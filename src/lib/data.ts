@@ -18,11 +18,11 @@ export const products: Product[] = [
 ];
 
 export const units: Unit[] = [
-  { id: 'UNIT001', name: 'UBS Centro', type: 'Posto de Saúde', address: 'Rua Principal, 123' },
-  { id: 'UNIT002', name: 'Hospital Municipal', type: 'Hospital', address: 'Av. da Saúde, 456' },
-  { id: 'UNIT003', name: 'Laboratório Central', type: 'Laboratório', address: 'Rua das Análises, 789' },
-  { id: 'UNIT004', name: 'CEO - Centro de Especialidades Odontológicas', type: 'Odontologia', address: 'Av. dos Dentistas, 101' },
-  { id: 'UNIT005', name: 'UBS Bairro Novo', type: 'Posto de Saúde', address: 'Rua Projetada, 321' },
+  { id: 'UNIT001', name: 'UBS Centro', address: 'Rua Principal, 123', coordinatorName: 'Maria Silva', hasDentalOffice: true, hasPharmacy: true },
+  { id: 'UNIT002', name: 'Hospital Municipal', address: 'Av. da Saúde, 456', coordinatorName: 'Carlos Andrade', hasDentalOffice: false, hasPharmacy: true },
+  { id: 'UNIT003', name: 'Laboratório Central', address: 'Rua das Análises, 789', coordinatorName: 'Ana Lima', hasDentalOffice: false, hasPharmacy: false },
+  { id: 'UNIT004', name: 'CEO - Centro de Especialidades Odontológicas', address: 'Av. dos Dentistas, 101', coordinatorName: 'Dr. João Gomes', hasDentalOffice: true, hasPharmacy: false },
+  { id: 'UNIT005', name: 'UBS Bairro Novo', address: 'Rua Projetada, 321', coordinatorName: 'Fernanda Costa', hasDentalOffice: true, hasPharmacy: true },
 ];
 
 export const patients: Patient[] = [

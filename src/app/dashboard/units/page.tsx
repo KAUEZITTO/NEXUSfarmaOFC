@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { AddUnitDialog } from "@/components/dashboard/add-unit-dialog";
 
 export default function UnitsPage() {
   return (
@@ -22,10 +23,12 @@ export default function UnitsPage() {
               Cadastre e gerencie as unidades que recebem os produtos.
             </CardDescription>
           </div>
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Adicionar Unidade
-          </Button>
+          <AddUnitDialog trigger={
+            <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Adicionar Unidade
+            </Button>
+          } />
         </div>
       </CardHeader>
       <CardContent>

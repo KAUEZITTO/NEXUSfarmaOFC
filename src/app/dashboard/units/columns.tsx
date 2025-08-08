@@ -2,34 +2,12 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Unit } from "@/lib/types"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, Check, X, Edit } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { AddUnitDialog } from "@/components/dashboard/add-unit-dialog"
 
 export const columns: ColumnDef<Unit>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -46,17 +24,35 @@ export const columns: ColumnDef<Unit>[] = [
     cell: ({ row }) => <div className="capitalize font-medium">{row.getValue("name")}</div>,
   },
   {
-    accessorKey: "type",
-    header: "Tipo",
-    cell: ({ row }) => <div className="capitalize">{row.getValue("type")}</div>,
-  },
-  {
     accessorKey: "address",
     header: "Endereço",
+  },
+   {
+    accessorKey: "coordinatorName",
+    header: "Coordenador(a)",
+    cell: ({ row }) => <div>{row.getValue("coordinatorName") || 'N/A'}</div>,
+  },
+  {
+    accessorKey: "hasPharmacy",
+    header: "Farmácia",
+    cell: ({ row }) => {
+      const hasPharmacy = row.getValue("hasPharmacy")
+      return hasPharmacy ? <Check className="h-4 w-4 text-green-500" /> : <X className="h-4 w-4 text-red-500" />
+    }
+  },
+  {
+    accessorKey: "hasDentalOffice",
+    header: "Odonto",
+    cell: ({ row }) => {
+      const hasOffice = row.getValue("hasDentalOffice")
+      return hasOffice ? <Check className="h-4 w-4 text-green-500" /> : <X className="h-4 w-4 text-red-500" />
+    }
   },
   {
     id: "actions",
     cell: ({ row }) => {
+      const unit = row.original
+
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -67,8 +63,14 @@ export const columns: ColumnDef<Unit>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
-            <DropdownMenuItem>Ver Pedidos</DropdownMenuItem>
-            <DropdownMenuItem>Editar</DropdownMenuItem>
+            <DropdownMenuItem asChild>
+                 <AddUnitDialog unitToEdit={unit} trigger={
+                    <button className="w-full h-full relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                        <Edit className="mr-2 h-4 w-4" />
+                        <span>Editar</span>
+                    </button>
+                } />
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )

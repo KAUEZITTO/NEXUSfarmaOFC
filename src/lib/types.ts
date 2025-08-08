@@ -15,8 +15,10 @@ export type Product = {
 export type Unit = {
   id: string;
   name: string;
-  type: 'Hospital' | 'Posto de Saúde' | 'Laboratório' | 'Odontologia' | 'Outro';
   address: string;
+  coordinatorName?: string;
+  hasDentalOffice?: boolean;
+  hasPharmacy?: boolean;
 };
 
 export type PatientStatus = 'Ativo' | 'Tratamento Concluído' | 'Tratamento Interrompido' | 'Óbito';
