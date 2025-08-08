@@ -4,8 +4,9 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Patient } from "@/lib/types"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, Eye } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import Link from "next/link"
 
 export const columns: ColumnDef<Patient>[] = [
   {
@@ -69,7 +70,12 @@ export const columns: ColumnDef<Patient>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
-            <DropdownMenuItem>Ver Histórico</DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href={`/dashboard/patients/${patient.id}`}>
+                <Eye className="mr-2 h-4 w-4" />
+                Ver Histórico
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem>Editar</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

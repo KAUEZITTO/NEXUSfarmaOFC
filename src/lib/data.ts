@@ -1,4 +1,4 @@
-import type { Product, Order, Patient, Unit } from './types';
+import type { Product, Order, Patient, Unit, Dispensation } from './types';
 
 export const products: Product[] = [
   { id: 'PROD001', name: 'Dipirona 500mg', category: 'Medicamento', quantity: 150, expiryDate: '2025-12-31', status: 'Em Estoque', batch: 'LOTE202401A', presentation: 'Comprimido' },
@@ -37,4 +37,36 @@ export const orders: Order[] = [
   { id: 'ORD005', unitId: 'UNIT001', unit: 'UBS Bairro Novo', sentDate: '2024-05-16', deliveryDate: '2024-05-17', status: 'Entregue', itemCount: 3 },
   { id: 'ORD006', unitId: 'UNIT002', unit: 'Hospital Municipal', sentDate: '2024-06-01', status: 'Pendente', itemCount: 7 },
   { id: 'ORD007', unitId: 'UNIT001', unit: 'UBS Centro', sentDate: '2024-06-02', status: 'Em Trânsito', itemCount: 4 },
+];
+
+// Mock data for dispensations
+export const dispensations: Dispensation[] = [
+    { 
+        id: 'DISP-1716300000000', 
+        patientId: 'PAT001', 
+        patient: patients[0],
+        date: '21/05/2024',
+        items: [
+            { productId: 'PROD008', name: 'Insulina NPH', quantity: 2, category: 'Insulinas', presentation: 'Frasco 10ml', batch: 'LOTE-NPH-1', expiryDate: '30/11/2025' },
+            { productId: 'PROD010', name: 'Tiras de Glicemia', quantity: 1, category: 'Tiras/Lancetas', presentation: 'Caixa c/ 50', batch: 'LOTE-TIRA-3', expiryDate: '31/10/2025' }
+        ]
+    },
+    { 
+        id: 'DISP-1716310000000', 
+        patientId: 'PAT002', 
+        patient: patients[1],
+        date: '22/05/2024',
+        items: [
+            { productId: 'PROD006', name: 'Paracetamol 750mg', quantity: 30, category: 'Medicamentos', presentation: 'Comprimido', batch: 'LOTE202403D', expiryDate: '10/05/2025' }
+        ]
+    },
+        { 
+        id: 'DISP-1716320000000', 
+        patientId: 'PAT001', 
+        patient: patients[0],
+        date: '23/05/2024',
+        items: [
+            { productId: 'FRD001', name: 'Fralda Geriátrica M', quantity: 4, category: 'Fraldas', presentation: 'Pacote' }
+        ]
+    }
 ];

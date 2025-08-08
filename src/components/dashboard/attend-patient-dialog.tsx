@@ -187,16 +187,21 @@ export function AttendPatientDialog() {
 
 
   const handleSaveDispensation = () => {
+    if (!selectedPatient) return;
+
     const dispensationId = `DISP-${Date.now()}`;
     const dispensationData = {
       id: dispensationId,
+      patientId: selectedPatient.id,
       patient: selectedPatient,
       date: new Date().toLocaleDateString('pt-BR'),
-      items: items,
+      items: items.map(({ internalId, ...rest }) => rest), // Remove internalId before saving
     };
     
-    // In a real app, you'd save this to a DB. Here, we save to localStorage.
-    localStorage.setItem(`dispensation-${dispensationId}`, JSON.stringify(dispensationData));
+    // In a real app, you'd save this to a DB. 
+    // Here, we can add it to our mock data array for the history page to work.
+    // Note: this won't persist across reloads without a backend.
+    allDispensations.push(dispensationData);
 
     toast({
       title: 'Dispensação Registrada!',
@@ -204,7 +209,9 @@ export function AttendPatientDialog() {
     });
     
     setIsOpen(false);
-    router.push(`/dispensation-receipt/${dispensationId}`);
+    
+    // Redirect to the receipt page with a query param to trigger printing
+    router.push(`/dispensation-receipt/${dispensationId}?new=true`);
 
     // Reset state for next time
     setTimeout(() => {

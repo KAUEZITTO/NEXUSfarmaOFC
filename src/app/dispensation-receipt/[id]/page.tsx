@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -14,9 +14,9 @@ import {
 import { Printer, ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/logo";
 import Image from "next/image";
-import Link from "next/link";
-import { notFound, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import type { Dispensation, DispensationItem } from "@/lib/types";
+import { dispensations as allDispensations } from "@/lib/data";
 
 const CategoryTitle = ({ children }: { children: React.ReactNode }) => (
   <TableRow className="bg-muted/60 hover:bg-muted/60 print:bg-gray-100">
@@ -134,17 +134,34 @@ const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensatio
 export default function DispensationReceiptPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [dispensationData, setDispensationData] = useState<Dispensation | null>(null);
+  const [isNew, setIsNew] = useState(false);
 
   useEffect(() => {
-    const storedData = localStorage.getItem(`dispensation-${params.id}`);
-    if (storedData) {
-      setDispensationData(JSON.parse(storedData));
-    } else {
-      // In a real app, you might fetch from a server here as a fallback
-      // For this prototype, we'll just show not found.
-      notFound();
+    // Check if it's a new dispensation to auto-print
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('new') === 'true') {
+        setIsNew(true);
+         // Clean up the URL
+        router.replace(`/dispensation-receipt/${params.id}`, undefined);
     }
-  }, [params.id]);
+    
+    // In a real app, this would be a fetch from a DB.
+    // Here we find it in the mock data, which contains localStorage-like data
+    const data = allDispensations.find(d => d.id === params.id);
+
+    if (data) {
+        // We need to find the full patient object
+        setDispensationData(data);
+    } 
+  }, [params.id, router]);
+
+  useEffect(() => {
+      if (dispensationData && isNew) {
+          window.print();
+          setIsNew(false); // Reset state to prevent re-printing on refresh
+      }
+  }, [dispensationData, isNew]);
+
 
   if (!dispensationData) {
     return (
@@ -174,4 +191,3 @@ export default function DispensationReceiptPage({ params }: { params: { id: stri
     </>
   );
 }
-

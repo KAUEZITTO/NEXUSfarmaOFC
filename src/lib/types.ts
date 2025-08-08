@@ -47,6 +47,7 @@ export type DispensationItem = {
 
 export type Dispensation = {
     id: string;
+    patientId: string; // Keep patientId for easy filtering
     patient: Patient;
     date: string;
     items: DispensationItem[];
