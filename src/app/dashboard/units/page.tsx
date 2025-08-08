@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { getUnits } from "@/lib/actions";
-import { columns } from "./columns";
+import { getColumns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
@@ -33,6 +33,8 @@ export default function UnitsPage() {
   useEffect(() => {
     fetchUnits();
   }, []);
+
+  const columns = getColumns({ onUnitSaved: fetchUnits });
 
   return (
     <Card>

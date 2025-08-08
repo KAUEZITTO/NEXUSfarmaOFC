@@ -140,7 +140,7 @@ export default async function UnitDetailsPage({ params }: { params: { unitId: st
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {unitOrders.length > 0 ? unitOrders.map((order) => (
+                {unitOrders.length > 0 ? unitOrders.slice(0, 10).map((order) => (
                    <TableRow key={order.id}>
                       <TableCell className="font-mono">{order.id.substring(0, 8)}...</TableCell>
                       <TableCell>{new Date(order.sentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</TableCell>

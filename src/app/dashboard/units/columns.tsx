@@ -8,7 +8,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { AddUnitDialog } from "@/components/dashboard/add-unit-dialog"
 import Link from "next/link"
 
-export const columns: ColumnDef<Unit>[] = [
+type ColumnsProps = {
+  onUnitSaved: () => void;
+};
+
+
+export const getColumns = ({ onUnitSaved }: ColumnsProps): ColumnDef<Unit>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -79,7 +84,7 @@ export const columns: ColumnDef<Unit>[] = [
             </DropdownMenuItem>
              <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-                 <AddUnitDialog unitToEdit={unit} trigger={
+                 <AddUnitDialog unitToEdit={unit} onUnitSaved={onUnitSaved} trigger={
                     <button className="w-full h-full relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
                         <Edit className="mr-2 h-4 w-4" />
                         <span>Editar Unidade</span>
