@@ -15,6 +15,7 @@ import { getProducts, getAllPatients, getAllDispensations } from "@/lib/actions"
 import { generateCompleteReportPDF, generateStockReportPDF } from "@/lib/pdf-generator";
 import { useEffect, useState } from "react";
 import type { Product, Patient, Dispensation } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
 
 type GeneratingState = {
     complete: boolean;
@@ -23,6 +24,7 @@ type GeneratingState = {
 }
 
 export default function ReportsPage() {
+  const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [dispensations, setDispensations] = useState<Dispensation[]>([]);
@@ -64,6 +66,7 @@ export default function ReportsPage() {
         downloadPdf(pdfDataUri, `nexusfarma_relatorio_completo_${new Date().toISOString().split('T')[0]}.pdf`);
     } catch(e) {
         console.error("Failed to generate complete PDF", e);
+        toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
     } finally {
         setIsGenerating(prev => ({...prev, complete: false}));
     }
@@ -76,10 +79,18 @@ export default function ReportsPage() {
       downloadPdf(pdfDataUri, `nexusfarma_relatorio_estoque_${new Date().toISOString().split('T')[0]}.pdf`);
     } catch(e) {
       console.error("Failed to generate stock PDF", e);
+      toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
     } finally {
       setIsGenerating(prev => ({...prev, stock: false}));
     }
   }
+
+  const handleNotImplemented = () => {
+    toast({
+        title: 'Funcionalidade em Desenvolvimento',
+        description: 'A geração deste relatório específico ainda não foi implementada.',
+    });
+  };
 
 
   const now = new Date();
@@ -206,7 +217,7 @@ export default function ReportsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-          <Button variant="outline" className="justify-start" disabled>
+          <Button variant="outline" className="justify-start" onClick={handleNotImplemented}>
             <FileText className="mr-2 h-4 w-4" />
             Dispensação por Unidade
           </Button>
@@ -218,19 +229,19 @@ export default function ReportsPage() {
              )}
             Estoque Atual
           </Button>
-           <Button variant="outline" className="justify-start" disabled>
+           <Button variant="outline" className="justify-start" onClick={handleNotImplemented}>
             <FileText className="mr-2 h-4 w-4" />
             Produtos a Vencer
           </Button>
-          <Button variant="outline" className="justify-start" disabled>
+          <Button variant="outline" className="justify-start" onClick={handleNotImplemented}>
             <FileText className="mr-2 h-4 w-4" />
             Atendimento de Pacientes
           </Button>
-           <Button variant="outline" className="justify-start" disabled>
+           <Button variant="outline" className="justify-start" onClick={handleNotImplemented}>
             <FileText className="mr-2 h-4 w-4" />
             Entradas e Saídas
           </Button>
-           <Button variant="outline" className="justify-start" disabled>
+           <Button variant="outline" className="justify-start" onClick={handleNotImplemented}>
             <FileText className="mr-2 h-4 w-4" />
             Relatório de Lotes
           </Button>
