@@ -48,28 +48,20 @@ const orderData = {
   unit: "UBS Centro",
   date: "20 de Maio de 2024",
   items: {
-    medicines: [
+    Medicamentos: [
       createOrderItem("PROD001", 50), // Dipirona 500mg
       createOrderItem("PROD006", 100), // Paracetamol 750mg
     ].filter(Boolean) as OrderItem[],
-    technical_material: [
+    "Material Técnico": [
       createOrderItem("PROD002", 200), // Seringa 10ml
       createOrderItem("PROD003", 2), // Luva de Procedimento (M)
     ].filter(Boolean) as OrderItem[],
-    odontological_items: [
+    "Itens Odontológicos": [
         createOrderItem("PROD004", 5) // Resina Composta Z350
     ].filter(Boolean) as OrderItem[],
-    laboratory_items: [],
+    "Itens de Laboratório": [],
   },
 };
-
-const CategoryTitle = ({ children }: { children: React.ReactNode }) => (
-  <TableRow className="bg-muted/60 hover:bg-muted/60 print:bg-gray-100">
-    <TableCell colSpan={5} className="font-bold text-md text-slate-600 tracking-wide uppercase">
-      {children}
-    </TableCell>
-  </TableRow>
-);
 
 const renderItemRows = (items: OrderItem[]) => {
     return items.map((item, index) => (
@@ -120,44 +112,29 @@ const ReceiptCopy = ({ showSignature, isFirstCopy }: { showSignature: boolean, i
         </div>
       </div>
 
-      <div>
-        <Table className="border-collapse border border-gray-300">
-          <TableHeader>
-            <TableRow className="bg-gray-200 hover:bg-gray-200 print:bg-gray-200">
-              <TableHead className="w-[45%] font-semibold text-slate-700 border border-gray-300">Item</TableHead>
-              <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Apresentação</TableHead>
-              <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Lote</TableHead>
-              <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Validade</TableHead>
-              <TableHead className="text-right font-semibold text-slate-700 border border-gray-300">Quantidade</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody className="border border-gray-300">
-            {orderData.items.medicines.length > 0 && (
-              <>
-                <CategoryTitle>Medicamentos</CategoryTitle>
-                {renderItemRows(orderData.items.medicines)}
-              </>
-            )}
-            {orderData.items.technical_material.length > 0 && (
-              <>
-                <CategoryTitle>Material Técnico</CategoryTitle>
-                {renderItemRows(orderData.items.technical_material)}
-              </>
-            )}
-            {orderData.items.odontological_items.length > 0 && (
-              <>
-                <CategoryTitle>Itens Odontológicos</CategoryTitle>
-                {renderItemRows(orderData.items.odontological_items)}
-              </>
-            )}
-            {orderData.items.laboratory_items.length > 0 && (
-              <>
-                <CategoryTitle>Itens de Laboratório</CategoryTitle>
-                  {renderItemRows(orderData.items.laboratory_items)}
-              </>
-            )}
-          </TableBody>
-        </Table>
+      <div className="space-y-6">
+        {Object.entries(orderData.items).map(([category, items]) => {
+          if (items.length === 0) return null;
+          return (
+            <div key={category}>
+               <h3 className="font-bold text-md text-slate-600 tracking-wide uppercase mb-2">{category}</h3>
+               <Table className="border-collapse border border-gray-300">
+                <TableHeader>
+                  <TableRow className="bg-gray-200 hover:bg-gray-200 print:bg-gray-200">
+                    <TableHead className="w-[45%] font-semibold text-slate-700 border border-gray-300">Item</TableHead>
+                    <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Apresentação</TableHead>
+                    <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Lote</TableHead>
+                    <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Validade</TableHead>
+                    <TableHead className="text-right font-semibold text-slate-700 border border-gray-300">Quantidade</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="border border-gray-300">
+                  {renderItemRows(items)}
+                </TableBody>
+              </Table>
+            </div>
+          )
+        })}
       </div>
       
       {showSignature && (

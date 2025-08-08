@@ -18,13 +18,6 @@ import { useRouter } from "next/navigation";
 import type { Dispensation, DispensationItem } from "@/lib/types";
 import { dispensations as allDispensations } from "@/lib/data";
 
-const CategoryTitle = ({ children }: { children: React.ReactNode }) => (
-  <TableRow className="bg-muted/60 hover:bg-muted/60 print:bg-gray-100">
-    <TableCell colSpan={5} className="font-bold text-md text-slate-600 tracking-wide uppercase">
-      {children}
-    </TableCell>
-  </TableRow>
-);
 
 const renderItemRows = (items: DispensationItem[]) => {
     if (!items || items.length === 0) return null;
@@ -90,26 +83,29 @@ const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensatio
             </div>
         </div>
 
-        <div>
-          <Table className="border-collapse border border-gray-300">
-            <TableHeader>
-              <TableRow className="bg-gray-200 hover:bg-gray-200 print:bg-gray-200">
-                <TableHead className="w-[40%] font-semibold text-slate-700 border border-gray-300">Item</TableHead>
-                <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Apresentação</TableHead>
-                <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Lote</TableHead>
-                <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Validade</TableHead>
-                <TableHead className="text-right font-semibold text-slate-700 border border-gray-300">Quantidade</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="border border-gray-300">
-                {Object.entries(groupedItems).map(([category, items]) => (
-                    <React.Fragment key={category}>
-                        <CategoryTitle>{category}</CategoryTitle>
-                        {renderItemRows(items)}
-                    </React.Fragment>
-                ))}
-            </TableBody>
-          </Table>
+        <div className="space-y-6">
+          {Object.entries(groupedItems).map(([category, items]) => {
+              if (items.length === 0) return null;
+              return (
+                <div key={category}>
+                  <h3 className="font-bold text-md text-slate-600 tracking-wide uppercase mb-2">{category}</h3>
+                  <Table className="border-collapse border border-gray-300">
+                    <TableHeader>
+                      <TableRow className="bg-gray-200 hover:bg-gray-200 print:bg-gray-200">
+                        <TableHead className="w-[40%] font-semibold text-slate-700 border border-gray-300">Item</TableHead>
+                        <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Apresentação</TableHead>
+                        <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Lote</TableHead>
+                        <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Validade</TableHead>
+                        <TableHead className="text-right font-semibold text-slate-700 border border-gray-300">Quantidade</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody className="border border-gray-300">
+                      {renderItemRows(items)}
+                    </TableBody>
+                  </Table>
+                </div>
+              )
+            })}
         </div>
         
         {showSignature && (
