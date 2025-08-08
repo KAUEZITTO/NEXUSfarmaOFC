@@ -1,22 +1,11 @@
+
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { auth as adminAuth } from 'firebase-admin';
-import { getAuth } from "firebase-admin/auth";
-import { initializeApp, getApps } from 'firebase-admin/app';
 
-const firebaseAdminConfig = {
-  // We can't expose private keys to the client-side, but this is a server-side file.
-  // It's a common practice to use environment variables here.
-  // For this prototype, we'll keep it simple, but in a real app, use process.env.
-  // We also can't dynamically generate this part easily.
-  // Let's assume the user will have to fill this in or a separate process does.
-};
-
-
-// Initialize Firebase Admin SDK
-if (!getApps().length) {
-    initializeApp();
-}
+// O SDK do Admin não é estritamente necessário para esta abordagem de protótipo,
+// pois o Firebase Auth (cliente) e as regras de segurança gerenciam a sessão.
+// A verificação do cookie de sessão aqui seria uma camada extra de segurança em um app de produção.
+// Por enquanto, vamos simplificar para evitar a necessidade de credenciais de serviço.
 
 export async function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get('session')?.value;
@@ -31,22 +20,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url));
   }
   
-  try {
-     // This is where Firebase Admin SDK would be used if fully configured.
-     // For this prototype, we will trust the presence of the cookie.
-     // In a real app: await getAuth().verifySessionCookie(sessionCookie, true);
+  // Em um aplicativo de produção completo, você faria a verificação do cookie de sessão aqui
+  // usando o Firebase Admin SDK para garantir que o cookie é válido.
+  // try {
+  //   await getAuth().verifySessionCookie(sessionCookie, true);
+  // } catch (error) { ... }
      
-     if(isAuthPage) {
-        return NextResponse.redirect(new URL('/dashboard', request.url));
-     }
-
-  } catch (error) {
-     console.error("Session cookie verification failed:", error);
-     // If verification fails, redirect to login
-     const response = NextResponse.redirect(new URL('/', request.url));
-     // Clear the invalid cookie
-     response.cookies.delete('session');
-     return response;
+  if(isAuthPage) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   return NextResponse.next();
