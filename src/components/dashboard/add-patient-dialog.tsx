@@ -30,6 +30,7 @@ import { units } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { patients } from '@/lib/data';
 import type { Patient } from '@/lib/types';
+import { Textarea } from '../ui/textarea';
 
 
 export function AddPatientDialog() {
@@ -41,6 +42,7 @@ export function AddPatientDialog() {
   const [demandType, setDemandType] = useState<'judicial' | 'municipal' | 'none'>('none');
   const [judicialItems, setJudicialItems] = useState<string[]>([]);
   const [municipalItems, setMunicipalItems] = useState<string[]>([]);
+  const [hasInsulinReport, setHasInsulinReport] = useState(false);
 
   const handleSavePatient = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +59,9 @@ export function AddPatientDialog() {
         unitName: units.find(u => u.id === formData.get('unitId'))?.name,
         isAnalogInsulinUser,
         analogInsulinType: isAnalogInsulinUser ? formData.get('analogInsulinType') as any : undefined,
+        hasInsulinReport: isAnalogInsulinUser ? hasInsulinReport : undefined,
+        insulinDosage: isAnalogInsulinUser ? formData.get('insulinDosage') as string : undefined,
+        insulinPresentation: isAnalogInsulinUser ? formData.get('insulinPresentation') as any : undefined,
         mandateType: demandType === 'judicial' ? 'Legal' : demandType === 'municipal' ? 'Municipal' : 'N/A',
         judicialItems: demandType === 'judicial' ? judicialItems as any : [],
         municipalItems: demandType === 'municipal' ? municipalItems as any : [],
@@ -144,17 +149,45 @@ export function AddPatientDialog() {
                 </div>
 
                 {isAnalogInsulinUser && (
-                    <RadioGroup name="analogInsulinType" className="ml-6 p-4 border-l">
-                         <Label>Especificar Tipo:</Label>
+                    <div className="ml-6 p-4 border-l space-y-4">
                         <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="Lantus (Glargina)" id="lantus" />
-                            <Label htmlFor="lantus">Lantus (Glargina)</Label>
+                            <Switch id="has-insulin-report" checked={hasInsulinReport} onCheckedChange={setHasInsulinReport} />
+                            <Label htmlFor="has-insulin-report">Apresentou Laudo?</Label>
                         </div>
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="Apidra (Glulisina)" id="apidra" />
-                            <Label htmlFor="apidra">Apidra (Glulisina)</Label>
+                        
+                        <div>
+                            <Label>Especificar Tipo de Insulina:</Label>
+                            <RadioGroup name="analogInsulinType" className="mt-2 flex gap-4">
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="Lantus (Glargina)" id="lantus" />
+                                    <Label htmlFor="lantus">Lantus (Glargina)</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="Apidra (Glulisina)" id="apidra" />
+                                    <Label htmlFor="apidra">Apidra (Glulisina)</Label>
+                                </div>
+                            </RadioGroup>
                         </div>
-                    </RadioGroup>
+
+                        <div>
+                            <Label>Apresentação:</Label>
+                            <RadioGroup name="insulinPresentation" className="mt-2 flex gap-4">
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="Caneta" id="pen" />
+                                    <Label htmlFor="pen">Caneta</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="Frasco" id="vial" />
+                                    <Label htmlFor="vial">Frasco</Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
+
+                        <div className='space-y-2'>
+                            <Label htmlFor="insulinDosage">Posologia</Label>
+                            <Textarea id="insulinDosage" name="insulinDosage" placeholder="Ex: 10 UI de manhã, 15 UI à noite" />
+                        </div>
+                    </div>
                 )}
               </div>
               

@@ -26,6 +26,9 @@ export type Patient = {
     phone?: string;
     isAnalogInsulinUser?: boolean;
     analogInsulinType?: 'Lantus (Glargina)' | 'Apidra (Glulisina)';
+    hasInsulinReport?: boolean;
+    insulinDosage?: string;
+    insulinPresentation?: 'Caneta' | 'Frasco';
     mandateType: 'Legal' | 'Municipal' | 'N/A';
     judicialItems?: ('Medicamentos' | 'Material Técnico')[];
     municipalItems?: ('Fraldas' | 'Material Técnico' | 'Medicamentos')[];

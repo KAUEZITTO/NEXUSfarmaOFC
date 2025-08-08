@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -53,6 +53,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { dispensations as allDispensations } from '@/lib/data';
 
 type DispensationItem = DispensationItemType & {
   internalId: string;
@@ -126,9 +127,37 @@ export function AttendPatientDialog() {
       patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       patient.cpf.includes(searchTerm)
   );
+  
+  const setupInitialItems = (patient: Patient) => {
+    const initialItems: DispensationItem[] = [];
+
+    if (patient.isAnalogInsulinUser && patient.analogInsulinType) {
+        // Find the insulin product based on name and presentation
+        const insulinProduct = allProducts.find(p => 
+            p.name.toLowerCase().includes(patient.analogInsulinType!.toLowerCase().split(' ')[0]) &&
+            p.presentation?.toLowerCase().includes(patient.insulinPresentation!.toLowerCase())
+        );
+
+        if(insulinProduct) {
+             initialItems.push({
+                internalId: `item-insulin-${Date.now()}`,
+                productId: insulinProduct.id,
+                name: insulinProduct.name,
+                category: 'Insulinas',
+                quantity: 1, // Default, user can change
+                presentation: insulinProduct.presentation,
+                batch: insulinProduct.batch,
+                expiryDate: insulinProduct.expiryDate ? new Date(insulinProduct.expiryDate).toLocaleDateString('pt-BR') : 'N/A',
+            });
+        }
+    }
+
+    setItems(initialItems);
+  };
 
   const handleSelectPatient = (patient: Patient) => {
     setSelectedPatient(patient);
+    setupInitialItems(patient);
     setStep('dispenseForm');
   };
 
@@ -198,9 +227,6 @@ export function AttendPatientDialog() {
       items: items.map(({ internalId, ...rest }) => rest), // Remove internalId before saving
     };
     
-    // In a real app, you'd save this to a DB. 
-    // Here, we can add it to our mock data array for the history page to work.
-    // Note: this won't persist across reloads without a backend.
     allDispensations.push(dispensationData);
 
     toast({
@@ -377,6 +403,12 @@ export function AttendPatientDialog() {
                     <div><span className="font-semibold">CPF:</span> {selectedPatient.cpf}</div>
                     <div><span className="font-semibold">CNS:</span> {selectedPatient.cns}</div>
                     <div><span className="font-semibold">Mandado:</span> {selectedPatient.mandateType}</div>
+                    {selectedPatient.isAnalogInsulinUser && (
+                        <>
+                           <div><span className="font-semibold">Tipo de Insulina:</span> {selectedPatient.analogInsulinType} ({selectedPatient.insulinPresentation})</div>
+                           <div><span className="font-semibold">Posologia:</span> {selectedPatient.insulinDosage || 'N/A'}</div>
+                        </>
+                    )}
                   </CardContent>
                 </Card>
 
