@@ -5,7 +5,7 @@ import { Order } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, Printer } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 
@@ -88,8 +88,9 @@ export const columns: ColumnDef<Order>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
             <DropdownMenuItem>Ver Detalhes</DropdownMenuItem>
-            <DropdownMenuItem>
-                <Link href={`/dashboard/orders/${order.id}/receipt`} className="w-full h-full">
+            <DropdownMenuItem asChild>
+                <Link href={`/dashboard/orders/${order.id}/receipt`} className="w-full h-full flex items-center">
+                    <Printer className="mr-2 h-4 w-4" />
                     Imprimir Recibo
                 </Link>
             </DropdownMenuItem>
