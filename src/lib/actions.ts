@@ -4,8 +4,8 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { db } from './firebase';
-import { collection, getDocs, addDoc, updateDoc, doc, query, where, getDoc, writeBatch, documentId, Timestamp, orderBy } from 'firebase/firestore';
-import type { Product, Unit, Patient, PatientStatus, Order, Dispensation, OrderItem, DispensationItem, StockMovement } from './types';
+import { collection, getDocs, addDoc, updateDoc, doc, query, where, getDoc, writeBatch, documentId, Timestamp, orderBy, CollectionReference, Query } from 'firebase/firestore';
+import type { Product, Unit, Patient, PatientStatus, Order, Dispensation, OrderItem, DispensationItem, StockMovement, PatientFilter } from './types';
 import { revalidatePath } from 'next/cache';
 import { adminAuth } from './firebase-admin';
 
@@ -188,11 +188,39 @@ export async function updateUnit(unitId: string, unitData: Partial<Unit>) {
 }
 
 // FIRESTORE ACTIONS - PATIENTS
-
-export async function getPatients(): Promise<Patient[]> {
+export async function getPatients(filter: PatientFilter = 'active'): Promise<Patient[]> {
     const patientsCol = collection(db, 'patients');
-    const q = query(patientsCol, where('status', '==', 'Ativo'));
-    const patientSnapshot = await getDocs(q);
+    let patientQuery: Query | CollectionReference = patientsCol;
+
+    switch (filter) {
+        case 'active':
+            patientQuery = query(patientsCol, where('status', '==', 'Ativo'));
+            break;
+        case 'inactive':
+            patientQuery = query(patientsCol, where('status', '!=', 'Ativo'));
+            break;
+        case 'insulin':
+            patientQuery = query(patientsCol, where('isAnalogInsulinUser', '==', true), where('status', '==', 'Ativo'));
+            break;
+        case 'diapers':
+            patientQuery = query(patientsCol, where('municipalItems', 'array-contains', 'Fraldas'), where('status', '==', 'Ativo'));
+            break;
+        case 'bedridden':
+            patientQuery = query(patientsCol, where('isBedridden', '==', true), where('status', '==', 'Ativo'));
+            break;
+        case 'legal':
+             patientQuery = query(patientsCol, where('mandateType', '==', 'Legal'), where('status', '==', 'Ativo'));
+            break;
+        case 'municipal':
+             patientQuery = query(patientsCol, where('mandateType', '==', 'Municipal'), where('status', '==', 'Ativo'));
+            break;
+        case 'all':
+        default:
+            // No extra filter needed for 'all'
+            break;
+    }
+    
+    const patientSnapshot = await getDocs(patientQuery);
     const patientList = patientSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Patient));
     return patientList;
 }

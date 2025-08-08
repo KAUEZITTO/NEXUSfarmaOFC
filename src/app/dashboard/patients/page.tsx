@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState, useEffect } from "react";
-import { getAllPatients } from "@/lib/actions";
+import { useState, useEffect, useTransition } from "react";
+import { getPatients } from "@/lib/actions";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
 import {
@@ -16,57 +16,43 @@ import { AttendPatientDialog } from "@/components/dashboard/attend-patient-dialo
 import { AddPatientDialog } from "@/components/dashboard/add-patient-dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { Patient } from "@/lib/types";
+import type { Patient, PatientFilter } from "@/lib/types";
 import { PlusCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type FilterCategory = 'Ativos' | 'Inativos' | 'Insulinas' | 'Fraldas' | 'Acamados' | 'Judicial' | 'Municipal' | 'Todos';
-
-const filterCategories: FilterCategory[] = ['Ativos', 'Inativos', 'Insulinas', 'Fraldas', 'Acamados', 'Judicial', 'Municipal', 'Todos'];
-
-const filterPatients = (patients: Patient[], filter: FilterCategory): Patient[] => {
-    switch(filter) {
-        case 'Ativos':
-             return patients.filter(p => p.status === 'Ativo');
-        case 'Inativos':
-            return patients.filter(p => p.status !== 'Ativo');
-        case 'Insulinas':
-            return patients.filter(p => p.isAnalogInsulinUser && p.status === 'Ativo');
-        case 'Fraldas':
-            return patients.filter(p => p.municipalItems?.includes('Fraldas') && p.status === 'Ativo');
-        case 'Acamados':
-            return patients.filter(p => p.isBedridden && p.status === 'Ativo');
-        case 'Judicial':
-            return patients.filter(p => p.mandateType === 'Legal' && p.status === 'Ativo');
-        case 'Municipal':
-            return patients.filter(p => p.mandateType === 'Municipal' && p.status === 'Ativo');
-        case 'Todos':
-        default:
-            return patients;
-    }
-}
+const filterCategories: { label: string, value: PatientFilter }[] = [
+    { label: 'Ativos', value: 'active' },
+    { label: 'Inativos', value: 'inactive' },
+    { label: 'Insulinas', value: 'insulin' },
+    { label: 'Fraldas', value: 'diapers' },
+    { label: 'Acamados', value: 'bedridden' },
+    { label: 'Judicial', value: 'legal' },
+    { label: 'Municipal', value: 'municipal' },
+    { label: 'Todos', value: 'all' },
+];
 
 
 export default function PatientsPage() {
-  const [activeFilter, setActiveFilter] = useState<FilterCategory>('Ativos');
+  const [activeFilter, setActiveFilter] = useState<PatientFilter>('active');
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isPending, startTransition] = useTransition();
 
-  const fetchPatients = async () => {
+  const fetchPatients = (filter: PatientFilter) => {
     setLoading(true);
-    // Fetch all patients to allow for filtering on the client-side
-    const fetchedPatients = await getAllPatients();
-    setPatients(fetchedPatients);
-    setLoading(false);
+    startTransition(async () => {
+        const fetchedPatients = await getPatients(filter);
+        setPatients(fetchedPatients);
+        setLoading(false);
+    });
   };
 
   useEffect(() => {
-    fetchPatients();
-  }, []);
+    fetchPatients(activeFilter);
+  }, [activeFilter]);
 
 
-  const filteredPatients = filterPatients(patients, activeFilter);
-  const dataTableColumns = columns({ onPatientStatusChanged: fetchPatients });
+  const dataTableColumns = columns({ onPatientStatusChanged: () => fetchPatients(activeFilter) });
 
   return (
     <Card>
@@ -79,8 +65,8 @@ export default function PatientsPage() {
             </CardDescription>
           </div>
           <div className="flex gap-2">
-            <AttendPatientDialog onDispensationSaved={fetchPatients} />
-            <AddPatientDialog onPatientSaved={fetchPatients} trigger={
+            <AttendPatientDialog onDispensationSaved={() => fetchPatients(activeFilter)} />
+            <AddPatientDialog onPatientSaved={() => fetchPatients(activeFilter)} trigger={
               <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Adicionar Paciente
@@ -91,18 +77,18 @@ export default function PatientsPage() {
          <div className="flex items-center space-x-2 pt-4 overflow-x-auto pb-2">
             {filterCategories.map(filter => (
                  <Button 
-                    key={filter}
-                    variant={activeFilter === filter ? "default" : "outline"}
-                    onClick={() => setActiveFilter(filter)}
+                    key={filter.value}
+                    variant={activeFilter === filter.value ? "default" : "outline"}
+                    onClick={() => setActiveFilter(filter.value)}
                     className="rounded-full flex-shrink-0"
                 >
-                    {filter}
+                    {filter.label}
                 </Button>
             ))}
         </div>
       </CardHeader>
       <CardContent>
-         {loading ? (
+         {loading || isPending ? (
           <div className="space-y-2">
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-12 w-full" />
@@ -110,7 +96,7 @@ export default function PatientsPage() {
             <Skeleton className="h-12 w-full" />
           </div>
         ) : (
-          <DataTable columns={dataTableColumns} data={filteredPatients} filterColumn="name" />
+          <DataTable columns={dataTableColumns} data={patients} filterColumn="name" />
         )}
       </CardContent>
     </Card>

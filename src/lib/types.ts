@@ -1,4 +1,5 @@
 
+
 export type Product = {
   id: string;
   name: string;
@@ -60,6 +61,8 @@ export type Patient = {
     isBedridden?: boolean;
     files?: PatientFile[];
 };
+
+export type PatientFilter = 'active' | 'inactive' | 'insulin' | 'diapers' | 'bedridden' | 'legal' | 'municipal' | 'all';
 
 export type OrderItem = {
     productId: string;

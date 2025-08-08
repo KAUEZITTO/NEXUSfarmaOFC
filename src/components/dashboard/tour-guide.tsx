@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { navItems } from './dashboard-nav';
 
-const TOUR_STORAGE_KEY = 'nexusfarma-tour-completed';
+const TOUR_STORAGE_KEY = 'nexusfarma-tour-completed-v1';
 
 const tourSteps = [
     {
@@ -74,11 +74,14 @@ export function TourGuide() {
         const step = tourSteps[nextStepIndex];
         if (!step) return;
 
-        const navItem = navItems.find(item => item.tourId === step.element.replace(/\[data-tour-id="|"\]/g, ''));
+        // Find the nav item associated with the step's tourId
+        const tourId = step.element.replace(/\[data-tour-id="|"\]/g, '');
+        const navItem = navItems.find(item => item.tourId === tourId);
+
         if (navItem && navItem.href !== pathname) {
             router.push(navItem.href);
         }
-    }
+    };
 
 
     if (!startTour) {
@@ -104,4 +107,3 @@ export function TourGuide() {
         />
     );
 }
-
