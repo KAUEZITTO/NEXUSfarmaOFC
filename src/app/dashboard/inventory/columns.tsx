@@ -1,3 +1,4 @@
+
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
@@ -5,9 +6,10 @@ import { Product } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, Edit, MoreHorizontal } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+import { AddProductDialog } from "@/components/dashboard/add-product-dialog"
 
 export const columns: ColumnDef<Product>[] = [
   {
@@ -31,6 +33,11 @@ export const columns: ColumnDef<Product>[] = [
     ),
     enableSorting: false,
     enableHiding: false,
+  },
+  {
+    accessorKey: "id",
+    header: "ID do Produto",
+    cell: ({ row }) => <div className="font-mono">{row.getValue("id")}</div>,
   },
   {
     accessorKey: "name",
@@ -72,8 +79,12 @@ export const columns: ColumnDef<Product>[] = [
     accessorKey: "expiryDate",
     header: "Vencimento",
     cell: ({ row }) => {
-      const date = new Date(row.getValue("expiryDate"))
-      return <div>{date.toLocaleDateString('pt-BR')}</div>
+      const dateString = row.getValue("expiryDate") as string;
+      if (!dateString) return null;
+      // Date is yyyy-mm-dd, need to convert to local format
+      const [year, month, day] = dateString.split('-');
+      const date = new Date(Number(year), Number(month) - 1, Number(day));
+      return <div>{date.toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</div>
     }
   },
   {
@@ -98,8 +109,14 @@ export const columns: ColumnDef<Product>[] = [
               Copiar ID do Produto
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
-            <DropdownMenuItem>Editar</DropdownMenuItem>
+            <DropdownMenuItem asChild>
+                <AddProductDialog productToEdit={product} trigger={
+                    <button className="w-full h-full relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                        <Edit className="mr-2 h-4 w-4" />
+                        <span>Editar</span>
+                    </button>
+                } />
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )

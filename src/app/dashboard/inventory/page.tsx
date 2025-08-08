@@ -43,12 +43,12 @@ export default function InventoryPage() {
               Gerencie seus produtos, adicione novos e acompanhe o estoque.
             </CardDescription>
           </div>
-          <AddProductDialog>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Adicionar Produto
+          <AddProductDialog trigger={
+             <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Adicionar Produto
             </Button>
-          </AddProductDialog>
+          } />
         </div>
          <div className="flex items-center space-x-2 pt-4 overflow-x-auto pb-2">
             {filterCategories.map(filter => (

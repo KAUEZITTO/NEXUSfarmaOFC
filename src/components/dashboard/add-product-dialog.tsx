@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -27,16 +27,18 @@ import { products } from '@/lib/data';
 import type { Product } from '@/lib/types';
 
 type AddProductDialogProps = {
-  children: React.ReactNode;
+  trigger: React.ReactNode;
+  productToEdit?: Product;
 };
 
 const categories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Outro'];
 const presentations: Exclude<Product['presentation'], undefined>[] = ['Comprimido', 'Unidade', 'Caixa c/ 100', 'Seringa 4g', 'Frasco 10ml', 'Caixa c/ 50', 'Caneta 3ml', 'Pacote', 'Bolsa', 'Outro'];
 const suppliers: Exclude<Product['supplier'], undefined>[] = ['Casmed', 'Mednutri', 'Doação', 'Outro'];
 
-export function AddProductDialog({ children }: AddProductDialogProps) {
+export function AddProductDialog({ trigger, productToEdit }: AddProductDialogProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
+  const isEditing = !!productToEdit;
 
   // Form state
   const [name, setName] = useState('');
@@ -48,6 +50,20 @@ export function AddProductDialog({ children }: AddProductDialogProps) {
   const [supplier, setSupplier] = useState<Product['supplier']>('Casmed');
   const [quantity, setQuantity] = useState(0);
   const [presentation, setPresentation] = useState<Product['presentation']>('Unidade');
+
+  useEffect(() => {
+    if (productToEdit && isOpen) {
+        setName(productToEdit.name);
+        setCommercialName(productToEdit.commercialName || '');
+        setManufacturer(productToEdit.manufacturer || '');
+        setCategory(productToEdit.category);
+        setBatch(productToEdit.batch || '');
+        setExpiryDate(productToEdit.expiryDate || '');
+        setSupplier(productToEdit.supplier || 'Outro');
+        setQuantity(productToEdit.quantity);
+        setPresentation(productToEdit.presentation || 'Outro');
+    }
+  }, [productToEdit, isOpen]);
 
   const generateProductId = (productName: string): string => {
     const existingProducts = products.filter(p => p.name.toLowerCase() === productName.toLowerCase());
@@ -76,7 +92,7 @@ export function AddProductDialog({ children }: AddProductDialogProps) {
   };
 
   const handleSave = () => {
-    if (!name || !category || quantity <= 0) {
+    if (!name || !category || (quantity < 0)) {
       toast({
         variant: 'destructive',
         title: 'Campos Obrigatórios',
@@ -85,28 +101,50 @@ export function AddProductDialog({ children }: AddProductDialogProps) {
       return;
     }
 
-    const newProductId = generateProductId(name);
+    if (isEditing) {
+        const index = products.findIndex(p => p.id === productToEdit.id);
+        if (index !== -1) {
+            products[index] = {
+                ...products[index],
+                name,
+                commercialName: category === 'Medicamento' ? commercialName : undefined,
+                manufacturer,
+                category,
+                quantity,
+                batch,
+                expiryDate,
+                supplier,
+                presentation,
+                status: quantity > 0 ? (quantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque',
+            };
+            toast({
+              title: 'Produto Atualizado!',
+              description: `${name} foi atualizado com sucesso.`,
+            });
+        }
+    } else {
+        const newProductId = generateProductId(name);
+        const newProduct: Product = {
+        id: newProductId,
+        name,
+        commercialName: category === 'Medicamento' ? commercialName : undefined,
+        manufacturer: manufacturer,
+        category,
+        quantity,
+        batch,
+        expiryDate,
+        supplier,
+        presentation,
+        status: quantity > 0 ? (quantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque',
+        };
 
-    const newProduct: Product = {
-      id: newProductId,
-      name,
-      commercialName: category === 'Medicamento' ? commercialName : undefined,
-      manufacturer: manufacturer,
-      category,
-      quantity,
-      batch,
-      expiryDate,
-      supplier,
-      presentation,
-      status: quantity > 0 ? (quantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque',
-    };
+        products.unshift(newProduct);
 
-    products.unshift(newProduct); // Add to the beginning of the array
-
-    toast({
-      title: 'Produto Adicionado!',
-      description: `${newProduct.name} foi adicionado ao inventário com sucesso.`,
-    });
+        toast({
+        title: 'Produto Adicionado!',
+        description: `${newProduct.name} foi adicionado ao inventário com sucesso.`,
+        });
+    }
 
     setIsOpen(false);
     // Reset form
@@ -120,15 +158,15 @@ export function AddProductDialog({ children }: AddProductDialogProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Adicionar Novo Produto ao Inventário</DialogTitle>
+          <DialogTitle>{isEditing ? 'Editar Produto' : 'Adicionar Novo Produto'}</DialogTitle>
         </DialogHeader>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="name">Nome do Produto (Princípio Ativo/Descrição)</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} disabled={isEditing} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="category">Categoria</Label>
@@ -188,7 +226,7 @@ export function AddProductDialog({ children }: AddProductDialogProps) {
           </DialogClose>
           <Button type="button" onClick={handleSave}>
             <Save className="mr-2 h-4 w-4" />
-            Salvar Produto
+            Salvar
           </Button>
         </DialogFooter>
       </DialogContent>
