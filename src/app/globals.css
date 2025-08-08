@@ -71,3 +71,50 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.loading-capsule {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 48px;
+  height: 24px;
+}
+
+.capsule-half {
+  width: 24px;
+  height: 24px;
+  position: relative;
+  animation-duration: 1.5s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+
+.capsule-half.left {
+  background-color: hsl(var(--primary));
+  border-radius: 12px 0 0 12px;
+  animation-name: slide-left;
+}
+
+.capsule-half.right {
+  background-color: hsl(var(--secondary));
+  border-radius: 0 12px 12px 0;
+  animation-name: slide-right;
+}
+
+@keyframes slide-left {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-8px);
+  }
+}
+
+@keyframes slide-right {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(8px);
+  }
+}

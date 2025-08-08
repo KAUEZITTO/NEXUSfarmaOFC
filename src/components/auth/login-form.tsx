@@ -7,17 +7,18 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { createSessionCookie } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
+import { LoadingCapsule } from '../ui/loading-capsule';
 
 function LoginButton() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" className="w-full" aria-disabled={pending}>
-      {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+      {pending ? <LoadingCapsule /> : null}
       {pending ? 'Entrando...' : 'Entrar'}
     </Button>
   );
@@ -80,7 +81,7 @@ export function LoginForm() {
         />
       </div>
        <Button type="submit" className="w-full" disabled={isPending}>
-          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isPending && <LoadingCapsule />}
           {isPending ? 'Entrando...' : 'Entrar'}
         </Button>
       {errorMessage && (
