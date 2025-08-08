@@ -65,7 +65,7 @@ const DosageInput = ({ dosages, setDosages, unitLabel }: { dosages: Dosage[], se
                         className="w-24"
                     />
                     <Label>{unitLabel}</Label>
-                    <Button variant="ghost" size="icon" onClick={() => removeDosage(dosage.id)}>
+                    <Button type="button" variant="ghost" size="icon" onClick={() => removeDosage(dosage.id)}>
                         <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
                 </div>
@@ -87,6 +87,7 @@ export function AddPatientDialog() {
   const [usesStrips, setUsesStrips] = useState(false);
   const [insulinDosages, setInsulinDosages] = useState<Dosage[]>([]);
   const [stripDosages, setStripDosages] = useState<Dosage[]>([]);
+  const [isBedridden, setIsBedridden] = useState(false);
 
   const [demandType, setDemandType] = useState<'judicial' | 'municipal' | 'none'>('none');
   const [judicialItems, setJudicialItems] = useState<string[]>([]);
@@ -113,6 +114,7 @@ export function AddPatientDialog() {
         insulinPresentation: isAnalogInsulinUser ? formData.get('insulinPresentation') as any : undefined,
         usesStrips,
         stripDosages: usesStrips ? stripDosages : undefined,
+        isBedridden,
         mandateType: demandType === 'judicial' ? 'Legal' : demandType === 'municipal' ? 'Municipal' : 'N/A',
         judicialItems: demandType === 'judicial' ? judicialItems as any : [],
         municipalItems: demandType === 'municipal' ? municipalItems as any : [],
@@ -194,6 +196,13 @@ export function AddPatientDialog() {
               </div>
 
               {/* Special Conditions */}
+              <div className="space-y-4 pt-4 border-t">
+                  <div className="flex items-center space-x-2">
+                    <Switch id="is-bedridden" checked={isBedridden} onCheckedChange={setIsBedridden} />
+                    <Label htmlFor="is-bedridden">Paciente Acamado?</Label>
+                  </div>
+              </div>
+
               <div className="space-y-4 pt-4 border-t">
                  <div className="flex items-center space-x-2">
                     <Switch id="analog-insulin-user" checked={isAnalogInsulinUser} onCheckedChange={setIsAnalogInsulinUser} />

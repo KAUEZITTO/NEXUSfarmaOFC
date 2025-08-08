@@ -45,6 +45,7 @@ export type Patient = {
     unitName?: string;
     unitId?: string;
     status: PatientStatus;
+    isBedridden?: boolean;
 };
 
 export type Order = {
