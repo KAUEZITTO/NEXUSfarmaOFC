@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Building, Info } from "lucide-react";
+import { Building, Info, LifeBuoy } from "lucide-react";
 
 export default function AboutPage() {
   return (
@@ -38,9 +38,12 @@ export default function AboutPage() {
           </p>
         </div>
         <div>
-          <h2 className="text-lg font-semibold">Suporte</h2>
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <LifeBuoy className="h-5 w-5 text-primary" />
+            Suporte
+            </h2>
           <p className="mt-2 text-muted-foreground">
-            Para suporte técnico, entre em contato com a equipe de TI da prefeitura.
+            Para suporte técnico ou dúvidas, entre em contato através do e-mail: <a href="mailto:nexus.help@gmail.com" className="text-primary hover:underline">nexus.help@gmail.com</a>.
           </p>
         </div>
       </CardContent>
