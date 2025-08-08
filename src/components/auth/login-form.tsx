@@ -1,34 +1,69 @@
+
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
-import { authenticate } from '@/lib/actions';
+import { useState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { createSessionCookie } from '@/lib/actions';
+import { useRouter } from 'next/navigation';
 
 function LoginButton() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" className="w-full" aria-disabled={pending}>
+      {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
       {pending ? 'Entrando...' : 'Entrar'}
     </Button>
   );
 }
 
 export function LoginForm() {
-  const [errorMessage, dispatch] = useFormState(authenticate, undefined);
+  const router = useRouter();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsPending(true);
+    setErrorMessage(null);
+
+    const formData = new FormData(event.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const idToken = await userCredential.user.getIdToken();
+      await createSessionCookie(idToken);
+      // The redirect is handled in the server action
+    } catch (error: any) {
+        console.error(error);
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-email') {
+            setErrorMessage('Email ou senha inválidos.');
+        } else {
+            setErrorMessage('Ocorreu um erro ao fazer login. Tente novamente.');
+        }
+    } finally {
+        setIsPending(false);
+    }
+  };
+
 
   return (
-    <form action={dispatch} className="grid gap-4">
+    <form onSubmit={handleSubmit} className="grid gap-4">
       <div className="grid gap-2">
-        <Label htmlFor="userId">ID de Usuário</Label>
+        <Label htmlFor="email">Email</Label>
         <Input
-          id="userId"
-          name="userId"
-          type="text"
-          placeholder="Ex: KAUE23"
+          id="email"
+          name="email"
+          type="email"
+          placeholder="seu@email.com"
           required
         />
       </div>
@@ -44,7 +79,10 @@ export function LoginForm() {
           placeholder="••••••••"
         />
       </div>
-      <LoginButton />
+       <Button type="submit" className="w-full" disabled={isPending}>
+          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isPending ? 'Entrando...' : 'Entrar'}
+        </Button>
       {errorMessage && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />

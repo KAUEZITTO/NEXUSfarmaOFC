@@ -3,29 +3,11 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-export async function authenticate(
-  prevState: string | undefined,
-  formData: FormData,
-) {
-  try {
-    const userId = formData.get('userId') as string;
-    const password = formData.get('password') as string;
+// authenticate function is no longer needed here as it will be handled client-side with Firebase.
 
-    // Mock authentication logic
-    // In a real app, you would validate against a database
-    if (userId.toLowerCase() === 'kaue23' && password === 'teste123') {
-      cookies().set('session', 'true', { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 });
-    } else {
-      return 'ID de usuário ou senha inválidos.';
-    }
-  } catch (error) {
-    if ((error as Error).message.includes('credentialssignin')) {
-      return 'ID de usuário ou senha inválidos.';
-    }
-    return 'Ocorreu um erro. Tente novamente.';
-  }
-
-  redirect('/dashboard');
+export async function createSessionCookie(token: string) {
+    cookies().set('session', token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 });
+    redirect('/dashboard');
 }
 
 export async function logout() {

@@ -14,7 +14,7 @@ export default function LoginPage() {
             </div>
             <h1 className="text-3xl font-bold mt-4">Login</h1>
             <p className="text-balance text-muted-foreground">
-              Insira seu ID de usuário e senha para acessar o painel
+              Insira seu e-mail e senha para acessar o painel
             </p>
           </div>
           <LoginForm />
