@@ -12,10 +12,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Download, FileText, BarChart2, AlertTriangle, Package, Users, Loader2 } from "lucide-react";
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
-import { getProducts, getAllPatients, getAllDispensations } from "@/lib/actions";
-import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF, generatePatientReportPDF } from "@/lib/pdf-generator";
+import { getProducts, getAllPatients, getAllDispensations, getUnits, getOrders } from "@/lib/actions";
+import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF, generatePatientReportPDF, generateUnitDispensationReportPDF } from "@/lib/pdf-generator";
 import { useEffect, useState } from "react";
-import type { Product, Patient, Dispensation } from "@/lib/types";
+import type { Product, Patient, Dispensation, Unit, Order } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 
 type GeneratingState = {
@@ -23,6 +23,7 @@ type GeneratingState = {
     stock: boolean;
     expiry: boolean;
     patient: boolean;
+    unitDispensation: boolean;
 }
 
 export default function ReportsPage() {
@@ -30,25 +31,32 @@ export default function ReportsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [dispensations, setDispensations] = useState<Dispensation[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState<GeneratingState>({
     complete: false,
     stock: false,
     expiry: false,
     patient: false,
+    unitDispensation: false,
   });
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const [productsData, patientsData, dispensationsData] = await Promise.all([
+      const [productsData, patientsData, dispensationsData, unitsData, ordersData] = await Promise.all([
         getProducts(),
         getAllPatients(),
-        getAllDispensations()
+        getAllDispensations(),
+        getUnits(),
+        getOrders(),
       ]);
       setProducts(productsData);
       setPatients(patientsData);
       setDispensations(dispensationsData);
+      setUnits(unitsData);
+      setOrders(ordersData);
       setLoading(false);
     };
     fetchData();
@@ -117,6 +125,19 @@ export default function ReportsPage() {
       toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
     } finally {
       setIsGenerating(prev => ({...prev, patient: false}));
+    }
+  }
+
+  const handleExportUnitDispensation = async () => {
+    setIsGenerating(prev => ({...prev, unitDispensation: true}));
+    try {
+        const pdfDataUri = await generateUnitDispensationReportPDF(orders, units);
+        openPdfPrintDialog(pdfDataUri);
+    } catch(e) {
+        console.error("Failed to generate unit dispensation PDF", e);
+        toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
+    } finally {
+        setIsGenerating(prev => ({...prev, unitDispensation: false}));
     }
   }
 
@@ -253,8 +274,12 @@ export default function ReportsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-          <Button variant="outline" className="justify-start" onClick={handleNotImplemented}>
-            <FileText className="mr-2 h-4 w-4" />
+          <Button variant="outline" className="justify-start" onClick={handleExportUnitDispensation} disabled={isGenerating.unitDispensation}>
+             {isGenerating.unitDispensation ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+             ) : (
+                <FileText className="mr-2 h-4 w-4" />
+             )}
             Dispensação por Unidade
           </Button>
           <Button variant="outline" className="justify-start" onClick={handleExportStock} disabled={isGenerating.stock}>

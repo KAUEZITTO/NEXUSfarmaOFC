@@ -4,7 +4,7 @@
 
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import type { Product, Patient, Dispensation } from './types';
+import type { Product, Patient, Dispensation, Order, Unit } from './types';
 import { Logo } from '@/components/logo';
 import { NEXUS_LOGO_B64, PREF_LOGO_B64, CAF_LOGO_B64 } from './logo-base64';
 
@@ -213,4 +213,40 @@ export const generatePatientReportPDF = async (dispensations: Dispensation[]): P
     return doc.output('datauristring');
 };
 
+export const generateUnitDispensationReportPDF = async (orders: Order[], units: Unit[]): Promise<string> => {
+    const doc = new jsPDF() as jsPDFWithAutoTable;
+    addHeader(doc, 'Relatório de Dispensação por Unidade');
+
+    const unitDataMap = new Map<string, { totalItems: number, orderCount: number, type: string, name: string }>();
+
+    units.forEach(u => {
+        unitDataMap.set(u.id, { totalItems: 0, orderCount: 0, type: u.type, name: u.name });
+    });
+
+    orders.forEach(order => {
+        const unit = unitDataMap.get(order.unitId);
+        if (unit) {
+            unit.totalItems += order.itemCount;
+            unit.orderCount += 1;
+        }
+    });
+
+    const body = Array.from(unitDataMap.values()).map(u => [
+        u.name,
+        u.type,
+        u.orderCount.toString(),
+        u.totalItems.toLocaleString('pt-BR')
+    ]);
+
+    doc.autoTable({
+        startY: 65,
+        head: [['Nome da Unidade', 'Tipo', 'Total de Pedidos', 'Total de Itens Recebidos']],
+        body: body,
+        theme: 'grid',
+        headStyles: { fillColor: [13, 148, 136] }, // Teal color for units
+    });
+    
+    addFooter(doc);
+    return doc.output('datauristring');
+};
     
