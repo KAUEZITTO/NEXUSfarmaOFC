@@ -25,12 +25,57 @@ import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { PlusCircle, Save } from 'lucide-react';
+import { PlusCircle, Save, Trash2 } from 'lucide-react';
 import { units } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { patients } from '@/lib/data';
-import type { Patient } from '@/lib/types';
-import { Textarea } from '../ui/textarea';
+import type { Patient, Dosage } from '@/lib/types';
+
+const dosagePeriods: Dosage['period'][] = ['Manhã', 'Tarde', 'Noite', 'Ao deitar', 'Após Café', 'Jejum'];
+
+const DosageInput = ({ dosages, setDosages, unitLabel }: { dosages: Dosage[], setDosages: (dosages: Dosage[]) => void, unitLabel: string }) => {
+    
+    const addDosage = () => {
+        setDosages([...dosages, { id: `d-${Date.now()}`, period: 'Manhã', quantity: 1 }]);
+    }
+
+    const updateDosage = (id: string, field: 'period' | 'quantity', value: any) => {
+        setDosages(dosages.map(d => d.id === id ? { ...d, [field]: value } : d));
+    }
+
+    const removeDosage = (id: string) => {
+        setDosages(dosages.filter(d => d.id !== id));
+    }
+
+    return (
+        <div className="space-y-2">
+            {dosages.map(dosage => (
+                <div key={dosage.id} className="flex items-center gap-2">
+                    <Select value={dosage.period} onValueChange={(v) => updateDosage(dosage.id, 'period', v)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            {dosagePeriods.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                     <Input 
+                        type="number"
+                        min="1"
+                        value={dosage.quantity}
+                        onChange={(e) => updateDosage(dosage.id, 'quantity', parseInt(e.target.value))}
+                        className="w-24"
+                    />
+                    <Label>{unitLabel}</Label>
+                    <Button variant="ghost" size="icon" onClick={() => removeDosage(dosage.id)}>
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                </div>
+            ))}
+            <Button type="button" variant="outline" size="sm" onClick={addDosage}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Período
+            </Button>
+        </div>
+    )
+};
 
 
 export function AddPatientDialog() {
@@ -39,6 +84,10 @@ export function AddPatientDialog() {
   
   // State for each form field
   const [isAnalogInsulinUser, setIsAnalogInsulinUser] = useState(false);
+  const [usesStrips, setUsesStrips] = useState(false);
+  const [insulinDosages, setInsulinDosages] = useState<Dosage[]>([]);
+  const [stripDosages, setStripDosages] = useState<Dosage[]>([]);
+
   const [demandType, setDemandType] = useState<'judicial' | 'municipal' | 'none'>('none');
   const [judicialItems, setJudicialItems] = useState<string[]>([]);
   const [municipalItems, setMunicipalItems] = useState<string[]>([]);
@@ -60,11 +109,14 @@ export function AddPatientDialog() {
         isAnalogInsulinUser,
         analogInsulinType: isAnalogInsulinUser ? formData.get('analogInsulinType') as any : undefined,
         hasInsulinReport: isAnalogInsulinUser ? hasInsulinReport : undefined,
-        insulinDosage: isAnalogInsulinUser ? formData.get('insulinDosage') as string : undefined,
+        insulinDosages: isAnalogInsulinUser ? insulinDosages : undefined,
         insulinPresentation: isAnalogInsulinUser ? formData.get('insulinPresentation') as any : undefined,
+        usesStrips,
+        stripDosages: usesStrips ? stripDosages : undefined,
         mandateType: demandType === 'judicial' ? 'Legal' : demandType === 'municipal' ? 'Municipal' : 'N/A',
         judicialItems: demandType === 'judicial' ? judicialItems as any : [],
         municipalItems: demandType === 'municipal' ? municipalItems as any : [],
+        status: 'Ativo'
     }
 
     if (!newPatient.name || !newPatient.cpf || !newPatient.cns) {
@@ -182,14 +234,27 @@ export function AddPatientDialog() {
                                 </div>
                             </RadioGroup>
                         </div>
-
+                        
                         <div className='space-y-2'>
-                            <Label htmlFor="insulinDosage">Posologia</Label>
-                            <Textarea id="insulinDosage" name="insulinDosage" placeholder="Ex: 10 UI de manhã, 15 UI à noite" />
+                           <Label>Posologia</Label>
+                           <DosageInput dosages={insulinDosages} setDosages={setInsulinDosages} unitLabel="UI" />
                         </div>
                     </div>
                 )}
               </div>
+
+               <div className="space-y-4 pt-4 border-t">
+                 <div className="flex items-center space-x-2">
+                    <Switch id="uses-strips" checked={usesStrips} onCheckedChange={setUsesStrips} />
+                    <Label htmlFor="uses-strips">Faz uso de Tiras de Glicemia?</Label>
+                </div>
+                {usesStrips && (
+                    <div className="ml-6 p-4 border-l space-y-4">
+                        <Label>Orientações de Medição</Label>
+                        <DosageInput dosages={stripDosages} setDosages={setStripDosages} unitLabel="vez(es)" />
+                    </div>
+                )}
+               </div>
               
               <div className="space-y-4 pt-4 border-t">
                 <Label>Tipo de Demanda (Mandado)</Label>

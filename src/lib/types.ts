@@ -18,6 +18,12 @@ export type Unit = {
 
 export type PatientStatus = 'Ativo' | 'Tratamento Concluído' | 'Tratamento Interrompido' | 'Óbito';
 
+export type Dosage = {
+    id: string;
+    period: 'Manhã' | 'Tarde' | 'Noite' | 'Ao deitar' | 'Após Café' | 'Jejum';
+    quantity: number;
+}
+
 export type Patient = {
     id: string;
     name: string;
@@ -29,8 +35,10 @@ export type Patient = {
     isAnalogInsulinUser?: boolean;
     analogInsulinType?: 'Lantus (Glargina)' | 'Apidra (Glulisina)';
     hasInsulinReport?: boolean;
-    insulinDosage?: string;
+    insulinDosages?: Dosage[];
     insulinPresentation?: 'Caneta' | 'Frasco';
+    usesStrips?: boolean;
+    stripDosages?: Dosage[];
     mandateType: 'Legal' | 'Municipal' | 'N/A';
     judicialItems?: ('Medicamentos' | 'Material Técnico')[];
     municipalItems?: ('Fraldas' | 'Material Técnico' | 'Medicamentos')[];

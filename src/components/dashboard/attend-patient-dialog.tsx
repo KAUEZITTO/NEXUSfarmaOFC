@@ -131,8 +131,12 @@ export function AttendPatientDialog() {
   const setupInitialItems = (patient: Patient) => {
     const initialItems: DispensationItem[] = [];
 
-    if (patient.isAnalogInsulinUser && patient.analogInsulinType) {
-        // Find the insulin product based on name and presentation
+    // Auto-add insulin
+    if (patient.isAnalogInsulinUser && patient.insulinDosages && patient.insulinDosages.length > 0) {
+        const totalInsulinPerDay = patient.insulinDosages.reduce((sum, d) => sum + d.quantity, 0);
+        // Assuming monthly dispensation
+        const totalInsulinPerMonth = Math.ceil((totalInsulinPerDay * 30) / 100) * 100; // Example logic: round up to nearest 100 UI
+
         const insulinProduct = allProducts.find(p => 
             p.name.toLowerCase().includes(patient.analogInsulinType!.toLowerCase().split(' ')[0]) &&
             p.presentation?.toLowerCase().includes(patient.insulinPresentation!.toLowerCase())
@@ -144,13 +148,33 @@ export function AttendPatientDialog() {
                 productId: insulinProduct.id,
                 name: insulinProduct.name,
                 category: 'Insulinas',
-                quantity: 1, // Default, user can change
+                quantity: 1, // Let's default to 1, user can adjust
                 presentation: insulinProduct.presentation,
                 batch: insulinProduct.batch,
                 expiryDate: insulinProduct.expiryDate ? new Date(insulinProduct.expiryDate).toLocaleDateString('pt-BR') : 'N/A',
             });
         }
     }
+
+    // Auto-add strips
+    if (patient.usesStrips && patient.stripDosages && patient.stripDosages.length > 0) {
+        const stripProduct = allProducts.find(p => p.name.toLowerCase().includes('tiras de glicemia'));
+        if (stripProduct) {
+            const totalStripsPerDay = patient.stripDosages.reduce((sum, d) => sum + d.quantity, 0);
+            const boxesNeeded = Math.ceil((totalStripsPerDay * 30) / 50); // Assuming box of 50
+             initialItems.push({
+                internalId: `item-strips-${Date.now()}`,
+                productId: stripProduct.id,
+                name: stripProduct.name,
+                category: 'Tiras/Lancetas',
+                quantity: boxesNeeded,
+                presentation: stripProduct.presentation,
+                batch: stripProduct.batch,
+                expiryDate: stripProduct.expiryDate ? new Date(stripProduct.expiryDate).toLocaleDateString('pt-BR') : 'N/A',
+            });
+        }
+    }
+
 
     setItems(initialItems);
   };
@@ -406,7 +430,12 @@ export function AttendPatientDialog() {
                     {selectedPatient.isAnalogInsulinUser && (
                         <>
                            <div><span className="font-semibold">Tipo de Insulina:</span> {selectedPatient.analogInsulinType} ({selectedPatient.insulinPresentation})</div>
-                           <div><span className="font-semibold">Posologia:</span> {selectedPatient.insulinDosage || 'N/A'}</div>
+                            <div className="col-span-2"><span className="font-semibold">Posologia Insulina:</span> {selectedPatient.insulinDosages?.map(d => `${d.quantity} UI ${d.period}`).join(', ') || 'N/A'}</div>
+                        </>
+                    )}
+                     {selectedPatient.usesStrips && (
+                        <>
+                           <div className="col-span-2"><span className="font-semibold">Posologia Tiras:</span> {selectedPatient.stripDosages?.map(d => `${d.quantity}x ${d.period}`).join(', ') || 'N/A'}</div>
                         </>
                     )}
                   </CardContent>
