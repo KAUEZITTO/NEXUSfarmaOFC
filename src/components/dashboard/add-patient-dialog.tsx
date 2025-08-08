@@ -1,0 +1,225 @@
+
+'use client';
+
+import { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { PlusCircle, Save } from 'lucide-react';
+import { units } from '@/lib/data';
+import { useToast } from '@/hooks/use-toast';
+import { patients } from '@/lib/data';
+import type { Patient } from '@/lib/types';
+
+
+export function AddPatientDialog() {
+  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+  
+  // State for each form field
+  const [isAnalogInsulinUser, setIsAnalogInsulinUser] = useState(false);
+  const [demandType, setDemandType] = useState<'judicial' | 'municipal' | 'none'>('none');
+  const [judicialItems, setJudicialItems] = useState<string[]>([]);
+  const [municipalItems, setMunicipalItems] = useState<string[]>([]);
+
+  const handleSavePatient = (e: React.FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+    const newPatient: Partial<Patient> = {
+        id: `PAT-${Date.now()}`,
+        name: formData.get('name') as string,
+        cpf: formData.get('cpf') as string,
+        cns: formData.get('cns') as string,
+        rg: formData.get('rg') as string,
+        address: formData.get('address') as string,
+        phone: formData.get('phone') as string,
+        unitId: formData.get('unitId') as string,
+        unitName: units.find(u => u.id === formData.get('unitId'))?.name,
+        isAnalogInsulinUser,
+        analogInsulinType: isAnalogInsulinUser ? formData.get('analogInsulinType') as any : undefined,
+        mandateType: demandType === 'judicial' ? 'Legal' : demandType === 'municipal' ? 'Municipal' : 'N/A',
+        judicialItems: demandType === 'judicial' ? judicialItems as any : [],
+        municipalItems: demandType === 'municipal' ? municipalItems as any : [],
+    }
+
+    if (!newPatient.name || !newPatient.cpf || !newPatient.cns) {
+        toast({
+            variant: 'destructive',
+            title: 'Campos Obrigatórios',
+            description: 'Nome, CPF e Cartão do SUS são obrigatórios.'
+        });
+        return;
+    }
+    
+    patients.push(newPatient as Patient);
+
+    toast({
+        title: 'Paciente Adicionado!',
+        description: `${newPatient.name} foi cadastrado com sucesso.`
+    });
+
+    setIsOpen(false);
+    // Reset form states if needed
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Adicionar Paciente
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Adicionar Novo Paciente</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSavePatient}>
+          <ScrollArea className="h-[70vh] p-4">
+            <div className="space-y-6">
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome Completo <span className="text-red-500">*</span></Label>
+                  <Input id="name" name="name" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cpf">CPF <span className="text-red-500">*</span></Label>
+                  <Input id="cpf" name="cpf" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="rg">RG (Opcional)</Label>
+                  <Input id="rg" name="rg" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cns">Cartão do SUS <span className="text-red-500">*</span></Label>
+                  <Input id="cns" name="cns" required />
+                </div>
+                 <div className="space-y-2 col-span-1 md:col-span-2">
+                  <Label htmlFor="address">Endereço</Label>
+                  <Input id="address" name="address" />
+                </div>
+                 <div className="space-y-2">
+                  <Label htmlFor="phone">Telefones (Opcional)</Label>
+                  <Input id="phone" name="phone" />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="unitId">Unidade de Referência</Label>
+                    <Select name="unitId">
+                        <SelectTrigger><SelectValue placeholder="Selecione a unidade" /></SelectTrigger>
+                        <SelectContent>
+                            {units.map(unit => (
+                                <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+              </div>
+
+              {/* Special Conditions */}
+              <div className="space-y-4 pt-4 border-t">
+                 <div className="flex items-center space-x-2">
+                    <Switch id="analog-insulin-user" checked={isAnalogInsulinUser} onCheckedChange={setIsAnalogInsulinUser} />
+                    <Label htmlFor="analog-insulin-user">Usuário de Insulina Análoga?</Label>
+                </div>
+
+                {isAnalogInsulinUser && (
+                    <RadioGroup name="analogInsulinType" className="ml-6 p-4 border-l">
+                         <Label>Especificar Tipo:</Label>
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="Lantus (Glargina)" id="lantus" />
+                            <Label htmlFor="lantus">Lantus (Glargina)</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="Apidra (Glulisina)" id="apidra" />
+                            <Label htmlFor="apidra">Apidra (Glulisina)</Label>
+                        </div>
+                    </RadioGroup>
+                )}
+              </div>
+              
+              <div className="space-y-4 pt-4 border-t">
+                <Label>Tipo de Demanda (Mandado)</Label>
+                 <RadioGroup defaultValue="none" onValueChange={(v) => setDemandType(v as any)} className="flex gap-4">
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="none" id="demand-none" />
+                        <Label htmlFor="demand-none">Nenhuma</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="judicial" id="demand-judicial" />
+                        <Label htmlFor="demand-judicial">Demanda Judicial</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="municipal" id="demand-municipal" />
+                        <Label htmlFor="demand-municipal">Demanda Municipal</Label>
+                    </div>
+                </RadioGroup>
+
+                {demandType === 'judicial' && (
+                    <div className="ml-6 p-4 border-l space-y-2">
+                        <Label>Especificar Itens Judiciais:</Label>
+                        <div className="flex items-center space-x-2">
+                            <Checkbox id="judicial-meds" onCheckedChange={(checked) => setJudicialItems(p => checked ? [...p, 'Medicamentos'] : p.filter(i => i !== 'Medicamentos'))} />
+                            <Label htmlFor="judicial-meds">Medicamentos</Label>
+                        </div>
+                         <div className="flex items-center space-x-2">
+                            <Checkbox id="judicial-tech" onCheckedChange={(checked) => setJudicialItems(p => checked ? [...p, 'Material Técnico'] : p.filter(i => i !== 'Material Técnico'))}/>
+                            <Label htmlFor="judicial-tech">Material Técnico</Label>
+                        </div>
+                    </div>
+                )}
+
+                 {demandType === 'municipal' && (
+                    <div className="ml-6 p-4 border-l space-y-2">
+                        <Label>Especificar Itens Municipais:</Label>
+                         <div className="flex items-center space-x-2">
+                            <Checkbox id="municipal-diapers" onCheckedChange={(checked) => setMunicipalItems(p => checked ? [...p, 'Fraldas'] : p.filter(i => i !== 'Fraldas'))} />
+                            <Label htmlFor="municipal-diapers">Fraldas</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <Checkbox id="municipal-meds" onCheckedChange={(checked) => setMunicipalItems(p => checked ? [...p, 'Medicamentos'] : p.filter(i => i !== 'Medicamentos'))} />
+                            <Label htmlFor="municipal-meds">Medicamentos</Label>
+                        </div>
+                         <div className="flex items-center space-x-2">
+                            <Checkbox id="municipal-tech" onCheckedChange={(checked) => setMunicipalItems(p => checked ? [...p, 'Material Técnico'] : p.filter(i => i !== 'Material Técnico'))} />
+                            <Label htmlFor="municipal-tech">Material Técnico</Label>
+                        </div>
+                    </div>
+                )}
+              </div>
+            </div>
+          </ScrollArea>
+          <DialogFooter className="pt-4">
+             <DialogClose asChild>
+                <Button type="button" variant="outline">Cancelar</Button>
+             </DialogClose>
+            <Button type="submit">
+                <Save className="mr-2 h-4 w-4" />
+                Salvar Paciente
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

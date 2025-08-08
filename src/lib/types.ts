@@ -21,8 +21,16 @@ export type Patient = {
     name: string;
     cpf: string;
     cns: string;
+    rg?: string;
+    address?: string;
+    phone?: string;
+    isAnalogInsulinUser?: boolean;
+    analogInsulinType?: 'Lantus (Glargina)' | 'Apidra (Glulisina)';
     mandateType: 'Legal' | 'Municipal' | 'N/A';
+    judicialItems?: ('Medicamentos' | 'Material Técnico')[];
+    municipalItems?: ('Fraldas' | 'Material Técnico' | 'Medicamentos')[];
     unitName?: string;
+    unitId?: string;
 };
 
 export type Order = {
