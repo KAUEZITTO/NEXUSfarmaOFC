@@ -1,5 +1,5 @@
 
-'use server';
+'use client';
 
 import {
   Card,
@@ -9,17 +9,53 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, FileText, BarChart2, AlertTriangle, Package, Users } from "lucide-react";
+import { Download, FileText, BarChart2, AlertTriangle, Package, Users, Loader2 } from "lucide-react";
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
 import { getProducts, getAllPatients, getAllDispensations } from "@/lib/actions";
+import { generateCompleteReportPDF } from "@/lib/pdf-generator";
+import { useEffect, useState } from "react";
+import type { Product, Patient, Dispensation } from "@/lib/types";
 
-export default async function ReportsPage() {
+export default function ReportsPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [dispensations, setDispensations] = useState<Dispensation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
-  const [products, patients, dispensations] = await Promise.all([
-    getProducts(),
-    getAllPatients(),
-    getAllDispensations()
-  ]);
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const [productsData, patientsData, dispensationsData] = await Promise.all([
+        getProducts(),
+        getAllPatients(),
+        getAllDispensations()
+      ]);
+      setProducts(productsData);
+      setPatients(patientsData);
+      setDispensations(dispensationsData);
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
+
+  const handleExport = () => {
+    setIsGeneratingReport(true);
+    try {
+        const pdfDataUri = generateCompleteReportPDF(products, patients, dispensations);
+        const link = document.createElement('a');
+        link.href = pdfDataUri;
+        link.download = `nexusfarma_relatorio_completo_${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } catch(e) {
+        console.error("Failed to generate PDF", e);
+    } finally {
+        setIsGeneratingReport(false);
+    }
+  }
+
 
   const now = new Date();
   const thirtyDaysFromNow = new Date();
@@ -59,6 +95,14 @@ export default async function ReportsPage() {
   
   const judicialPatients = patients.filter(p => p.mandateType === 'Legal' || p.mandateType === 'Municipal').length;
 
+  if (loading) {
+    return (
+       <div className="flex items-center justify-center h-full">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-4 text-muted-foreground">Carregando dados dos relatórios...</span>
+       </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -69,9 +113,13 @@ export default async function ReportsPage() {
             Gere e visualize relatórios de dispensação, estoque e mais.
           </p>
         </div>
-        <Button>
-          <Download className="mr-2 h-4 w-4" />
-          Exportar Relatório Completo
+        <Button onClick={handleExport} disabled={isGeneratingReport}>
+          {isGeneratingReport ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="mr-2 h-4 w-4" />
+          )}
+          {isGeneratingReport ? 'Gerando PDF...' : 'Exportar Relatório Completo'}
         </Button>
       </div>
 
