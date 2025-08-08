@@ -181,8 +181,8 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
   return (
     <>
       <div className="print-container">
-        <ReceiptCopy showSignature={false} isFirstCopy={true} />
-        <ReceiptCopy showSignature={true} isFirstCopy={false} />
+        <ReceiptCopy showSignature={true} isFirstCopy={true} />
+        <ReceiptCopy showSignature={false} isFirstCopy={false} />
       </div>
 
       <div className="fixed bottom-4 right-4 print:hidden">
