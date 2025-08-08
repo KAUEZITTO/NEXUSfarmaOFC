@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,6 @@ const orderData = {
   id: "ORD001",
   unit: "UBS Centro",
   date: "20 de Maio de 2024",
-  recipient: "Enfermeira Chefe Ana",
   items: {
     medicines: [
       { name: "Dipirona 500mg", quantity: 50 },
@@ -33,8 +33,8 @@ const orderData = {
 };
 
 const CategoryTitle = ({ children }: { children: React.ReactNode }) => (
-  <TableRow>
-    <TableCell colSpan={2} className="font-bold text-lg bg-muted">
+  <TableRow className="bg-muted hover:bg-muted">
+    <TableCell colSpan={2} className="font-bold text-md text-muted-foreground tracking-wide uppercase">
       {children}
     </TableCell>
   </TableRow>
@@ -45,7 +45,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
   // const order = await fetchOrder(params.id);
 
   return (
-    <div className="max-w-4xl mx-auto p-8 bg-white text-black">
+    <div className="max-w-4xl mx-auto p-8 bg-white text-black shadow-lg print:shadow-none">
       <header className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
           {/* Placeholder for App Logo */}
@@ -82,60 +82,63 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      <Table className="border">
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[80%]">Item</TableHead>
-            <TableHead className="text-right">Quantidade</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {orderData.items.medicines.length > 0 && (
-            <>
-              <CategoryTitle>Medicamentos</CategoryTitle>
-              {orderData.items.medicines.map((item) => (
-                <TableRow key={item.name}>
-                  <TableCell>{item.name}</TableCell>
-                  <TableCell className="text-right">{item.quantity}</TableCell>
-                </TableRow>
-              ))}
-            </>
-          )}
-          {orderData.items.technical_material.length > 0 && (
-            <>
-              <CategoryTitle>Material Técnico</CategoryTitle>
-              {orderData.items.technical_material.map((item) => (
-                <TableRow key={item.name}>
-                  <TableCell>{item.name}</TableCell>
-                  <TableCell className="text-right">{item.quantity}</TableCell>
-                </TableRow>
-              ))}
-            </>
-          )}
-          {orderData.items.odontological_items.length > 0 && (
-            <>
-              <CategoryTitle>Itens Odontológicos</CategoryTitle>
-              {orderData.items.odontological_items.map((item) => (
-                <TableRow key={item.name}>
-                  <TableCell>{item.name}</TableCell>
-                  <TableCell className="text-right">{item.quantity}</TableCell>
-                </TableRow>
-              ))}
-            </>
-          )}
-          {orderData.items.laboratory_items.length > 0 && (
-            <>
-              <CategoryTitle>Itens de Laboratório</CategoryTitle>
-              {orderData.items.laboratory_items.map((item) => (
-                <TableRow key={item.name}>
-                  <TableCell>{item.name}</TableCell>
-                  <TableCell className="text-right">{item.quantity}</TableCell>
-                </TableRow>
-              ))}
-            </>
-          )}
-        </TableBody>
-      </Table>
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[80%] font-semibold">Item</TableHead>
+              <TableHead className="text-right font-semibold">Quantidade</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {orderData.items.medicines.length > 0 && (
+              <>
+                <CategoryTitle>Medicamentos</CategoryTitle>
+                {orderData.items.medicines.map((item, index) => (
+                  <TableRow key={item.name} className={index === orderData.items.medicines.length - 1 ? 'border-b-0' : ''}>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell className="text-right">{item.quantity}</TableCell>
+                  </TableRow>
+                ))}
+              </>
+            )}
+            {orderData.items.technical_material.length > 0 && (
+              <>
+                <CategoryTitle>Material Técnico</CategoryTitle>
+                {orderData.items.technical_material.map((item, index) => (
+                  <TableRow key={item.name} className={index === orderData.items.technical_material.length - 1 ? 'border-b-0' : ''}>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell className="text-right">{item.quantity}</TableCell>
+                  </TableRow>
+                ))}
+              </>
+            )}
+            {orderData.items.odontological_items.length > 0 && (
+              <>
+                <CategoryTitle>Itens Odontológicos</CategoryTitle>
+                {orderData.items.odontological_items.map((item, index) => (
+                  <TableRow key={item.name} className={index === orderData.items.odontological_items.length - 1 ? 'border-b-0' : ''}>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell className="text-right">{item.quantity}</TableCell>
+                  </TableRow>
+                ))}
+              </>
+            )}
+            {orderData.items.laboratory_items.length > 0 && (
+              <>
+                <CategoryTitle>Itens de Laboratório</CategoryTitle>
+                {orderData.items.laboratory_items.map((item, index) => (
+                   <TableRow key={item.name} className={index === orderData.items.laboratory_items.length - 1 ? 'border-b-0' : ''}>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell className="text-right">{item.quantity}</TableCell>
+                  </TableRow>
+                ))}
+              </>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
       <div className="mt-20">
         <div className="w-1/2 mx-auto">
           <div className="border-t border-black"></div>
