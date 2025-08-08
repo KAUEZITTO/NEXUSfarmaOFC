@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -17,6 +18,17 @@ export default function ReceiptLayout({
           }
           .print\\:hidden {
              display: none;
+          }
+          @page {
+            size: A4;
+            margin: 0;
+          }
+          .print-container {
+            margin: 0;
+            padding: 0;
+          }
+          .page-break-after {
+            page-break-after: always;
           }
         }
       `}</style>

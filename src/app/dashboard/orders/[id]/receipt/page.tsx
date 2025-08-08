@@ -2,7 +2,6 @@
 'use client';
 
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -25,8 +24,6 @@ type OrderItem = {
   expiryDate?: string;
   presentation?: string;
 };
-
-type OrderCategory = "medicines" | "technical_material" | "odontological_items" | "laboratory_items";
 
 // Helper function to create order items from product data
 const createOrderItem = (productId: string, quantity: number): OrderItem | null => {
@@ -84,14 +81,10 @@ const renderItemRows = (items: OrderItem[]) => {
     ));
 }
 
-
-export default function ReceiptPage({ params }: { params: { id: string } }) {
-  // In a real app, you would fetch order data based on params.id
-  // const order = await fetchOrder(params.id);
-
-  return (
-    <div className="max-w-4xl mx-auto p-8 bg-white text-black shadow-lg print:shadow-none">
-       <header className="mb-4">
+const ReceiptCopy = ({ showSignature, isFirstCopy }: { showSignature: boolean, isFirstCopy: boolean }) => (
+  <div className={`max-w-4xl mx-auto bg-white text-black ${isFirstCopy ? 'shadow-lg print:shadow-none page-break-after' : ''}`}>
+    <div className="p-8">
+      <header className="mb-4">
         <div className="grid grid-cols-3 items-center text-center border-b pb-4 border-gray-400">
             <div className="flex flex-col items-center justify-center">
                 <Image src="/SMS-PREF.png" alt="Logo Prefeitura" width={80} height={80} data-ai-hint="city hall government" />
@@ -104,8 +97,8 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
             </div>
 
             <div className="flex flex-col items-center justify-center">
-                 <Image src="/CAF.png" alt="Logo CAF" width={80} height={80} data-ai-hint="pharmacy cross" />
-                 <p className="text-xs font-bold mt-1">CAF - CENTRO DE ABASTÊCIMENTO FARMACÊUTICO</p>
+                  <Image src="/CAF.png" alt="Logo CAF" width={80} height={80} data-ai-hint="pharmacy cross" />
+                  <p className="text-xs font-bold mt-1">CAF - CENTRO DE ABASTÊCIMENTO FARMACÊUTICO</p>
             </div>
         </div>
       </header>
@@ -158,29 +151,46 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
             {orderData.items.laboratory_items.length > 0 && (
               <>
                 <CategoryTitle>Itens de Laboratório</CategoryTitle>
-                 {renderItemRows(orderData.items.laboratory_items)}
+                  {renderItemRows(orderData.items.laboratory_items)}
               </>
             )}
           </TableBody>
         </Table>
       </div>
-
-      <div className="mt-20">
-        <div className="w-1/2 mx-auto">
-          <div className="border-t border-black"></div>
-          <p className="text-center mt-2">Assinatura do Recebedor</p>
+      
+      {showSignature && (
+        <div className="mt-20">
+          <div className="w-1/2 mx-auto">
+            <div className="border-t border-black"></div>
+            <p className="text-center mt-2">Assinatura do Recebedor</p>
+          </div>
         </div>
-      </div>
-      <p className="text-xs text-center mt-8 text-gray-500">
-        Este documento é gerado em duas vias.
+      )}
+       <p className="text-xs text-center mt-8 text-gray-500">
+        {isFirstCopy ? "1ª VIA - UNIDADE" : "2ª VIA - CAF"}
       </p>
+    </div>
+  </div>
+);
+
+
+export default function ReceiptPage({ params }: { params: { id: string } }) {
+  // In a real app, you would fetch order data based on params.id
+  // const order = await fetchOrder(params.id);
+
+  return (
+    <>
+      <div className="print-container">
+        <ReceiptCopy showSignature={true} isFirstCopy={true} />
+        <ReceiptCopy showSignature={false} isFirstCopy={false} />
+      </div>
 
       <div className="fixed bottom-4 right-4 print:hidden">
-         <Button onClick={() => window.print()}>
+          <Button onClick={() => window.print()}>
             <Printer className="mr-2 h-4 w-4" />
             Imprimir
         </Button>
       </div>
-    </div>
+    </>
   );
 }
