@@ -126,7 +126,8 @@ export async function addPatient(patient: Omit<Patient, 'id'>) {
         status: 'Ativo' as PatientStatus,
         ...patient,
     }
-    await addDoc(collection(db, 'patients'), patientWithStatus);
+    const newPatientRef = doc(collection(db, 'patients'));
+    await addDoc(collection(db, 'patients'), { ...patientWithStatus, id: newPatientRef.id});
     revalidatePath('/dashboard/patients');
 }
 
@@ -198,15 +199,15 @@ export async function addOrder(orderData: Omit<Order, 'id' | 'status' | 'sentDat
     itemCount: orderData.items.reduce((sum, item) => sum + item.quantity, 0),
   };
   
-  const docRef = await addDoc(collection(db, 'orders'), newOrder);
-  await updateDoc(docRef, { id: docRef.id });
+  await addDoc(collection(db, 'orders'), newOrder);
+  await updateDoc(newOrderRef, { id: newOrderRef.id });
 
   // 3. Revalidate paths
   revalidatePath('/dashboard/orders');
   revalidatePath('/dashboard/inventory');
   revalidatePath('/dashboard');
   
-  return { ...newOrder, id: docRef.id };
+  return { ...newOrder, id: newOrderRef.id };
 }
 
 export async function getOrdersForUnit(unitId: string): Promise<Order[]> {
@@ -250,15 +251,15 @@ export async function addDispensation(dispensationData: Omit<Dispensation, 'id' 
         id: newDispensationRef.id,
         date: new Date().toISOString(),
     };
-    const docRef = await addDoc(collection(db, 'dispensations'), newDispensation);
-    await updateDoc(docRef, { id: docRef.id });
+    await addDoc(collection(db, 'dispensations'), newDispensation);
+    await updateDoc(newDispensationRef, { id: newDispensationRef.id });
 
     // 3. Revalidate paths
     revalidatePath(`/dashboard/patients/${dispensationData.patientId}`);
     revalidatePath('/dashboard/inventory');
     revalidatePath('/dashboard');
 
-    return { ...newDispensation, id: docRef.id };
+    return { ...newDispensation, id: newDispensationRef.id };
 }
 
 export async function getDispensationsForPatient(patientId: string): Promise<Dispensation[]> {

@@ -235,7 +235,7 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
             mandateType: demandType === 'judicial' ? 'Legal' : demandType === 'municipal' ? 'Municipal' : 'N/A',
             judicialItems: demandType === 'judicial' ? judicialItems : [],
             municipalItems: demandType === 'municipal' ? municipalItems : [],
-            files: [...files, ...newFiles],
+            files: [...(files || []), ...newFiles],
             status: isEditing ? patientToEdit.status : 'Ativo'
         }
 

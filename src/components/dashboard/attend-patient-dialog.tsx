@@ -272,7 +272,7 @@ export function AttendPatientDialog({ onDispensationSaved }: { onDispensationSav
     const patientForDispensation = { ...selectedPatient };
     delete patientForDispensation.files; // Don't embed huge file lists in dispensation history
 
-    const dispensationItems = items.map(({ internalId, ...rest }) => rest);
+    const dispensationItems = items.map(({ internalId, ...rest }) => ({...rest}));
 
     try {
         const newDispensation = await addDispensation({

@@ -142,7 +142,9 @@ export default function DispensationReceiptPage({ params }: { params: { id: stri
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('new') === 'true') {
         setIsNew(true);
-        router.replace(`/dispensation-receipt/${params.id}`, undefined);
+        // Clean the URL
+        const newUrl = window.location.pathname;
+        window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
     }
     
     async function fetchDispensation() {
