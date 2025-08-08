@@ -17,12 +17,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { logout } from '@/lib/actions';
-import { LogOut, User, Settings } from 'lucide-react';
+import { LogOut, User, Settings, HelpCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTour } from './tour-guide';
 
 export function UserNav() {
   const router = useRouter();
+  const { startTour } = useTour();
 
   const handleLogout = async () => {
     await logout();
@@ -62,6 +64,10 @@ export function UserNav() {
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Configurações</span>
               </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={startTour}>
+                <HelpCircle className="mr-2 h-4 w-4" />
+                <span>Fazer Tour</span>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />

@@ -3,11 +3,26 @@
 
 import 'intro.js/introjs.css';
 import { Steps } from 'intro.js-react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext, createContext } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { navItems } from './dashboard-nav';
 
 const TOUR_STORAGE_KEY = 'nexusfarma-tour-completed-v1';
+
+type TourContextType = {
+    startTour: () => void;
+};
+
+const TourContext = createContext<TourContextType | null>(null);
+
+export const useTour = () => {
+    const context = useContext(TourContext);
+    if (!context) {
+        throw new Error('useTour must be used within a TourProvider');
+    }
+    return context;
+};
+
 
 const tourSteps = [
     {
@@ -46,27 +61,40 @@ const tourSteps = [
     }),
      {
         element: '[data-tour-id="step-user-nav"]',
-        intro: 'Por fim, aqui você pode acessar as <strong>Configurações</strong> da sua conta para alterar sua senha ou sair do sistema com segurança. Explore o NexusFarma!',
+        intro: 'Por fim, aqui você pode acessar as <strong>Configurações</strong> da sua conta, refazer este tour, ou sair do sistema com segurança. Explore o NexusFarma!',
     }
 ];
 
+export function TourProvider({ children }: { children: React.ReactNode }) {
+    const [isTourActive, setIsTourActive] = useState(false);
 
-export function TourGuide() {
-    const [startTour, setStartTour] = useState(false);
+    const startTour = () => {
+        setIsTourActive(true);
+    };
+
+    return (
+        <TourContext.Provider value={{ startTour }}>
+            {children}
+            <TourGuide isTourActive={isTourActive} setIsTourActive={setIsTourActive} />
+        </TourContext.Provider>
+    );
+};
+
+
+export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boolean, setIsTourActive: (isActive: boolean) => void }) {
     const router = useRouter();
     const pathname = usePathname();
 
     useEffect(() => {
         const tourCompleted = localStorage.getItem(TOUR_STORAGE_KEY);
         if (!tourCompleted) {
-            // Use a timeout to ensure the DOM is ready
-            const timer = setTimeout(() => setStartTour(true), 1500);
+            const timer = setTimeout(() => setIsTourActive(true), 1500);
             return () => clearTimeout(timer);
         }
-    }, []);
+    }, [setIsTourActive]);
 
     const onExit = () => {
-        setStartTour(false);
+        setIsTourActive(false);
         localStorage.setItem(TOUR_STORAGE_KEY, 'true');
     };
 
@@ -74,7 +102,6 @@ export function TourGuide() {
         const step = tourSteps[nextStepIndex];
         if (!step) return;
 
-        // Find the nav item associated with the step's tourId
         const tourId = step.element.replace(/\[data-tour-id="|"\]/g, '');
         const navItem = navItems.find(item => item.tourId === tourId);
 
@@ -84,13 +111,13 @@ export function TourGuide() {
     };
 
 
-    if (!startTour) {
+    if (!isTourActive) {
         return null;
     }
 
     return (
         <Steps
-            enabled={startTour}
+            enabled={isTourActive}
             steps={tourSteps}
             initialStep={0}
             onExit={onExit}
