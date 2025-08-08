@@ -10,7 +10,8 @@ import {
   Users,
   AlertTriangle,
   Package,
-  Building2
+  Building2,
+  CalendarClock
 } from "lucide-react"
 import Link from "next/link"
 
@@ -37,9 +38,85 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { OverviewChart } from "@/components/dashboard/overview-chart"
+import { getProducts, getOrders } from "@/lib/actions"
+import type { Product, Order, Unit } from "@/lib/types"
 
 
-export default function Dashboard() {
+const getUnitsServed = (orders: Order[]) => {
+    const unitsMap = new Map<string, { name: string, itemCount: number, type: string }>();
+
+    orders.forEach(order => {
+        const existingUnit = unitsMap.get(order.unitId);
+        if (existingUnit) {
+            existingUnit.itemCount += order.itemCount;
+        } else {
+            // This is a simplified version; in a real app, you'd fetch unit details
+            // to get the correct type. For now, we'll mock it.
+            unitsMap.set(order.unitId, {
+                name: order.unitName,
+                itemCount: order.itemCount,
+                type: 'Hospital' // Mock type
+            });
+        }
+    });
+
+    return Array.from(unitsMap.values()).sort((a, b) => b.itemCount - a.itemCount).slice(0, 5);
+}
+
+const getChartData = (products: Product[]) => {
+    const categoryMap = new Map<string, number>();
+
+    products.forEach(product => {
+        const currentTotal = categoryMap.get(product.category) || 0;
+        categoryMap.set(product.category, currentTotal + product.quantity);
+    });
+
+    return Array.from(categoryMap.entries()).map(([name, total]) => ({ name, total }));
+}
+
+export default async function Dashboard() {
+
+  const [products, orders] = await Promise.all([
+    getProducts(),
+    getOrders()
+  ]);
+
+  const lowStockItems = products.filter(p => p.status === 'Baixo Estoque').length;
+  const totalStockItems = products.reduce((sum, p) => sum + p.quantity, 0);
+  
+  const now = new Date();
+  const thirtyDaysFromNow = new Date();
+  thirtyDaysFromNow.setDate(now.getDate() + 30);
+
+  const expiringSoonItems = products.filter(p => {
+    if (!p.expiryDate) return false;
+    const expiry = new Date(p.expiryDate);
+    return expiry > now && expiry <= thirtyDaysFromNow;
+  }).length;
+  
+  const currentMonthOrders = orders.filter(o => {
+      const orderDate = new Date(o.sentDate);
+      return orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
+  }).length;
+
+  const lastMonth = new Date();
+  lastMonth.setMonth(now.getMonth() - 1);
+  const previousMonthOrders = orders.filter(o => {
+        const orderDate = new Date(o.sentDate);
+        return orderDate.getMonth() === lastMonth.getMonth() && orderDate.getFullYear() === lastMonth.getFullYear();
+    }).length;
+
+    let orderPercentageChange = 0;
+    if (previousMonthOrders > 0) {
+        orderPercentageChange = ((currentMonthOrders - previousMonthOrders) / previousMonthOrders) * 100;
+    } else if (currentMonthOrders > 0) {
+        orderPercentageChange = 100; // If last month had 0 and this month has orders, it's a big increase.
+    }
+
+  const unitsServed = getUnitsServed(orders);
+  const chartData = getChartData(products);
+
+
   return (
     <div className="flex flex-col w-full">
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
@@ -48,26 +125,26 @@ export default function Dashboard() {
             <CardTitle className="text-sm font-medium">
               Itens em Baixo Estoque
             </CardTitle>
-            <AlertTriangle className="h-4 w-4 text-destructive" />
+            <AlertTriangle className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">12</div>
+            <div className="text-2xl font-bold text-orange-500">{lowStockItems}</div>
             <p className="text-xs text-muted-foreground">
-              Itens que precisam de reposição urgente
+              Itens que precisam de reposição
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Produtos Próximos ao Vencimento
+              Próximos ao Vencimento
             </CardTitle>
-            <AlertTriangle className="h-4 w-4 text-secondary" />
+            <CalendarClock className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-secondary">5</div>
+            <div className="text-2xl font-bold text-yellow-600">{expiringSoonItems}</div>
             <p className="text-xs text-muted-foreground">
-              Itens com vencimento nos próximos 30 dias
+              Itens vencendo nos próximos 30 dias
             </p>
           </CardContent>
         </Card>
@@ -77,9 +154,9 @@ export default function Dashboard() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+120</div>
+            <div className="text-2xl font-bold">+{currentMonthOrders}</div>
             <p className="text-xs text-muted-foreground">
-              +15% em relação ao mês passado
+                {orderPercentageChange >= 0 ? `+${orderPercentageChange.toFixed(0)}%` : `${orderPercentageChange.toFixed(0)}%`} em relação ao mês passado
             </p>
           </CardContent>
         </Card>
@@ -89,7 +166,7 @@ export default function Dashboard() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+5,231</div>
+            <div className="text-2xl font-bold">{totalStockItems.toLocaleString('pt-BR')}</div>
             <p className="text-xs text-muted-foreground">
               Total de unidades de produtos
             </p>
@@ -105,7 +182,7 @@ export default function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
-            <OverviewChart />
+            <OverviewChart data={chartData} />
           </CardContent>
         </Card>
         <Card>
@@ -124,51 +201,24 @@ export default function Dashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow>
-                  <TableCell>
-                    <div className="font-medium">UBS Centro</div>
-                    <div className="hidden text-sm text-muted-foreground md:inline">
-                      Hospital
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">1,250</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>
-                    <div className="font-medium">Laboratório Municipal</div>
-                     <div className="hidden text-sm text-muted-foreground md:inline">
-                      Laboratório
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">980</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>
-                     <div className="font-medium">Hospital Regional</div>
-                     <div className="hidden text-sm text-muted-foreground md:inline">
-                      Hospital
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">750</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>
-                     <div className="font-medium">UBS Bairro Novo</div>
-                     <div className="hidden text-sm text-muted-foreground md:inline">
-                      Posto de Saúde
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">620</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>
-                     <div className="font-medium">CEO</div>
-                     <div className="hidden text-sm text-muted-foreground md:inline">
-                      Odontologia
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">450</TableCell>
-                </TableRow>
+                {unitsServed.map(unit => (
+                    <TableRow key={unit.name}>
+                        <TableCell>
+                            <div className="font-medium">{unit.name}</div>
+                            <div className="hidden text-sm text-muted-foreground md:inline">
+                            {unit.type}
+                            </div>
+                        </TableCell>
+                        <TableCell className="text-right">{unit.itemCount.toLocaleString('pt-BR')}</TableCell>
+                    </TableRow>
+                ))}
+                {unitsServed.length === 0 && (
+                    <TableRow>
+                        <TableCell colSpan={2} className="text-center h-24">
+                            Nenhum pedido registrado este mês.
+                        </TableCell>
+                    </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>

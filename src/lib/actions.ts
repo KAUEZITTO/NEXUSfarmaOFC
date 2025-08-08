@@ -4,7 +4,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { db } from './firebase';
-import { collection, getDocs, addDoc, updateDoc, doc, query, where, getDoc, writeBatch, documentId, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, doc, query, where, getDoc, writeBatch, documentId, Timestamp, orderBy } from 'firebase/firestore';
 import type { Product, Unit, Patient, PatientStatus, Order, Dispensation, OrderItem, DispensationItem } from './types';
 import { revalidatePath } from 'next/cache';
 
@@ -197,21 +197,32 @@ export async function addOrder(orderData: Omit<Order, 'id' | 'status' | 'sentDat
     status: 'Em Trânsito',
     itemCount: orderData.items.reduce((sum, item) => sum + item.quantity, 0),
   };
-  await addDoc(collection(db, 'orders'), newOrder);
+  
+  const docRef = await addDoc(collection(db, 'orders'), newOrder);
+  await updateDoc(docRef, { id: docRef.id });
 
   // 3. Revalidate paths
   revalidatePath('/dashboard/orders');
   revalidatePath('/dashboard/inventory');
+  revalidatePath('/dashboard');
   
-  return newOrder;
+  return { ...newOrder, id: docRef.id };
 }
 
 export async function getOrdersForUnit(unitId: string): Promise<Order[]> {
     const ordersCol = collection(db, 'orders');
-    const q = query(ordersCol, where('unitId', '==', unitId));
+    const q = query(ordersCol, where('unitId', '==', unitId), orderBy('sentDate', 'desc'));
     const orderSnapshot = await getDocs(q);
     const orderList = orderSnapshot.docs.map(doc => doc.data() as Order);
-    return orderList.sort((a, b) => new Date(b.sentDate).getTime() - new Date(a.sentDate).getTime());
+    return orderList;
+}
+
+export async function getOrders(): Promise<Order[]> {
+    const ordersCol = collection(db, 'orders');
+    const q = query(ordersCol, orderBy('sentDate', 'desc'));
+    const orderSnapshot = await getDocs(q);
+    const orderList = orderSnapshot.docs.map(doc => doc.data() as Order);
+    return orderList;
 }
 
 export async function getOrder(orderId: string): Promise<Order | null> {
@@ -239,21 +250,23 @@ export async function addDispensation(dispensationData: Omit<Dispensation, 'id' 
         id: newDispensationRef.id,
         date: new Date().toISOString(),
     };
-    await addDoc(collection(db, 'dispensations'), newDispensation);
+    const docRef = await addDoc(collection(db, 'dispensations'), newDispensation);
+    await updateDoc(docRef, { id: docRef.id });
 
     // 3. Revalidate paths
     revalidatePath(`/dashboard/patients/${dispensationData.patientId}`);
     revalidatePath('/dashboard/inventory');
+    revalidatePath('/dashboard');
 
-    return newDispensation;
+    return { ...newDispensation, id: docRef.id };
 }
 
 export async function getDispensationsForPatient(patientId: string): Promise<Dispensation[]> {
     const dispensationsCol = collection(db, 'dispensations');
-    const q = query(dispensationsCol, where('patientId', '==', patientId));
+    const q = query(dispensationsCol, where('patientId', '==', patientId), orderBy('date', 'desc'));
     const dispensationSnapshot = await getDocs(q);
     const dispensationList = dispensationSnapshot.docs.map(doc => doc.data() as Dispensation);
-    return dispensationList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return dispensationList;
 }
 
 export async function getDispensation(dispensationId: string): Promise<Dispensation | null> {
