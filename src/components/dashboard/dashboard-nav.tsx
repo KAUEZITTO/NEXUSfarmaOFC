@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -36,21 +37,21 @@ export function DashboardNav({ isMobile = false }: { isMobile?: boolean }) {
      <SidebarMenu>
         {navItems.map(({ href, icon: Icon, label }) => (
             <SidebarMenuItem key={label}>
-                <Link href={href} passHref legacyBehavior>
-                    <SidebarMenuButton 
-                        as="a"
-                        isActive={pathname.startsWith(href) && href !== '/dashboard' || pathname === href}
-                        onClick={() => {
-                            if (isMobile) {
-                                setOpenMobile(false)
-                            }
-                        }}
-                        tooltip={label}
-                    >
-                        <Icon />
-                        <span>{label}</span>
-                    </SidebarMenuButton>
-                </Link>
+                <SidebarMenuButton 
+                    asChild
+                    isActive={pathname.startsWith(href) && href !== '/dashboard' || pathname === href}
+                    onClick={() => {
+                        if (isMobile) {
+                            setOpenMobile(false)
+                        }
+                    }}
+                    tooltip={label}
+                >
+                  <Link href={href}>
+                    <Icon />
+                    <span>{label}</span>
+                  </Link>
+                </SidebarMenuButton>
             </SidebarMenuItem>
         ))}
     </SidebarMenu>
