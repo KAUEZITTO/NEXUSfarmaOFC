@@ -25,12 +25,15 @@ import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { PlusCircle, Save, Trash2, FileUp, X } from 'lucide-react';
+import { PlusCircle, Save, Trash2, FileUp, X, Loader2 } from 'lucide-react';
 import { units } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { patients } from '@/lib/data';
 import type { Patient, Dosage, PatientFile } from '@/lib/types';
 import { Separator } from '../ui/separator';
+import { storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+
 
 const dosagePeriods: Dosage['period'][] = ['Manhã', 'Tarde', 'Noite', 'Ao deitar', 'Após Café', 'Jejum'];
 
@@ -86,6 +89,7 @@ type AddPatientDialogProps = {
 export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const isEditing = !!patientToEdit;
 
   // State for each form field
@@ -135,8 +139,28 @@ export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogPro
         setJudicialItems(patientToEdit.judicialItems || []);
         setMunicipalItems(patientToEdit.municipalItems || []);
         setFiles(patientToEdit.files || []);
+    } else if (!isEditing && isOpen) {
+        // Reset state when opening for a new patient
+        setName('');
+        setCpf('');
+        setCns('');
+        setRg('');
+        setAddress('');
+        setPhone('');
+        setUnitId('');
+        setIsAnalogInsulinUser(false);
+        setUsesStrips(false);
+        setInsulinDosages([]);
+        setStripDosages([]);
+        setIsBedridden(false);
+        setDemandType('none');
+        setJudicialItems([]);
+        setMunicipalItems([]);
+        setHasInsulinReport(false);
+        setFiles([]);
+        setUploadedFiles([]);
     }
-  }, [patientToEdit, isOpen])
+  }, [patientToEdit, isOpen, isEditing])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -149,59 +173,87 @@ export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogPro
   }
 
 
-  const handleSavePatient = (e: React.FormEvent) => {
+  const handleSavePatient = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaving(true);
     
-    const newOrUpdatedPatient: Partial<Patient> = {
-        id: isEditing ? patientToEdit.id : `PAT-${Date.now()}`,
-        name,
-        cpf,
-        cns,
-        rg,
-        address,
-        phone,
-        unitId,
-        unitName: units.find(u => u.id === unitId)?.name,
-        isAnalogInsulinUser,
-        analogInsulinType: isAnalogInsulinUser ? insulinType : undefined,
-        hasInsulinReport: isAnalogInsulinUser ? hasInsulinReport : undefined,
-        insulinDosages: isAnalogInsulinUser ? insulinDosages : undefined,
-        insulinPresentation: isAnalogInsulinUser ? insulinPresentation : undefined,
-        usesStrips,
-        stripDosages: usesStrips ? stripDosages : undefined,
-        isBedridden,
-        mandateType: demandType === 'judicial' ? 'Legal' : demandType === 'municipal' ? 'Municipal' : 'N/A',
-        judicialItems: demandType === 'judicial' ? judicialItems : [],
-        municipalItems: demandType === 'municipal' ? municipalItems : [],
-        files: [...files, ...uploadedFiles.map(f => ({ name: f.name, url: '#' }))], // Mock URL
-        status: isEditing ? patientToEdit.status : 'Ativo'
-    }
-
-    if (!newOrUpdatedPatient.name || !newOrUpdatedPatient.cpf || !newOrUpdatedPatient.cns) {
+    if (!name || !cpf || !cns) {
         toast({
             variant: 'destructive',
             title: 'Campos Obrigatórios',
             description: 'Nome, CPF e Cartão do SUS são obrigatórios.'
         });
+        setIsSaving(false);
         return;
     }
     
-    if (isEditing) {
-        const index = patients.findIndex(p => p.id === patientToEdit.id);
-        if (index !== -1) {
-            patients[index] = newOrUpdatedPatient as Patient;
-        }
-    } else {
-         patients.push(newOrUpdatedPatient as Patient);
-    }
+    const patientId = isEditing ? patientToEdit.id : `PAT-${Date.now()}`;
     
-
-    toast({
-        title: `Paciente ${isEditing ? 'Atualizado' : 'Adicionado'}!`,
-        description: `${newOrUpdatedPatient.name} foi ${isEditing ? 'atualizado' : 'cadastrado'} com sucesso.`
+    // Upload files to Firebase Storage
+    const fileUploadPromises = uploadedFiles.map(async file => {
+        const fileRef = ref(storage, `patients/${patientId}/${file.name}`);
+        await uploadBytes(fileRef, file);
+        const url = await getDownloadURL(fileRef);
+        return { name: file.name, url: url };
     });
 
-    setIsOpen(false);
+    try {
+        const newFiles = await Promise.all(fileUploadPromises);
+
+        const newOrUpdatedPatient: Patient = {
+            id: patientId,
+            name,
+            cpf,
+            cns,
+            rg,
+            address,
+            phone,
+            unitId,
+            unitName: units.find(u => u.id === unitId)?.name,
+            isAnalogInsulinUser,
+            analogInsulinType: isAnalogInsulinUser ? insulinType : undefined,
+            hasInsulinReport: isAnalogInsulinUser ? hasInsulinReport : undefined,
+            insulinDosages: isAnalogInsulinUser ? insulinDosages : [],
+            insulinPresentation: isAnalogInsulinUser ? insulinPresentation : undefined,
+            usesStrips,
+            stripDosages: usesStrips ? stripDosages : [],
+            isBedridden,
+            mandateType: demandType === 'judicial' ? 'Legal' : demandType === 'municipal' ? 'Municipal' : 'N/A',
+            judicialItems: demandType === 'judicial' ? judicialItems : [],
+            municipalItems: demandType === 'municipal' ? municipalItems : [],
+            files: [...files, ...newFiles],
+            status: isEditing ? patientToEdit.status : 'Ativo'
+        }
+
+        
+        if (isEditing) {
+            const index = patients.findIndex(p => p.id === patientToEdit.id);
+            if (index !== -1) {
+                patients[index] = newOrUpdatedPatient as Patient;
+            }
+        } else {
+            patients.push(newOrUpdatedPatient as Patient);
+        }
+        
+
+        toast({
+            title: `Paciente ${isEditing ? 'Atualizado' : 'Adicionado'}!`,
+            description: `${newOrUpdatedPatient.name} foi ${isEditing ? 'atualizado' : 'cadastrado'} com sucesso.`
+        });
+
+        setIsOpen(false);
+        setUploadedFiles([]);
+
+    } catch (error) {
+        console.error("Error saving patient or uploading files:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Erro ao Salvar',
+            description: 'Ocorreu um erro ao salvar o paciente ou fazer upload dos arquivos. Verifique o console para mais detalhes.'
+        });
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   return (
@@ -380,8 +432,8 @@ export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogPro
                 <div className="space-y-4">
                     <Label>Anexar Documentos (Laudos, Receitas, etc.)</Label>
                     <div className="flex items-center gap-2">
-                        <Input id="file-upload" type="file" className="hidden" onChange={handleFileChange} multiple />
-                        <Button type="button" variant="outline" onClick={() => document.getElementById('file-upload')?.click()}>
+                        <Input id="file-upload" type="file" className="hidden" onChange={handleFileChange} multiple disabled={isSaving} />
+                        <Button type="button" variant="outline" onClick={() => document.getElementById('file-upload')?.click()} disabled={isSaving}>
                             <FileUp className="mr-2 h-4 w-4" />
                             Escolher Arquivos
                         </Button>
@@ -389,13 +441,14 @@ export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogPro
                     <div className="space-y-2">
                         {files.map(file => (
                             <div key={file.name} className="flex items-center justify-between text-sm p-2 bg-muted rounded-md">
-                                <span>{file.name} (Salvo)</span>
+                                <a href={file.url} target="_blank" rel="noopener noreferrer" className="hover:underline">{file.name}</a>
+                                <span>(Salvo)</span>
                             </div>
                         ))}
                          {uploadedFiles.map(file => (
                             <div key={file.name} className="flex items-center justify-between text-sm p-2 bg-muted rounded-md">
                                 <span>{file.name}</span>
-                                <Button type="button" size="icon" variant="ghost" onClick={() => removeFile(file.name)}>
+                                <Button type="button" size="icon" variant="ghost" onClick={() => removeFile(file.name)} disabled={isSaving}>
                                     <X className="h-4 w-4" />
                                 </Button>
                             </div>
@@ -407,11 +460,11 @@ export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogPro
           </ScrollArea>
           <DialogFooter className="pt-4">
              <DialogClose asChild>
-                <Button type="button" variant="outline">Cancelar</Button>
+                <Button type="button" variant="outline" disabled={isSaving}>Cancelar</Button>
              </DialogClose>
-            <Button type="submit">
-                <Save className="mr-2 h-4 w-4" />
-                {isEditing ? 'Salvar Alterações' : 'Salvar Paciente'}
+            <Button type="submit" disabled={isSaving}>
+                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                {isSaving ? 'Salvando...' : (isEditing ? 'Salvar Alterações' : 'Salvar Paciente')}
             </Button>
           </DialogFooter>
         </form>
