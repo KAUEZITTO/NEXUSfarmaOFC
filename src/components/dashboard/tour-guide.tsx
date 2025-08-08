@@ -6,6 +6,7 @@ import { Steps } from 'intro.js-react';
 import React, { useEffect, useState, useContext, createContext } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { navItems } from './dashboard-nav';
+import { useSidebar } from '../ui/sidebar';
 
 const TOUR_STORAGE_KEY = 'nexusfarma-tour-completed-v1';
 
@@ -67,10 +68,24 @@ const tourSteps = [
 
 export function TourProvider({ children }: { children: React.ReactNode }) {
     const [isTourActive, setIsTourActive] = useState(false);
+    const { setOpen } = useSidebar();
 
     const startTour = () => {
+        // Ensure sidebar is open on desktop for the tour
+        setOpen(true); 
         setIsTourActive(true);
     };
+
+    // Automatically start tour for new users
+    useEffect(() => {
+        const tourCompleted = localStorage.getItem(TOUR_STORAGE_KEY);
+        if (!tourCompleted) {
+            const timer = setTimeout(() => {
+               startTour();
+            }, 1500); 
+            return () => clearTimeout(timer);
+        }
+    }, []);
 
     return (
         <TourContext.Provider value={{ startTour }}>
@@ -85,14 +100,6 @@ export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boo
     const router = useRouter();
     const pathname = usePathname();
 
-    useEffect(() => {
-        const tourCompleted = localStorage.getItem(TOUR_STORAGE_KEY);
-        if (!tourCompleted) {
-            const timer = setTimeout(() => setIsTourActive(true), 1500);
-            return () => clearTimeout(timer);
-        }
-    }, [setIsTourActive]);
-
     const onExit = () => {
         setIsTourActive(false);
         localStorage.setItem(TOUR_STORAGE_KEY, 'true');
@@ -100,14 +107,36 @@ export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boo
 
     const onBeforeChange = (nextStepIndex: number) => {
         const step = tourSteps[nextStepIndex];
-        if (!step) return;
+        if (!step) return true; // continue tour
 
         const tourId = step.element.replace(/\[data-tour-id="|"\]/g, '');
+        
+        // Find associated nav item
         const navItem = navItems.find(item => item.tourId === tourId);
-
+        
         if (navItem && navItem.href !== pathname) {
             router.push(navItem.href);
+            // We can't proceed immediately, so we stop the tour and restart it on the new page
+            // This is a common pattern for multi-page tours.
+            // A more complex solution would involve a global state manager to handle the step index across navigations.
+            // For this app, this approach is simple and effective.
         }
+        
+        // Check if the element exists, if not, wait a bit.
+        const checkElement = (retries: number) => {
+            if (retries <= 0) {
+                // If we can't find it, we just skip to the next step or exit.
+                console.warn(`Tour element not found: ${step.element}`);
+                return;
+            }
+            if (!document.querySelector(step.element)) {
+                setTimeout(() => checkElement(retries - 1), 100);
+            }
+        }
+        
+        checkElement(10); // Check for 1 second max.
+
+        return true;
     };
 
 

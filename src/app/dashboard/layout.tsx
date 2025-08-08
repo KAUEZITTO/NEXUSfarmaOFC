@@ -19,7 +19,6 @@ export default function DashboardLayout({
   return (
     <TourProvider>
       <SidebarProvider>
-        <TourGuide />
         <div className="grid min-h-screen w-full md:grid-cols-[var(--sidebar-width)_1fr] peer-data-[state=collapsed]:md:grid-cols-[var(--sidebar-width-icon)_1fr] transition-[grid-template-columns] duration-300 ease-in-out">
           <Sidebar>
               <SidebarHeader>
@@ -44,6 +43,7 @@ export default function DashboardLayout({
             </main>
           </div>
         </div>
+        <TourGuide />
       </SidebarProvider>
     </TourProvider>
   );
