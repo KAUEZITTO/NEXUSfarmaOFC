@@ -1,0 +1,20 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // As coleções principais só podem ser acessadas por usuários autenticados.
+    // Isso protege seus dados de acesso anônimo.
+    
+    // Regra geral para a maioria das coleções
+    match /{collection}/{docId} 
+      where collection in ['products', 'units', 'patients', 'orders', 'dispensations'] {
+        // Permite ler, criar e atualizar se o usuário estiver logado.
+        allow read, create, update: if request.auth != null;
+        
+        // Impede a exclusão de registros para manter a integridade dos dados.
+        allow delete: if false; 
+    }
+  }
+}
