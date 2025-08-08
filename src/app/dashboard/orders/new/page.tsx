@@ -19,20 +19,20 @@ export default function NewOrderPage() {
       <div className="mx-auto grid max-w-5xl flex-1 auto-rows-max gap-4">
         <div className="flex items-center gap-4">
           <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
-            Criar Novo Pedido
+            Criar Nova Remessa
           </h1>
           <div className="hidden items-center gap-2 md:ml-auto md:flex">
             <Button variant="outline" size="sm">
               Descartar
             </Button>
-            <Button size="sm">Salvar Pedido</Button>
+            <Button size="sm">Salvar Remessa</Button>
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-[1fr_250px] lg:grid-cols-3 lg:gap-8">
           <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 lg:gap-8">
             <Card>
               <CardHeader>
-                <CardTitle>Detalhes do Pedido</CardTitle>
+                <CardTitle>Detalhes da Remessa</CardTitle>
                 <CardDescription>
                   Selecione a unidade de destino e adicione os produtos.
                 </CardDescription>
@@ -52,26 +52,14 @@ export default function NewOrderPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                   <div className="grid gap-3">
-                    <Label htmlFor="patient">Paciente (Opcional)</Label>
-                    <Select>
-                      <SelectTrigger id="patient" aria-label="Selecione o paciente">
-                        <SelectValue placeholder="Selecione se for demanda específica" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pat1">João da Silva</SelectItem>
-                        <SelectItem value="pat2">Maria Oliveira</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Itens do Pedido</CardTitle>
+                <CardTitle>Itens da Remessa</CardTitle>
                  <CardDescription>
-                  Adicione os produtos e quantidades para este pedido.
+                  Adicione os produtos e quantidades para esta remessa.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -123,7 +111,7 @@ export default function NewOrderPage() {
                 <CardTitle>Observações</CardTitle>
               </CardHeader>
               <CardContent>
-                <Textarea placeholder="Adicione qualquer observação sobre o pedido..." />
+                <Textarea placeholder="Adicione qualquer observação sobre a remessa..." />
               </CardContent>
             </Card>
           </div>
@@ -132,7 +120,7 @@ export default function NewOrderPage() {
             <Button variant="outline" size="sm">
               Descartar
             </Button>
-            <Button size="sm">Salvar Pedido</Button>
+            <Button size="sm">Salvar Remessa</Button>
           </div>
       </div>
     </form>

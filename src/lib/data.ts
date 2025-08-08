@@ -26,9 +26,11 @@ export const patients: Patient[] = [
 ];
 
 export const orders: Order[] = [
-  { id: 'ORD001', unit: 'UBS Centro', date: '2024-05-20', status: 'Entregue', itemCount: 5 },
-  { id: 'ORD002', unit: 'Hospital Municipal', patient: 'João da Silva', date: '2024-05-19', status: 'Entregue', itemCount: 2 },
-  { id: 'ORD003', unit: 'CEO', date: '2024-05-18', status: 'Pendente', itemCount: 12 },
-  { id: 'ORD004', unit: 'Laboratório Central', date: '2024-05-17', status: 'Cancelado', itemCount: 8 },
-  { id: 'ORD005', unit: 'UBS Bairro Novo', date: '2024-05-16', status: 'Entregue', itemCount: 3 },
+  { id: 'ORD001', unitId: 'UNIT001', unit: 'UBS Centro', sentDate: '2024-05-20', deliveryDate: '2024-05-21', status: 'Entregue', itemCount: 5 },
+  { id: 'ORD002', unitId: 'UNIT002', unit: 'Hospital Municipal', patient: 'João da Silva', sentDate: '2024-05-19', deliveryDate: '2024-05-20', status: 'Entregue', itemCount: 2 },
+  { id: 'ORD003', unitId: 'UNIT004', unit: 'CEO', sentDate: '2024-05-18', status: 'Em Trânsito', itemCount: 12 },
+  { id: 'ORD004', unitId: 'UNIT003', unit: 'Laboratório Central', sentDate: '2024-05-17', status: 'Cancelado', itemCount: 8 },
+  { id: 'ORD005', unitId: 'UNIT001', unit: 'UBS Bairro Novo', sentDate: '2024-05-16', deliveryDate: '2024-05-17', status: 'Entregue', itemCount: 3 },
+  { id: 'ORD006', unitId: 'UNIT002', unit: 'Hospital Municipal', sentDate: '2024-06-01', status: 'Pendente', itemCount: 7 },
+  { id: 'ORD007', unitId: 'UNIT001', unit: 'UBS Centro', sentDate: '2024-06-02', status: 'Em Trânsito', itemCount: 4 },
 ];

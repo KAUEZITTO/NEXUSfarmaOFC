@@ -24,8 +24,10 @@ export type Patient = {
 export type Order = {
   id: string;
   unit: string;
+  unitId: string;
   patient?: string;
-  date: string;
-  status: 'Entregue' | 'Pendente' | 'Cancelado';
+  sentDate: string;
+  deliveryDate?: string;
+  status: 'Entregue' | 'Pendente' | 'Cancelado' | 'Em Trânsito';
   itemCount: number;
 };

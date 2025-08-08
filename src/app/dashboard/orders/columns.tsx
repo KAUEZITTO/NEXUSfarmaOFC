@@ -1,81 +1,41 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { Order } from "@/lib/types"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Unit } from "@/lib/types" 
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, MoreHorizontal, Printer } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { ArrowUpDown, MoreHorizontal, Eye } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 
-export const columns: ColumnDef<Order>[] = [
+export const columns: ColumnDef<Unit>[] = [
   {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: "id",
-    header: "ID do Pedido",
-  },
-  {
-    accessorKey: "unit",
+    accessorKey: "name",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Unidade de Destino
+          Nome da Unidade
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
     },
-    cell: ({ row }) => <div className="capitalize font-medium">{row.getValue("unit")}</div>,
+    cell: ({ row }) => <div className="capitalize font-medium">{row.getValue("name")}</div>,
   },
   {
-    accessorKey: "patient",
-    header: "Paciente",
-    cell: ({ row }) => <div className="capitalize">{row.getValue("patient") || 'N/A'}</div>,
+    accessorKey: "type",
+    header: "Tipo",
+    cell: ({ row }) => <div className="capitalize">{row.getValue("type")}</div>,
   },
   {
-    accessorKey: "date",
-    header: "Data",
-    cell: ({ row }) => {
-      const date = new Date(row.getValue("date"))
-      return <div>{date.toLocaleDateString('pt-BR')}</div>
-    }
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const status: string = row.getValue("status");
-      return <Badge variant={status === 'Cancelado' ? 'destructive' : status === 'Pendente' ? 'secondary' : 'default'} className={status === 'Pendente' ? 'bg-orange-500 text-white' : ''}>{status}</Badge>
-    },
+    accessorKey: "address",
+    header: "Endereço",
   },
   {
     id: "actions",
     cell: ({ row }) => {
-      const order = row.original
+      const unit = row.original
 
       return (
         <DropdownMenu>
@@ -87,11 +47,10 @@ export const columns: ColumnDef<Order>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
-            <DropdownMenuItem>Ver Detalhes</DropdownMenuItem>
             <DropdownMenuItem asChild>
-                <Link href={`/dashboard/orders/${order.id}/receipt`} className="w-full h-full flex items-center">
-                    <Printer className="mr-2 h-4 w-4" />
-                    Imprimir Recibo
+                <Link href={`/dashboard/orders/history/${unit.id}`} className="w-full h-full flex items-center">
+                    <Eye className="mr-2 h-4 w-4" />
+                    Ver Histórico de Pedidos
                 </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { orders } from "@/lib/data";
+import { units } from "@/lib/data";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
@@ -18,21 +18,21 @@ export default function OrdersPage() {
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>Pedidos e Remessas</CardTitle>
+            <CardTitle>Unidades Atendidas</CardTitle>
             <CardDescription>
-              Acompanhe todos os pedidos e crie novas remessas.
+              Selecione uma unidade para ver o histórico de pedidos ou crie uma nova remessa.
             </CardDescription>
           </div>
           <Button asChild>
             <Link href="/dashboard/orders/new">
               <PlusCircle className="mr-2 h-4 w-4" />
-              Novo Pedido
+              Nova Remessa
             </Link>
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        <DataTable columns={columns} data={orders} filterColumn="unit" />
+        <DataTable columns={columns} data={units} filterColumn="name" />
       </CardContent>
     </Card>
   );
