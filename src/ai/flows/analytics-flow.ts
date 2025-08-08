@@ -2,16 +2,18 @@
 'use server';
 
 /**
- * @fileOverview An analytics AI flow that can answer questions about inventory and consumption.
+ * @fileOverview An analytics AI flow that can answer questions about inventory, consumption, and patients.
  *
  * - analyzeData - A function that handles the data analysis process.
  * - getInventoryAnalysis - A Genkit tool to get a summary of the current inventory status.
  * - getConsumptionAnalysis - A Genkit tool to get a summary of product consumption over a period.
+ * - getPatientAnalysis - A Genkit tool to get a summary of the patient profile.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getProducts, getOrders, getAllDispensations } from '@/lib/actions';
+import { getProducts, getOrders, getAllDispensations, getAllPatients } from '@/lib/actions';
+import type { Patient } from '@/lib/types';
 
 // Define tools for the AI to use
 
@@ -105,12 +107,52 @@ const getConsumptionAnalysis = ai.defineTool(
     }
 );
 
+const getPatientAnalysis = ai.defineTool(
+    {
+        name: 'getPatientAnalysis',
+        description: 'Retorna uma análise do perfil dos pacientes cadastrados, incluindo contagens por status, tipo de mandado, uso de insulina e mais.',
+        inputSchema: z.object({}),
+        outputSchema: z.object({
+            totalPatients: z.number(),
+            activePatients: z.number(),
+            inactivePatients: z.number(),
+            patientsByStatus: z.record(z.string(), z.number()),
+            patientsByMandate: z.record(z.string(), z.number()),
+            insulinUsers: z.number(),
+            bedriddenPatients: z.number(),
+        }),
+    },
+    async () => {
+        const patients = await getAllPatients();
+
+        const patientsByStatus = patients.reduce((acc, p) => {
+            acc[p.status] = (acc[p.status] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+
+        const patientsByMandate = patients.reduce((acc, p) => {
+            acc[p.mandateType] = (acc[p.mandateType] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+
+        return {
+            totalPatients: patients.length,
+            activePatients: patients.filter(p => p.status === 'Ativo').length,
+            inactivePatients: patients.filter(p => p.status !== 'Ativo').length,
+            patientsByStatus,
+            patientsByMandate,
+            insulinUsers: patients.filter(p => p.isAnalogInsulinUser).length,
+            bedriddenPatients: patients.filter(p => p.isBedridden).length,
+        };
+    }
+);
+
 
 const analyticsPrompt = ai.definePrompt({
     name: 'analyticsPrompt',
-    tools: [getInventoryAnalysis, getConsumptionAnalysis],
+    tools: [getInventoryAnalysis, getConsumptionAnalysis, getPatientAnalysis],
     system: `Você é um assistente especialista em análise de dados para o sistema NexusFarma, um sistema de gestão de estoque farmacêutico.
-    Sua tarefa é responder às perguntas do usuário sobre o estado do inventário, consumo de itens, e outras métricas relevantes.
+    Sua tarefa é responder às perguntas do usuário sobre o estado do inventário, consumo de itens, perfil dos pacientes e outras métricas relevantes.
     Use as ferramentas disponíveis para obter os dados necessários e, em seguida, formate a resposta de forma clara, concisa e útil para um gestor.
     Use Markdown para formatar sua resposta (negrito, listas, etc.) para melhor legibilidade.
     Se a pergunta for ambígua, peça esclarecimentos. Responda sempre em português do Brasil.`,
