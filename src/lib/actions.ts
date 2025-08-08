@@ -54,13 +54,15 @@ async function logActivity(action: string, details: string) {
 export async function createSessionCookie(token: string) {
     const sevenDaysInSeconds = 60 * 60 * 24 * 7;
     cookies().set('session', token, { httpOnly: true, path: '/', maxAge: sevenDaysInSeconds });
+    // We can't get user info here yet, so log it as a system action or on the client.
+    // For simplicity, we'll log it as a general login event.
     await logActivity('Login', `Usuário fez login.`);
     redirect('/dashboard');
 }
 
 export async function logout() {
   const user = await getCurrentUser();
-  await logActivity('Logout', `Usuário ${user?.email} saiu.`);
+  await logActivity('Logout', `Usuário ${user?.email || 'desconhecido'} saiu.`);
   cookies().delete('session');
   redirect('/');
 }
