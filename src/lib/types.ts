@@ -1,12 +1,14 @@
 export type Product = {
   id: string;
   name: string;
+  commercialName?: string;
   category: 'Medicamento' | 'Material Técnico' | 'Odontológico' | 'Laboratório' | 'Fraldas' | 'Outro';
   quantity: number;
   expiryDate: string;
   status: 'Em Estoque' | 'Baixo Estoque' | 'Sem Estoque';
   batch?: string;
-  presentation?: string;
+  presentation?: 'Comprimido' | 'Unidade' | 'Caixa c/ 100' | 'Seringa 4g' | 'Frasco 10ml' | 'Caixa c/ 50' | 'Caneta 3ml' | 'Pacote' | 'Bolsa' | 'Outro';
+  supplier?: 'Casmed' | 'Mednutri' | 'Doação' | 'Outro';
 };
 
 export type Unit = {
