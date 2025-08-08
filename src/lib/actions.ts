@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { db } from './firebase';
 import { collection, getDocs, addDoc, updateDoc, doc, query, where, getDoc, writeBatch, documentId, Timestamp, orderBy } from 'firebase/firestore';
-import type { Product, Unit, Patient, PatientStatus, Order, Dispensation, OrderItem, DispensationItem } from './types';
+import type { Product, Unit, Patient, PatientStatus, Order, Dispensation, OrderItem, DispensationItem, StockMovement } from './types';
 import { revalidatePath } from 'next/cache';
 import { adminAuth } from './firebase-admin';
 
@@ -67,6 +67,36 @@ export async function logout() {
   redirect('/');
 }
 
+// STOCK MOVEMENT LOGGING
+async function logStockMovement(
+    productId: string,
+    productName: string,
+    type: StockMovement['type'],
+    reason: StockMovement['reason'],
+    quantityChange: number,
+    quantityBefore: number,
+    relatedId?: string
+) {
+    const user = await getCurrentUser();
+    const movementRef = doc(collection(db, 'stockMovements'));
+    const movement: StockMovement = {
+        id: movementRef.id,
+        productId,
+        productName,
+        type,
+        reason,
+        quantityChange,
+        quantityBefore,
+        quantityAfter: quantityBefore + quantityChange, // quantityChange is negative for 'Saída'
+        date: new Date().toISOString(),
+        relatedId: relatedId || '',
+        user: user?.email || 'Sistema'
+    };
+    await addDoc(collection(db, 'stockMovements'), movement);
+    await updateDoc(movementRef, { id: movementRef.id });
+}
+
+
 // FIRESTORE ACTIONS - PRODUCTS
 
 export async function getProducts(): Promise<Product[]> {
@@ -82,6 +112,10 @@ export async function addProduct(product: Omit<Product, 'id' | 'status'>) {
         status: product.quantity > 0 ? (product.quantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque',
     }
     const docRef = await addDoc(collection(db, 'products'), newProductData);
+
+    // Log the initial stock movement
+    await logStockMovement(docRef.id, product.name, 'Entrada', 'Entrada Inicial', product.quantity, 0);
+    
     await logActivity('Produto Adicionado', `Novo produto "${product.name}" (ID: ${docRef.id}) foi adicionado com quantidade ${product.quantity}.`);
     revalidatePath('/dashboard/inventory');
 }
@@ -91,11 +125,21 @@ export async function updateProduct(productId: string, productData: Partial<Prod
         throw new Error("Product ID is required for updating.");
     }
     const productRef = doc(db, 'products', productId);
+    const productSnap = await getDoc(productRef);
+    if (!productSnap.exists()) {
+        throw new Error(`Product with ID ${productId} not found.`);
+    }
+    const oldProductData = productSnap.data();
+    const quantityBefore = oldProductData.quantity;
+
 
     const updatedData = { ...productData };
 
-    if (productData.quantity !== undefined) {
+    if (productData.quantity !== undefined && productData.quantity !== quantityBefore) {
          updatedData.status = productData.quantity > 0 ? (productData.quantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque';
+         const quantityChange = productData.quantity - quantityBefore;
+         const type = quantityChange > 0 ? 'Entrada' : 'Saída';
+         await logStockMovement(productId, productData.name || oldProductData.name, type, 'Ajuste de Inventário', quantityChange, quantityBefore);
     }
 
     await updateDoc(productRef, updatedData);
@@ -210,17 +254,15 @@ export async function updatePatientStatus(patientId: string, status: PatientStat
 
 
 // FIRESTORE ACTIONS - ORDERS / REMESSAS
-
-async function updateStock(items: (OrderItem[] | DispensationItem[])) {
+async function processStockUpdate(items: (OrderItem[] | DispensationItem[]), reason: StockMovement['reason'], relatedId?: string) {
     const batch = writeBatch(db);
     const productIds = items.map(item => item.productId);
     if (productIds.length === 0) return;
 
-    // Fetch only the products that are part of the order/dispensation
     const productsRef = collection(db, 'products');
     const productsQuery = query(productsRef, where(documentId(), 'in', productIds));
     const productSnapshots = await getDocs(productsQuery);
-    
+
     const productMap = new Map<string, Product>();
     productSnapshots.forEach(doc => {
         productMap.set(doc.id, { id: doc.id, ...doc.data() } as Product);
@@ -229,13 +271,18 @@ async function updateStock(items: (OrderItem[] | DispensationItem[])) {
     for (const item of items) {
         const product = productMap.get(item.productId);
         if (product) {
-            const newQuantity = product.quantity - item.quantity;
+            const quantityBefore = product.quantity;
+            const newQuantity = quantityBefore - item.quantity;
             if (newQuantity < 0) {
-                throw new Error(`Estoque insuficiente para o produto ${product.name}. Apenas ${product.quantity} disponíveis.`);
+                throw new Error(`Estoque insuficiente para o produto ${product.name}. Apenas ${quantityBefore} disponíveis.`);
             }
             const productRef = doc(db, 'products', item.productId);
             const newStatus = newQuantity > 0 ? (newQuantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque';
             batch.update(productRef, { quantity: newQuantity, status: newStatus });
+            
+            // Log movement
+            await logStockMovement(item.productId, item.name, 'Saída', reason, -item.quantity, quantityBefore, relatedId);
+
         } else {
             throw new Error(`Produto com ID ${item.productId} não encontrado.`);
         }
@@ -246,21 +293,23 @@ async function updateStock(items: (OrderItem[] | DispensationItem[])) {
 
 
 export async function addOrder(orderData: Omit<Order, 'id' | 'status' | 'sentDate' | 'itemCount'>): Promise<Order> {
-  // 1. Update product quantities first (this will throw if not enough stock)
-  await updateStock(orderData.items);
+  const newOrderRef = doc(collection(db, 'orders'));
+  const newOrderId = newOrderRef.id;
+
+  // 1. Update product quantities first and log movements
+  await processStockUpdate(orderData.items, 'Saída por Remessa', newOrderId);
 
   // 2. Create the new order
-  const newOrderRef = doc(collection(db, 'orders'));
   const newOrder: Order = {
     ...orderData,
-    id: newOrderRef.id,
+    id: newOrderId,
     sentDate: new Date().toISOString(),
     status: 'Em Trânsito',
     itemCount: orderData.items.reduce((sum, item) => sum + item.quantity, 0),
   };
   
   await addDoc(collection(db, 'orders'), newOrder);
-  await updateDoc(newOrderRef, { id: newOrderRef.id });
+  await updateDoc(newOrderRef, { id: newOrderId });
 
   // 3. Log and Revalidate
   await logActivity('Remessa Criada', `Nova remessa (ID: ${newOrder.id}) com ${newOrder.itemCount} itens foi criada para a unidade "${newOrder.unitName}".`);
@@ -268,7 +317,7 @@ export async function addOrder(orderData: Omit<Order, 'id' | 'status' | 'sentDat
   revalidatePath('/dashboard/inventory');
   revalidatePath('/dashboard');
   
-  return { ...newOrder, id: newOrderRef.id };
+  return { ...newOrder, id: newOrderId };
 }
 
 export async function getOrdersForUnit(unitId: string): Promise<Order[]> {
@@ -301,19 +350,20 @@ export async function getOrder(orderId: string): Promise<Order | null> {
 // FIRESTORE ACTIONS - DISPENSATIONS
 
 export async function addDispensation(dispensationData: Omit<Dispensation, 'id' | 'date'>): Promise<Dispensation> {
-    
-    // 1. Update product stock
-    await updateStock(dispensationData.items);
+    const newDispensationRef = doc(collection(db, 'dispensations'));
+    const newDispensationId = newDispensationRef.id;
+
+    // 1. Update product stock and log movements
+    await processStockUpdate(dispensationData.items, 'Saída por Dispensação', newDispensationId);
 
     // 2. Create dispensation record
-    const newDispensationRef = doc(collection(db, 'dispensations'));
     const newDispensation: Dispensation = {
         ...dispensationData,
-        id: newDispensationRef.id,
+        id: newDispensationId,
         date: new Date().toISOString(),
     };
     await addDoc(collection(db, 'dispensations'), newDispensation);
-    await updateDoc(newDispensationRef, { id: newDispensationRef.id });
+    await updateDoc(newDispensationRef, { id: newDispensationId });
 
     // 3. Log and Revalidate
     const totalItems = dispensationData.items.reduce((sum, item) => sum + item.quantity, 0);
@@ -322,7 +372,7 @@ export async function addDispensation(dispensationData: Omit<Dispensation, 'id' 
     revalidatePath('/dashboard/inventory');
     revalidatePath('/dashboard');
 
-    return { ...newDispensation, id: newDispensationRef.id };
+    return { ...newDispensation, id: newDispensationId };
 }
 
 export async function getDispensationsForPatient(patientId: string): Promise<Dispensation[]> {
@@ -349,4 +399,13 @@ export async function getDispensation(dispensationId: string): Promise<Dispensat
         return null;
     }
     return querySnapshot.docs[0].data() as Dispensation;
+}
+
+// FIRESTORE ACTIONS - REPORTS
+export async function getStockMovements(): Promise<StockMovement[]> {
+    const movementsCol = collection(db, 'stockMovements');
+    const q = query(movementsCol, orderBy('date', 'desc'));
+    const snapshot = await getDocs(q);
+    const movementList = snapshot.docs.map(doc => doc.data() as StockMovement);
+    return movementList;
 }

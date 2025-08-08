@@ -12,10 +12,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Download, FileText, BarChart2, AlertTriangle, Package, Users, Loader2 } from "lucide-react";
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
-import { getProducts, getAllPatients, getAllDispensations, getUnits, getOrders } from "@/lib/actions";
-import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF, generatePatientReportPDF, generateUnitDispensationReportPDF } from "@/lib/pdf-generator";
+import { getProducts, getAllPatients, getAllDispensations, getUnits, getOrders, getStockMovements } from "@/lib/actions";
+import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF, generatePatientReportPDF, generateUnitDispensationReportPDF, generateBatchReportPDF, generateEntriesAndExitsReportPDF } from "@/lib/pdf-generator";
 import { useEffect, useState } from "react";
-import type { Product, Patient, Dispensation, Unit, Order } from "@/lib/types";
+import type { Product, Patient, Dispensation, Unit, Order, StockMovement } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 
 type GeneratingState = {
@@ -24,6 +24,8 @@ type GeneratingState = {
     expiry: boolean;
     patient: boolean;
     unitDispensation: boolean;
+    entriesAndExits: boolean;
+    batch: boolean;
 }
 
 export default function ReportsPage() {
@@ -33,6 +35,7 @@ export default function ReportsPage() {
   const [dispensations, setDispensations] = useState<Dispensation[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [stockMovements, setStockMovements] = useState<StockMovement[]>([]);
   const [loading, setLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState<GeneratingState>({
     complete: false,
@@ -40,23 +43,27 @@ export default function ReportsPage() {
     expiry: false,
     patient: false,
     unitDispensation: false,
+    entriesAndExits: false,
+    batch: false,
   });
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const [productsData, patientsData, dispensationsData, unitsData, ordersData] = await Promise.all([
+      const [productsData, patientsData, dispensationsData, unitsData, ordersData, movementsData] = await Promise.all([
         getProducts(),
         getAllPatients(),
         getAllDispensations(),
         getUnits(),
         getOrders(),
+        getStockMovements(),
       ]);
       setProducts(productsData);
       setPatients(patientsData);
       setDispensations(dispensationsData);
       setUnits(unitsData);
       setOrders(ordersData);
+      setStockMovements(movementsData);
       setLoading(false);
     };
     fetchData();
@@ -141,13 +148,31 @@ export default function ReportsPage() {
     }
   }
 
+  const handleExportBatch = async () => {
+    setIsGenerating(prev => ({...prev, batch: true}));
+    try {
+        const pdfDataUri = await generateBatchReportPDF(products);
+        openPdfPrintDialog(pdfDataUri);
+    } catch(e) {
+        console.error("Failed to generate batch report PDF", e);
+        toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
+    } finally {
+        setIsGenerating(prev => ({...prev, batch: false}));
+    }
+  }
 
-  const handleNotImplemented = () => {
-    toast({
-        title: 'Funcionalidade em Desenvolvimento',
-        description: 'A geração deste relatório específico ainda não foi implementada.',
-    });
-  };
+    const handleExportEntriesAndExits = async () => {
+    setIsGenerating(prev => ({...prev, entriesAndExits: true}));
+    try {
+        const pdfDataUri = await generateEntriesAndExitsReportPDF(stockMovements);
+        openPdfPrintDialog(pdfDataUri);
+    } catch(e) {
+        console.error("Failed to generate entries and exits PDF", e);
+        toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
+    } finally {
+        setIsGenerating(prev => ({...prev, entriesAndExits: false}));
+    }
+  }
 
 
   const now = new Date();
@@ -306,14 +331,22 @@ export default function ReportsPage() {
                 )}
             Atendimento de Pacientes
           </Button>
-           <Button variant="outline" className="justify-start" onClick={handleNotImplemented}>
-            <FileText className="mr-2 h-4 w-4" />
-            Entradas e Saídas
-          </Button>
-           <Button variant="outline" className="justify-start" onClick={handleNotImplemented}>
-            <FileText className="mr-2 h-4 w-4" />
-            Relatório de Lotes
-          </Button>
+           <Button variant="outline" className="justify-start" onClick={handleExportEntriesAndExits} disabled={isGenerating.entriesAndExits}>
+                {isGenerating.entriesAndExits ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                    <FileText className="mr-2 h-4 w-4" />
+                )}
+                Entradas e Saídas
+            </Button>
+           <Button variant="outline" className="justify-start" onClick={handleExportBatch} disabled={isGenerating.batch}>
+                {isGenerating.batch ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                    <FileText className="mr-2 h-4 w-4" />
+                )}
+                Relatório de Lotes
+            </Button>
         </CardContent>
       </Card>
     </div>

@@ -4,7 +4,7 @@
 
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import type { Product, Patient, Dispensation, Order, Unit } from './types';
+import type { Product, Patient, Dispensation, Order, Unit, StockMovement } from './types';
 import { Logo } from '@/components/logo';
 import { NEXUS_LOGO_B64, PREF_LOGO_B64, CAF_LOGO_B64 } from './logo-base64';
 
@@ -249,4 +249,53 @@ export const generateUnitDispensationReportPDF = async (orders: Order[], units: 
     addFooter(doc);
     return doc.output('datauristring');
 };
+
+export const generateBatchReportPDF = async (products: Product[]): Promise<string> => {
+    const doc = new jsPDF() as jsPDFWithAutoTable;
+    addHeader(doc, 'Relatório de Lotes');
+
+    const body = products.map(p => [
+        p.name,
+        p.batch || 'N/A',
+        p.expiryDate ? new Date(p.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : 'N/A',
+        p.quantity.toString()
+    ]);
     
+    doc.autoTable({
+        startY: 65,
+        head: [['Nome do Produto', 'Lote', 'Validade', 'Quantidade']],
+        body: body,
+        theme: 'grid',
+        headStyles: { fillColor: [19, 78, 74] }, // Dark Teal
+    });
+
+    addFooter(doc);
+    return doc.output('datauristring');
+};
+
+
+export const generateEntriesAndExitsReportPDF = async (movements: StockMovement[]): Promise<string> => {
+    const doc = new jsPDF() as jsPDFWithAutoTable;
+    addHeader(doc, 'Relatório de Entradas e Saídas');
+
+    const body = movements.map(m => [
+        new Date(m.date).toLocaleString('pt-BR', { timeZone: 'UTC'}),
+        m.productName,
+        m.type,
+        m.reason,
+        m.quantityChange.toString(),
+        m.quantityAfter.toString(),
+        m.user,
+    ]);
+
+    doc.autoTable({
+        startY: 65,
+        head: [['Data', 'Produto', 'Tipo', 'Motivo', 'Alteração', 'Estoque Final', 'Usuário']],
+        body: body,
+        theme: 'grid',
+        headStyles: { fillColor: [107, 114, 128] }, // Gray
+    });
+
+    addFooter(doc);
+    return doc.output('datauristring');
+};

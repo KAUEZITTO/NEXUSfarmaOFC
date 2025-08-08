@@ -1,3 +1,4 @@
+
 export type Product = {
   id: string;
   name: string;
@@ -98,4 +99,18 @@ export type Dispensation = {
     patient: Omit<Patient, 'files'>;
     date: string;
     items: DispensationItem[];
+};
+
+export type StockMovement = {
+  id: string;
+  productId: string;
+  productName: string;
+  type: 'Entrada' | 'Saída' | 'Ajuste';
+  reason: 'Entrada por Compra' | 'Saída por Remessa' | 'Saída por Dispensação' | 'Ajuste de Inventário' | 'Entrada Inicial';
+  quantityChange: number;
+  quantityBefore: number;
+  quantityAfter: number;
+  date: string;
+  relatedId?: string; // e.g., Order ID or Dispensation ID
+  user: string;
 };
