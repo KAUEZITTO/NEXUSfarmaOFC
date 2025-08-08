@@ -2,6 +2,7 @@ export type Product = {
   id: string;
   name: string;
   commercialName?: string;
+  manufacturer?: string;
   category: 'Medicamento' | 'Material Técnico' | 'Odontológico' | 'Laboratório' | 'Fraldas' | 'Outro';
   quantity: number;
   expiryDate: string;

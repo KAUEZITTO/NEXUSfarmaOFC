@@ -41,6 +41,7 @@ export function AddProductDialog({ children }: AddProductDialogProps) {
   // Form state
   const [name, setName] = useState('');
   const [commercialName, setCommercialName] = useState('');
+  const [manufacturer, setManufacturer] = useState('');
   const [category, setCategory] = useState<Product['category']>('Medicamento');
   const [batch, setBatch] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
@@ -90,6 +91,7 @@ export function AddProductDialog({ children }: AddProductDialogProps) {
       id: newProductId,
       name,
       commercialName: category === 'Medicamento' ? commercialName : undefined,
+      manufacturer: manufacturer,
       category,
       quantity,
       batch,
@@ -110,6 +112,7 @@ export function AddProductDialog({ children }: AddProductDialogProps) {
     // Reset form
     setName('');
     setCommercialName('');
+    setManufacturer('');
     setBatch('');
     setExpiryDate('');
     setQuantity(0);
@@ -142,6 +145,10 @@ export function AddProductDialog({ children }: AddProductDialogProps) {
               <Input id="commercialName" value={commercialName} onChange={(e) => setCommercialName(e.target.value)} />
             </div>
           )}
+           <div className="space-y-2">
+              <Label htmlFor="manufacturer">Laboratório/Indústria (Opcional)</Label>
+              <Input id="manufacturer" value={manufacturer} onChange={(e) => setManufacturer(e.target.value)} />
+            </div>
           <div className="space-y-2">
             <Label htmlFor="batch">Lote</Label>
             <Input id="batch" value={batch} onChange={(e) => setBatch(e.target.value)} />
