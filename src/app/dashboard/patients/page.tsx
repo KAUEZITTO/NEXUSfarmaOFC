@@ -17,6 +17,7 @@ import { AddPatientDialog } from "@/components/dashboard/add-patient-dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Patient } from "@/lib/types";
+import { PlusCircle } from "lucide-react";
 
 type FilterCategory = 'Todos' | 'Insulinas' | 'Fraldas' | 'Acamados' | 'Judicial' | 'Municipal';
 
@@ -58,7 +59,12 @@ export default function PatientsPage() {
           </div>
           <div className="flex gap-2">
             <AttendPatientDialog />
-            <AddPatientDialog />
+            <AddPatientDialog trigger={
+              <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Adicionar Paciente
+              </Button>
+            } />
           </div>
         </div>
          <div className="flex items-center space-x-2 pt-4">

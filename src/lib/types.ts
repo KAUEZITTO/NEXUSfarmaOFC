@@ -24,6 +24,11 @@ export type Dosage = {
     quantity: number;
 }
 
+export type PatientFile = {
+    name: string;
+    url: string; // In a real app, this would be a URL to the stored file
+}
+
 export type Patient = {
     id: string;
     name: string;
@@ -46,6 +51,7 @@ export type Patient = {
     unitId?: string;
     status: PatientStatus;
     isBedridden?: boolean;
+    files?: PatientFile[];
 };
 
 export type Order = {

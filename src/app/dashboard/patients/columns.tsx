@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { AddPatientDialog } from "@/components/dashboard/add-patient-dialog"
 
 const updatePatientStatus = (patientId: string, status: PatientStatus) => {
   // This is a mock implementation. In a real app, you'd call a server action.
@@ -110,9 +111,13 @@ export const columns: ColumnDef<Patient>[] = [
                 Ver Histórico
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Edit className="mr-2 h-4 w-4" />
-              Editar Cadastro
+             <DropdownMenuItem asChild>
+                <AddPatientDialog patientToEdit={patient} trigger={
+                    <button className="w-full h-full relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                        <Edit className="mr-2 h-4 w-4" />
+                        <span>Editar Cadastro</span>
+                    </button>
+                } />
             </DropdownMenuItem>
             <DropdownMenuSeparator />
              <DropdownMenuSub>

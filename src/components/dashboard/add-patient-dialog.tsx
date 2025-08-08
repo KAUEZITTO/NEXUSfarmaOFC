@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -25,11 +25,12 @@ import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { PlusCircle, Save, Trash2 } from 'lucide-react';
+import { PlusCircle, Save, Trash2, FileUp, X } from 'lucide-react';
 import { units } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { patients } from '@/lib/data';
-import type { Patient, Dosage } from '@/lib/types';
+import type { Patient, Dosage, PatientFile } from '@/lib/types';
+import { Separator } from '../ui/separator';
 
 const dosagePeriods: Dosage['period'][] = ['Manhã', 'Tarde', 'Noite', 'Ao deitar', 'Após Café', 'Jejum'];
 
@@ -77,12 +78,25 @@ const DosageInput = ({ dosages, setDosages, unitLabel }: { dosages: Dosage[], se
     )
 };
 
+type AddPatientDialogProps = {
+    patientToEdit?: Patient;
+    trigger: React.ReactNode;
+}
 
-export function AddPatientDialog() {
+export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  
+  const isEditing = !!patientToEdit;
+
   // State for each form field
+  const [name, setName] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [cns, setCns] = useState('');
+  const [rg, setRg] = useState('');
+  const [address, setAddress] = useState('');
+  const [phone, setPhone] = useState('');
+  const [unitId, setUnitId] = useState('');
+  
   const [isAnalogInsulinUser, setIsAnalogInsulinUser] = useState(false);
   const [usesStrips, setUsesStrips] = useState(false);
   const [insulinDosages, setInsulinDosages] = useState<Dosage[]>([]);
@@ -93,35 +107,77 @@ export function AddPatientDialog() {
   const [judicialItems, setJudicialItems] = useState<string[]>([]);
   const [municipalItems, setMunicipalItems] = useState<string[]>([]);
   const [hasInsulinReport, setHasInsulinReport] = useState(false);
+  const [insulinType, setInsulinType] = useState<'Lantus (Glargina)' | 'Apidra (Glulisina)'>('Lantus (Glargina)');
+  const [insulinPresentation, setInsulinPresentation] = useState<'Caneta' | 'Frasco'>('Caneta');
+
+  const [files, setFiles] = useState<PatientFile[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+
+
+  useEffect(() => {
+    if (patientToEdit && isOpen) {
+        setName(patientToEdit.name || '');
+        setCpf(patientToEdit.cpf || '');
+        setCns(patientToEdit.cns || '');
+        setRg(patientToEdit.rg || '');
+        setAddress(patientToEdit.address || '');
+        setPhone(patientToEdit.phone || '');
+        setUnitId(patientToEdit.unitId || '');
+        setIsAnalogInsulinUser(patientToEdit.isAnalogInsulinUser || false);
+        setHasInsulinReport(patientToEdit.hasInsulinReport || false);
+        setInsulinType(patientToEdit.analogInsulinType || 'Lantus (Glargina)');
+        setInsulinPresentation(patientToEdit.insulinPresentation || 'Caneta');
+        setInsulinDosages(patientToEdit.insulinDosages || []);
+        setUsesStrips(patientToEdit.usesStrips || false);
+        setStripDosages(patientToEdit.stripDosages || []);
+        setIsBedridden(patientToEdit.isBedridden || false);
+        setDemandType(patientToEdit.mandateType === 'Legal' ? 'judicial' : patientToEdit.mandateType === 'Municipal' ? 'municipal' : 'none');
+        setJudicialItems(patientToEdit.judicialItems || []);
+        setMunicipalItems(patientToEdit.municipalItems || []);
+        setFiles(patientToEdit.files || []);
+    }
+  }, [patientToEdit, isOpen])
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setUploadedFiles(prev => [...prev, ...Array.from(e.target.files)]);
+    }
+  };
+
+  const removeFile = (fileName: string) => {
+    setUploadedFiles(prev => prev.filter(f => f.name !== fileName));
+  }
+
 
   const handleSavePatient = (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
-    const newPatient: Partial<Patient> = {
-        id: `PAT-${Date.now()}`,
-        name: formData.get('name') as string,
-        cpf: formData.get('cpf') as string,
-        cns: formData.get('cns') as string,
-        rg: formData.get('rg') as string,
-        address: formData.get('address') as string,
-        phone: formData.get('phone') as string,
-        unitId: formData.get('unitId') as string,
-        unitName: units.find(u => u.id === formData.get('unitId'))?.name,
+    
+    const newOrUpdatedPatient: Partial<Patient> = {
+        id: isEditing ? patientToEdit.id : `PAT-${Date.now()}`,
+        name,
+        cpf,
+        cns,
+        rg,
+        address,
+        phone,
+        unitId,
+        unitName: units.find(u => u.id === unitId)?.name,
         isAnalogInsulinUser,
-        analogInsulinType: isAnalogInsulinUser ? formData.get('analogInsulinType') as any : undefined,
+        analogInsulinType: isAnalogInsulinUser ? insulinType : undefined,
         hasInsulinReport: isAnalogInsulinUser ? hasInsulinReport : undefined,
         insulinDosages: isAnalogInsulinUser ? insulinDosages : undefined,
-        insulinPresentation: isAnalogInsulinUser ? formData.get('insulinPresentation') as any : undefined,
+        insulinPresentation: isAnalogInsulinUser ? insulinPresentation : undefined,
         usesStrips,
         stripDosages: usesStrips ? stripDosages : undefined,
         isBedridden,
         mandateType: demandType === 'judicial' ? 'Legal' : demandType === 'municipal' ? 'Municipal' : 'N/A',
-        judicialItems: demandType === 'judicial' ? judicialItems as any : [],
-        municipalItems: demandType === 'municipal' ? municipalItems as any : [],
-        status: 'Ativo'
+        judicialItems: demandType === 'judicial' ? judicialItems : [],
+        municipalItems: demandType === 'municipal' ? municipalItems : [],
+        files: [...files, ...uploadedFiles.map(f => ({ name: f.name, url: '#' }))], // Mock URL
+        status: isEditing ? patientToEdit.status : 'Ativo'
     }
 
-    if (!newPatient.name || !newPatient.cpf || !newPatient.cns) {
+    if (!newOrUpdatedPatient.name || !newOrUpdatedPatient.cpf || !newOrUpdatedPatient.cns) {
         toast({
             variant: 'destructive',
             title: 'Campos Obrigatórios',
@@ -130,28 +186,32 @@ export function AddPatientDialog() {
         return;
     }
     
-    patients.push(newPatient as Patient);
+    if (isEditing) {
+        const index = patients.findIndex(p => p.id === patientToEdit.id);
+        if (index !== -1) {
+            patients[index] = newOrUpdatedPatient as Patient;
+        }
+    } else {
+         patients.push(newOrUpdatedPatient as Patient);
+    }
+    
 
     toast({
-        title: 'Paciente Adicionado!',
-        description: `${newPatient.name} foi cadastrado com sucesso.`
+        title: `Paciente ${isEditing ? 'Atualizado' : 'Adicionado'}!`,
+        description: `${newOrUpdatedPatient.name} foi ${isEditing ? 'atualizado' : 'cadastrado'} com sucesso.`
     });
 
     setIsOpen(false);
-    // Reset form states if needed
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Adicionar Paciente
-        </Button>
+        {trigger}
       </DialogTrigger>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Adicionar Novo Paciente</DialogTitle>
+          <DialogTitle>{isEditing ? 'Editar Paciente' : 'Adicionar Novo Paciente'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSavePatient}>
           <ScrollArea className="h-[70vh] p-4">
@@ -160,31 +220,31 @@ export function AddPatientDialog() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome Completo <span className="text-red-500">*</span></Label>
-                  <Input id="name" name="name" required />
+                  <Input id="name" name="name" required value={name} onChange={e => setName(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cpf">CPF <span className="text-red-500">*</span></Label>
-                  <Input id="cpf" name="cpf" required />
+                  <Input id="cpf" name="cpf" required value={cpf} onChange={e => setCpf(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="rg">RG (Opcional)</Label>
-                  <Input id="rg" name="rg" />
+                  <Input id="rg" name="rg" value={rg} onChange={e => setRg(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cns">Cartão do SUS <span className="text-red-500">*</span></Label>
-                  <Input id="cns" name="cns" required />
+                  <Input id="cns" name="cns" required value={cns} onChange={e => setCns(e.target.value)} />
                 </div>
                  <div className="space-y-2 col-span-1 md:col-span-2">
                   <Label htmlFor="address">Endereço</Label>
-                  <Input id="address" name="address" />
+                  <Input id="address" name="address" value={address} onChange={e => setAddress(e.target.value)} />
                 </div>
                  <div className="space-y-2">
                   <Label htmlFor="phone">Telefones (Opcional)</Label>
-                  <Input id="phone" name="phone" />
+                  <Input id="phone" name="phone" value={phone} onChange={e => setPhone(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="unitId">Unidade de Referência</Label>
-                    <Select name="unitId">
+                    <Select name="unitId" value={unitId} onValueChange={setUnitId}>
                         <SelectTrigger><SelectValue placeholder="Selecione a unidade" /></SelectTrigger>
                         <SelectContent>
                             {units.map(unit => (
@@ -218,7 +278,7 @@ export function AddPatientDialog() {
                         
                         <div>
                             <Label>Especificar Tipo de Insulina:</Label>
-                            <RadioGroup name="analogInsulinType" className="mt-2 flex gap-4">
+                            <RadioGroup value={insulinType} onValueChange={(v) => setInsulinType(v as any)} className="mt-2 flex gap-4">
                                 <div className="flex items-center space-x-2">
                                     <RadioGroupItem value="Lantus (Glargina)" id="lantus" />
                                     <Label htmlFor="lantus">Lantus (Glargina)</Label>
@@ -232,7 +292,7 @@ export function AddPatientDialog() {
 
                         <div>
                             <Label>Apresentação:</Label>
-                            <RadioGroup name="insulinPresentation" className="mt-2 flex gap-4">
+                            <RadioGroup value={insulinPresentation} onValueChange={(v) => setInsulinPresentation(v as any)} className="mt-2 flex gap-4">
                                 <div className="flex items-center space-x-2">
                                     <RadioGroupItem value="Caneta" id="pen" />
                                     <Label htmlFor="pen">Caneta</Label>
@@ -267,7 +327,7 @@ export function AddPatientDialog() {
               
               <div className="space-y-4 pt-4 border-t">
                 <Label>Tipo de Demanda (Mandado)</Label>
-                 <RadioGroup defaultValue="none" onValueChange={(v) => setDemandType(v as any)} className="flex gap-4">
+                 <RadioGroup value={demandType} onValueChange={(v) => setDemandType(v as any)} className="flex gap-4">
                     <div className="flex items-center space-x-2">
                         <RadioGroupItem value="none" id="demand-none" />
                         <Label htmlFor="demand-none">Nenhuma</Label>
@@ -286,11 +346,11 @@ export function AddPatientDialog() {
                     <div className="ml-6 p-4 border-l space-y-2">
                         <Label>Especificar Itens Judiciais:</Label>
                         <div className="flex items-center space-x-2">
-                            <Checkbox id="judicial-meds" onCheckedChange={(checked) => setJudicialItems(p => checked ? [...p, 'Medicamentos'] : p.filter(i => i !== 'Medicamentos'))} />
+                            <Checkbox id="judicial-meds" checked={judicialItems.includes('Medicamentos')} onCheckedChange={(checked) => setJudicialItems(p => checked ? [...p, 'Medicamentos'] : p.filter(i => i !== 'Medicamentos'))} />
                             <Label htmlFor="judicial-meds">Medicamentos</Label>
                         </div>
                          <div className="flex items-center space-x-2">
-                            <Checkbox id="judicial-tech" onCheckedChange={(checked) => setJudicialItems(p => checked ? [...p, 'Material Técnico'] : p.filter(i => i !== 'Material Técnico'))}/>
+                            <Checkbox id="judicial-tech" checked={judicialItems.includes('Material Técnico')} onCheckedChange={(checked) => setJudicialItems(p => checked ? [...p, 'Material Técnico'] : p.filter(i => i !== 'Material Técnico'))}/>
                             <Label htmlFor="judicial-tech">Material Técnico</Label>
                         </div>
                     </div>
@@ -300,20 +360,49 @@ export function AddPatientDialog() {
                     <div className="ml-6 p-4 border-l space-y-2">
                         <Label>Especificar Itens Municipais:</Label>
                          <div className="flex items-center space-x-2">
-                            <Checkbox id="municipal-diapers" onCheckedChange={(checked) => setMunicipalItems(p => checked ? [...p, 'Fraldas'] : p.filter(i => i !== 'Fraldas'))} />
+                            <Checkbox id="municipal-diapers" checked={municipalItems.includes('Fraldas')} onCheckedChange={(checked) => setMunicipalItems(p => checked ? [...p, 'Fraldas'] : p.filter(i => i !== 'Fraldas'))} />
                             <Label htmlFor="municipal-diapers">Fraldas</Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <Checkbox id="municipal-meds" onCheckedChange={(checked) => setMunicipalItems(p => checked ? [...p, 'Medicamentos'] : p.filter(i => i !== 'Medicamentos'))} />
+                            <Checkbox id="municipal-meds" checked={municipalItems.includes('Medicamentos')} onCheckedChange={(checked) => setMunicipalItems(p => checked ? [...p, 'Medicamentos'] : p.filter(i => i !== 'Medicamentos'))} />
                             <Label htmlFor="municipal-meds">Medicamentos</Label>
                         </div>
                          <div className="flex items-center space-x-2">
-                            <Checkbox id="municipal-tech" onCheckedChange={(checked) => setMunicipalItems(p => checked ? [...p, 'Material Técnico'] : p.filter(i => i !== 'Material Técnico'))} />
+                            <Checkbox id="municipal-tech" checked={municipalItems.includes('Material Técnico')} onCheckedChange={(checked) => setMunicipalItems(p => checked ? [...p, 'Material Técnico'] : p.filter(i => i !== 'Material Técnico'))} />
                             <Label htmlFor="municipal-tech">Material Técnico</Label>
                         </div>
                     </div>
                 )}
               </div>
+              <Separator />
+
+                {/* File Upload Section */}
+                <div className="space-y-4">
+                    <Label>Anexar Documentos (Laudos, Receitas, etc.)</Label>
+                    <div className="flex items-center gap-2">
+                        <Input id="file-upload" type="file" className="hidden" onChange={handleFileChange} multiple />
+                        <Button type="button" variant="outline" onClick={() => document.getElementById('file-upload')?.click()}>
+                            <FileUp className="mr-2 h-4 w-4" />
+                            Escolher Arquivos
+                        </Button>
+                    </div>
+                    <div className="space-y-2">
+                        {files.map(file => (
+                            <div key={file.name} className="flex items-center justify-between text-sm p-2 bg-muted rounded-md">
+                                <span>{file.name} (Salvo)</span>
+                            </div>
+                        ))}
+                         {uploadedFiles.map(file => (
+                            <div key={file.name} className="flex items-center justify-between text-sm p-2 bg-muted rounded-md">
+                                <span>{file.name}</span>
+                                <Button type="button" size="icon" variant="ghost" onClick={() => removeFile(file.name)}>
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
             </div>
           </ScrollArea>
           <DialogFooter className="pt-4">
@@ -322,7 +411,7 @@ export function AddPatientDialog() {
              </DialogClose>
             <Button type="submit">
                 <Save className="mr-2 h-4 w-4" />
-                Salvar Paciente
+                {isEditing ? 'Salvar Alterações' : 'Salvar Paciente'}
             </Button>
           </DialogFooter>
         </form>
