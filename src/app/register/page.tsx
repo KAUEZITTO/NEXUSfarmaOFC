@@ -19,9 +19,9 @@ export default function RegisterPage() {
       <div className="flex items-center justify-center py-12">
         <div className="mx-auto grid w-[350px] gap-6">
           <div className="grid gap-2 text-center">
-             <div className="flex justify-center">
+             <Link href="/" className="flex justify-center">
               <Logo />
-            </div>
+            </Link>
             <h1 className="text-3xl font-bold mt-4">Criar Conta</h1>
             <p className="text-balance text-muted-foreground">
               Preencha o formulário para criar sua conta
@@ -30,7 +30,7 @@ export default function RegisterPage() {
           <RegisterForm />
           <div className="mt-4 text-center text-sm">
             Já tem uma conta?{' '}
-            <Link href="/" className="underline">
+            <Link href="/login" className="underline">
               Faça login
             </Link>
           </div>
