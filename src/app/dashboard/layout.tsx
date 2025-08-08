@@ -66,7 +66,7 @@ export default function DashboardLayout({
                   className="flex items-center gap-2 text-lg font-semibold mb-4"
                 >
                   <Logo />
-                  <span className="sr-only">EstoqueLink</span>
+                  <span className="sr-only">NexusFarma</span>
                 </Link>
                 <DashboardNav isMobile={true} />
               </nav>

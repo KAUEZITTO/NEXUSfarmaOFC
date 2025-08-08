@@ -4,8 +4,8 @@ import './globals.css';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: 'EstoqueLink',
-  description: 'Sistema de Gestão de Estoque',
+  title: 'NexusFarma',
+  description: 'Sistema de Gestão de Estoque Farmacêutico',
 };
 
 export default function RootLayout({

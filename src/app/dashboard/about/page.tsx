@@ -13,7 +13,7 @@ export default function AboutPage() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Info className="h-6 w-6" />
-          Sobre o EstoqueLink
+          Sobre o NexusFarma
         </CardTitle>
         <CardDescription>
           Informações sobre o sistema e integrações.
@@ -35,7 +35,7 @@ export default function AboutPage() {
         <div>
           <h2 className="text-lg font-semibold">Versão do Sistema</h2>
           <p className="mt-2 text-muted-foreground">
-            EstoqueLink v1.0.0
+            NexusFarma v1.0.0
           </p>
         </div>
         <div>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -11,9 +10,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Boxes, Printer } from "lucide-react";
+import { Printer } from "lucide-react";
 import { products } from "@/lib/data";
 import { Product } from "@/lib/types";
+import { Logo } from "@/components/logo";
 
 type OrderItem = {
   productId: string;
@@ -72,7 +72,7 @@ const CategoryTitle = ({ children }: { children: React.ReactNode }) => (
 
 const renderItemRows = (items: OrderItem[]) => {
     return items.map((item) => (
-        <TableRow key={item.productId} className="border-b">
+        <TableRow key={item.productId}>
             <TableCell className="font-medium">{item.name}</TableCell>
             <TableCell className="text-center">{item.presentation || "--"}</TableCell>
             <TableCell className="text-center">{item.batch || "--"}</TableCell>
@@ -91,12 +91,8 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
     <div className="max-w-4xl mx-auto p-8 bg-white text-black shadow-lg print:shadow-none">
       <header className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
-          {/* Placeholder for App Logo */}
-          <Boxes className="h-10 w-10 text-blue-600" />
-          <div>
-            <h1 className="text-xl font-bold">EstoqueLink</h1>
-            <p className="text-sm">Termo de Recebimento</p>
-          </div>
+          <Logo />
+          <p className="text-sm -ml-2 mt-1">Termo de Recebimento</p>
         </div>
         <div className="text-right">
             <h2 className="font-bold text-lg">PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU</h2>
@@ -120,7 +116,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      <div className="border-t border-b border-gray-300">
+      <div>
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
