@@ -21,6 +21,7 @@ type OrderItem = {
   quantity: number;
   batch?: string;
   expiryDate?: string;
+  presentation?: string;
 };
 
 type OrderCategory = "medicines" | "technical_material" | "odontological_items" | "laboratory_items";
@@ -35,6 +36,7 @@ const createOrderItem = (productId: string, quantity: number): OrderItem | null 
         quantity: quantity,
         batch: product.batch,
         expiryDate: product.expiryDate ? new Date(product.expiryDate).toLocaleDateString('pt-BR') : undefined,
+        presentation: product.presentation
     };
 }
 
@@ -62,7 +64,7 @@ const orderData = {
 
 const CategoryTitle = ({ children }: { children: React.ReactNode }) => (
   <TableRow className="bg-muted hover:bg-muted">
-    <TableCell colSpan={4} className="font-bold text-md text-muted-foreground tracking-wide uppercase">
+    <TableCell colSpan={5} className="font-bold text-md text-muted-foreground tracking-wide uppercase">
       {children}
     </TableCell>
   </TableRow>
@@ -70,8 +72,9 @@ const CategoryTitle = ({ children }: { children: React.ReactNode }) => (
 
 const renderItemRows = (items: OrderItem[]) => {
     return items.map((item) => (
-        <TableRow key={item.productId}>
+        <TableRow key={item.productId} className="border-b">
             <TableCell className="font-medium">{item.name}</TableCell>
+            <TableCell className="text-center">{item.presentation || "--"}</TableCell>
             <TableCell className="text-center">{item.batch || "--"}</TableCell>
             <TableCell className="text-center">{item.expiryDate || "--"}</TableCell>
             <TableCell className="text-right">{item.quantity}</TableCell>
@@ -117,11 +120,12 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      <div className="border rounded-lg">
+      <div className="border-t border-b border-gray-300">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="w-[55%] font-semibold">Item</TableHead>
+            <TableRow className="bg-muted/50 hover:bg-muted/50">
+              <TableHead className="w-[45%] font-semibold">Item</TableHead>
+              <TableHead className="text-center font-semibold">Apresentação</TableHead>
               <TableHead className="text-center font-semibold">Lote</TableHead>
               <TableHead className="text-center font-semibold">Validade</TableHead>
               <TableHead className="text-right font-semibold">Quantidade</TableHead>
