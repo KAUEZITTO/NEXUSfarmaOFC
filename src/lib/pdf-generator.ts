@@ -39,7 +39,7 @@ const addHeader = (doc: jsPDFWithAutoTable, title: string) => {
 };
 
 const addFooter = (doc: jsPDFWithAutoTable) => {
-    const pageCount = doc.internal.pages.length - 1; 
+    const pageCount = doc.internal.pages.length; 
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     doc.setFontSize(8);
@@ -130,4 +130,30 @@ export const generateCompleteReportPDF = async (
 
   // Return the PDF as a base64 encoded string (data URI)
   return doc.output('datauristring');
+};
+
+export const generateStockReportPDF = async (products: Product[]): Promise<string> => {
+    const doc = new jsPDF() as jsPDFWithAutoTable;
+
+    addHeader(doc, 'Relatório de Estoque Atual');
+
+    const inventoryBody = products.map(p => [
+        p.name,
+        p.category,
+        p.quantity.toString(),
+        p.status,
+        p.expiryDate ? new Date(p.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : 'N/A',
+        p.batch || 'N/A'
+    ]);
+
+    doc.autoTable({
+        startY: 65,
+        head: [['Nome', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote']],
+        body: inventoryBody,
+        theme: 'grid',
+        headStyles: { fillColor: [37, 99, 235] },
+    });
+
+    addFooter(doc);
+    return doc.output('datauristring');
 };

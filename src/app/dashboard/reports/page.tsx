@@ -12,16 +12,25 @@ import { Button } from "@/components/ui/button";
 import { Download, FileText, BarChart2, AlertTriangle, Package, Users, Loader2 } from "lucide-react";
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
 import { getProducts, getAllPatients, getAllDispensations } from "@/lib/actions";
-import { generateCompleteReportPDF } from "@/lib/pdf-generator";
+import { generateCompleteReportPDF, generateStockReportPDF } from "@/lib/pdf-generator";
 import { useEffect, useState } from "react";
 import type { Product, Patient, Dispensation } from "@/lib/types";
+
+type GeneratingState = {
+    complete: boolean;
+    stock: boolean;
+    // Add other report types here
+}
 
 export default function ReportsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [dispensations, setDispensations] = useState<Dispensation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [isGenerating, setIsGenerating] = useState<GeneratingState>({
+    complete: false,
+    stock: false,
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,20 +48,36 @@ export default function ReportsPage() {
     fetchData();
   }, []);
 
-  const handleExport = async () => {
-    setIsGeneratingReport(true);
+  const downloadPdf = (pdfDataUri: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = pdfDataUri;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  const handleExportComplete = async () => {
+    setIsGenerating(prev => ({...prev, complete: true}));
     try {
         const pdfDataUri = await generateCompleteReportPDF(products, patients, dispensations);
-        const link = document.createElement('a');
-        link.href = pdfDataUri;
-        link.download = `nexusfarma_relatorio_completo_${new Date().toISOString().split('T')[0]}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        downloadPdf(pdfDataUri, `nexusfarma_relatorio_completo_${new Date().toISOString().split('T')[0]}.pdf`);
     } catch(e) {
-        console.error("Failed to generate PDF", e);
+        console.error("Failed to generate complete PDF", e);
     } finally {
-        setIsGeneratingReport(false);
+        setIsGenerating(prev => ({...prev, complete: false}));
+    }
+  }
+
+  const handleExportStock = async () => {
+    setIsGenerating(prev => ({...prev, stock: true}));
+    try {
+      const pdfDataUri = await generateStockReportPDF(products);
+      downloadPdf(pdfDataUri, `nexusfarma_relatorio_estoque_${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch(e) {
+      console.error("Failed to generate stock PDF", e);
+    } finally {
+      setIsGenerating(prev => ({...prev, stock: false}));
     }
   }
 
@@ -113,13 +138,13 @@ export default function ReportsPage() {
             Gere e visualize relatórios de dispensação, estoque e mais.
           </p>
         </div>
-        <Button onClick={handleExport} disabled={isGeneratingReport}>
-          {isGeneratingReport ? (
+        <Button onClick={handleExportComplete} disabled={isGenerating.complete}>
+          {isGenerating.complete ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
             <Download className="mr-2 h-4 w-4" />
           )}
-          {isGeneratingReport ? 'Gerando PDF...' : 'Exportar Relatório Completo'}
+          {isGenerating.complete ? 'Gerando...' : 'Exportar Relatório Completo'}
         </Button>
       </div>
 
@@ -181,27 +206,31 @@ export default function ReportsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-          <Button variant="outline" className="justify-start">
+          <Button variant="outline" className="justify-start" disabled>
             <FileText className="mr-2 h-4 w-4" />
             Dispensação por Unidade
           </Button>
-          <Button variant="outline" className="justify-start">
-            <FileText className="mr-2 h-4 w-4" />
+          <Button variant="outline" className="justify-start" onClick={handleExportStock} disabled={isGenerating.stock}>
+             {isGenerating.stock ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+             ) : (
+                <FileText className="mr-2 h-4 w-4" />
+             )}
             Estoque Atual
           </Button>
-           <Button variant="outline" className="justify-start">
+           <Button variant="outline" className="justify-start" disabled>
             <FileText className="mr-2 h-4 w-4" />
             Produtos a Vencer
           </Button>
-          <Button variant="outline" className="justify-start">
+          <Button variant="outline" className="justify-start" disabled>
             <FileText className="mr-2 h-4 w-4" />
             Atendimento de Pacientes
           </Button>
-           <Button variant="outline" className="justify-start">
+           <Button variant="outline" className="justify-start" disabled>
             <FileText className="mr-2 h-4 w-4" />
             Entradas e Saídas
           </Button>
-           <Button variant="outline" className="justify-start">
+           <Button variant="outline" className="justify-start" disabled>
             <FileText className="mr-2 h-4 w-4" />
             Relatório de Lotes
           </Button>
