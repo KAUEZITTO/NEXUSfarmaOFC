@@ -5,6 +5,7 @@ export type Product = {
   quantity: number;
   expiryDate: string;
   status: 'Em Estoque' | 'Baixo Estoque' | 'Sem Estoque';
+  batch?: string;
 };
 
 export type Unit = {

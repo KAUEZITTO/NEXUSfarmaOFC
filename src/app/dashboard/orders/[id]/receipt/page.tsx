@@ -12,6 +12,32 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Boxes, Printer } from "lucide-react";
+import { products } from "@/lib/data";
+import { Product } from "@/lib/types";
+
+type OrderItem = {
+  productId: string;
+  name: string;
+  quantity: number;
+  batch?: string;
+  expiryDate?: string;
+};
+
+type OrderCategory = "medicines" | "technical_material" | "odontological_items" | "laboratory_items";
+
+// Helper function to create order items from product data
+const createOrderItem = (productId: string, quantity: number): OrderItem | null => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return null;
+    return {
+        productId: product.id,
+        name: product.name,
+        quantity: quantity,
+        batch: product.batch,
+        expiryDate: product.expiryDate ? new Date(product.expiryDate).toLocaleDateString('pt-BR') : undefined,
+    };
+}
+
 
 // Mock data for a single order
 const orderData = {
@@ -20,25 +46,39 @@ const orderData = {
   date: "20 de Maio de 2024",
   items: {
     medicines: [
-      { name: "Dipirona 500mg", quantity: 50 },
-      { name: "Paracetamol 750mg", quantity: 100 },
-    ],
+      createOrderItem("PROD001", 50), // Dipirona 500mg
+      createOrderItem("PROD006", 100), // Paracetamol 750mg
+    ].filter(Boolean) as OrderItem[],
     technical_material: [
-      { name: "Seringa 10ml", quantity: 200 },
-      { name: "Luva de Procedimento (M)", quantity: 2 },
-    ],
-    odontological_items: [{ name: "Resina Composta Z350", quantity: 5 }],
+      createOrderItem("PROD002", 200), // Seringa 10ml
+      createOrderItem("PROD003", 2), // Luva de Procedimento (M)
+    ].filter(Boolean) as OrderItem[],
+    odontological_items: [
+        createOrderItem("PROD004", 5) // Resina Composta Z350
+    ].filter(Boolean) as OrderItem[],
     laboratory_items: [],
   },
 };
 
 const CategoryTitle = ({ children }: { children: React.ReactNode }) => (
   <TableRow className="bg-muted hover:bg-muted">
-    <TableCell colSpan={2} className="font-bold text-md text-muted-foreground tracking-wide uppercase">
+    <TableCell colSpan={4} className="font-bold text-md text-muted-foreground tracking-wide uppercase">
       {children}
     </TableCell>
   </TableRow>
 );
+
+const renderItemRows = (items: OrderItem[]) => {
+    return items.map((item) => (
+        <TableRow key={item.productId}>
+            <TableCell className="font-medium">{item.name}</TableCell>
+            <TableCell className="text-center">{item.batch || "--"}</TableCell>
+            <TableCell className="text-center">{item.expiryDate || "--"}</TableCell>
+            <TableCell className="text-right">{item.quantity}</TableCell>
+        </TableRow>
+    ));
+}
+
 
 export default function ReceiptPage({ params }: { params: { id: string } }) {
   // In a real app, you would fetch order data based on params.id
@@ -55,15 +95,10 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
             <p className="text-sm">Termo de Recebimento</p>
           </div>
         </div>
-        <div className="flex items-center gap-4 text-right">
-          <div>
-            {/* Placeholder for CAF Logo */}
-            <p className="font-bold">CAF LOGO</p>
-          </div>
-          <div>
-            {/* Placeholder for Municipality Logo */}
-            <p className="font-bold">MUNICIPALITY LOGO</p>
-          </div>
+        <div className="text-right">
+            <h2 className="font-bold text-lg">PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU</h2>
+            <p className="text-sm">SECRETARIA MUNICIPAL DE SAÚDE</p>
+            <p className="text-sm">FARMÁCIA CENTRAL</p>
         </div>
       </header>
       <Separator className="my-4 bg-gray-400" />
@@ -85,8 +120,10 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-[80%] font-semibold">Item</TableHead>
+            <TableRow className="bg-muted/50">
+              <TableHead className="w-[55%] font-semibold">Item</TableHead>
+              <TableHead className="text-center font-semibold">Lote</TableHead>
+              <TableHead className="text-center font-semibold">Validade</TableHead>
               <TableHead className="text-right font-semibold">Quantidade</TableHead>
             </TableRow>
           </TableHeader>
@@ -94,45 +131,25 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
             {orderData.items.medicines.length > 0 && (
               <>
                 <CategoryTitle>Medicamentos</CategoryTitle>
-                {orderData.items.medicines.map((item, index) => (
-                  <TableRow key={item.name} className={index === orderData.items.medicines.length - 1 ? 'border-b-0' : ''}>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell className="text-right">{item.quantity}</TableCell>
-                  </TableRow>
-                ))}
+                {renderItemRows(orderData.items.medicines)}
               </>
             )}
             {orderData.items.technical_material.length > 0 && (
               <>
                 <CategoryTitle>Material Técnico</CategoryTitle>
-                {orderData.items.technical_material.map((item, index) => (
-                  <TableRow key={item.name} className={index === orderData.items.technical_material.length - 1 ? 'border-b-0' : ''}>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell className="text-right">{item.quantity}</TableCell>
-                  </TableRow>
-                ))}
+                {renderItemRows(orderData.items.technical_material)}
               </>
             )}
             {orderData.items.odontological_items.length > 0 && (
               <>
                 <CategoryTitle>Itens Odontológicos</CategoryTitle>
-                {orderData.items.odontological_items.map((item, index) => (
-                  <TableRow key={item.name} className={index === orderData.items.odontological_items.length - 1 ? 'border-b-0' : ''}>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell className="text-right">{item.quantity}</TableCell>
-                  </TableRow>
-                ))}
+                {renderItemRows(orderData.items.odontological_items)}
               </>
             )}
             {orderData.items.laboratory_items.length > 0 && (
               <>
                 <CategoryTitle>Itens de Laboratório</CategoryTitle>
-                {orderData.items.laboratory_items.map((item, index) => (
-                   <TableRow key={item.name} className={index === orderData.items.laboratory_items.length - 1 ? 'border-b-0' : ''}>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell className="text-right">{item.quantity}</TableCell>
-                  </TableRow>
-                ))}
+                 {renderItemRows(orderData.items.laboratory_items)}
               </>
             )}
           </TableBody>
