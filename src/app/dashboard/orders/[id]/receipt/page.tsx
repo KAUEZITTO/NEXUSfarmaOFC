@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -99,9 +100,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
 
             <div className="flex flex-col items-center justify-center">
                 <Logo />
-                <p className="text-sm mt-1 font-semibold">Termo de Recebimento</p>
-                <p className="text-xs">SECRETARIA MUNICIPAL DE SAÚDE</p>
-                <p className="text-xs font-bold">FARMÁCIA CENTRAL</p>
+                <p className="text-sm mt-1 font-semibold">GUIA DE ENTREGA</p>
             </div>
 
             <div className="flex flex-col items-center justify-center">
