@@ -51,11 +51,11 @@ const addFooter = (doc: jsPDFWithAutoTable) => {
     }
 };
 
-export const generateCompleteReportPDF = (
+export const generateCompleteReportPDF = async (
     products: Product[],
     patients: Patient[],
     dispensations: Dispensation[]
-): string => {
+): Promise<string> => {
   const doc = new jsPDF() as jsPDFWithAutoTable;
 
   // --- Summary Page ---

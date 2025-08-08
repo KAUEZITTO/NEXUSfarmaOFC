@@ -39,10 +39,10 @@ export default function ReportsPage() {
     fetchData();
   }, []);
 
-  const handleExport = () => {
+  const handleExport = async () => {
     setIsGeneratingReport(true);
     try {
-        const pdfDataUri = generateCompleteReportPDF(products, patients, dispensations);
+        const pdfDataUri = await generateCompleteReportPDF(products, patients, dispensations);
         const link = document.createElement('a');
         link.href = pdfDataUri;
         link.download = `nexusfarma_relatorio_completo_${new Date().toISOString().split('T')[0]}.pdf`;
