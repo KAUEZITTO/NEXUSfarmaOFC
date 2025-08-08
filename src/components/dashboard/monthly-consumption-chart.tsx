@@ -1,20 +1,47 @@
+
 "use client"
 
+import { useEffect, useState } from "react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from "recharts"
+import type { Dispensation } from "@/lib/types";
 
-const data = [
-  { month: "Jan", total: Math.floor(Math.random() * 2000) + 500 },
-  { month: "Fev", total: Math.floor(Math.random() * 2000) + 500 },
-  { month: "Mar", total: Math.floor(Math.random() * 2000) + 500 },
-  { month: "Abr", total: Math.floor(Math.random() * 2000) + 500 },
-  { month: "Mai", total: Math.floor(Math.random() * 2000) + 500 },
-  { month: "Jun", total: Math.floor(Math.random() * 2000) + 500 },
-]
+const getChartData = (dispensations: Dispensation[]) => {
+  const data: { month: string; total: number }[] = [];
+  const now = new Date();
 
-export function MonthlyConsumptionChart() {
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const monthName = date.toLocaleString('pt-BR', { month: 'short' }).replace('.', '');
+
+    const monthlyTotal = dispensations
+      .filter(d => {
+        const dDate = new Date(d.date);
+        return dDate.getMonth() === date.getMonth() && dDate.getFullYear() === date.getFullYear();
+      })
+      .reduce((sum, d) => sum + d.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
+
+    data.push({ month: monthName.charAt(0).toUpperCase() + monthName.slice(1), total: monthlyTotal });
+  }
+  
+  return data;
+};
+
+export function MonthlyConsumptionChart({ dispensations }: { dispensations: Dispensation[] }) {
+    const [chartData, setChartData] = useState<{ month: string; total: number }[]>([]);
+
+    useEffect(() => {
+        // Prevent hydration mismatch by calculating on the client
+        setChartData(getChartData(dispensations));
+    }, [dispensations]);
+
+    // Render a placeholder or nothing until client-side calculation is done
+    if (chartData.length === 0) {
+        return <div className="h-[350px] w-full flex items-center justify-center text-muted-foreground">Carregando dados do gráfico...</div>;
+    }
+
   return (
     <ResponsiveContainer width="100%" height={350}>
-      <BarChart data={data}>
+      <BarChart data={chartData}>
         <XAxis
           dataKey="month"
           stroke="#888888"

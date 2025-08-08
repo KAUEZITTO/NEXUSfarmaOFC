@@ -269,6 +269,14 @@ export async function getDispensationsForPatient(patientId: string): Promise<Dis
     return dispensationList;
 }
 
+export async function getAllDispensations(): Promise<Dispensation[]> {
+    const dispensationsCol = collection(db, 'dispensations');
+    const q = query(dispensationsCol, orderBy('date', 'desc'));
+    const dispensationSnapshot = await getDocs(q);
+    const dispensationList = dispensationSnapshot.docs.map(doc => doc.data() as Dispensation);
+    return dispensationList;
+}
+
 export async function getDispensation(dispensationId: string): Promise<Dispensation | null> {
     if (!dispensationId) return null;
     const q = query(collection(db, "dispensations"), where("id", "==", dispensationId));

@@ -1,3 +1,6 @@
+
+'use server';
+
 import {
   Card,
   CardContent,
@@ -8,8 +11,55 @@ import {
 import { Button } from "@/components/ui/button";
 import { Download, FileText, BarChart2, AlertTriangle, Package, Users } from "lucide-react";
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
+import { getProducts, getAllPatients, getAllDispensations } from "@/lib/actions";
 
-export default function ReportsPage() {
+export default async function ReportsPage() {
+
+  const [products, patients, dispensations] = await Promise.all([
+    getProducts(),
+    getAllPatients(),
+    getAllDispensations()
+  ]);
+
+  const now = new Date();
+  const thirtyDaysFromNow = new Date();
+  thirtyDaysFromNow.setDate(now.getDate() + 30);
+
+  const lowStockItems = products.filter(p => p.status === 'Baixo Estoque').length;
+  const expiringSoonItems = products.filter(p => {
+    if (!p.expiryDate) return false;
+    const expiry = new Date(p.expiryDate);
+    return expiry > now && expiry <= thirtyDaysFromNow;
+  }).length;
+  
+  const totalStockAlerts = lowStockItems + expiringSoonItems;
+
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const itemsDispensedThisMonth = dispensations
+    .filter(d => new Date(d.date) >= firstDayOfMonth)
+    .reduce((total, d) => total + d.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
+
+  const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const firstDayOfLastMonth = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1);
+  const lastDayOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+  const itemsDispensedLastMonth = dispensations
+    .filter(d => {
+        const dDate = new Date(d.date);
+        return dDate >= firstDayOfLastMonth && dDate <= lastDayOfLastMonth;
+    })
+    .reduce((total, d) => total + d.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
+  
+  let monthlyChangePercentage = 0;
+  if (itemsDispensedLastMonth > 0) {
+    monthlyChangePercentage = ((itemsDispensedThisMonth - itemsDispensedLastMonth) / itemsDispensedLastMonth) * 100;
+  } else if (itemsDispensedThisMonth > 0) {
+    monthlyChangePercentage = 100;
+  }
+  
+  const judicialPatients = patients.filter(p => p.mandateType === 'Legal' || p.mandateType === 'Municipal').length;
+
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -32,8 +82,10 @@ export default function ReportsPage() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,234</div>
-            <p className="text-xs text-muted-foreground">+5.2% em relação ao mês anterior</p>
+            <div className="text-2xl font-bold">{itemsDispensedThisMonth.toLocaleString('pt-BR')}</div>
+            <p className="text-xs text-muted-foreground">
+                 {monthlyChangePercentage >= 0 ? `+${monthlyChangePercentage.toFixed(1)}%` : `${monthlyChangePercentage.toFixed(1)}%`} em relação ao mês anterior
+            </p>
           </CardContent>
         </Card>
          <Card>
@@ -42,7 +94,7 @@ export default function ReportsPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">89</div>
+            <div className="text-2xl font-bold">{judicialPatients}</div>
             <p className="text-xs text-muted-foreground">Pacientes com mandado judicial/municipal</p>
           </CardContent>
         </Card>
@@ -52,8 +104,8 @@ export default function ReportsPage() {
             <AlertTriangle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">17</div>
-            <p className="text-xs text-muted-foreground">12 baixo estoque, 5 perto do vencimento</p>
+            <div className="text-2xl font-bold">{totalStockAlerts}</div>
+            <p className="text-xs text-muted-foreground">{lowStockItems} baixo estoque, {expiringSoonItems} perto do vencimento</p>
           </CardContent>
         </Card>
       </div>
@@ -69,7 +121,7 @@ export default function ReportsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
-             <MonthlyConsumptionChart />
+             <MonthlyConsumptionChart dispensations={dispensations} />
           </CardContent>
         </Card>
 
