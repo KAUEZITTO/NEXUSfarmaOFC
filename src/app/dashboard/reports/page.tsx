@@ -70,15 +70,27 @@ export default function ReportsPage() {
   }, []);
 
   const openPdfPrintDialog = (pdfDataUri: string) => {
+    const byteCharacters = atob(pdfDataUri.split(',')[1]);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'application/pdf' });
+    const blobUrl = URL.createObjectURL(blob);
+
     const iframe = document.createElement('iframe');
     iframe.style.display = 'none';
-    iframe.src = pdfDataUri;
+    iframe.src = blobUrl;
     document.body.appendChild(iframe);
     iframe.onload = () => {
         setTimeout(() => {
-            iframe.contentWindow?.focus();
-            iframe.contentWindow?.print();
+            if (iframe.contentWindow) {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            }
             document.body.removeChild(iframe);
+            URL.revokeObjectURL(blobUrl);
         }, 1);
     };
   }
@@ -352,5 +364,7 @@ export default function ReportsPage() {
     </div>
   );
 }
+
+    
 
     

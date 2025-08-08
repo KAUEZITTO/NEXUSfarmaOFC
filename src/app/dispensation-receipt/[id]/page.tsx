@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useEffect, useState } from "react";
@@ -11,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Printer, ArrowLeft } from "lucide-react";
+import { Printer, ArrowLeft, Loader2 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -137,6 +138,7 @@ export default function DispensationReceiptPage({ params }: { params: { id: stri
   const router = useRouter();
   const [dispensationData, setDispensationData] = useState<Dispensation | null>(null);
   const [isNew, setIsNew] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -148,10 +150,12 @@ export default function DispensationReceiptPage({ params }: { params: { id: stri
     }
     
     async function fetchDispensation() {
+        setLoading(true);
         const data = await getDispensation(params.id);
         if (data) {
             setDispensationData(data);
         }
+        setLoading(false);
     }
     fetchDispensation();
   }, [params.id, router]);
@@ -164,10 +168,19 @@ export default function DispensationReceiptPage({ params }: { params: { id: stri
   }, [dispensationData, isNew]);
 
 
-  if (!dispensationData) {
+  if (loading) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
-            <p>Carregando recibo...</p>
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <p className="ml-4">Carregando recibo...</p>
+        </div>
+    );
+  }
+
+  if (!dispensationData) {
+      return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <p>Recibo não encontrado.</p>
         </div>
     );
   }
@@ -192,3 +205,5 @@ export default function DispensationReceiptPage({ params }: { params: { id: stri
     </>
   );
 }
+
+    

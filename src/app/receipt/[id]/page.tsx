@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useEffect, useState } from "react";
@@ -11,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Printer, ArrowLeft } from "lucide-react";
+import { Printer, ArrowLeft, Loader2 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import Image from "next/image";
 import { useRouter } from 'next/navigation';
@@ -128,11 +129,14 @@ const ReceiptCopy = ({ order, showSignature, isFirstCopy }: { order: Order, show
 export default function ReceiptPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [orderData, setOrderData] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchOrderData() {
+        setLoading(true);
         const order = await getOrder(params.id);
         setOrderData(order);
+        setLoading(false);
     }
     if (params.id) {
         fetchOrderData();
@@ -140,10 +144,19 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
   }, [params.id]);
 
 
-  if (!orderData) {
+  if (loading) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
-            <p>Carregando recibo...</p>
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <p className="ml-4">Carregando recibo...</p>
+        </div>
+    );
+  }
+
+  if (!orderData) {
+      return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <p>Recibo não encontrado.</p>
         </div>
     );
   }
@@ -168,3 +181,5 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
     </>
   );
 }
+
+    
