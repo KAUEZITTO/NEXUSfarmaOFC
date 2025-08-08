@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Building, Info, LifeBuoy } from "lucide-react";
+import { Building, Info, LifeBuoy, Lightbulb } from "lucide-react";
 
 export default function AboutPage() {
   return (
@@ -44,6 +44,16 @@ export default function AboutPage() {
             </h2>
           <p className="mt-2 text-muted-foreground">
             Para suporte técnico ou dúvidas, entre em contato através do e-mail: <a href="mailto:nexus.help@gmail.com" className="text-primary hover:underline">nexus.help@gmail.com</a>.
+          </p>
+        </div>
+         <div>
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Lightbulb className="h-5 w-5 text-primary" />
+            Sugestões Futuras
+          </h2>
+          <p className="mt-2 text-muted-foreground">
+            Tem ideias para melhorar o NexusFarma? Envie suas sugestões para
+            o mesmo e-mail do suporte. Estamos sempre abertos a novas propostas para evoluir o sistema!
           </p>
         </div>
       </CardContent>
