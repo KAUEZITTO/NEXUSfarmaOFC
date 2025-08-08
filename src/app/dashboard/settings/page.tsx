@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -11,20 +12,65 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Save, User, Lock } from "lucide-react";
+import { Loader2, Save, User, Lock } from "lucide-react";
+import { useToast } from '@/hooks/use-toast';
+import { getAuth, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 export default function SettingsPage() {
-
-    const handlePasswordChange = (e: React.FormEvent) => {
+    const { toast } = useToast();
+    const [isSavingPassword, setIsSavingPassword] = useState(false);
+    
+    const handlePasswordChange = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        // In a real app, you would dispatch a server action here to change the password
-        alert("Funcionalidade de alteração de senha não implementada neste protótipo.");
+        setIsSavingPassword(true);
+
+        const formData = new FormData(e.currentTarget);
+        const currentPassword = formData.get('current-password') as string;
+        const newPassword = formData.get('new-password') as string;
+        const confirmPassword = formData.get('confirm-password') as string;
+        
+        if (newPassword !== confirmPassword) {
+            toast({ variant: 'destructive', title: 'Erro', description: 'As novas senhas não coincidem.' });
+            setIsSavingPassword(false);
+            return;
+        }
+
+        const user = auth.currentUser;
+        if (!user || !user.email) {
+            toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não encontrado. Por favor, faça login novamente.' });
+            setIsSavingPassword(false);
+            return;
+        }
+
+        const credential = EmailAuthProvider.credential(user.email, currentPassword);
+
+        try {
+            await reauthenticateWithCredential(user, credential);
+            await updatePassword(user, newPassword);
+            toast({ title: 'Sucesso!', description: 'Sua senha foi alterada com sucesso.' });
+            (e.target as HTMLFormElement).reset();
+        } catch (error: any) {
+            console.error("Password change error:", error.code);
+            if (error.code === 'auth/wrong-password') {
+                toast({ variant: 'destructive', title: 'Erro', description: 'A senha atual está incorreta.' });
+            } else if (error.code === 'auth/weak-password') {
+                toast({ variant: 'destructive', title: 'Erro', description: 'A nova senha deve ter pelo menos 6 caracteres.' });
+            } else {
+                 toast({ variant: 'destructive', title: 'Erro', description: 'Ocorreu um erro ao alterar a senha.' });
+            }
+        } finally {
+            setIsSavingPassword(false);
+        }
     }
 
     const handleProfileUpdate = (e: React.FormEvent) => {
         e.preventDefault();
          // In a real app, you would dispatch a server action here to update the profile
-        alert("Funcionalidade de atualização de perfil não implementada neste protótipo.");
+        toast({
+            title: 'Funcionalidade em Desenvolvimento',
+            description: 'A atualização do perfil ainda não foi implementada neste protótipo.',
+        });
     }
 
   return (
@@ -76,19 +122,23 @@ export default function SettingsPage() {
           <form onSubmit={handlePasswordChange} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="current-password">Senha Atual</Label>
-              <Input id="current-password" type="password" placeholder="••••••••" />
+              <Input id="current-password" name="current-password" type="password" placeholder="••••••••" required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="new-password">Nova Senha</Label>
-              <Input id="new-password" type="password" placeholder="••••••••" />
+              <Input id="new-password" name="new-password" type="password" placeholder="••••••••" required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirm-password">Confirmar Nova Senha</Label>
-              <Input id="confirm-password" type="password" placeholder="••••••••" />
+              <Input id="confirm-password" name="confirm-password" type="password" placeholder="••••••••" required />
             </div>
-            <Button type="submit">
-                <Save className="mr-2 h-4 w-4" />
-                Alterar Senha
+            <Button type="submit" disabled={isSavingPassword}>
+                {isSavingPassword ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                )}
+                {isSavingPassword ? 'Alterando...' : 'Alterar Senha'}
             </Button>
           </form>
         </CardContent>
