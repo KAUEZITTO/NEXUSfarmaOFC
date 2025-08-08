@@ -15,6 +15,8 @@ import { products } from "@/lib/data";
 import { Product } from "@/lib/types";
 import { Logo } from "@/components/logo";
 import Image from "next/image";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 type OrderItem = {
   productId: string;
@@ -82,7 +84,7 @@ const renderItemRows = (items: OrderItem[]) => {
 }
 
 const ReceiptCopy = ({ showSignature, isFirstCopy }: { showSignature: boolean, isFirstCopy: boolean }) => (
-  <div className={`max-w-4xl mx-auto bg-white text-black ${!isFirstCopy ? 'shadow-lg print:shadow-none' : 'shadow-lg print:shadow-none page-break-after'}`}>
+  <div className={`max-w-4xl mx-auto bg-white text-black my-8 print:my-0 ${isFirstCopy ? 'shadow-lg print:shadow-none page-break-after' : 'shadow-lg print:shadow-none'}`}>
     <div className="p-8">
       <header className="mb-4">
         <div className="grid grid-cols-3 items-center text-center border-b pb-4 border-gray-400">
@@ -185,7 +187,13 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
         <ReceiptCopy showSignature={false} isFirstCopy={false} />
       </div>
 
-      <div className="fixed bottom-4 right-4 print:hidden">
+      <div className="fixed bottom-4 right-4 flex gap-2 print:hidden">
+          <Button variant="outline" asChild>
+            <Link href="/dashboard/orders">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar
+            </Link>
+          </Button>
           <Button onClick={() => window.print()}>
             <Printer className="mr-2 h-4 w-4" />
             Imprimir

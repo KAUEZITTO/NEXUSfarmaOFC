@@ -79,7 +79,7 @@ export const columns: ColumnDef<Order>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
             <DropdownMenuItem asChild>
-                <Link href={`/dashboard/orders/${order.id}/receipt`} className="w-full h-full flex items-center">
+                <Link href={`/receipt/${order.id}`} target="_blank" className="w-full h-full flex items-center">
                     <Eye className="mr-2 h-4 w-4" />
                     Visualizar Recibo
                 </Link>
