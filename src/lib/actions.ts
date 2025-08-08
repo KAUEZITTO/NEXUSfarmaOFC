@@ -322,9 +322,11 @@ export async function addOrder(orderData: Omit<Order, 'id' | 'status' | 'sentDat
 
 export async function getOrdersForUnit(unitId: string): Promise<Order[]> {
     const ordersCol = collection(db, 'orders');
-    const q = query(ordersCol, where('unitId', '==', unitId), orderBy('sentDate', 'desc'));
+    const q = query(ordersCol, where('unitId', '==', unitId));
     const orderSnapshot = await getDocs(q);
     const orderList = orderSnapshot.docs.map(doc => doc.data() as Order);
+    // Sort in-memory after fetching
+    orderList.sort((a, b) => new Date(b.sentDate).getTime() - new Date(a.sentDate).getTime());
     return orderList;
 }
 
