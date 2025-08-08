@@ -93,7 +93,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
        <header className="mb-4">
         <div className="grid grid-cols-3 items-center text-center border-b pb-4 border-gray-400">
             <div className="flex flex-col items-center justify-center">
-                <Image src="https://placehold.co/80x80.png" alt="Logo Prefeitura" width={50} height={50} data-ai-hint="city hall government" />
+                <Image src="/SMS-PREF.png" alt="Logo Prefeitura" width={80} height={80} data-ai-hint="city hall government" />
                 <p className="text-xs font-bold mt-1 max-w-40">PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU</p>
             </div>
 
@@ -105,7 +105,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
             </div>
 
             <div className="flex flex-col items-center justify-center">
-                 <Image src="https://placehold.co/80x80.png" alt="Logo Café de Igarapé Açu" width={50} height={50} data-ai-hint="coffee beans" />
+                 <Image src="/CAF.png" alt="Logo Café de Igarapé Açu" width={80} height={80} data-ai-hint="coffee beans" />
                  <p className="text-xs font-bold mt-1">CAFÉ DE IGARAPÉ-AÇU</p>
             </div>
         </div>
