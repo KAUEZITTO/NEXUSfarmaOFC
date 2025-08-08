@@ -17,7 +17,7 @@ export default function UnitsPage() {
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>Unidades de Destino</CardTitle>
+            <CardTitle>Unidades</CardTitle>
             <CardDescription>
               Cadastre e gerencie as unidades que recebem os produtos.
             </CardDescription>

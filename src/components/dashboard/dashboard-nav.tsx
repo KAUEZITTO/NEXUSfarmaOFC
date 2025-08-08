@@ -19,7 +19,7 @@ const navItems = [
   { href: '/dashboard/orders', icon: ShoppingCart, label: 'Pedidos', badge: 6 },
   { href: '/dashboard/inventory', icon: Package, label: 'Inventário' },
   { href: '/dashboard/patients', icon: Users, label: 'Pacientes' },
-  { href: '/dashboard/units', icon: Building2, label: 'Unidades de Destino' },
+  { href: '/dashboard/units', icon: Building2, label: 'Unidades' },
   { href: '/dashboard/reports', icon: BarChart2, label: 'Relatórios' },
   { href: '/dashboard/about', icon: Info, label: 'Sobre' },
 ];
@@ -30,7 +30,7 @@ export function DashboardNav({ isMobile = false }: { isMobile?: boolean }) {
     cn(
       'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
       {
-        'bg-muted text-primary': pathname === href,
+        'bg-muted text-primary': pathname.startsWith(href) && href !== '/dashboard' || pathname === href,
         'justify-center text-lg': isMobile,
       }
     );
