@@ -7,14 +7,60 @@ import { db } from './firebase';
 import { collection, getDocs, addDoc, updateDoc, doc, query, where, getDoc, writeBatch, documentId, Timestamp, orderBy } from 'firebase/firestore';
 import type { Product, Unit, Patient, PatientStatus, Order, Dispensation, OrderItem, DispensationItem } from './types';
 import { revalidatePath } from 'next/cache';
+import { adminAuth } from './firebase-admin';
+
+// ACTIVITY LOGGING
+type ActivityLog = {
+    user: string; // User's email or ID
+    action: string;
+    details: string;
+    timestamp: Date;
+}
+
+async function getCurrentUser() {
+    const sessionCookie = cookies().get('session')?.value;
+    if (!sessionCookie) return null;
+
+    try {
+        const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
+        return {
+            email: decodedToken.email || 'N/A',
+            uid: decodedToken.uid,
+        }
+    } catch (error) {
+        console.error("Error verifying session cookie:", error);
+        return null;
+    }
+}
+
+async function logActivity(action: string, details: string) {
+    try {
+        const user = await getCurrentUser();
+        const logEntry: ActivityLog = {
+            user: user?.email || 'Sistema',
+            action,
+            details,
+            timestamp: new Date(),
+        };
+        await addDoc(collection(db, 'logs'), logEntry);
+    } catch (error) {
+        console.error("Failed to log activity:", error);
+        // We don't throw an error here because logging should not block the main operation.
+    }
+}
+
 
 // AUTH ACTIONS
 export async function createSessionCookie(token: string) {
-    cookies().set('session', token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 });
+    const sevenDaysInSeconds = 60 * 60 * 24 * 7;
+    cookies().set('session', token, { httpOnly: true, path: '/', maxAge: sevenDaysInSeconds });
+    await logActivity('Login', `Usuário fez login.`);
     redirect('/dashboard');
 }
 
 export async function logout() {
+  const user = await getCurrentUser();
+  await logActivity('Logout', `Usuário ${user?.email} saiu.`);
   cookies().delete('session');
   redirect('/');
 }
@@ -33,7 +79,8 @@ export async function addProduct(product: Omit<Product, 'id' | 'status'>) {
         ...product,
         status: product.quantity > 0 ? (product.quantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque',
     }
-    await addDoc(collection(db, 'products'), newProductData);
+    const docRef = await addDoc(collection(db, 'products'), newProductData);
+    await logActivity('Produto Adicionado', `Novo produto "${product.name}" (ID: ${docRef.id}) foi adicionado com quantidade ${product.quantity}.`);
     revalidatePath('/dashboard/inventory');
 }
 
@@ -50,6 +97,7 @@ export async function updateProduct(productId: string, productData: Partial<Prod
     }
 
     await updateDoc(productRef, updatedData);
+    await logActivity('Produto Atualizado', `Produto "${productData.name}" (ID: ${productId}) foi atualizado.`);
     revalidatePath('/dashboard/inventory');
 }
 
@@ -72,7 +120,8 @@ export async function getUnit(unitId: string): Promise<Unit | null> {
 
 
 export async function addUnit(unit: Omit<Unit, 'id'>) {
-    await addDoc(collection(db, 'units'), unit);
+    const docRef = await addDoc(collection(db, 'units'), unit);
+    await logActivity('Unidade Adicionada', `Nova unidade "${unit.name}" (ID: ${docRef.id}) foi adicionada.`);
     revalidatePath('/dashboard/units');
     revalidatePath('/dashboard/orders');
     revalidatePath('/dashboard/orders/new');
@@ -85,6 +134,7 @@ export async function updateUnit(unitId: string, unitData: Partial<Unit>) {
     }
     const unitRef = doc(db, 'units', unitId);
     await updateDoc(unitRef, unitData);
+    await logActivity('Unidade Atualizada', `Unidade "${unitData.name}" (ID: ${unitId}) foi atualizada.`);
     revalidatePath('/dashboard/units');
     revalidatePath('/dashboard/orders');
     revalidatePath('/dashboard/orders/new');
@@ -126,8 +176,10 @@ export async function addPatient(patient: Omit<Patient, 'id'>) {
         status: 'Ativo' as PatientStatus,
         ...patient,
     }
-    const newPatientRef = doc(collection(db, 'patients'));
-    await addDoc(collection(db, 'patients'), { ...patientWithStatus, id: newPatientRef.id});
+    const newPatientRef = await addDoc(collection(db, 'patients'), patientWithStatus);
+    await updateDoc(newPatientRef, { id: newPatientRef.id });
+
+    await logActivity('Paciente Adicionado', `Novo paciente "${patient.name}" (ID: ${newPatientRef.id}) foi cadastrado.`);
     revalidatePath('/dashboard/patients');
 }
 
@@ -137,6 +189,7 @@ export async function updatePatient(patientId: string, patientData: Partial<Pati
     }
     const patientRef = doc(db, 'patients', patientId);
     await updateDoc(patientRef, patientData);
+    await logActivity('Paciente Atualizado', `Paciente "${patientData.name}" (ID: ${patientId}) foi atualizado.`);
     revalidatePath('/dashboard/patients');
     revalidatePath(`/dashboard/patients/${patientId}`);
 }
@@ -146,7 +199,10 @@ export async function updatePatientStatus(patientId: string, status: PatientStat
     throw new Error("Patient ID is required for updating status.");
   }
   const patientRef = doc(db, 'patients', patientId);
+  const patientSnap = await getDoc(patientRef);
+  const patientName = patientSnap.data()?.name || 'Desconhecido';
   await updateDoc(patientRef, { status });
+  await logActivity('Status do Paciente Alterado', `Status do paciente "${patientName}" (ID: ${patientId}) foi alterado para "${status}".`);
   revalidatePath('/dashboard/patients');
 }
 
@@ -158,27 +214,29 @@ async function updateStock(items: (OrderItem[] | DispensationItem[])) {
     const productIds = items.map(item => item.productId);
     if (productIds.length === 0) return;
 
-    const productsQuery = query(collection(db, 'products'), where(documentId(), 'in', productIds));
+    // Fetch only the products that are part of the order/dispensation
+    const productsRef = collection(db, 'products');
+    const productsQuery = query(productsRef, where(documentId(), 'in', productIds));
     const productSnapshots = await getDocs(productsQuery);
-
-    const productUpdates = new Map<string, number>();
-
-    productSnapshots.forEach(docSnap => {
-        const product = { id: docSnap.id, ...docSnap.data() } as Product;
-        const orderItem = items.find(item => item.productId === product.id);
-        if (orderItem) {
-            const newQuantity = product.quantity - orderItem.quantity;
-            if (newQuantity < 0) {
-                throw new Error(`Estoque insuficiente para o produto ${product.name}`);
-            }
-            productUpdates.set(product.id, newQuantity);
-        }
+    
+    const productMap = new Map<string, Product>();
+    productSnapshots.forEach(doc => {
+        productMap.set(doc.id, { id: doc.id, ...doc.data() } as Product);
     });
 
-    for (const [productId, newQuantity] of productUpdates.entries()) {
-        const productRef = doc(db, 'products', productId);
-        const newStatus = newQuantity > 0 ? (newQuantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque';
-        batch.update(productRef, { quantity: newQuantity, status: newStatus });
+    for (const item of items) {
+        const product = productMap.get(item.productId);
+        if (product) {
+            const newQuantity = product.quantity - item.quantity;
+            if (newQuantity < 0) {
+                throw new Error(`Estoque insuficiente para o produto ${product.name}. Apenas ${product.quantity} disponíveis.`);
+            }
+            const productRef = doc(db, 'products', item.productId);
+            const newStatus = newQuantity > 0 ? (newQuantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque';
+            batch.update(productRef, { quantity: newQuantity, status: newStatus });
+        } else {
+            throw new Error(`Produto com ID ${item.productId} não encontrado.`);
+        }
     }
 
     await batch.commit();
@@ -202,7 +260,8 @@ export async function addOrder(orderData: Omit<Order, 'id' | 'status' | 'sentDat
   await addDoc(collection(db, 'orders'), newOrder);
   await updateDoc(newOrderRef, { id: newOrderRef.id });
 
-  // 3. Revalidate paths
+  // 3. Log and Revalidate
+  await logActivity('Remessa Criada', `Nova remessa (ID: ${newOrder.id}) com ${newOrder.itemCount} itens foi criada para a unidade "${newOrder.unitName}".`);
   revalidatePath('/dashboard/orders');
   revalidatePath('/dashboard/inventory');
   revalidatePath('/dashboard');
@@ -254,7 +313,9 @@ export async function addDispensation(dispensationData: Omit<Dispensation, 'id' 
     await addDoc(collection(db, 'dispensations'), newDispensation);
     await updateDoc(newDispensationRef, { id: newDispensationRef.id });
 
-    // 3. Revalidate paths
+    // 3. Log and Revalidate
+    const totalItems = dispensationData.items.reduce((sum, item) => sum + item.quantity, 0);
+    await logActivity('Dispensação Registrada', `Nova dispensação (ID: ${newDispensation.id}) com ${totalItems} itens foi registrada para o paciente "${dispensationData.patient.name}".`);
     revalidatePath(`/dashboard/patients/${dispensationData.patientId}`);
     revalidatePath('/dashboard/inventory');
     revalidatePath('/dashboard');
