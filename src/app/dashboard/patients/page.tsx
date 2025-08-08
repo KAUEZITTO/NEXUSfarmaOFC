@@ -1,3 +1,6 @@
+
+'use client';
+
 import { patients } from "@/lib/data";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
@@ -10,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { AttendPatientDialog } from "@/components/dashboard/attend-patient-dialog";
 
 export default function PatientsPage() {
   return (
@@ -23,10 +27,7 @@ export default function PatientsPage() {
             </CardDescription>
           </div>
           <div className="flex gap-2">
-            <Button>
-              <UserCheck className="mr-2 h-4 w-4" />
-              Atender Paciente
-            </Button>
+            <AttendPatientDialog />
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
               Adicionar Paciente
