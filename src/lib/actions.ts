@@ -1,10 +1,12 @@
+
 'use server';
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { db } from './firebase';
 import { collection, getDocs, addDoc, updateDoc, doc, query, where } from 'firebase/firestore';
-import type { Product } from './types';
+import type { Product, Unit } from './types';
+import { revalidatePath } from 'next/cache';
 
 // AUTH ACTIONS
 export async function createSessionCookie(token: string) {
@@ -32,6 +34,7 @@ export async function addProduct(product: Omit<Product, 'id' | 'status'>) {
         status: product.quantity > 0 ? (product.quantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque',
     }
     await addDoc(collection(db, 'products'), newProductData);
+    revalidatePath('/dashboard/inventory');
 }
 
 export async function updateProduct(productId: string, productData: Partial<Product>) {
@@ -47,4 +50,34 @@ export async function updateProduct(productId: string, productData: Partial<Prod
     }
 
     await updateDoc(productRef, updatedData);
+    revalidatePath('/dashboard/inventory');
+}
+
+// FIRESTORE ACTIONS - UNITS
+
+export async function getUnits(): Promise<Unit[]> {
+    const unitsCol = collection(db, 'units');
+    const unitSnapshot = await getDocs(unitsCol);
+    const unitList = unitSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Unit));
+    return unitList;
+}
+
+export async function addUnit(unit: Omit<Unit, 'id'>) {
+    await addDoc(collection(db, 'units'), unit);
+    revalidatePath('/dashboard/units');
+    revalidatePath('/dashboard/orders');
+    revalidatePath('/dashboard/orders/new');
+    revalidatePath('/dashboard/patients');
+}
+
+export async function updateUnit(unitId: string, unitData: Partial<Unit>) {
+    if (!unitId) {
+        throw new Error("Unit ID is required for updating.");
+    }
+    const unitRef = doc(db, 'units', unitId);
+    await updateDoc(unitRef, unitData);
+    revalidatePath('/dashboard/units');
+    revalidatePath('/dashboard/orders');
+    revalidatePath('/dashboard/orders/new');
+    revalidatePath('/dashboard/patients');
 }

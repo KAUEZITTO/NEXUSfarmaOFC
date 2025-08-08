@@ -15,6 +15,7 @@ export type Product = {
 export type Unit = {
   id: string;
   name: string;
+  type: string;
   address: string;
   coordinatorName?: string;
   hasDentalOffice?: boolean;

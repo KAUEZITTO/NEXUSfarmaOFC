@@ -26,10 +26,10 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PlusCircle, Save, Trash2, FileUp, X, Loader2 } from 'lucide-react';
-import { units } from '@/lib/data';
+import { getUnits } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { patients } from '@/lib/data';
-import type { Patient, Dosage, PatientFile } from '@/lib/types';
+import type { Patient, Dosage, PatientFile, Unit } from '@/lib/types';
 import { Separator } from '../ui/separator';
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -116,7 +116,18 @@ export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogPro
 
   const [files, setFiles] = useState<PatientFile[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
 
+
+  useEffect(() => {
+    async function loadUnits() {
+        if (isOpen) {
+            const fetchedUnits = await getUnits();
+            setUnits(fetchedUnits);
+        }
+    }
+    loadUnits();
+  }, [isOpen]);
 
   useEffect(() => {
     if (patientToEdit && isOpen) {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -20,11 +21,13 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { X, PlusCircle, Save, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import { products } from '@/lib/data';
-import { units } from '@/lib/data';
+import { useState, useEffect } from 'react';
+import { products as mockProducts } from '@/lib/data';
+import { getUnits, getProducts } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import type { Unit, Product } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type RemessaItem = {
   id: string;
@@ -39,6 +42,23 @@ export default function NewOrderPage() {
     { id: `item-${Date.now()}`, productId: '', quantity: 1 },
   ]);
   const [destinationUnit, setDestinationUnit] = useState('');
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      const [fetchedUnits, fetchedProducts] = await Promise.all([
+        getUnits(),
+        getProducts()
+      ]);
+      setUnits(fetchedUnits);
+      setProducts(fetchedProducts);
+      setLoading(false);
+    }
+    loadData();
+  }, []);
 
   const handleAddItem = () => {
     setItems([...items, { id: `item-${Date.now()}`, productId: '', quantity: 1 }]);
@@ -72,7 +92,7 @@ export default function NewOrderPage() {
       return;
     }
 
-    // Mock save logic
+    // Mock save logic - TODO: Convert to server action to save to Firestore
     console.log('Salvando Remessa:', { destinationUnit, items });
     toast({
         title: 'Remessa Salva!',
@@ -84,6 +104,35 @@ export default function NewOrderPage() {
   const handleDiscard = () => {
     router.back();
   };
+
+  if (loading) {
+    return (
+        <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+            <div className="mx-auto grid max-w-5xl flex-1 auto-rows-max gap-4">
+                 <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
+                    Criar Nova Remessa
+                 </h1>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Detalhes da Remessa</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-10 w-full" />
+                    </CardContent>
+                 </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Itens da Remessa</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-10 w-full mb-4" />
+                        <Skeleton className="h-10 w-full" />
+                    </CardContent>
+                 </Card>
+            </div>
+        </div>
+    )
+  }
 
   return (
     <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">

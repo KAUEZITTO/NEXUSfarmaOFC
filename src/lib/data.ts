@@ -2,13 +2,7 @@ import type { Product, Order, Patient, Unit, Dispensation } from './types';
 
 export const products: Product[] = []; // This will now be fetched from Firestore
 
-export const units: Unit[] = [
-  { id: 'UNIT001', name: 'UBS Centro', address: 'Rua Principal, 123', coordinatorName: 'Maria Silva', hasDentalOffice: true, hasPharmacy: true },
-  { id: 'UNIT002', name: 'Hospital Municipal', address: 'Av. da Saúde, 456', coordinatorName: 'Carlos Andrade', hasDentalOffice: false, hasPharmacy: true },
-  { id: 'UNIT003', name: 'Laboratório Central', address: 'Rua das Análises, 789', coordinatorName: 'Ana Lima', hasDentalOffice: false, hasPharmacy: false },
-  { id: 'UNIT004', name: 'CEO - Centro de Especialidades Odontológicas', address: 'Av. dos Dentistas, 101', coordinatorName: 'Dr. João Gomes', hasDentalOffice: true, hasPharmacy: false },
-  { id: 'UNIT005', name: 'UBS Bairro Novo', address: 'Rua Projetada, 321', coordinatorName: 'Fernanda Costa', hasDentalOffice: true, hasPharmacy: true },
-];
+export const units: Unit[] = []; // This will now be fetched from Firestore
 
 export const patients: Patient[] = [
     { id: 'PAT001', name: 'João da Silva', cpf: '111.222.333-44', cns: '898 0010 7777 6666', mandateType: 'Legal', unitName: 'UBS Centro', status: 'Ativo' },

@@ -1,5 +1,8 @@
+
+'use client';
+
 import Link from "next/link";
-import { units } from "@/lib/data";
+import { getUnits } from "@/lib/actions";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
@@ -11,8 +14,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import type { Unit } from "@/lib/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function OrdersPage() {
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadUnits() {
+      setLoading(true);
+      const fetchedUnits = await getUnits();
+      setUnits(fetchedUnits);
+      setLoading(false);
+    }
+    loadUnits();
+  }, []);
+
   return (
     <Card>
       <CardHeader>
@@ -32,7 +51,15 @@ export default function OrdersPage() {
         </div>
       </CardHeader>
       <CardContent>
-        <DataTable columns={columns} data={units} filterColumn="name" />
+         {loading ? (
+             <div className="space-y-2">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+            </div>
+        ) : (
+          <DataTable columns={columns} data={units} filterColumn="name" />
+        )}
       </CardContent>
     </Card>
   );

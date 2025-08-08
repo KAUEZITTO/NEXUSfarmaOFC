@@ -15,19 +15,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Save } from 'lucide-react';
+import { Save, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { units } from '@/lib/data';
+import { addUnit, updateUnit } from '@/lib/actions';
 import type { Unit } from '@/lib/types';
 
 type AddUnitDialogProps = {
   trigger: React.ReactNode;
   unitToEdit?: Unit;
+  onUnitSaved?: () => void;
 };
 
-export function AddUnitDialog({ trigger, unitToEdit }: AddUnitDialogProps) {
+export function AddUnitDialog({ trigger, unitToEdit, onUnitSaved }: AddUnitDialogProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const isEditing = !!unitToEdit;
 
   // Form state
@@ -37,6 +39,14 @@ export function AddUnitDialog({ trigger, unitToEdit }: AddUnitDialogProps) {
   const [hasDentalOffice, setHasDentalOffice] = useState(false);
   const [hasPharmacy, setHasPharmacy] = useState(false);
 
+  const resetForm = () => {
+    setName('');
+    setAddress('');
+    setCoordinatorName('');
+    setHasDentalOffice(false);
+    setHasPharmacy(false);
+  }
+
   useEffect(() => {
     if (unitToEdit && isOpen) {
         setName(unitToEdit.name || '');
@@ -45,16 +55,11 @@ export function AddUnitDialog({ trigger, unitToEdit }: AddUnitDialogProps) {
         setHasDentalOffice(unitToEdit.hasDentalOffice || false);
         setHasPharmacy(unitToEdit.hasPharmacy || false);
     } else {
-        // Reset form when opening to add a new one
-        setName('');
-        setAddress('');
-        setCoordinatorName('');
-        setHasDentalOffice(false);
-        setHasPharmacy(false);
+        resetForm();
     }
   }, [unitToEdit, isOpen]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name || !address) {
       toast({
         variant: 'destructive',
@@ -63,34 +68,50 @@ export function AddUnitDialog({ trigger, unitToEdit }: AddUnitDialogProps) {
       });
       return;
     }
+    setIsSaving(true);
 
-    const newOrUpdatedUnit: Unit = {
-      id: isEditing ? unitToEdit.id : `UNIT-${Date.now()}`,
-      name,
-      address,
-      coordinatorName,
-      hasDentalOffice,
-      hasPharmacy,
-    };
-
-    if (isEditing) {
-        const index = units.findIndex(u => u.id === unitToEdit.id);
-        if (index !== -1) {
-            units[index] = newOrUpdatedUnit;
+    try {
+        if (isEditing && unitToEdit) {
+            await updateUnit(unitToEdit.id, {
+                name,
+                address,
+                coordinatorName,
+                hasDentalOffice,
+                hasPharmacy,
+            });
+            toast({
+              title: 'Unidade Atualizada!',
+              description: `A unidade ${name} foi atualizada com sucesso.`,
+            });
+        } else {
+            await addUnit({
+                name,
+                address,
+                coordinatorName,
+                hasDentalOffice,
+                hasPharmacy,
+                type: 'UBS' // default type for new units
+            });
+            toast({
+              title: 'Unidade Adicionada!',
+              description: `A unidade ${name} foi adicionada com sucesso.`,
+            });
         }
-        toast({
-          title: 'Unidade Atualizada!',
-          description: `A unidade ${name} foi atualizada com sucesso.`,
-        });
-    } else {
-        units.unshift(newOrUpdatedUnit);
-        toast({
-          title: 'Unidade Adicionada!',
-          description: `A unidade ${name} foi adicionada com sucesso.`,
-        });
-    }
 
-    setIsOpen(false);
+        onUnitSaved?.();
+        setIsOpen(false);
+        resetForm();
+
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Erro ao salvar',
+            description: 'Ocorreu um erro ao salvar a unidade. Tente novamente.',
+        });
+        console.error("Failed to save unit:", error);
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   return (
@@ -124,13 +145,13 @@ export function AddUnitDialog({ trigger, unitToEdit }: AddUnitDialogProps) {
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button type="button" variant="outline">
+            <Button type="button" variant="outline" disabled={isSaving}>
               Cancelar
             </Button>
           </DialogClose>
-          <Button type="button" onClick={handleSave}>
-            <Save className="mr-2 h-4 w-4" />
-            Salvar
+          <Button type="button" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            {isSaving ? 'Salvando...' : 'Salvar'}
           </Button>
         </DialogFooter>
       </DialogContent>

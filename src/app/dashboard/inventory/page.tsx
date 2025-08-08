@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { getProducts } from "@/lib/actions";
-import { columns } from "./columns";
+import { getColumns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
@@ -34,24 +34,20 @@ export default function InventoryPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchProducts = async () => {
+    setLoading(true);
+    const fetchedProducts = await getProducts();
+    setProducts(fetchedProducts);
+    setLoading(false);
+  }
+
   useEffect(() => {
-    async function loadProducts() {
-      setLoading(true);
-      const fetchedProducts = await getProducts();
-      setProducts(fetchedProducts);
-      setLoading(false);
-    }
-    loadProducts();
+    fetchProducts();
   }, []);
 
   const filteredProducts = filterProducts(products, activeFilter);
 
-  const handleProductSaved = async () => {
-     setLoading(true);
-     const fetchedProducts = await getProducts();
-     setProducts(fetchedProducts);
-     setLoading(false);
-  }
+  const columns = getColumns({ onProductSaved: fetchProducts });
 
   return (
     <Card>
@@ -63,7 +59,7 @@ export default function InventoryPage() {
               Gerencie seus produtos, adicione novos e acompanhe o estoque.
             </CardDescription>
           </div>
-          <AddProductDialog onProductSaved={handleProductSaved} trigger={
+          <AddProductDialog onProductSaved={fetchProducts} trigger={
              <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Adicionar Produto
