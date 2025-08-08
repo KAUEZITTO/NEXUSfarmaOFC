@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -12,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Download, FileText, BarChart2, AlertTriangle, Package, Users, Loader2 } from "lucide-react";
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
 import { getProducts, getAllPatients, getAllDispensations } from "@/lib/actions";
-import { generateCompleteReportPDF, generateStockReportPDF } from "@/lib/pdf-generator";
+import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF } from "@/lib/pdf-generator";
 import { useEffect, useState } from "react";
 import type { Product, Patient, Dispensation } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 type GeneratingState = {
     complete: boolean;
     stock: boolean;
+    expiry: boolean;
     // Add other report types here
 }
 
@@ -32,6 +34,7 @@ export default function ReportsPage() {
   const [isGenerating, setIsGenerating] = useState<GeneratingState>({
     complete: false,
     stock: false,
+    expiry: false,
   });
 
   useEffect(() => {
@@ -82,6 +85,19 @@ export default function ReportsPage() {
       toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
     } finally {
       setIsGenerating(prev => ({...prev, stock: false}));
+    }
+  }
+
+  const handleExportExpiry = async () => {
+    setIsGenerating(prev => ({...prev, expiry: true}));
+    try {
+      const pdfDataUri = await generateExpiryReportPDF(products);
+      downloadPdf(pdfDataUri, `nexusfarma_relatorio_vencimentos_${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch(e) {
+      console.error("Failed to generate expiry PDF", e);
+      toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
+    } finally {
+      setIsGenerating(prev => ({...prev, expiry: false}));
     }
   }
 
@@ -229,8 +245,12 @@ export default function ReportsPage() {
              )}
             Estoque Atual
           </Button>
-           <Button variant="outline" className="justify-start" onClick={handleNotImplemented}>
-            <FileText className="mr-2 h-4 w-4" />
+           <Button variant="outline" className="justify-start" onClick={handleExportExpiry} disabled={isGenerating.expiry}>
+             {isGenerating.expiry ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+             ) : (
+                <FileText className="mr-2 h-4 w-4" />
+             )}
             Produtos a Vencer
           </Button>
           <Button variant="outline" className="justify-start" onClick={handleNotImplemented}>

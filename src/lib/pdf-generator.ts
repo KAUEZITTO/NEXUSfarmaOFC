@@ -157,3 +157,31 @@ export const generateStockReportPDF = async (products: Product[]): Promise<strin
     addFooter(doc);
     return doc.output('datauristring');
 };
+
+export const generateExpiryReportPDF = async (products: Product[]): Promise<string> => {
+    const doc = new jsPDF() as jsPDFWithAutoTable;
+
+    addHeader(doc, 'Relatório de Produtos a Vencer');
+
+    const expiringProducts = products
+        .filter(p => p.expiryDate) // Only products with an expiry date
+        .sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime()); // Sort by soonest to expire
+
+    const body = expiringProducts.map(p => [
+        p.name,
+        p.batch || 'N/A',
+        new Date(p.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}),
+        p.quantity.toString(),
+    ]);
+
+    doc.autoTable({
+        startY: 65,
+        head: [['Nome do Produto', 'Lote', 'Data de Validade', 'Quantidade']],
+        body: body,
+        theme: 'grid',
+        headStyles: { fillColor: [217, 119, 6] }, // Orange color for warning
+    });
+
+    addFooter(doc);
+    return doc.output('datauristring');
+};
