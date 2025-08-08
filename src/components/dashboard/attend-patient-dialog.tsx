@@ -46,7 +46,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
 import {
   Card,
   CardContent,
@@ -62,7 +61,7 @@ type DispensationItem = {
   batch?: string;
   expiryDate?: string;
   source: 'Estoque' | 'Farmácia';
-  category: string;
+  category: Category;
 };
 
 type Category =
@@ -77,21 +76,47 @@ const categories: {
   name: Category;
   icon: React.ElementType;
   fields: ('lote' | 'validade' | 'nome')[];
+  productCategory: Product['category'] | 'Fralda' | 'Insulina' | 'Tira/Lanceta';
 }[] = [
-  { name: 'Insulinas', icon: Syringe, fields: ['lote', 'validade'] },
-  { name: 'Tiras/Lancetas', icon: ClipboardList, fields: ['lote', 'validade'] },
-  { name: 'Medicamentos', icon: Pill, fields: ['lote', 'validade'] },
-  { name: 'Fraldas', icon: Baby, fields: [] },
-  { name: 'Material Técnico', icon: Stethoscope, fields: ['nome'] },
-  { name: 'Outros', icon: Package, fields: ['nome'] },
+  { name: 'Insulinas', icon: Syringe, fields: ['lote', 'validade'], productCategory: 'Insulina' },
+  { name: 'Tiras/Lancetas', icon: ClipboardList, fields: ['lote', 'validade'], productCategory: 'Tira/Lanceta' },
+  { name: 'Medicamentos', icon: Pill, fields: ['lote', 'validade'], productCategory: 'Medicamento' },
+  { name: 'Material Técnico', icon: Stethoscope, fields: ['nome'], productCategory: 'Material Técnico' },
+  { name: 'Fraldas', icon: Baby, fields: [], productCategory: 'Fralda' },
+  { name: 'Outros', icon: Package, fields: ['nome'], productCategory: 'Outro' },
 ];
 
-const insulinTypes = [
-    { id: 'INS001', name: 'Lantus', batch: 'LOTE-LANTUS-1', expiryDate: '2025-10-31' },
-    { id: 'INS002', name: 'NPH Refil', batch: 'LOTE-NPHR-2', expiryDate: '2025-11-30' },
-    { id: 'INS003', name: 'NPH Frasco', batch: 'LOTE-NPHF-3', expiryDate: '2025-12-31' },
-    { id: 'INS004', name: 'Regular', batch: 'LOTE-REG-4', expiryDate: '2026-01-31' },
-];
+const getProductsForCategory = (category: Category): Partial<Product>[] => {
+    const categoryInfo = categories.find(c => c.name === category);
+    if (!categoryInfo) return [];
+
+    if (category === 'Fraldas') {
+        return [{ id: 'FRD001', name: 'Fralda Geriátrica M' }, { id: 'FRD002', name: 'Fralda Geriátrica G'}];
+    }
+    
+    // This is a special mapping for Insulinas, Tiras/Lancetas etc.
+    // In a real scenario, these would also have a proper category in the database.
+    const productCategoryMapping: Record<string, Product['category']> = {
+      'Insulinas': 'Medicamento',
+      'Tiras/Lancetas': 'Material Técnico',
+      'Medicamentos': 'Medicamento',
+      'Material Técnico': 'Material Técnico',
+      'Outros': 'Outro',
+    }
+    const productCategory = productCategoryMapping[category];
+
+    let filtered = allProducts.filter(p => p.category === productCategory);
+
+    if (category === 'Insulinas') {
+        filtered = filtered.filter(p => p.name.toLowerCase().includes('insulina'));
+    }
+    if (category === 'Tiras/Lancetas') {
+        filtered = filtered.filter(p => p.name.toLowerCase().includes('tira') || p.name.toLowerCase().includes('lanceta'));
+    }
+
+    return filtered;
+}
+
 
 export function AttendPatientDialog() {
   const [isOpen, setIsOpen] = useState(false);
@@ -100,9 +125,6 @@ export function AttendPatientDialog() {
   );
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
-    null
-  );
   const [items, setItems] = useState<DispensationItem[]>([]);
   const { toast } = useToast();
 
@@ -120,12 +142,10 @@ export function AttendPatientDialog() {
   const handleBack = () => {
     setStep('selectPatient');
     setSelectedPatient(null);
-    setSelectedCategory(null);
     setItems([]);
   };
 
-  const handleAddItem = () => {
-    if (!selectedCategory) return;
+  const handleAddItem = (category: Category) => {
     setItems([
       ...items,
       {
@@ -134,7 +154,7 @@ export function AttendPatientDialog() {
         name: '',
         quantity: 1,
         source: 'Estoque',
-        category: selectedCategory,
+        category: category,
       },
     ]);
   };
@@ -154,21 +174,19 @@ export function AttendPatientDialog() {
   };
   
   const handleProductSelect = (id: string, productId: string) => {
-     let product: { name: string; batch?: string; expiryDate?: string; } | undefined;
-
-     if (selectedCategory === 'Insulinas' || selectedCategory === 'Tiras/Lancetas') {
-        product = insulinTypes.find(p => p.id === productId);
-     } else {
-        product = allProducts.find(p => p.id === productId);
-     }
+     const itemToUpdate = items.find(i => i.id === id);
+     if (!itemToUpdate) return;
+     
+     const productList = getProductsForCategory(itemToUpdate.category);
+     const product = productList.find(p => p.id === productId);
      
      if (product) {
          setItems(items.map(item => item.id === id ? {
             ...item,
             productId: productId,
-            name: product!.name,
-            batch: product!.batch || 'N/A',
-            expiryDate: product!.expiryDate ? new Date(product!.expiryDate).toLocaleDateString('pt-BR') : 'N/A'
+            name: product.name!,
+            batch: product.batch || 'N/A',
+            expiryDate: product.expiryDate ? new Date(product.expiryDate).toLocaleDateString('pt-BR') : 'N/A'
          } : item));
      }
   }
@@ -188,102 +206,101 @@ export function AttendPatientDialog() {
   };
   
   const renderItemInput = (item: DispensationItem) => {
-    const categoryInfo = categories.find(c => c.name === selectedCategory);
+    const categoryInfo = categories.find(c => c.name === item.category);
     if (!categoryInfo) return null;
     
-    if (selectedCategory === 'Insulinas' || selectedCategory === 'Tiras/Lancetas' || selectedCategory === 'Medicamentos') {
-        const productList = selectedCategory === 'Insulinas' ? insulinTypes : allProducts.filter(p => p.category === 'Medicamento');
-         return (
+    if (categoryInfo.fields.length > 0) {
+        const productList = getProductsForCategory(item.category);
+        if (productList.length > 0) {
+            return (
              <Select value={item.productId} onValueChange={(value) => handleProductSelect(item.id, value)}>
                 <SelectTrigger><SelectValue placeholder="Selecione o item..." /></SelectTrigger>
                 <SelectContent>
-                    {productList.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                    {productList.map(p => <SelectItem key={p.id} value={p.id!}>{p.name}</SelectItem>)}
                 </SelectContent>
              </Select>
-         )
-    }
-
-    if (categoryInfo.fields.includes('nome')) {
-        return (
-            <Input 
-                placeholder="Nome do item"
-                value={item.name}
-                onChange={(e) => handleItemChange(item.id, 'name', e.target.value)}
-            />
-        )
+            )
+        }
     }
     
-    return <span className="text-muted-foreground">--</span>;
+    // For Fraldas, Outros, etc. where we type the name
+    return (
+        <Input 
+            placeholder="Nome do item"
+            value={item.name}
+            onChange={(e) => handleItemChange(item.id, 'name', e.target.value)}
+        />
+    )
   }
-
-  const renderTable = () => {
-    if (!selectedCategory) return null;
-    const categoryInfo = categories.find((c) => c.name === selectedCategory);
+  
+  const renderDispensationTables = () => {
+    const groupedItems = items.reduce((acc, item) => {
+        (acc[item.category] = acc[item.category] || []).push(item);
+        return acc;
+    }, {} as Record<Category, DispensationItem[]>);
 
     return (
-      <div className="mt-4">
-        <h3 className="text-lg font-semibold mb-2">{selectedCategory}</h3>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[30%]">Item</TableHead>
-              {categoryInfo?.fields.includes('lote') && <TableHead>Lote</TableHead>}
-              {categoryInfo?.fields.includes('validade') && <TableHead>Validade</TableHead>}
-              <TableHead>Origem</TableHead>
-              <TableHead className="w-[100px]">Qtd.</TableHead>
-              <TableHead></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {items
-              .filter((i) => i.category === selectedCategory)
-              .map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{renderItemInput(item)}</TableCell>
-                  {categoryInfo?.fields.includes('lote') && <TableCell>{item.batch || 'N/A'}</TableCell>}
-                  {categoryInfo?.fields.includes('validade') && <TableCell>{item.expiryDate || 'N/A'}</TableCell>}
-                  <TableCell>
-                     <Select value={item.source} onValueChange={(value) => handleItemChange(item.id, 'source', value)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="Estoque">Estoque</SelectItem>
-                            <SelectItem value="Farmácia">Farmácia</SelectItem>
-                        </SelectContent>
-                     </Select>
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => handleItemChange(item.id, 'quantity', parseInt(e.target.value))}
-                      min="1"
-                      className="w-full"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveItem(item.id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-        <Button
-          variant="outline"
-          className="w-full mt-4"
-          onClick={handleAddItem}
-        >
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Adicionar Item
-        </Button>
-      </div>
-    );
-  };
+        <div className="space-y-6">
+            {categories.map(categoryInfo => {
+                const categoryItems = groupedItems[categoryInfo.name];
+                if (!categoryItems || categoryItems.length === 0) return null;
+
+                return (
+                    <div key={categoryInfo.name}>
+                        <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                           <categoryInfo.icon className="h-5 w-5" />
+                           {categoryInfo.name}
+                        </h3>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-[30%]">Item</TableHead>
+                                    {categoryInfo.fields.includes('lote') && <TableHead>Lote</TableHead>}
+                                    {categoryInfo.fields.includes('validade') && <TableHead>Validade</TableHead>}
+                                    <TableHead>Origem</TableHead>
+                                    <TableHead className="w-[100px]">Qtd.</TableHead>
+                                    <TableHead></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {categoryItems.map(item => (
+                                    <TableRow key={item.id}>
+                                        <TableCell>{renderItemInput(item)}</TableCell>
+                                        {categoryInfo.fields.includes('lote') && <TableCell>{item.batch || 'N/A'}</TableCell>}
+                                        {categoryInfo.fields.includes('validade') && <TableCell>{item.expiryDate || 'N/A'}</TableCell>}
+                                        <TableCell>
+                                            <Select value={item.source} onValueChange={(value) => handleItemChange(item.id, 'source', value)}>
+                                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Estoque">Estoque</SelectItem>
+                                                    <SelectItem value="Farmácia">Farmácia</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Input
+                                                type="number"
+                                                value={item.quantity}
+                                                onChange={(e) => handleItemChange(item.id, 'quantity', parseInt(e.target.value))}
+                                                min="1"
+                                                className="w-full"
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.id)}>
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )
+            })}
+        </div>
+    )
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -360,26 +377,30 @@ export function AttendPatientDialog() {
                 </Card>
 
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Selecione uma categoria para dispensar:</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+                  <h3 className="text-lg font-semibold mb-2">Adicionar itens para dispensar:</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
                     {categories.map(({ name, icon: Icon }) => (
-                      <button
+                      <Button
                         key={name}
-                        onClick={() => setSelectedCategory(name)}
-                        className={cn(
-                          'flex flex-col items-center justify-center p-4 border rounded-lg aspect-square text-center',
-                          'hover:bg-accent hover:text-accent-foreground transition-colors',
-                          selectedCategory === name && 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2'
-                        )}
+                        variant="outline"
+                        onClick={() => handleAddItem(name)}
+                        className="flex flex-col h-24"
                       >
                         <Icon className="h-8 w-8 mb-2" />
-                        <span className="text-sm font-medium">{name}</span>
-                      </button>
+                        <span className="text-xs text-center">{name}</span>
+                      </Button>
                     ))}
                   </div>
                 </div>
+                <Separator />
 
-                {selectedCategory && renderTable()}
+                {items.length > 0 ? (
+                    renderDispensationTables()
+                ) : (
+                    <div className="text-center text-muted-foreground py-10">
+                        Nenhum item adicionado à dispensação.
+                    </div>
+                )}
               </div>
             </ScrollArea>
           )}

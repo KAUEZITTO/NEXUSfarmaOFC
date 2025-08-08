@@ -8,6 +8,10 @@ export const products: Product[] = [
   { id: 'PROD005', name: 'Tubo de Coleta (Tampa Vermelha)', category: 'Laboratório', quantity: 1200, expiryDate: '2025-08-20', status: 'Em Estoque', presentation: 'Unidade' },
   { id: 'PROD006', name: 'Paracetamol 750mg', category: 'Medicamento', quantity: 80, expiryDate: '2025-05-10', status: 'Em Estoque', batch: 'LOTE202403D', presentation: 'Comprimido' },
   { id: 'PROD007', name: 'Agulha Hipodérmica 25x7', category: 'Material Técnico', quantity: 250, expiryDate: '2026-02-28', status: 'Em Estoque', batch: 'LOTE202404E', presentation: 'Unidade' },
+  { id: 'PROD008', name: 'Insulina NPH', category: 'Medicamento', quantity: 50, expiryDate: '2025-11-30', status: 'Em Estoque', batch: 'LOTE-NPH-1', presentation: 'Frasco' },
+  { id: 'PROD009', name: 'Insulina Regular', category: 'Medicamento', quantity: 40, expiryDate: '2026-01-31', status: 'Em Estoque', batch: 'LOTE-REG-2', presentation: 'Frasco' },
+  { id: 'PROD010', name: 'Tiras de Glicemia', category: 'Material Técnico', quantity: 100, expiryDate: '2025-10-31', status: 'Em Estoque', batch: 'LOTE-TIRA-3', presentation: 'Caixa c/ 50' },
+  { id: 'PROD011', name: 'Agulha para Caneta de Insulina 32G', category: 'Material Técnico', quantity: 300, expiryDate: '2026-04-30', status: 'Em Estoque', batch: 'LOTE-AGULHA-4', presentation: 'Caixa c/ 100' },
 ];
 
 export const units: Unit[] = [
