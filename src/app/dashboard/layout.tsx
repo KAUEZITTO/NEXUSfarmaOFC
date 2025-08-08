@@ -15,22 +15,17 @@ import {
   Users,
   Building2,
   FileText,
-  Info
+  Info,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { UserNav } from '@/components/dashboard/user-nav';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { DashboardNav } from '@/components/dashboard/dashboard-nav';
 import { Logo } from '@/components/logo';
 import { PageLoader } from '@/components/ui/page-loader';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { navItems } from '@/components/dashboard/dashboard-nav';
 
 
 export default function DashboardLayout({
@@ -57,20 +52,13 @@ export default function DashboardLayout({
     // This will trigger on path changes.
     setLoading(false); // Make sure to turn it off when the new page is mounted.
 
-    // A better approach in a real app would be to use a global state manager (like Zustand or Redux)
-    // and trigger the loading state on link clicks before navigation happens.
-    // For this prototype, we'll keep it simple.
-
   }, [pathname]);
   
-  // A simplified way to handle loading for this prototype:
-  // We'll watch for clicks on our navigation links.
    useEffect(() => {
     const navLinks = document.querySelectorAll('a[href^="/dashboard"]');
 
     const handleClick = (e: MouseEvent) => {
       const target = e.currentTarget as HTMLAnchorElement;
-      // Don't trigger for the current page
       if (target.pathname !== pathname) {
         setLoading(true);
       }
@@ -85,47 +73,22 @@ export default function DashboardLayout({
 
 
   return (
-    <>
+    <SidebarProvider>
       <PageLoader isLoading={loading} />
-      <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-        <div className="hidden border-r bg-muted/40 md:block">
-          <div className="flex h-full max-h-screen flex-col gap-2">
-            <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-              <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
-                <Logo />
-              </Link>
-            </div>
-            <div className="flex-1">
-              <DashboardNav />
-            </div>
-          </div>
-        </div>
-        <div className="flex flex-col">
-          <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="shrink-0 md:hidden"
-                >
-                  <Home className="h-5 w-5" />
-                  <span className="sr-only">Toggle navigation menu</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="flex flex-col">
-                <nav className="grid gap-2 text-lg font-medium">
-                  <Link
-                    href="/dashboard"
-                    className="flex items-center gap-2 text-lg font-semibold mb-4"
-                  >
+      <div className="grid min-h-screen w-full">
+         <Sidebar>
+            <SidebarHeader>
+                <Link href="/dashboard">
                     <Logo />
-                    <span className="sr-only">NexusFarma</span>
-                  </Link>
-                  <DashboardNav isMobile={true} />
-                </nav>
-              </SheetContent>
-            </Sheet>
+                </Link>
+            </SidebarHeader>
+            <SidebarContent>
+                <DashboardNav />
+            </SidebarContent>
+        </Sidebar>
+        <div className="flex flex-col peer-data-[collapsible=icon]:pl-[var(--sidebar-width-icon)] peer-data-[state=expanded]:pl-[var(--sidebar-width)] transition-[padding] duration-200">
+          <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+            <SidebarTrigger className="md:hidden" />
             <div className="w-full flex-1">
               {/* Can add a search bar here if needed */}
             </div>
@@ -136,6 +99,6 @@ export default function DashboardLayout({
           </main>
         </div>
       </div>
-    </>
+    </SidebarProvider>
   );
 }
