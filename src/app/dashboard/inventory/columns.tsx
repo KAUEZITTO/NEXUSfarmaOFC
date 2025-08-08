@@ -79,7 +79,18 @@ export const getColumns = ({ onProductSaved }: ColumnsProps): ColumnDef<Product>
     header: "Status",
     cell: ({ row }) => {
       const status: string = row.getValue("status");
-      return <Badge variant={status === 'Sem Estoque' ? 'destructive' : status === 'Baixo Estoque' ? 'secondary' : 'default'} className={cn(status === 'Baixo Estoque' && 'bg-orange-500 text-white')}>{status}</Badge>
+      const variantMap: { [key: string]: "destructive" | "secondary" | "default" } = {
+        'Sem Estoque': 'destructive',
+        'Baixo Estoque': 'secondary',
+        'Em Estoque': 'default'
+      };
+      
+      return <Badge 
+        variant={variantMap[status] ?? 'default'}
+        className={cn(status === 'Baixo Estoque' && 'bg-accent text-accent-foreground')}
+      >
+        {status}
+      </Badge>
     },
   },
   {

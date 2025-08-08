@@ -47,9 +47,9 @@ export const columns: ColumnDef<Order>[] = [
       return <Badge 
         variant={variantMap[status] || "default"} 
         className={cn({
-            'bg-orange-500 text-white': status === 'Pendente',
-            'bg-blue-500 text-white': status === 'Em Trânsito',
-            'bg-green-600 text-white': status === 'Entregue'
+            'bg-accent text-accent-foreground': status === 'Pendente',
+            'bg-blue-500 text-white': status === 'Em Trânsito', // A specific color for this one is fine
+            'bg-secondary text-secondary-foreground': status === 'Entregue'
         })}
       >
         {status}
