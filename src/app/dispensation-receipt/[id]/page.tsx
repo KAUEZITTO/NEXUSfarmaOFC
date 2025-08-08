@@ -16,7 +16,7 @@ import { Logo } from "@/components/logo";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { Dispensation, DispensationItem } from "@/lib/types";
-import { dispensations as allDispensations } from "@/lib/data";
+import { getDispensation } from "@/lib/actions";
 
 
 const renderItemRows = (items: DispensationItem[]) => {
@@ -33,8 +33,7 @@ const renderItemRows = (items: DispensationItem[]) => {
 }
 
 const getReturnDate = (dispensationDate: string) => {
-    const [day, month, year] = dispensationDate.split('/').map(Number);
-    const date = new Date(year, month - 1, day);
+    const date = new Date(dispensationDate);
     date.setDate(date.getDate() + 30);
     return date.toLocaleDateString('pt-BR');
 };
@@ -48,6 +47,7 @@ const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensatio
     }, {} as Record<string, DispensationItem[]>);
     
     const returnDate = getReturnDate(dispensation.date);
+    const formattedDispensationDate = new Date(dispensation.date).toLocaleDateString('pt-BR');
 
   return (
     <div className={`max-w-4xl mx-auto bg-white text-black my-8 print:my-0 flex flex-col justify-between min-h-screen ${isFirstCopy ? 'shadow-lg print:shadow-none page-break-after' : 'shadow-lg print:shadow-none'}`}>
@@ -77,7 +77,7 @@ const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensatio
                 <div><span className="font-semibold">CNS:</span> {dispensation.patient.cns}</div>
                 {dispensation.patient.unitName && <div><span className="font-semibold">Unidade:</span> {dispensation.patient.unitName}</div>}
                 <div><span className="font-semibold">Mandado:</span> {dispensation.patient.mandateType}</div>
-                <div><span className="font-semibold">Data:</span> {dispensation.date}</div>
+                <div><span className="font-semibold">Data:</span> {formattedDispensationDate}</div>
                 <div className="font-bold"><span className="font-semibold">Retorno:</span> {returnDate}</div>
                 <div><span className="font-semibold">ID da Dispensa:</span> {dispensation.id}</div>
             </div>
@@ -139,28 +139,25 @@ export default function DispensationReceiptPage({ params }: { params: { id: stri
   const [isNew, setIsNew] = useState(false);
 
   useEffect(() => {
-    // Check if it's a new dispensation to auto-print
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('new') === 'true') {
         setIsNew(true);
-         // Clean up the URL
         router.replace(`/dispensation-receipt/${params.id}`, undefined);
     }
     
-    // In a real app, this would be a fetch from a DB.
-    // Here we find it in the mock data, which contains localStorage-like data
-    const data = allDispensations.find(d => d.id === params.id);
-
-    if (data) {
-        // We need to find the full patient object
-        setDispensationData(data);
-    } 
+    async function fetchDispensation() {
+        const data = await getDispensation(params.id);
+        if (data) {
+            setDispensationData(data);
+        }
+    }
+    fetchDispensation();
   }, [params.id, router]);
 
   useEffect(() => {
       if (dispensationData && isNew) {
           window.print();
-          setIsNew(false); // Reset state to prevent re-printing on refresh
+          setIsNew(false);
       }
   }, [dispensationData, isNew]);
 

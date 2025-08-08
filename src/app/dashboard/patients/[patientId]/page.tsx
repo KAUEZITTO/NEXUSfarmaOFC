@@ -1,9 +1,7 @@
 
-
 'use server';
 
-import { getPatients, getUnits } from "@/lib/actions";
-import { dispensations as allDispensations } from "@/lib/data";
+import { getPatient, getDispensationsForPatient } from "@/lib/actions";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
 import {
@@ -17,15 +15,14 @@ import { notFound } from "next/navigation";
 import { User } from "lucide-react";
 
 export default async function PatientHistoryPage({ params }: { params: { patientId: string } }) {
-  const patients = await getPatients();
-  const patient = patients.find(p => p.id === params.patientId);
-  // In a real app, this would be a proper DB query.
-  // Here we filter the mock data.
-  const dispensations = allDispensations.filter(d => d.patientId === params.patientId);
+  const patient = await getPatient(params.patientId);
 
   if (!patient) {
     notFound();
   }
+
+  const dispensations = await getDispensationsForPatient(params.patientId);
+
 
   return (
     <div className="space-y-6">

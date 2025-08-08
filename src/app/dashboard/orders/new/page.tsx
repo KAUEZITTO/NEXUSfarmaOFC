@@ -20,31 +20,37 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { X, PlusCircle, Save, Trash2 } from 'lucide-react';
+import { X, PlusCircle, Save, Trash2, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { products as mockProducts } from '@/lib/data';
-import { getUnits, getProducts } from '@/lib/actions';
+import { getUnits, getProducts, addOrder } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { Unit, Product } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type RemessaItem = {
-  id: string;
+  internalId: string;
   productId: string;
+  name: string;
   quantity: number;
+  batch?: string;
+  expiryDate?: string;
+  presentation?: string;
+  category: string;
 };
 
 export default function NewOrderPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [items, setItems] = useState<RemessaItem[]>([
-    { id: `item-${Date.now()}`, productId: '', quantity: 1 },
+    { internalId: `item-${Date.now()}`, productId: '', quantity: 1, name: '', category: 'Medicamento' },
   ]);
-  const [destinationUnit, setDestinationUnit] = useState('');
+  const [destinationUnitId, setDestinationUnitId] = useState('');
+  const [notes, setNotes] = useState('');
   const [units, setUnits] = useState<Unit[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -61,20 +67,35 @@ export default function NewOrderPage() {
   }, []);
 
   const handleAddItem = () => {
-    setItems([...items, { id: `item-${Date.now()}`, productId: '', quantity: 1 }]);
+    setItems([...items, { internalId: `item-${Date.now()}`, productId: '', quantity: 1, name: '', category: 'Medicamento' }]);
   };
 
   const handleRemoveItem = (id: string) => {
-    setItems(items.filter((item) => item.id !== id));
+    setItems(items.filter((item) => item.internalId !== id));
   };
     
-  const handleItemChange = (id: string, field: 'productId' | 'quantity', value: string | number) => {
-    setItems(items.map(item => item.id === id ? { ...item, [field]: value } : item));
+  const handleItemChange = (id: string, field: 'quantity', value: number) => {
+    setItems(items.map(item => item.internalId === id ? { ...item, [field]: value } : item));
   };
 
-  const handleSave = () => {
-    // Basic validation
-    if (!destinationUnit) {
+  const handleProductSelect = (id: string, productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      setItems(items.map(item => item.internalId === id ? { 
+        ...item, 
+        productId: product.id,
+        name: product.name,
+        batch: product.batch,
+        expiryDate: product.expiryDate,
+        presentation: product.presentation,
+        category: product.category,
+      } : item));
+    }
+  };
+
+
+  const handleSave = async () => {
+    if (!destinationUnitId) {
       toast({
         variant: 'destructive',
         title: 'Erro de Validação',
@@ -92,13 +113,34 @@ export default function NewOrderPage() {
       return;
     }
 
-    // Mock save logic - TODO: Convert to server action to save to Firestore
-    console.log('Salvando Remessa:', { destinationUnit, items });
-    toast({
-        title: 'Remessa Salva!',
-        description: 'A nova remessa foi criada com sucesso.',
-    });
-    router.push('/dashboard/orders');
+    setIsSaving(true);
+    const unitName = units.find(u => u.id === destinationUnitId)?.name || 'Desconhecida';
+
+    const orderItems = items.map(({ internalId, ...rest }) => rest);
+
+    try {
+        await addOrder({
+            unitId: destinationUnitId,
+            unitName: unitName,
+            items: orderItems,
+            notes,
+        });
+
+        toast({
+            title: 'Remessa Salva!',
+            description: 'A nova remessa foi criada com sucesso.',
+        });
+        router.push('/dashboard/orders');
+    } catch(error) {
+        console.error("Error saving order: ", error);
+        toast({
+            variant: 'destructive',
+            title: 'Erro ao Salvar',
+            description: 'Não foi possível salvar a remessa. Tente novamente.'
+        })
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   const handleDiscard = () => {
@@ -142,13 +184,13 @@ export default function NewOrderPage() {
             Criar Nova Remessa
           </h1>
           <div className="hidden items-center gap-2 md:ml-auto md:flex">
-            <Button variant="outline" size="sm" onClick={handleDiscard}>
+            <Button variant="outline" size="sm" onClick={handleDiscard} disabled={isSaving}>
                 <Trash2 className="mr-2 h-4 w-4" />
                 Descartar
             </Button>
-            <Button size="sm" onClick={handleSave}>
-                <Save className="mr-2 h-4 w-4" />
-                Salvar Remessa
+            <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                {isSaving ? 'Salvando...' : 'Salvar Remessa'}
             </Button>
           </div>
         </div>
@@ -164,7 +206,7 @@ export default function NewOrderPage() {
               <CardContent>
                 <div className="grid gap-3">
                   <Label htmlFor="unit">Unidade de Destino</Label>
-                  <Select onValueChange={setDestinationUnit} value={destinationUnit}>
+                  <Select onValueChange={setDestinationUnitId} value={destinationUnitId}>
                     <SelectTrigger
                       id="unit"
                       aria-label="Selecione a unidade"
@@ -193,12 +235,12 @@ export default function NewOrderPage() {
                 <div className="space-y-4">
                   {items.map((item, index) => (
                     <div
-                      key={item.id}
+                      key={item.internalId}
                       className="grid grid-cols-[1fr_100px_auto] items-center gap-4"
                     >
                       <Select
                         value={item.productId}
-                        onValueChange={(value) => handleItemChange(item.id, 'productId', value)}
+                        onValueChange={(value) => handleProductSelect(item.internalId, value)}
                       >
                         <SelectTrigger
                           id={`product-${index}`}
@@ -218,10 +260,10 @@ export default function NewOrderPage() {
                         type="number" 
                         placeholder="Qtd." 
                         value={item.quantity}
-                        onChange={(e) => handleItemChange(item.id, 'quantity', parseInt(e.target.value, 10) || 0)}
+                        onChange={(e) => handleItemChange(item.internalId, 'quantity', parseInt(e.target.value, 10) || 0)}
                         min="1"
                       />
-                       <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.id)} disabled={items.length <= 1}>
+                       <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.internalId)} disabled={items.length <= 1}>
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
@@ -245,16 +287,19 @@ export default function NewOrderPage() {
                 <CardTitle>Observações</CardTitle>
               </CardHeader>
               <CardContent>
-                <Textarea placeholder="Adicione qualquer observação sobre a remessa..." />
+                <Textarea placeholder="Adicione qualquer observação sobre a remessa..." value={notes} onChange={(e) => setNotes(e.target.value)} />
               </CardContent>
             </Card>
           </div>
         </div>
         <div className="flex items-center justify-center gap-2 md:hidden">
-          <Button variant="outline" size="sm" onClick={handleDiscard}>
+          <Button variant="outline" size="sm" onClick={handleDiscard} disabled={isSaving}>
             Descartar
           </Button>
-          <Button size="sm" onClick={handleSave}>Salvar Remessa</Button>
+          <Button size="sm" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            {isSaving ? 'Salvando...' : 'Salvar Remessa'}
+          </Button>
         </div>
       </div>
     </div>

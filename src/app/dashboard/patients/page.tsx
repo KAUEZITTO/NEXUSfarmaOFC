@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { getPatients } from "@/lib/actions";
+import { getAllPatients } from "@/lib/actions";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
 import {
@@ -20,22 +20,26 @@ import type { Patient } from "@/lib/types";
 import { PlusCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type FilterCategory = 'Todos' | 'Insulinas' | 'Fraldas' | 'Acamados' | 'Judicial' | 'Municipal';
+type FilterCategory = 'Todos' | 'Insulinas' | 'Fraldas' | 'Acamados' | 'Judicial' | 'Municipal' | 'Inativos';
 
-const filterCategories: FilterCategory[] = ['Todos', 'Insulinas', 'Fraldas', 'Acamados', 'Judicial', 'Municipal'];
+const filterCategories: FilterCategory[] = ['Todos', 'Ativos', 'Inativos', 'Insulinas', 'Fraldas', 'Acamados', 'Judicial', 'Municipal'];
 
 const filterPatients = (patients: Patient[], filter: FilterCategory): Patient[] => {
     switch(filter) {
+        case 'Ativos':
+             return patients.filter(p => p.status === 'Ativo');
+        case 'Inativos':
+            return patients.filter(p => p.status !== 'Ativo');
         case 'Insulinas':
-            return patients.filter(p => p.isAnalogInsulinUser);
+            return patients.filter(p => p.isAnalogInsulinUser && p.status === 'Ativo');
         case 'Fraldas':
-            return patients.filter(p => p.municipalItems?.includes('Fraldas'));
+            return patients.filter(p => p.municipalItems?.includes('Fraldas') && p.status === 'Ativo');
         case 'Acamados':
-            return patients.filter(p => p.isBedridden);
+            return patients.filter(p => p.isBedridden && p.status === 'Ativo');
         case 'Judicial':
-            return patients.filter(p => p.mandateType === 'Legal');
+            return patients.filter(p => p.mandateType === 'Legal' && p.status === 'Ativo');
         case 'Municipal':
-            return patients.filter(p => p.mandateType === 'Municipal');
+            return patients.filter(p => p.mandateType === 'Municipal' && p.status === 'Ativo');
         case 'Todos':
         default:
             return patients;
@@ -44,13 +48,14 @@ const filterPatients = (patients: Patient[], filter: FilterCategory): Patient[] 
 
 
 export default function PatientsPage() {
-  const [activeFilter, setActiveFilter] = useState<FilterCategory>('Todos');
+  const [activeFilter, setActiveFilter] = useState<FilterCategory>('Ativos');
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchPatients = async () => {
     setLoading(true);
-    const fetchedPatients = await getPatients();
+    // Fetch all patients to allow for filtering between active/inactive
+    const fetchedPatients = await getAllPatients();
     setPatients(fetchedPatients);
     setLoading(false);
   };

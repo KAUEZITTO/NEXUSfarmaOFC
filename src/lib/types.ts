@@ -60,15 +60,26 @@ export type Patient = {
     files?: PatientFile[];
 };
 
+export type OrderItem = {
+    productId: string;
+    name: string;
+    quantity: number;
+    batch?: string;
+    expiryDate?: string;
+    presentation?: string;
+    category: string;
+};
+
 export type Order = {
   id: string;
-  unit: string;
   unitId: string;
-  patient?: string;
+  unitName: string;
   sentDate: string;
   deliveryDate?: string;
   status: 'Entregue' | 'Pendente' | 'Cancelado' | 'Em Trânsito';
   itemCount: number;
+  items: OrderItem[];
+  notes?: string;
 };
 
 export type DispensationItem = {

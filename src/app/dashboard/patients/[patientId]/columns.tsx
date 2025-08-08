@@ -1,3 +1,4 @@
+
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
@@ -16,8 +17,8 @@ export const columns: ColumnDef<Dispensation>[] = [
     accessorKey: "date",
     header: "Data",
     cell: ({ row }) => {
-      // Assuming date is already in "dd/MM/yyyy" format from mock data
-      return <div>{row.getValue("date")}</div>
+        const date = new Date(row.getValue("date"));
+        return <div>{date.toLocaleDateString('pt-BR')}</div>
     }
   },
   {

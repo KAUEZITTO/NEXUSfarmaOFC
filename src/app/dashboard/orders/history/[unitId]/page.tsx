@@ -1,8 +1,7 @@
 
 'use server';
 
-import { orders as allOrders } from "@/lib/data";
-import { getUnits } from "@/lib/actions";
+import { getOrdersForUnit, getUnit } from "@/lib/actions";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
 import {
@@ -15,15 +14,13 @@ import {
 import { notFound } from "next/navigation";
 
 export default async function OrderHistoryPage({ params }: { params: { unitId: string } }) {
-  const units = await getUnits();
-  const unit = units.find(u => u.id === params.unitId);
+  const unit = await getUnit(params.unitId);
   
-  // TODO: Fetch orders from Firestore once migrated
-  const orders = allOrders.filter(o => o.unitId === params.unitId);
-
   if (!unit) {
     notFound();
   }
+  
+  const orders = await getOrdersForUnit(params.unitId);
 
   return (
     <Card>

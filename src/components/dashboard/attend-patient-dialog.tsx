@@ -25,8 +25,9 @@ import {
   Baby,
   Package,
   ClipboardList,
+  Loader2,
 } from 'lucide-react';
-import { getPatients, getProducts } from '@/lib/actions';
+import { getPatients, getProducts, addDispensation } from '@/lib/actions';
 import type { Patient, Product, DispensationItem as DispensationItemType } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -53,7 +54,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { dispensations as allDispensations } from '@/lib/data';
 
 type DispensationItem = DispensationItemType & {
   internalId: string;
@@ -85,11 +85,9 @@ const stripKeywords = ['tira', 'lanceta'];
 
 const getProductsForCategory = (allProducts: Product[], category: Category): Partial<Product>[] => {
     if (category === 'Fraldas') {
-        // Fraldas might not be in the main products table in the same way, or they might be.
-        // For this example, we'll filter from allProducts if available, or return a default.
         const diaperProducts = allProducts.filter(p => p.category === 'Fraldas');
         if (diaperProducts.length > 0) return diaperProducts;
-        return [{ id: 'FRD001', name: 'Fralda Geriátrica M', presentation: 'Pacote' }, { id: 'FRD002', name: 'Fralda Geriátrica G', presentation: 'Pacote' }];
+        return [];
     }
 
     if (category === 'Insulinas') {
@@ -128,6 +126,7 @@ export function AttendPatientDialog({ onDispensationSaved }: { onDispensationSav
   const [allPatients, setAllPatients] = useState<Patient[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [items, setItems] = useState<DispensationItem[]>([]);
   const { toast } = useToast();
@@ -257,38 +256,55 @@ export function AttendPatientDialog({ onDispensationSaved }: { onDispensationSav
   }
 
 
-  const handleSaveDispensation = () => {
+  const handleSaveDispensation = async () => {
     if (!selectedPatient) return;
 
-    const dispensationId = `DISP-${Date.now()}`;
+    if (items.some(item => !item.productId || item.quantity <= 0)) {
+        toast({
+            variant: 'destructive',
+            title: 'Itens Inválidos',
+            description: 'Por favor, preencha todos os itens corretamente antes de salvar.'
+        });
+        return;
+    }
+    
+    setIsSaving(true);
     const patientForDispensation = { ...selectedPatient };
     delete patientForDispensation.files; // Don't embed huge file lists in dispensation history
 
-    const dispensationData = {
-      id: dispensationId,
-      patientId: selectedPatient.id,
-      patient: patientForDispensation,
-      date: new Date().toLocaleDateString('pt-BR'),
-      items: items.map(({ internalId, ...rest }) => rest), // Remove internalId before saving
-    };
-    
-    // This is where you would call a server action to save the dispensation to Firestore.
-    // For this prototype, we'll continue using the mock array.
-    allDispensations.push(dispensationData);
+    const dispensationItems = items.map(({ internalId, ...rest }) => rest);
 
-    toast({
-      title: 'Dispensação Registrada!',
-      description: `Gerando recibo para ${selectedPatient?.name}.`,
-    });
-    
-    onDispensationSaved?.();
-    setIsOpen(false);
-    
-    router.push(`/dispensation-receipt/${dispensationId}?new=true`);
+    try {
+        const newDispensation = await addDispensation({
+            patientId: selectedPatient.id,
+            patient: patientForDispensation,
+            items: dispensationItems
+        });
+        
+        toast({
+          title: 'Dispensação Registrada!',
+          description: `Gerando recibo para ${selectedPatient?.name}.`,
+        });
+        
+        onDispensationSaved?.();
+        setIsOpen(false);
+        
+        router.push(`/dispensation-receipt/${newDispensation.id}?new=true`);
 
-    setTimeout(() => {
-        handleBack();
-    }, 300);
+        setTimeout(() => {
+            handleBack();
+        }, 300);
+
+    } catch (error) {
+        console.error("Error saving dispensation: ", error);
+        toast({
+            variant: 'destructive',
+            title: 'Erro ao Salvar',
+            description: 'Não foi possível registrar a dispensação. Tente novamente.'
+        })
+    } finally {
+        setIsSaving(false);
+    }
   };
   
   const renderItemInput = (item: DispensationItem) => {
@@ -299,7 +315,9 @@ export function AttendPatientDialog({ onDispensationSaved }: { onDispensationSav
         <Select value={item.productId} onValueChange={(value) => handleProductSelect(item.internalId, value)}>
           <SelectTrigger><SelectValue placeholder="Selecione o item..." /></SelectTrigger>
           <SelectContent>
-            {productList.map(p => <SelectItem key={p.id} value={p.id!}>{p.name}</SelectItem>)}
+            {productList.map(p => <SelectItem key={p.id} value={p.id!} disabled={allProducts.find(fp => fp.id === p.id)?.quantity === 0}>
+                {p.name} (Estoque: {allProducts.find(fp => fp.id === p.id)?.quantity || 0})
+            </SelectItem>)}
           </SelectContent>
         </Select>
       );
@@ -494,10 +512,10 @@ export function AttendPatientDialog({ onDispensationSaved }: { onDispensationSav
 
         {step === 'dispenseForm' && (
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSaveDispensation} disabled={items.length === 0}>
-              <Save className="mr-2 h-4 w-4" />
-              Salvar e Gerar Recibo
+            <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isSaving}>Cancelar</Button>
+            <Button onClick={handleSaveDispensation} disabled={items.length === 0 || isSaving}>
+              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              {isSaving ? 'Salvando...' : 'Salvar e Gerar Recibo'}
             </Button>
           </DialogFooter>
         )}
