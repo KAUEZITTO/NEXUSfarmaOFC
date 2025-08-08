@@ -18,35 +18,45 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Users, Pill, Stethoscope, ArrowLeft, FileText, CheckCircle, XCircle, Clock } from "lucide-react";
-import { getUnits, getPatients } from "@/lib/actions";
-import { orders as allOrders } from "@/lib/data";
+import { Building2, Users, Pill, Stethoscope, ArrowLeft, FileText, CheckCircle, XCircle } from "lucide-react";
+import { getUnit, getPatients, getOrdersForUnit } from "@/lib/actions";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import type { OrderItem } from "@/lib/types";
 
-// This is a mock function to simulate getting order details.
-// In a real app, this data would come from your database.
-const getItemsForOrder = (orderId: string) => {
-    // For this example, we'll return a mock count based on orderId.
-    const seed = parseInt(orderId.replace(/[^0-9]/g, ''), 10) || 1;
-    const medCount = (seed % 3) * 2 + 1; // 1, 3, 5
-    const materialCount = (seed % 2) * 3 + 2; // 2, 5
+// This function now uses real order data
+const calculateItemTotals = (orders: { items: OrderItem[] }[]) => {
+    let medCount = 0;
+    let materialCount = 0;
+
+    orders.forEach(order => {
+        order.items.forEach(item => {
+            if (item.category === 'Medicamento') {
+                medCount += item.quantity;
+            } else if (item.category === 'Material Técnico') {
+                materialCount += item.quantity;
+            }
+        });
+    });
+
     return { medCount, materialCount };
 };
 
 export default async function UnitDetailsPage({ params }: { params: { unitId: string } }) {
-  const units = await getUnits();
-  const unit = units.find(u => u.id === params.unitId);
+  const unit = await getUnit(params.unitId);
 
   if (!unit) {
     notFound();
   }
-  const allPatients = await getPatients();
-  const patientCount = allPatients.filter(p => p.unitId === unit.id).length;
-  const unitOrders = allOrders.filter(o => o.unitId === unit.id);
   
-  const totalMedicationsSent = unitOrders.reduce((sum, order) => sum + getItemsForOrder(order.id).medCount, 0);
-  const totalMaterialsSent = unitOrders.reduce((sum, order) => sum + getItemsForOrder(order.id).materialCount, 0);
+  const [allPatients, unitOrders] = await Promise.all([
+    getPatients(),
+    getOrdersForUnit(unit.id)
+  ]);
+  
+  const patientCount = allPatients.filter(p => p.unitId === unit.id).length;
+  
+  const { medCount: totalMedicationsSent, materialCount: totalMaterialsSent } = calculateItemTotals(unitOrders);
 
   return (
     <div className="space-y-6">
@@ -95,7 +105,7 @@ export default async function UnitDetailsPage({ params }: { params: { unitId: st
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalMedicationsSent}</div>
-             <p className="text-xs text-muted-foreground">Total de itens (últimos 90 dias)</p>
+             <p className="text-xs text-muted-foreground">Total de itens (todo o período)</p>
           </CardContent>
         </Card>
         <Card>
@@ -105,7 +115,7 @@ export default async function UnitDetailsPage({ params }: { params: { unitId: st
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalMaterialsSent}</div>
-            <p className="text-xs text-muted-foreground">Total de itens (últimos 90 dias)</p>
+            <p className="text-xs text-muted-foreground">Total de itens (todo o período)</p>
           </CardContent>
         </Card>
       </div>
@@ -132,7 +142,7 @@ export default async function UnitDetailsPage({ params }: { params: { unitId: st
               <TableBody>
                 {unitOrders.length > 0 ? unitOrders.map((order) => (
                    <TableRow key={order.id}>
-                      <TableCell className="font-mono">{order.id}</TableCell>
+                      <TableCell className="font-mono">{order.id.substring(0, 8)}...</TableCell>
                       <TableCell>{new Date(order.sentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</TableCell>
                       <TableCell>{order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : <span className="text-muted-foreground">Pendente</span>}</TableCell>
                       <TableCell>{order.itemCount}</TableCell>

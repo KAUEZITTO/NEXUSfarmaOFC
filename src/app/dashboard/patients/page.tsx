@@ -20,9 +20,9 @@ import type { Patient } from "@/lib/types";
 import { PlusCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type FilterCategory = 'Todos' | 'Insulinas' | 'Fraldas' | 'Acamados' | 'Judicial' | 'Municipal' | 'Inativos';
+type FilterCategory = 'Ativos' | 'Inativos' | 'Insulinas' | 'Fraldas' | 'Acamados' | 'Judicial' | 'Municipal' | 'Todos';
 
-const filterCategories: FilterCategory[] = ['Todos', 'Ativos', 'Inativos', 'Insulinas', 'Fraldas', 'Acamados', 'Judicial', 'Municipal'];
+const filterCategories: FilterCategory[] = ['Ativos', 'Inativos', 'Insulinas', 'Fraldas', 'Acamados', 'Judicial', 'Municipal', 'Todos'];
 
 const filterPatients = (patients: Patient[], filter: FilterCategory): Patient[] => {
     switch(filter) {
@@ -54,7 +54,7 @@ export default function PatientsPage() {
 
   const fetchPatients = async () => {
     setLoading(true);
-    // Fetch all patients to allow for filtering between active/inactive
+    // Fetch all patients to allow for filtering on the client-side
     const fetchedPatients = await getAllPatients();
     setPatients(fetchedPatients);
     setLoading(false);
@@ -66,6 +66,7 @@ export default function PatientsPage() {
 
 
   const filteredPatients = filterPatients(patients, activeFilter);
+  const dataTableColumns = columns({ onPatientStatusChanged: fetchPatients });
 
   return (
     <Card>
@@ -109,7 +110,7 @@ export default function PatientsPage() {
             <Skeleton className="h-12 w-full" />
           </div>
         ) : (
-          <DataTable columns={columns({ onPatientStatusChanged: fetchPatients })} data={filteredPatients} filterColumn="name" />
+          <DataTable columns={dataTableColumns} data={filteredPatients} filterColumn="name" />
         )}
       </CardContent>
     </Card>

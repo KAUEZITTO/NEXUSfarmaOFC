@@ -90,6 +90,7 @@ export const columns = ({ onPatientStatusChanged }: ColumnsProps): ColumnDef<Pat
     header: "Status",
     cell: ({ row }) => {
       const status: PatientStatus = row.getValue("status");
+      // Don't show badge for 'Ativo' to reduce visual clutter
       if (status === 'Ativo') return null;
 
       const variantMap: { [key in PatientStatus]?: "default" | "secondary" | "destructive" } = {
