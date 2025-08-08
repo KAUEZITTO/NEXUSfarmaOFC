@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { db } from './firebase';
 import { collection, getDocs, addDoc, updateDoc, doc, query, where, getDoc, writeBatch, documentId, Timestamp } from 'firebase/firestore';
-import type { Product, Unit, Patient, PatientStatus, Order, Dispensation } from './types';
+import type { Product, Unit, Patient, PatientStatus, Order, Dispensation, OrderItem, DispensationItem } from './types';
 import { revalidatePath } from 'next/cache';
 
 // AUTH ACTIONS
@@ -152,46 +152,54 @@ export async function updatePatientStatus(patientId: string, status: PatientStat
 
 // FIRESTORE ACTIONS - ORDERS / REMESSAS
 
-export async function addOrder(orderData: Omit<Order, 'id' | 'status' | 'sentDate' | 'itemCount'>) {
-  const batch = writeBatch(db);
+async function updateStock(items: (OrderItem[] | DispensationItem[])) {
+    const batch = writeBatch(db);
+    const productIds = items.map(item => item.productId);
+    if (productIds.length === 0) return;
 
-  // 1. Create the new order
+    const productsQuery = query(collection(db, 'products'), where(documentId(), 'in', productIds));
+    const productSnapshots = await getDocs(productsQuery);
+
+    const productUpdates = new Map<string, number>();
+
+    productSnapshots.forEach(docSnap => {
+        const product = { id: docSnap.id, ...docSnap.data() } as Product;
+        const orderItem = items.find(item => item.productId === product.id);
+        if (orderItem) {
+            const newQuantity = product.quantity - orderItem.quantity;
+            if (newQuantity < 0) {
+                throw new Error(`Estoque insuficiente para o produto ${product.name}`);
+            }
+            productUpdates.set(product.id, newQuantity);
+        }
+    });
+
+    for (const [productId, newQuantity] of productUpdates.entries()) {
+        const productRef = doc(db, 'products', productId);
+        const newStatus = newQuantity > 0 ? (newQuantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque';
+        batch.update(productRef, { quantity: newQuantity, status: newStatus });
+    }
+
+    await batch.commit();
+}
+
+
+export async function addOrder(orderData: Omit<Order, 'id' | 'status' | 'sentDate' | 'itemCount'>): Promise<Order> {
+  // 1. Update product quantities first (this will throw if not enough stock)
+  await updateStock(orderData.items);
+
+  // 2. Create the new order
   const newOrderRef = doc(collection(db, 'orders'));
   const newOrder: Order = {
     ...orderData,
     id: newOrderRef.id,
-    sentDate: Timestamp.now().toDate().toISOString(),
+    sentDate: new Date().toISOString(),
     status: 'Em Trânsito',
     itemCount: orderData.items.reduce((sum, item) => sum + item.quantity, 0),
   };
-  batch.set(newOrderRef, newOrder);
+  await addDoc(collection(db, 'orders'), newOrder);
 
-  // 2. Update product quantities
-  const productIds = orderData.items.map(item => item.productId);
-  const productsQuery = query(collection(db, 'products'), where(documentId(), 'in', productIds));
-  const productSnapshots = await getDocs(productsQuery);
-
-  const productUpdates = new Map<string, number>();
-
-  productSnapshots.forEach(docSnap => {
-    const product = { id: docSnap.id, ...docSnap.data() } as Product;
-    const orderItem = orderData.items.find(item => item.productId === product.id);
-    if (orderItem) {
-      const newQuantity = product.quantity - orderItem.quantity;
-      productUpdates.set(product.id, newQuantity);
-    }
-  });
-
-  for (const [productId, newQuantity] of productUpdates.entries()) {
-    const productRef = doc(db, 'products', productId);
-    const newStatus = newQuantity > 0 ? (newQuantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque';
-    batch.update(productRef, { quantity: newQuantity, status: newStatus });
-  }
-
-  // 3. Commit the batch
-  await batch.commit();
-
-  // 4. Revalidate paths
+  // 3. Revalidate paths
   revalidatePath('/dashboard/orders');
   revalidatePath('/dashboard/inventory');
   
@@ -208,16 +216,23 @@ export async function getOrdersForUnit(unitId: string): Promise<Order[]> {
 
 export async function getOrder(orderId: string): Promise<Order | null> {
     if (!orderId) return null;
-    const orderRef = doc(db, 'orders', orderId);
-    const orderSnap = await getDoc(orderRef);
-    if (!orderSnap.exists()) return null;
-    return orderSnap.data() as Order;
+    const q = query(collection(db, "orders"), where("id", "==", orderId));
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+        return null;
+    }
+    return querySnapshot.docs[0].data() as Order;
 }
 
 
 // FIRESTORE ACTIONS - DISPENSATIONS
 
-export async function addDispensation(dispensationData: Omit<Dispensation, 'id' | 'date'>) {
+export async function addDispensation(dispensationData: Omit<Dispensation, 'id' | 'date'>): Promise<Dispensation> {
+    
+    // 1. Update product stock
+    await updateStock(dispensationData.items);
+
+    // 2. Create dispensation record
     const newDispensationRef = doc(collection(db, 'dispensations'));
     const newDispensation: Dispensation = {
         ...dispensationData,
@@ -226,7 +241,10 @@ export async function addDispensation(dispensationData: Omit<Dispensation, 'id' 
     };
     await addDoc(collection(db, 'dispensations'), newDispensation);
 
+    // 3. Revalidate paths
     revalidatePath(`/dashboard/patients/${dispensationData.patientId}`);
+    revalidatePath('/dashboard/inventory');
+
     return newDispensation;
 }
 

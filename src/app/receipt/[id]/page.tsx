@@ -25,7 +25,7 @@ const renderItemRows = (items: OrderItem[]) => {
             <TableCell className="font-medium">{item.name}</TableCell>
             <TableCell className="text-center">{item.presentation || "--"}</TableCell>
             <TableCell className="text-center">{item.batch || "--"}</TableCell>
-            <TableCell className="text-center">{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('pt-BR') : "--"}</TableCell>
+            <TableCell className="text-center">{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : "--"}</TableCell>
             <TableCell className="text-right">{item.quantity}</TableCell>
         </TableRow>
     ));
@@ -134,7 +134,9 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
         const order = await getOrder(params.id);
         setOrderData(order);
     }
-    fetchOrderData();
+    if (params.id) {
+        fetchOrderData();
+    }
   }, [params.id]);
 
 
