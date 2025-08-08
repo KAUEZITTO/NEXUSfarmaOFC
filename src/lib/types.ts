@@ -16,6 +16,8 @@ export type Unit = {
   address: string;
 };
 
+export type PatientStatus = 'Ativo' | 'Tratamento Concluído' | 'Tratamento Interrompido' | 'Óbito';
+
 export type Patient = {
     id: string;
     name: string;
@@ -34,6 +36,7 @@ export type Patient = {
     municipalItems?: ('Fraldas' | 'Material Técnico' | 'Medicamentos')[];
     unitName?: string;
     unitId?: string;
+    status: PatientStatus;
 };
 
 export type Order = {

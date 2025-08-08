@@ -1,12 +1,21 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { Patient } from "@/lib/types"
+import { Patient, PatientStatus } from "@/lib/types"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, MoreHorizontal, Eye } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { ArrowUpDown, MoreHorizontal, Eye, Edit, UserCheck, UserX, CheckCircle, XCircle, HeartPulse } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+
+const updatePatientStatus = (patientId: string, status: PatientStatus) => {
+  // This is a mock implementation. In a real app, you'd call a server action.
+  console.log(`Updating patient ${patientId} to status ${status}`);
+  // You might want to trigger a re-render or a toast message here.
+  alert(`Status do paciente ${patientId} atualizado para ${status}. Recarregue a página para ver a alteração.`);
+};
 
 export const columns: ColumnDef<Patient>[] = [
   {
@@ -56,6 +65,31 @@ export const columns: ColumnDef<Patient>[] = [
     cell: ({ row }) => <div className="capitalize">{row.getValue("mandateType")}</div>,
   },
   {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => {
+      const status: PatientStatus = row.getValue("status");
+      if (status === 'Ativo') return null;
+
+      const variantMap: { [key in PatientStatus]: "default" | "secondary" | "destructive" } = {
+        'Ativo': 'default',
+        'Tratamento Concluído': 'default',
+        'Tratamento Interrompido': 'secondary',
+        'Óbito': 'destructive'
+      };
+
+      return <Badge 
+        variant={variantMap[status]} 
+        className={cn({
+          'bg-green-600 text-white': status === 'Tratamento Concluído',
+          'bg-orange-500 text-white': status === 'Tratamento Interrompido',
+        })}
+      >
+        {status}
+      </Badge>
+    }
+  },
+  {
     id: "actions",
     cell: ({ row }) => {
       const patient = row.original
@@ -76,7 +110,37 @@ export const columns: ColumnDef<Patient>[] = [
                 Ver Histórico
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>Editar</DropdownMenuItem>
+            <DropdownMenuItem>
+              <Edit className="mr-2 h-4 w-4" />
+              Editar Cadastro
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+             <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                    <HeartPulse className="mr-2 h-4 w-4" />
+                    <span>Alterar Status</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                         <DropdownMenuItem onClick={() => updatePatientStatus(patient.id, 'Ativo')}>
+                            <UserCheck className="mr-2 h-4 w-4" />
+                            <span>Ativo</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updatePatientStatus(patient.id, 'Tratamento Concluído')}>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            <span>Tratamento Concluído</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updatePatientStatus(patient.id, 'Tratamento Interrompido')}>
+                            <XCircle className="mr-2 h-4 w-4" />
+                            <span>Tratamento Interrompido</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updatePatientStatus(patient.id, 'Óbito')}>
+                            <UserX className="mr-2 h-4 w-4" />
+                            <span>Óbito</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+            </DropdownMenuSub>
           </DropdownMenuContent>
         </DropdownMenu>
       )
