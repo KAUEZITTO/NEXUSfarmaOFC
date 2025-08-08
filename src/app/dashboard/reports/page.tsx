@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Download, FileText, BarChart2, AlertTriangle, Package, Users, Loader2 } from "lucide-react";
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
 import { getProducts, getAllPatients, getAllDispensations } from "@/lib/actions";
-import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF } from "@/lib/pdf-generator";
+import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF, generatePatientReportPDF } from "@/lib/pdf-generator";
 import { useEffect, useState } from "react";
 import type { Product, Patient, Dispensation } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -22,7 +22,7 @@ type GeneratingState = {
     complete: boolean;
     stock: boolean;
     expiry: boolean;
-    // Add other report types here
+    patient: boolean;
 }
 
 export default function ReportsPage() {
@@ -35,6 +35,7 @@ export default function ReportsPage() {
     complete: false,
     stock: false,
     expiry: false,
+    patient: false,
   });
 
   useEffect(() => {
@@ -100,6 +101,20 @@ export default function ReportsPage() {
       setIsGenerating(prev => ({...prev, expiry: false}));
     }
   }
+
+    const handleExportPatient = async () => {
+    setIsGenerating(prev => ({...prev, patient: true}));
+    try {
+      const pdfDataUri = await generatePatientReportPDF(dispensations);
+      downloadPdf(pdfDataUri, `nexusfarma_relatorio_atendimento_${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch(e) {
+      console.error("Failed to generate patient PDF", e);
+      toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
+    } finally {
+      setIsGenerating(prev => ({...prev, patient: false}));
+    }
+  }
+
 
   const handleNotImplemented = () => {
     toast({
@@ -253,8 +268,12 @@ export default function ReportsPage() {
              )}
             Produtos a Vencer
           </Button>
-          <Button variant="outline" className="justify-start" onClick={handleNotImplemented}>
-            <FileText className="mr-2 h-4 w-4" />
+          <Button variant="outline" className="justify-start" onClick={handleExportPatient} disabled={isGenerating.patient}>
+            {isGenerating.patient ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                <FileText className="mr-2 h-4 w-4" />
+                )}
             Atendimento de Pacientes
           </Button>
            <Button variant="outline" className="justify-start" onClick={handleNotImplemented}>
@@ -270,3 +289,5 @@ export default function ReportsPage() {
     </div>
   );
 }
+
+    

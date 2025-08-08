@@ -185,3 +185,32 @@ export const generateExpiryReportPDF = async (products: Product[]): Promise<stri
     addFooter(doc);
     return doc.output('datauristring');
 };
+
+export const generatePatientReportPDF = async (dispensations: Dispensation[]): Promise<string> => {
+    const doc = new jsPDF() as jsPDFWithAutoTable;
+
+    addHeader(doc, 'Relatório de Atendimento de Pacientes');
+
+    const body = dispensations.map(d => {
+        const totalItems = d.items.reduce((sum, item) => sum + item.quantity, 0);
+        return [
+            d.patient.name,
+            d.patient.cpf,
+            new Date(d.date).toLocaleDateString('pt-BR', { timeZone: 'UTC'}),
+            totalItems.toString()
+        ]
+    });
+
+    doc.autoTable({
+        startY: 65,
+        head: [['Paciente', 'CPF', 'Data da Dispensação', 'Nº de Itens']],
+        body: body,
+        theme: 'grid',
+        headStyles: { fillColor: [107, 33, 168] }, // Purple color for patients
+    });
+
+    addFooter(doc);
+    return doc.output('datauristring');
+};
+
+    
