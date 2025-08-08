@@ -62,16 +62,16 @@ const orderData = {
 };
 
 const CategoryTitle = ({ children }: { children: React.ReactNode }) => (
-  <TableRow className="bg-muted/5 hover:bg-muted/5">
-    <TableCell colSpan={5} className="font-bold text-md text-muted-foreground tracking-wide uppercase">
+  <TableRow className="bg-muted/60 hover:bg-muted/60 print:bg-gray-100">
+    <TableCell colSpan={5} className="font-bold text-md text-slate-600 tracking-wide uppercase">
       {children}
     </TableCell>
   </TableRow>
 );
 
 const renderItemRows = (items: OrderItem[]) => {
-    return items.map((item) => (
-        <TableRow key={item.productId} className="border-b">
+    return items.map((item, index) => (
+        <TableRow key={item.productId} className={`border-b print:even:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-muted/20'}`}>
             <TableCell className="font-medium">{item.name}</TableCell>
             <TableCell className="text-center">{item.presentation || "--"}</TableCell>
             <TableCell className="text-center">{item.batch || "--"}</TableCell>
@@ -82,7 +82,7 @@ const renderItemRows = (items: OrderItem[]) => {
 }
 
 const ReceiptCopy = ({ showSignature, isFirstCopy }: { showSignature: boolean, isFirstCopy: boolean }) => (
-  <div className={`max-w-4xl mx-auto bg-white text-black ${isFirstCopy ? 'shadow-lg print:shadow-none page-break-after' : ''}`}>
+  <div className={`max-w-4xl mx-auto bg-white text-black ${!isFirstCopy ? 'shadow-lg print:shadow-none' : 'shadow-lg print:shadow-none page-break-after'}`}>
     <div className="p-8">
       <header className="mb-4">
         <div className="grid grid-cols-3 items-center text-center border-b pb-4 border-gray-400">
@@ -119,17 +119,17 @@ const ReceiptCopy = ({ showSignature, isFirstCopy }: { showSignature: boolean, i
       </div>
 
       <div>
-        <Table className="border-none">
+        <Table className="border-collapse border border-gray-300">
           <TableHeader>
-            <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="w-[45%] font-semibold">Item</TableHead>
-              <TableHead className="text-center font-semibold">Apresentação</TableHead>
-              <TableHead className="text-center font-semibold">Lote</TableHead>
-              <TableHead className="text-center font-semibold">Validade</TableHead>
-              <TableHead className="text-right font-semibold">Quantidade</TableHead>
+            <TableRow className="bg-gray-200 hover:bg-gray-200 print:bg-gray-200">
+              <TableHead className="w-[45%] font-semibold text-slate-700 border border-gray-300">Item</TableHead>
+              <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Apresentação</TableHead>
+              <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Lote</TableHead>
+              <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Validade</TableHead>
+              <TableHead className="text-right font-semibold text-slate-700 border border-gray-300">Quantidade</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody className="border border-gray-300">
             {orderData.items.medicines.length > 0 && (
               <>
                 <CategoryTitle>Medicamentos</CategoryTitle>
