@@ -39,12 +39,22 @@ const renderItemRows = (items: DispensationItem[]) => {
     ));
 }
 
+const getReturnDate = (dispensationDate: string) => {
+    const [day, month, year] = dispensationDate.split('/').map(Number);
+    const date = new Date(year, month - 1, day);
+    date.setDate(date.getDate() + 30);
+    return date.toLocaleDateString('pt-BR');
+};
+
+
 const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensation: Dispensation, showSignature: boolean, isFirstCopy: boolean }) => {
     const groupedItems = dispensation.items.reduce((acc, item) => {
         const category = item.category;
         (acc[category] = acc[category] || []).push(item);
         return acc;
     }, {} as Record<string, DispensationItem[]>);
+    
+    const returnDate = getReturnDate(dispensation.date);
 
   return (
     <div className={`max-w-4xl mx-auto bg-white text-black my-8 print:my-0 flex flex-col justify-between min-h-screen ${isFirstCopy ? 'shadow-lg print:shadow-none page-break-after' : 'shadow-lg print:shadow-none'}`}>
@@ -72,8 +82,10 @@ const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensatio
                 <div><span className="font-semibold">Nome:</span> {dispensation.patient.name}</div>
                 <div><span className="font-semibold">CPF:</span> {dispensation.patient.cpf}</div>
                 <div><span className="font-semibold">CNS:</span> {dispensation.patient.cns}</div>
+                {dispensation.patient.unitName && <div><span className="font-semibold">Unidade:</span> {dispensation.patient.unitName}</div>}
                 <div><span className="font-semibold">Mandado:</span> {dispensation.patient.mandateType}</div>
                 <div><span className="font-semibold">Data:</span> {dispensation.date}</div>
+                <div className="font-bold"><span className="font-semibold">Retorno:</span> {returnDate}</div>
                 <div><span className="font-semibold">ID da Dispensa:</span> {dispensation.id}</div>
             </div>
         </div>
@@ -102,15 +114,9 @@ const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensatio
         
         {showSignature && (
           <div className="mt-20">
-            <div className="grid grid-cols-2 gap-20">
-                <div className="w-full mx-auto">
-                    <div className="border-t border-black"></div>
-                    <p className="text-center mt-2 text-sm">Assinatura do Dispensador</p>
-                </div>
-                <div className="w-full mx-auto">
-                    <div className="border-t border-black"></div>
-                    <p className="text-center mt-2 text-sm">Assinatura do Paciente/Responsável</p>
-                </div>
+             <div className="w-1/2 mx-auto">
+                <div className="border-t border-black"></div>
+                <p className="text-center mt-2 text-sm">Assinatura do Paciente/Responsável</p>
             </div>
           </div>
         )}

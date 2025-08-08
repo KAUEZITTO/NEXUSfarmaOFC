@@ -22,6 +22,7 @@ export type Patient = {
     cpf: string;
     cns: string;
     mandateType: 'Legal' | 'Municipal' | 'N/A';
+    unitName?: string;
 };
 
 export type Order = {

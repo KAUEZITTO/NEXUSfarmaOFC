@@ -1,4 +1,5 @@
 
+
 import { patients, dispensations as allDispensations } from "@/lib/data";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
@@ -38,6 +39,7 @@ export default function PatientHistoryPage({ params }: { params: { patientId: st
                 <div><span className="font-semibold">Nome:</span> {patient.name}</div>
                 <div><span className="font-semibold">CPF:</span> {patient.cpf}</div>
                 <div><span className="font-semibold">CNS:</span> {patient.cns}</div>
+                {patient.unitName && <div><span className="font-semibold">Unidade:</span> {patient.unitName}</div>}
                 <div><span className="font-semibold">Tipo de Mandado:</span> {patient.mandateType}</div>
             </CardContent>
         </Card>

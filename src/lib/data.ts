@@ -23,10 +23,10 @@ export const units: Unit[] = [
 ];
 
 export const patients: Patient[] = [
-    { id: 'PAT001', name: 'João da Silva', cpf: '111.222.333-44', cns: '898 0010 7777 6666', mandateType: 'Legal' },
-    { id: 'PAT002', name: 'Maria Oliveira', cpf: '555.666.777-88', cns: '700 5050 4444 3333', mandateType: 'Municipal' },
-    { id: 'PAT003', name: 'José Pereira', cpf: '999.888.777-66', cns: '708 2020 1111 0000', mandateType: 'Legal' },
-    { id: 'PAT004', name: 'Ana Souza', cpf: '123.456.789-00', cns: '704 8080 2222 9999', mandateType: 'N/A' },
+    { id: 'PAT001', name: 'João da Silva', cpf: '111.222.333-44', cns: '898 0010 7777 6666', mandateType: 'Legal', unitName: 'UBS Centro' },
+    { id: 'PAT002', name: 'Maria Oliveira', cpf: '555.666.777-88', cns: '700 5050 4444 3333', mandateType: 'Municipal', unitName: 'Hospital Municipal' },
+    { id: 'PAT003', name: 'José Pereira', cpf: '999.888.777-66', cns: '708 2020 1111 0000', mandateType: 'Legal', unitName: 'UBS Centro' },
+    { id: 'PAT004', name: 'Ana Souza', cpf: '123.456.789-00', cns: '704 8080 2222 9999', mandateType: 'N/A', unitName: 'UBS Bairro Novo' },
 ];
 
 export const orders: Order[] = [
