@@ -54,20 +54,25 @@ export default function ReportsPage() {
     fetchData();
   }, []);
 
-  const downloadPdf = (pdfDataUri: string, filename: string) => {
-    const link = document.createElement('a');
-    link.href = pdfDataUri;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const openPdfPrintDialog = (pdfDataUri: string) => {
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = pdfDataUri;
+    document.body.appendChild(iframe);
+    iframe.onload = () => {
+        setTimeout(() => {
+            iframe.contentWindow?.focus();
+            iframe.contentWindow?.print();
+            document.body.removeChild(iframe);
+        }, 1);
+    };
   }
 
   const handleExportComplete = async () => {
     setIsGenerating(prev => ({...prev, complete: true}));
     try {
         const pdfDataUri = await generateCompleteReportPDF(products, patients, dispensations);
-        downloadPdf(pdfDataUri, `nexusfarma_relatorio_completo_${new Date().toISOString().split('T')[0]}.pdf`);
+        openPdfPrintDialog(pdfDataUri);
     } catch(e) {
         console.error("Failed to generate complete PDF", e);
         toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
@@ -80,7 +85,7 @@ export default function ReportsPage() {
     setIsGenerating(prev => ({...prev, stock: true}));
     try {
       const pdfDataUri = await generateStockReportPDF(products);
-      downloadPdf(pdfDataUri, `nexusfarma_relatorio_estoque_${new Date().toISOString().split('T')[0]}.pdf`);
+      openPdfPrintDialog(pdfDataUri);
     } catch(e) {
       console.error("Failed to generate stock PDF", e);
       toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
@@ -93,7 +98,7 @@ export default function ReportsPage() {
     setIsGenerating(prev => ({...prev, expiry: true}));
     try {
       const pdfDataUri = await generateExpiryReportPDF(products);
-      downloadPdf(pdfDataUri, `nexusfarma_relatorio_vencimentos_${new Date().toISOString().split('T')[0]}.pdf`);
+      openPdfPrintDialog(pdfDataUri);
     } catch(e) {
       console.error("Failed to generate expiry PDF", e);
       toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
@@ -106,7 +111,7 @@ export default function ReportsPage() {
     setIsGenerating(prev => ({...prev, patient: true}));
     try {
       const pdfDataUri = await generatePatientReportPDF(dispensations);
-      downloadPdf(pdfDataUri, `nexusfarma_relatorio_atendimento_${new Date().toISOString().split('T')[0]}.pdf`);
+      openPdfPrintDialog(pdfDataUri);
     } catch(e) {
       console.error("Failed to generate patient PDF", e);
       toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
