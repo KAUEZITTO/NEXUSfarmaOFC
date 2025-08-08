@@ -4,12 +4,7 @@ export const products: Product[] = []; // This will now be fetched from Firestor
 
 export const units: Unit[] = []; // This will now be fetched from Firestore
 
-export const patients: Patient[] = [
-    { id: 'PAT001', name: 'João da Silva', cpf: '111.222.333-44', cns: '898 0010 7777 6666', mandateType: 'Legal', unitName: 'UBS Centro', status: 'Ativo' },
-    { id: 'PAT002', name: 'Maria Oliveira', cpf: '555.666.777-88', cns: '700 5050 4444 3333', mandateType: 'Municipal', unitName: 'Hospital Municipal', status: 'Ativo' },
-    { id: 'PAT003', name: 'José Pereira', cpf: '999.888.777-66', cns: '708 2020 1111 0000', mandateType: 'Legal', unitName: 'UBS Centro', status: 'Tratamento Concluído' },
-    { id: 'PAT004', name: 'Ana Souza', cpf: '123.456.789-00', cns: '704 8080 2222 9999', mandateType: 'N/A', unitName: 'UBS Bairro Novo', status: 'Ativo' },
-];
+export const patients: Patient[] = []; // This will now be fetched from Firestore
 
 export const orders: Order[] = [
   { id: 'ORD001', unitId: 'UNIT001', unit: 'UBS Centro', sentDate: '2024-05-20', deliveryDate: '2024-05-21', status: 'Entregue', itemCount: 5 },
@@ -26,7 +21,7 @@ export const dispensations: Dispensation[] = [
     { 
         id: 'DISP-1716300000000', 
         patientId: 'PAT001', 
-        patient: patients[0],
+        patient: { id: 'PAT001', name: 'João da Silva', cpf: '111.222.333-44', cns: '898 0010 7777 6666', mandateType: 'Legal', unitName: 'UBS Centro', status: 'Ativo' },
         date: '21/05/2024',
         items: [
             { productId: 'PROD-008', name: 'Insulina NPH', quantity: 2, category: 'Medicamentos', presentation: 'Frasco 10ml', batch: 'LOTE-NPH-1', expiryDate: '30/11/2025' },
@@ -36,7 +31,7 @@ export const dispensations: Dispensation[] = [
     { 
         id: 'DISP-1716310000000', 
         patientId: 'PAT002', 
-        patient: patients[1],
+        patient: { id: 'PAT002', name: 'Maria Oliveira', cpf: '555.666.777-88', cns: '700 5050 4444 3333', mandateType: 'Municipal', unitName: 'Hospital Municipal', status: 'Ativo' },
         date: '22/05/2024',
         items: [
             { productId: 'PROD-006', name: 'Paracetamol 750mg', quantity: 30, category: 'Medicamentos', presentation: 'Comprimido', batch: 'LOTE202403D', expiryDate: '10/05/2025' }
@@ -45,7 +40,7 @@ export const dispensations: Dispensation[] = [
         { 
         id: 'DISP-1716320000000', 
         patientId: 'PAT001', 
-        patient: patients[0],
+        patient: { id: 'PAT001', name: 'João da Silva', cpf: '111.222.333-44', cns: '898 0010 7777 6666', mandateType: 'Legal', unitName: 'UBS Centro', status: 'Ativo' },
         date: '23/05/2024',
         items: [
             { productId: 'FRD001', name: 'Fralda Geriátrica M', quantity: 4, category: 'Fraldas', presentation: 'Pacote' }

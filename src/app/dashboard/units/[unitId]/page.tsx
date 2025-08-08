@@ -1,4 +1,5 @@
 
+'use server';
 import { notFound } from "next/navigation";
 import {
   Card,
@@ -18,7 +19,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Building2, Users, Pill, Stethoscope, ArrowLeft, FileText, CheckCircle, XCircle, Clock } from "lucide-react";
-import { units, patients, orders as allOrders, products } from "@/lib/data";
+import { getUnits, getPatients } from "@/lib/actions";
+import { orders as allOrders } from "@/lib/data";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -32,14 +34,15 @@ const getItemsForOrder = (orderId: string) => {
     return { medCount, materialCount };
 };
 
-export default function UnitDetailsPage({ params }: { params: { unitId: string } }) {
+export default async function UnitDetailsPage({ params }: { params: { unitId: string } }) {
+  const units = await getUnits();
   const unit = units.find(u => u.id === params.unitId);
 
   if (!unit) {
     notFound();
   }
-
-  const patientCount = patients.filter(p => p.unitId === unit.id).length;
+  const allPatients = await getPatients();
+  const patientCount = allPatients.filter(p => p.unitId === unit.id).length;
   const unitOrders = allOrders.filter(o => o.unitId === unit.id);
   
   const totalMedicationsSent = unitOrders.reduce((sum, order) => sum + getItemsForOrder(order.id).medCount, 0);

@@ -26,7 +26,7 @@ import {
   Package,
   ClipboardList,
 } from 'lucide-react';
-import { patients as allPatients, products as allProducts } from '@/lib/data';
+import { getPatients, getProducts } from '@/lib/actions';
 import type { Patient, Product, DispensationItem as DispensationItemType } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -83,8 +83,12 @@ const insulinKeywords = ['insulina', 'lantus', 'apidra', 'nph', 'regular', 'agul
 const stripKeywords = ['tira', 'lanceta'];
 
 
-const getProductsForCategory = (category: Category): Partial<Product>[] => {
+const getProductsForCategory = (allProducts: Product[], category: Category): Partial<Product>[] => {
     if (category === 'Fraldas') {
+        // Fraldas might not be in the main products table in the same way, or they might be.
+        // For this example, we'll filter from allProducts if available, or return a default.
+        const diaperProducts = allProducts.filter(p => p.category === 'Fraldas');
+        if (diaperProducts.length > 0) return diaperProducts;
         return [{ id: 'FRD001', name: 'Fralda Geriátrica M', presentation: 'Pacote' }, { id: 'FRD002', name: 'Fralda Geriátrica G', presentation: 'Pacote' }];
     }
 
@@ -105,28 +109,41 @@ const getProductsForCategory = (category: Category): Partial<Product>[] => {
     }
     
     if (category === 'Outros') {
-        // Return products that don't fit well in other specific categories.
         const usedProductIds = new Set(
-            categories.flatMap(cat => getProductsForCategory(cat.name as Category)).map(p => p.id)
+            categories.flatMap(cat => getProductsForCategory(allProducts, cat.name as Category)).map(p => p.id)
         );
         return allProducts.filter(p => !usedProductIds.has(p.id));
     }
-
-    // Default case to return something, though all categories should be handled above.
     return [];
 }
 
 
-export function AttendPatientDialog() {
+export function AttendPatientDialog({ onDispensationSaved }: { onDispensationSaved?: () => void }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<'selectPatient' | 'dispenseForm'>(
     'selectPatient'
   );
   const [searchTerm, setSearchTerm] = useState('');
+  const [allPatients, setAllPatients] = useState<Patient[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [items, setItems] = useState<DispensationItem[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    async function loadData() {
+        if (isOpen) {
+            setLoading(true);
+            const [patients, products] = await Promise.all([getPatients(), getProducts()]);
+            setAllPatients(patients);
+            setAllProducts(products);
+            setLoading(false);
+        }
+    }
+    loadData();
+  }, [isOpen])
 
   const filteredPatients = allPatients.filter(
     (patient) =>
@@ -137,12 +154,7 @@ export function AttendPatientDialog() {
   const setupInitialItems = (patient: Patient) => {
     const initialItems: DispensationItem[] = [];
 
-    // Auto-add insulin
     if (patient.isAnalogInsulinUser && patient.insulinDosages && patient.insulinDosages.length > 0) {
-        const totalInsulinPerDay = patient.insulinDosages.reduce((sum, d) => sum + d.quantity, 0);
-        // Assuming monthly dispensation
-        const totalInsulinPerMonth = Math.ceil((totalInsulinPerDay * 30) / 100) * 100; // Example logic: round up to nearest 100 UI
-
         const insulinProduct = allProducts.find(p => 
             p.name.toLowerCase().includes(patient.analogInsulinType!.toLowerCase().split(' ')[0]) &&
             p.presentation?.toLowerCase().includes(patient.insulinPresentation!.toLowerCase())
@@ -154,7 +166,7 @@ export function AttendPatientDialog() {
                 productId: insulinProduct.id,
                 name: insulinProduct.name,
                 category: 'Insulinas',
-                quantity: 1, // Let's default to 1, user can adjust
+                quantity: 1, 
                 presentation: insulinProduct.presentation,
                 batch: insulinProduct.batch,
                 expiryDate: insulinProduct.expiryDate ? new Date(insulinProduct.expiryDate).toLocaleDateString('pt-BR') : 'N/A',
@@ -162,7 +174,6 @@ export function AttendPatientDialog() {
         }
     }
 
-    // Auto-add strips
     if (patient.usesStrips && patient.stripDosages && patient.stripDosages.length > 0) {
         const stripProduct = allProducts.find(p => p.name.toLowerCase().includes('tiras de glicemia'));
         if (stripProduct) {
@@ -229,16 +240,17 @@ export function AttendPatientDialog() {
      const itemToUpdate = items.find(i => i.internalId === id);
      if (!itemToUpdate) return;
      
-     const productList = getProductsForCategory(itemToUpdate.category as Category);
+     const productList = getProductsForCategory(allProducts, itemToUpdate.category as Category);
      const product = productList.find(p => p.id === productId);
      
      if (product) {
+         const fullProduct = allProducts.find(p => p.id === productId);
          setItems(items.map(item => item.internalId === id ? {
             ...item,
             productId: productId,
             name: product.name!,
-            batch: product.batch || 'N/A',
-            expiryDate: product.expiryDate ? new Date(product.expiryDate).toLocaleDateString('pt-BR') : 'N/A',
+            batch: fullProduct?.batch || 'N/A',
+            expiryDate: fullProduct?.expiryDate ? new Date(fullProduct.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A',
             presentation: product.presentation || '--'
          } : item));
      }
@@ -249,14 +261,19 @@ export function AttendPatientDialog() {
     if (!selectedPatient) return;
 
     const dispensationId = `DISP-${Date.now()}`;
+    const patientForDispensation = { ...selectedPatient };
+    delete patientForDispensation.files; // Don't embed huge file lists in dispensation history
+
     const dispensationData = {
       id: dispensationId,
       patientId: selectedPatient.id,
-      patient: selectedPatient,
+      patient: patientForDispensation,
       date: new Date().toLocaleDateString('pt-BR'),
       items: items.map(({ internalId, ...rest }) => rest), // Remove internalId before saving
     };
     
+    // This is where you would call a server action to save the dispensation to Firestore.
+    // For this prototype, we'll continue using the mock array.
     allDispensations.push(dispensationData);
 
     toast({
@@ -264,19 +281,18 @@ export function AttendPatientDialog() {
       description: `Gerando recibo para ${selectedPatient?.name}.`,
     });
     
+    onDispensationSaved?.();
     setIsOpen(false);
     
-    // Redirect to the receipt page with a query param to trigger printing
     router.push(`/dispensation-receipt/${dispensationId}?new=true`);
 
-    // Reset state for next time
     setTimeout(() => {
         handleBack();
     }, 300);
   };
   
   const renderItemInput = (item: DispensationItem) => {
-    const productList = getProductsForCategory(item.category as Category);
+    const productList = getProductsForCategory(allProducts, item.category as Category);
 
     if (productList.length > 0) {
       return (
@@ -289,7 +305,6 @@ export function AttendPatientDialog() {
       );
     }
     
-    // For categories with manual input
     return (
         <Input 
             placeholder="Nome do item"
@@ -399,7 +414,7 @@ export function AttendPatientDialog() {
               </div>
               <ScrollArea className="h-[calc(80vh-150px)]">
                 <div className="space-y-2">
-                  {filteredPatients.map((patient) => (
+                  {loading ? <p>Carregando pacientes...</p> : filteredPatients.map((patient) => (
                     <div
                       key={patient.id}
                       className="flex items-center justify-between p-3 rounded-md border hover:bg-muted cursor-pointer"

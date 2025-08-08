@@ -1,6 +1,9 @@
 
 
-import { patients, dispensations as allDispensations } from "@/lib/data";
+'use server';
+
+import { getPatients, getUnits } from "@/lib/actions";
+import { dispensations as allDispensations } from "@/lib/data";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
 import {
@@ -13,7 +16,8 @@ import {
 import { notFound } from "next/navigation";
 import { User } from "lucide-react";
 
-export default function PatientHistoryPage({ params }: { params: { patientId: string } }) {
+export default async function PatientHistoryPage({ params }: { params: { patientId: string } }) {
+  const patients = await getPatients();
   const patient = patients.find(p => p.id === params.patientId);
   // In a real app, this would be a proper DB query.
   // Here we filter the mock data.

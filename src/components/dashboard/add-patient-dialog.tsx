@@ -26,9 +26,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PlusCircle, Save, Trash2, FileUp, X, Loader2 } from 'lucide-react';
-import { getUnits } from '@/lib/actions';
+import { getUnits, addPatient, updatePatient } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { patients } from '@/lib/data';
 import type { Patient, Dosage, PatientFile, Unit } from '@/lib/types';
 import { Separator } from '../ui/separator';
 import { storage } from '@/lib/firebase';
@@ -84,9 +83,10 @@ const DosageInput = ({ dosages, setDosages, unitLabel }: { dosages: Dosage[], se
 type AddPatientDialogProps = {
     patientToEdit?: Patient;
     trigger: React.ReactNode;
+    onPatientSaved?: () => void;
 }
 
-export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogProps) {
+export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: AddPatientDialogProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -129,6 +129,27 @@ export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogPro
     loadUnits();
   }, [isOpen]);
 
+  const resetForm = () => {
+    setName('');
+    setCpf('');
+    setCns('');
+    setRg('');
+    setAddress('');
+    setPhone('');
+    setUnitId('');
+    setIsAnalogInsulinUser(false);
+    setUsesStrips(false);
+    setInsulinDosages([]);
+    setStripDosages([]);
+    setIsBedridden(false);
+    setDemandType('none');
+    setJudicialItems([]);
+    setMunicipalItems([]);
+    setHasInsulinReport(false);
+    setFiles([]);
+    setUploadedFiles([]);
+  }
+
   useEffect(() => {
     if (patientToEdit && isOpen) {
         setName(patientToEdit.name || '');
@@ -150,26 +171,9 @@ export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogPro
         setJudicialItems(patientToEdit.judicialItems || []);
         setMunicipalItems(patientToEdit.municipalItems || []);
         setFiles(patientToEdit.files || []);
-    } else if (!isEditing && isOpen) {
-        // Reset state when opening for a new patient
-        setName('');
-        setCpf('');
-        setCns('');
-        setRg('');
-        setAddress('');
-        setPhone('');
-        setUnitId('');
-        setIsAnalogInsulinUser(false);
-        setUsesStrips(false);
-        setInsulinDosages([]);
-        setStripDosages([]);
-        setIsBedridden(false);
-        setDemandType('none');
-        setJudicialItems([]);
-        setMunicipalItems([]);
-        setHasInsulinReport(false);
-        setFiles([]);
         setUploadedFiles([]);
+    } else if (!isEditing && isOpen) {
+        resetForm();
     }
   }, [patientToEdit, isOpen, isEditing])
 
@@ -211,8 +215,7 @@ export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogPro
     try {
         const newFiles = await Promise.all(fileUploadPromises);
 
-        const newOrUpdatedPatient: Patient = {
-            id: patientId,
+        const patientData: Omit<Patient, 'id'> = {
             name,
             cpf,
             cns,
@@ -238,22 +241,20 @@ export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogPro
 
         
         if (isEditing) {
-            const index = patients.findIndex(p => p.id === patientToEdit.id);
-            if (index !== -1) {
-                patients[index] = newOrUpdatedPatient as Patient;
-            }
+            await updatePatient(patientToEdit.id, patientData);
         } else {
-            patients.push(newOrUpdatedPatient as Patient);
+            await addPatient(patientData);
         }
         
 
         toast({
             title: `Paciente ${isEditing ? 'Atualizado' : 'Adicionado'}!`,
-            description: `${newOrUpdatedPatient.name} foi ${isEditing ? 'atualizado' : 'cadastrado'} com sucesso.`
+            description: `${patientData.name} foi ${isEditing ? 'atualizado' : 'cadastrado'} com sucesso.`
         });
 
+        onPatientSaved?.();
         setIsOpen(false);
-        setUploadedFiles([]);
+        resetForm();
 
     } catch (error) {
         console.error("Error saving patient or uploading files:", error);

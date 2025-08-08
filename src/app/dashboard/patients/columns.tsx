@@ -1,3 +1,4 @@
+
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
@@ -10,15 +11,34 @@ import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { AddPatientDialog } from "@/components/dashboard/add-patient-dialog"
+import { updatePatientStatus } from "@/lib/actions"
+import { useToast } from "@/hooks/use-toast"
 
-const updatePatientStatus = (patientId: string, status: PatientStatus) => {
-  // This is a mock implementation. In a real app, you'd call a server action.
-  console.log(`Updating patient ${patientId} to status ${status}`);
-  // You might want to trigger a re-render or a toast message here.
-  alert(`Status do paciente ${patientId} atualizado para ${status}. Recarregue a página para ver a alteração.`);
-};
+type ColumnsProps = {
+  onPatientStatusChanged: () => void;
+}
 
-export const columns: ColumnDef<Patient>[] = [
+export const columns = ({ onPatientStatusChanged }: ColumnsProps): ColumnDef<Patient>[] => {
+  const { toast } = useToast();
+
+  const handleUpdateStatus = async (patientId: string, status: PatientStatus) => {
+    try {
+      await updatePatientStatus(patientId, status);
+      toast({
+        title: "Status Atualizado!",
+        description: `O status do paciente foi alterado para ${status}.`,
+      });
+      onPatientStatusChanged();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao atualizar status",
+        description: "Não foi possível alterar o status do paciente.",
+      });
+    }
+  };
+
+  return [
   {
     id: "select",
     header: ({ table }) => (
@@ -72,15 +92,14 @@ export const columns: ColumnDef<Patient>[] = [
       const status: PatientStatus = row.getValue("status");
       if (status === 'Ativo') return null;
 
-      const variantMap: { [key in PatientStatus]: "default" | "secondary" | "destructive" } = {
-        'Ativo': 'default',
+      const variantMap: { [key in PatientStatus]?: "default" | "secondary" | "destructive" } = {
         'Tratamento Concluído': 'default',
         'Tratamento Interrompido': 'secondary',
         'Óbito': 'destructive'
       };
 
       return <Badge 
-        variant={variantMap[status]} 
+        variant={variantMap[status] ?? 'default'} 
         className={cn({
           'bg-green-600 text-white': status === 'Tratamento Concluído',
           'bg-orange-500 text-white': status === 'Tratamento Interrompido',
@@ -112,7 +131,7 @@ export const columns: ColumnDef<Patient>[] = [
               </Link>
             </DropdownMenuItem>
              <DropdownMenuItem asChild>
-                <AddPatientDialog patientToEdit={patient} trigger={
+                <AddPatientDialog patientToEdit={patient} onPatientSaved={onPatientStatusChanged} trigger={
                     <button className="w-full h-full relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
                         <Edit className="mr-2 h-4 w-4" />
                         <span>Editar Cadastro</span>
@@ -127,19 +146,19 @@ export const columns: ColumnDef<Patient>[] = [
                 </DropdownMenuSubTrigger>
                 <DropdownMenuPortal>
                     <DropdownMenuSubContent>
-                         <DropdownMenuItem onClick={() => updatePatientStatus(patient.id, 'Ativo')}>
+                         <DropdownMenuItem onClick={() => handleUpdateStatus(patient.id, 'Ativo')}>
                             <UserCheck className="mr-2 h-4 w-4" />
                             <span>Ativo</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => updatePatientStatus(patient.id, 'Tratamento Concluído')}>
+                        <DropdownMenuItem onClick={() => handleUpdateStatus(patient.id, 'Tratamento Concluído')}>
                             <CheckCircle className="mr-2 h-4 w-4" />
                             <span>Tratamento Concluído</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => updatePatientStatus(patient.id, 'Tratamento Interrompido')}>
+                        <DropdownMenuItem onClick={() => handleUpdateStatus(patient.id, 'Tratamento Interrompido')}>
                             <XCircle className="mr-2 h-4 w-4" />
                             <span>Tratamento Interrompido</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => updatePatientStatus(patient.id, 'Óbito')}>
+                        <DropdownMenuItem onClick={() => handleUpdateStatus(patient.id, 'Óbito')}>
                             <UserX className="mr-2 h-4 w-4" />
                             <span>Óbito</span>
                         </DropdownMenuItem>
@@ -152,3 +171,4 @@ export const columns: ColumnDef<Patient>[] = [
     },
   },
 ]
+}

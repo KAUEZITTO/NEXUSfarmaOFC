@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { db } from './firebase';
 import { collection, getDocs, addDoc, updateDoc, doc, query, where } from 'firebase/firestore';
-import type { Product, Unit } from './types';
+import type { Product, Unit, Patient, PatientStatus } from './types';
 import { revalidatePath } from 'next/cache';
 
 // AUTH ACTIONS
@@ -80,4 +80,42 @@ export async function updateUnit(unitId: string, unitData: Partial<Unit>) {
     revalidatePath('/dashboard/orders');
     revalidatePath('/dashboard/orders/new');
     revalidatePath('/dashboard/patients');
+}
+
+// FIRESTORE ACTIONS - PATIENTS
+
+export async function getPatients(): Promise<Patient[]> {
+    const patientsCol = collection(db, 'patients');
+    const patientSnapshot = await getDocs(patientsCol);
+    const patientList = patientSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Patient));
+    return patientList;
+}
+
+export async function addPatient(patient: Omit<Patient, 'id'>) {
+    // Add a default status if it's not provided
+    const patientWithStatus = {
+        status: 'Ativo' as PatientStatus,
+        ...patient,
+    }
+    await addDoc(collection(db, 'patients'), patientWithStatus);
+    revalidatePath('/dashboard/patients');
+}
+
+export async function updatePatient(patientId: string, patientData: Partial<Patient>) {
+    if (!patientId) {
+        throw new Error("Patient ID is required for updating.");
+    }
+    const patientRef = doc(db, 'patients', patientId);
+    await updateDoc(patientRef, patientData);
+    revalidatePath('/dashboard/patients');
+    revalidatePath(`/dashboard/patients/${patientId}`);
+}
+
+export async function updatePatientStatus(patientId: string, status: PatientStatus) {
+  if (!patientId) {
+    throw new Error("Patient ID is required for updating status.");
+  }
+  const patientRef = doc(db, 'patients', patientId);
+  await updateDoc(patientRef, { status });
+  revalidatePath('/dashboard/patients');
 }
