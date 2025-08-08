@@ -28,11 +28,8 @@ export function LoginForm() {
           id="userId"
           name="userId"
           type="text"
-          placeholder="123456"
+          placeholder="Ex: KAUE23"
           required
-          maxLength={6}
-          pattern="\d{6}"
-          title="ID de usuário deve conter 6 dígitos."
         />
       </div>
       <div className="grid gap-2">

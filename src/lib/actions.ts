@@ -13,7 +13,7 @@ export async function authenticate(
 
     // Mock authentication logic
     // In a real app, you would validate against a database
-    if (userId === '123456' && password === 'password') {
+    if (userId.toLowerCase() === 'kaue23' && password === 'teste123') {
       cookies().set('session', 'true', { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 });
     } else {
       return 'ID de usuário ou senha inválidos.';
