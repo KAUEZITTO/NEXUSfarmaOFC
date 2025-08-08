@@ -2,7 +2,7 @@ import { patients } from "@/lib/data";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, UserCheck } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -22,10 +22,16 @@ export default function PatientsPage() {
               Visualize e gerencie as informações dos pacientes.
             </CardDescription>
           </div>
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Adicionar Paciente
-          </Button>
+          <div className="flex gap-2">
+            <Button>
+              <UserCheck className="mr-2 h-4 w-4" />
+              Atender Paciente
+            </Button>
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Adicionar Paciente
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
