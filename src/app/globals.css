@@ -118,3 +118,61 @@ body {
     transform: translateX(8px);
   }
 }
+
+/* Custom styles for Intro.js */
+.custom-tooltip-class {
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--card-foreground));
+    border-radius: var(--radius);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    max-width: 350px !important;
+}
+
+.introjs-button {
+    background-color: hsl(var(--primary)) !important;
+    color: hsl(var(--primary-foreground)) !important;
+    text-shadow: none !important;
+    border-radius: var(--radius) !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    transition: background-color 0.2s;
+}
+
+.introjs-button:hover {
+    background-color: hsl(var(--primary) / 0.9) !important;
+}
+
+.introjs-prevbutton {
+    background-color: hsl(var(--muted)) !important;
+    color: hsl(var(--muted-foreground)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+}
+.introjs-prevbutton:hover {
+    background-color: hsl(var(--muted) / 0.9) !important;
+}
+
+.introjs-skipbutton {
+    color: hsl(var(--muted-foreground)) !important;
+}
+.introjs-skipbutton:hover {
+    color: hsl(var(--foreground)) !important;
+}
+
+.introjs-tooltiptext {
+    line-height: 1.6;
+}
+
+.introjs-arrow.top {
+    border-bottom-color: hsl(var(--card)) !important;
+}
+.introjs-arrow.bottom {
+    border-top-color: hsl(var(--card)) !important;
+}
+.introjs-arrow.left {
+    border-right-color: hsl(var(--card)) !important;
+}
+.introjs-arrow.right {
+    border-left-color: hsl(var(--card)) !important;
+}

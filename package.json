@@ -45,6 +45,8 @@
     "firebase": "^11.10.0",
     "firebase-admin": "^12.2.0",
     "genkit": "^1.14.1",
+    "intro.js": "^7.2.0",
+    "intro.js-react": "^1.0.0",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.2",
     "lucide-react": "^0.475.0",
@@ -61,6 +63,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@types/intro.js": "^5.1.2",
     "@types/jspdf": "^2.0.0",
     "@types/node": "^20",
     "@types/react": "^18",

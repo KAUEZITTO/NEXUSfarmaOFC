@@ -3,7 +3,6 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
 import {
   Home,
   ShoppingCart,
@@ -13,19 +12,18 @@ import {
   BarChart2,
   Info,
 } from 'lucide-react';
-import { Badge } from '../ui/badge';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '../ui/sidebar';
 import { useSidebar } from '../ui/sidebar';
 
 
 export const navItems = [
-  { href: '/dashboard', icon: Home, label: 'Dashboard' },
-  { href: '/dashboard/orders', icon: ShoppingCart, label: 'Pedidos' },
-  { href: '/dashboard/inventory', icon: Package, label: 'Inventário' },
-  { href: '/dashboard/patients', icon: Users, label: 'Pacientes' },
-  { href: '/dashboard/units', icon: Building2, label: 'Unidades' },
-  { href: '/dashboard/reports', icon: BarChart2, label: 'Relatórios' },
-  { href: '/dashboard/about', icon: Info, label: 'Sobre' },
+  { href: '/dashboard', icon: Home, label: 'Dashboard', tourId: 'step-dashboard' },
+  { href: '/dashboard/orders', icon: ShoppingCart, label: 'Pedidos', tourId: 'step-orders' },
+  { href: '/dashboard/inventory', icon: Package, label: 'Inventário', tourId: 'step-inventory' },
+  { href: '/dashboard/patients', icon: Users, label: 'Pacientes', tourId: 'step-patients' },
+  { href: '/dashboard/units', icon: Building2, label: 'Unidades', tourId: 'step-units' },
+  { href: '/dashboard/reports', icon: BarChart2, label: 'Relatórios', tourId: 'step-reports' },
+  { href: '/dashboard/about', icon: Info, label: 'Sobre', tourId: 'step-about' },
 ];
 
 export function DashboardNav({ isMobile = false }: { isMobile?: boolean }) {
@@ -35,11 +33,11 @@ export function DashboardNav({ isMobile = false }: { isMobile?: boolean }) {
 
   return (
      <SidebarMenu>
-        {navItems.map(({ href, icon: Icon, label }) => (
-            <SidebarMenuItem key={label}>
+        {navItems.map(({ href, icon: Icon, label, tourId }) => (
+            <SidebarMenuItem key={label} data-tour-id={tourId}>
                 <SidebarMenuButton 
                     asChild
-                    isActive={pathname.startsWith(href) && href !== '/dashboard' || pathname === href}
+                    isActive={pathname.startsWith(href) && (href !== '/dashboard' || pathname === href)}
                     onClick={() => {
                         if (isMobile) {
                             setOpenMobile(false)

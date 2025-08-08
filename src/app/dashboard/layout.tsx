@@ -8,6 +8,7 @@ import { UserNav } from '@/components/dashboard/user-nav';
 import { DashboardNav } from '@/components/dashboard/dashboard-nav';
 import { Logo } from '@/components/logo';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { TourGuide } from '@/components/dashboard/tour-guide';
 
 export default function DashboardLayout({
   children,
@@ -17,10 +18,11 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
+      <TourGuide />
       <div className="grid min-h-screen w-full md:grid-cols-[var(--sidebar-width)_1fr] peer-data-[state=collapsed]:md:grid-cols-[var(--sidebar-width-icon)_1fr] transition-[grid-template-columns] duration-300 ease-in-out">
          <Sidebar>
             <SidebarHeader>
-                <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+                <Link href="/dashboard" className="flex items-center gap-2 font-semibold" data-tour-id="step-logo">
                     <Logo />
                 </Link>
             </SidebarHeader>
