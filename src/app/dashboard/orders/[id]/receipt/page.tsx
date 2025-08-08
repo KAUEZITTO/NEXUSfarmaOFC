@@ -67,7 +67,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
         </div>
       </header>
       <Separator className="my-4 bg-gray-400" />
-      <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
+      <div className="grid grid-cols-3 gap-4 mb-8 text-sm">
         <div>
           <p className="font-bold">Unidade de Destino:</p>
           <p>{orderData.unit}</p>
@@ -80,10 +80,6 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
           <p className="font-bold">ID do Pedido:</p>
           <p>{orderData.id}</p>
         </div>
-      </div>
-      <div className="mb-8">
-        <p className="font-bold">Recebido por (Paciente/Responsável):</p>
-        <p>{orderData.recipient}</p>
       </div>
 
       <Table className="border">
