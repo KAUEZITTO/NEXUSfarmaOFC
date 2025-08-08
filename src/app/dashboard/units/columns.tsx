@@ -3,9 +3,10 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { Unit } from "@/lib/types"
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, MoreHorizontal, Check, X, Edit } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { ArrowUpDown, MoreHorizontal, Check, X, Edit, Eye } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { AddUnitDialog } from "@/components/dashboard/add-unit-dialog"
+import Link from "next/link"
 
 export const columns: ColumnDef<Unit>[] = [
   {
@@ -21,7 +22,14 @@ export const columns: ColumnDef<Unit>[] = [
         </Button>
       )
     },
-    cell: ({ row }) => <div className="capitalize font-medium">{row.getValue("name")}</div>,
+    cell: ({ row }) => {
+        const unit = row.original
+        return (
+            <Link href={`/dashboard/units/${unit.id}`} className="capitalize font-medium text-primary hover:underline">
+                {row.getValue("name")}
+            </Link>
+        )
+    },
   },
   {
     accessorKey: "address",
@@ -63,11 +71,18 @@ export const columns: ColumnDef<Unit>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
+             <DropdownMenuItem asChild>
+                <Link href={`/dashboard/units/${unit.id}`} className="w-full h-full flex items-center">
+                    <Eye className="mr-2 h-4 w-4" />
+                    Ver Detalhes
+                </Link>
+            </DropdownMenuItem>
+             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
                  <AddUnitDialog unitToEdit={unit} trigger={
                     <button className="w-full h-full relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
                         <Edit className="mr-2 h-4 w-4" />
-                        <span>Editar</span>
+                        <span>Editar Unidade</span>
                     </button>
                 } />
             </DropdownMenuItem>
