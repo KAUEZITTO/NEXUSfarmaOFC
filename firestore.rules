@@ -1,35 +1,11 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Products: Any authenticated user can read/write products.
-    match /products/{productId} {
-      allow read, create, update: if request.auth != null;
-      allow delete: if false; // Protect against accidental deletion
-    }
-
-    // Units: Any authenticated user can manage units.
-    match /units/{unitId} {
-      allow read, create, update: if request.auth != null;
-      allow delete: if false;
-    }
-
-    // Patients: Any authenticated user can manage patients.
-    match /patients/{patientId} {
-      allow read, create, update: if request.auth != null;
-      allow delete: if false; // Status should be changed, not deleted.
-    }
-
-    // Orders: Any authenticated user can manage orders.
-    match /orders/{orderId} {
-      allow read, create, update: if request.auth != null;
-      allow delete: if false;
-    }
-
-    // Dispensations: Any authenticated user can manage dispensations.
-    match /dispensations/{dispensationId} {
-      allow read, create, update: if request.auth != null;
-      allow delete: if false;
+    // Allows all reads and writes to all documents in the database.
+    // This is useful for development, but it's insecure for production.
+    // You should secure your database before deploying to production.
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }
