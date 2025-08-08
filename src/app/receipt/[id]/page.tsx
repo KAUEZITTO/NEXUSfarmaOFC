@@ -84,7 +84,7 @@ const renderItemRows = (items: OrderItem[]) => {
 }
 
 const ReceiptCopy = ({ showSignature, isFirstCopy }: { showSignature: boolean, isFirstCopy: boolean }) => (
-  <div className={`max-w-4xl mx-auto bg-white text-black my-8 print:my-0 ${isFirstCopy ? 'shadow-lg print:shadow-none page-break-after' : 'shadow-lg print:shadow-none'}`}>
+  <div className={`max-w-4xl mx-auto bg-white text-black my-8 print:my-0 flex flex-col justify-between min-h-screen ${isFirstCopy ? 'shadow-lg print:shadow-none page-break-after' : 'shadow-lg print:shadow-none'}`}>
     <div className="p-8">
       <header className="mb-4">
         <div className="grid grid-cols-3 items-center text-center border-b pb-4 border-gray-400">
@@ -168,10 +168,18 @@ const ReceiptCopy = ({ showSignature, isFirstCopy }: { showSignature: boolean, i
           </div>
         </div>
       )}
-       <p className="text-xs text-center mt-8 text-gray-500">
+    </div>
+    <footer className="p-8 pt-4">
+        <div className="border-t border-gray-300 pt-4 text-center text-xs text-gray-600">
+            <p className="font-bold">CAF – CENTRO DE ABASTÊCIMENTO FARMACÊUTICO</p>
+            <p>Av. Marechal Deodoro – Centro – IGARAPÉ-AÇU/PA - CEP 68.725-000</p>
+            <p>email: caf.igarape18@gmail.com | CNPJ: 11.718.379/0001-96</p>
+            <p className="font-semibold mt-2">PEDIDOS E DEMAIS DEMANDAS PODEM SER ENVIADAS POR EMAIL!</p>
+        </div>
+       <p className="text-xs text-center mt-4 text-gray-500">
         {isFirstCopy ? "1ª VIA - CAF" : "2ª VIA - UNIDADE"}
       </p>
-    </div>
+    </footer>
   </div>
 );
 
