@@ -14,6 +14,7 @@ import { Printer } from "lucide-react";
 import { products } from "@/lib/data";
 import { Product } from "@/lib/types";
 import { Logo } from "@/components/logo";
+import Image from "next/image";
 
 type OrderItem = {
   productId: string;
@@ -72,7 +73,7 @@ const CategoryTitle = ({ children }: { children: React.ReactNode }) => (
 
 const renderItemRows = (items: OrderItem[]) => {
     return items.map((item) => (
-        <TableRow key={item.productId}>
+        <TableRow key={item.productId} className="border-b">
             <TableCell className="font-medium">{item.name}</TableCell>
             <TableCell className="text-center">{item.presentation || "--"}</TableCell>
             <TableCell className="text-center">{item.batch || "--"}</TableCell>
@@ -89,19 +90,28 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="max-w-4xl mx-auto p-8 bg-white text-black shadow-lg print:shadow-none">
-      <header className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-2">
-          <Logo />
-          <p className="text-sm -ml-2 mt-1">Termo de Recebimento</p>
-        </div>
-        <div className="text-right">
-            <h2 className="font-bold text-lg">PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU</h2>
-            <p className="text-sm">SECRETARIA MUNICIPAL DE SAÚDE</p>
-            <p className="text-sm">FARMÁCIA CENTRAL</p>
+       <header className="mb-4">
+        <div className="grid grid-cols-3 items-center text-center border-b pb-4 border-gray-400">
+            <div className="flex flex-col items-center justify-center">
+                <Image src="https://placehold.co/80x80.png" alt="Logo Prefeitura" width={50} height={50} data-ai-hint="city hall government" />
+                <p className="text-xs font-bold mt-1 max-w-40">PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU</p>
+            </div>
+
+            <div className="flex flex-col items-center justify-center">
+                <Logo />
+                <p className="text-sm mt-1 font-semibold">Termo de Recebimento</p>
+                <p className="text-xs">SECRETARIA MUNICIPAL DE SAÚDE</p>
+                <p className="text-xs font-bold">FARMÁCIA CENTRAL</p>
+            </div>
+
+            <div className="flex flex-col items-center justify-center">
+                 <Image src="https://placehold.co/80x80.png" alt="Logo Café de Igarapé Açu" width={50} height={50} data-ai-hint="coffee beans" />
+                 <p className="text-xs font-bold mt-1">CAFÉ DE IGARAPÉ-AÇU</p>
+            </div>
         </div>
       </header>
-      <Separator className="my-4 bg-gray-400" />
-      <div className="grid grid-cols-3 gap-4 mb-8 text-sm">
+      
+      <div className="grid grid-cols-3 gap-4 my-6 text-sm">
         <div>
           <p className="font-bold">Unidade de Destino:</p>
           <p>{orderData.unit}</p>
@@ -117,7 +127,7 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
       </div>
 
       <div>
-        <Table>
+        <Table className="border-none">
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
               <TableHead className="w-[45%] font-semibold">Item</TableHead>
