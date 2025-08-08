@@ -21,23 +21,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Save } from 'lucide-react';
+import { Save, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { products } from '@/lib/data';
+import { addProduct, updateProduct } from '@/lib/actions';
 import type { Product } from '@/lib/types';
 
 type AddProductDialogProps = {
   trigger: React.ReactNode;
   productToEdit?: Product;
+  onProductSaved?: () => void;
 };
 
 const categories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Outro'];
 const presentations: Exclude<Product['presentation'], undefined>[] = ['Comprimido', 'Unidade', 'Caixa c/ 100', 'Seringa 4g', 'Frasco 10ml', 'Caixa c/ 50', 'Caneta 3ml', 'Pacote', 'Bolsa', 'Outro'];
 const suppliers: Exclude<Product['supplier'], undefined>[] = ['Casmed', 'Mednutri', 'Doação', 'Outro'];
 
-export function AddProductDialog({ trigger, productToEdit }: AddProductDialogProps) {
+export function AddProductDialog({ trigger, productToEdit, onProductSaved }: AddProductDialogProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const isEditing = !!productToEdit;
 
   // Form state
@@ -51,6 +53,18 @@ export function AddProductDialog({ trigger, productToEdit }: AddProductDialogPro
   const [quantity, setQuantity] = useState(0);
   const [presentation, setPresentation] = useState<Product['presentation']>('Unidade');
 
+  const resetForm = () => {
+    setName('');
+    setCommercialName('');
+    setManufacturer('');
+    setCategory('Medicamento');
+    setBatch('');
+    setExpiryDate('');
+    setSupplier('Casmed');
+    setQuantity(0);
+    setPresentation('Unidade');
+  }
+
   useEffect(() => {
     if (productToEdit && isOpen) {
         setName(productToEdit.name);
@@ -62,36 +76,12 @@ export function AddProductDialog({ trigger, productToEdit }: AddProductDialogPro
         setSupplier(productToEdit.supplier || 'Outro');
         setQuantity(productToEdit.quantity);
         setPresentation(productToEdit.presentation || 'Outro');
+    } else {
+        resetForm();
     }
   }, [productToEdit, isOpen]);
 
-  const generateProductId = (productName: string): string => {
-    const existingProducts = products.filter(p => p.name.toLowerCase() === productName.toLowerCase());
-
-    if (existingProducts.length === 0) {
-      // It's a new product, find the max ID and increment
-      const maxIdNum = products.reduce((max, p) => {
-        const idNum = parseInt(p.id.split('-')[1], 10);
-        return idNum > max ? idNum : max;
-      }, 0);
-      const newId = (maxIdNum + 1).toString().padStart(3, '0');
-      return `PROD-${newId}`;
-    }
-
-    // It's a new batch of an existing product
-    const baseId = existingProducts[0].id.split('-').slice(0, 2).join('-');
-    const maxSuffix = existingProducts.reduce((max, p) => {
-      const parts = p.id.split('-');
-      if (parts.length > 2) {
-        const suffix = parseInt(parts[2], 10);
-        return suffix > max ? suffix : max;
-      }
-      return max;
-    }, 0);
-    return `${baseId}-${maxSuffix + 1}`;
-  };
-
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name || !category || (quantity < 0)) {
       toast({
         variant: 'destructive',
@@ -100,12 +90,11 @@ export function AddProductDialog({ trigger, productToEdit }: AddProductDialogPro
       });
       return;
     }
+    setIsSaving(true);
 
-    if (isEditing) {
-        const index = products.findIndex(p => p.id === productToEdit.id);
-        if (index !== -1) {
-            products[index] = {
-                ...products[index],
+    try {
+        if (isEditing && productToEdit) {
+            const productDataToUpdate = {
                 name,
                 commercialName: category === 'Medicamento' ? commercialName : undefined,
                 manufacturer,
@@ -115,45 +104,44 @@ export function AddProductDialog({ trigger, productToEdit }: AddProductDialogPro
                 expiryDate,
                 supplier,
                 presentation,
-                status: quantity > 0 ? (quantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque',
             };
+            await updateProduct(productToEdit.id, productDataToUpdate);
             toast({
               title: 'Produto Atualizado!',
               description: `${name} foi atualizado com sucesso.`,
             });
+        } else {
+            const newProduct: Omit<Product, 'id' | 'status'> = {
+                name,
+                commercialName: category === 'Medicamento' ? commercialName : undefined,
+                manufacturer: manufacturer,
+                category,
+                quantity,
+                batch,
+                expiryDate,
+                supplier,
+                presentation,
+            };
+            await addProduct(newProduct);
+            toast({
+                title: 'Produto Adicionado!',
+                description: `${newProduct.name} foi adicionado ao inventário com sucesso.`,
+            });
         }
-    } else {
-        const newProductId = generateProductId(name);
-        const newProduct: Product = {
-        id: newProductId,
-        name,
-        commercialName: category === 'Medicamento' ? commercialName : undefined,
-        manufacturer: manufacturer,
-        category,
-        quantity,
-        batch,
-        expiryDate,
-        supplier,
-        presentation,
-        status: quantity > 0 ? (quantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque',
-        };
-
-        products.unshift(newProduct);
-
-        toast({
-        title: 'Produto Adicionado!',
-        description: `${newProduct.name} foi adicionado ao inventário com sucesso.`,
+        
+        onProductSaved?.();
+        setIsOpen(false);
+        resetForm();
+    } catch (error) {
+         toast({
+            variant: 'destructive',
+            title: 'Erro ao salvar',
+            description: 'Ocorreu um erro ao salvar o produto. Tente novamente.',
         });
+        console.error("Failed to save product:", error);
+    } finally {
+        setIsSaving(false);
     }
-
-    setIsOpen(false);
-    // Reset form
-    setName('');
-    setCommercialName('');
-    setManufacturer('');
-    setBatch('');
-    setExpiryDate('');
-    setQuantity(0);
   };
 
   return (
@@ -166,7 +154,7 @@ export function AddProductDialog({ trigger, productToEdit }: AddProductDialogPro
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="name">Nome do Produto (Princípio Ativo/Descrição)</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} disabled={isEditing} />
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="category">Categoria</Label>
@@ -220,13 +208,13 @@ export function AddProductDialog({ trigger, productToEdit }: AddProductDialogPro
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button type="button" variant="outline">
+            <Button type="button" variant="outline" disabled={isSaving}>
               Cancelar
             </Button>
           </DialogClose>
-          <Button type="button" onClick={handleSave}>
-            <Save className="mr-2 h-4 w-4" />
-            Salvar
+          <Button type="button" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            {isSaving ? 'Salvando...' : 'Salvar'}
           </Button>
         </DialogFooter>
       </DialogContent>

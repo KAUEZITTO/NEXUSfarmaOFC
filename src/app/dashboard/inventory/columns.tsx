@@ -11,7 +11,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { cn } from "@/lib/utils"
 import { AddProductDialog } from "@/components/dashboard/add-product-dialog"
 
-export const columns: ColumnDef<Product>[] = [
+// This function needs to be passed down to the columns to trigger a re-fetch
+// A better state management (like Zustand or React Context) would be ideal for a larger app
+// But for now, we pass a callback.
+type ColumnsProps = {
+  onProductSaved: () => void;
+}
+
+export const getColumns = ({ onProductSaved }: ColumnsProps): ColumnDef<Product>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -110,7 +117,7 @@ export const columns: ColumnDef<Product>[] = [
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-                <AddProductDialog productToEdit={product} trigger={
+                <AddProductDialog onProductSaved={onProductSaved} productToEdit={product} trigger={
                     <button className="w-full h-full relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
                         <Edit className="mr-2 h-4 w-4" />
                         <span>Editar</span>

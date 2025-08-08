@@ -1,21 +1,6 @@
 import type { Product, Order, Patient, Unit, Dispensation } from './types';
 
-export const products: Product[] = [
-  { id: 'PROD-001', name: 'Dipirona 500mg', category: 'Medicamento', quantity: 150, expiryDate: '2025-12-31', status: 'Em Estoque', batch: 'LOTE202401A', presentation: 'Comprimido' },
-  { id: 'PROD-002', name: 'Seringa 10ml', category: 'Material Técnico', quantity: 500, expiryDate: '2026-06-30', status: 'Em Estoque', batch: 'LOTE202402B', presentation: 'Unidade' },
-  { id: 'PROD-003', name: 'Luva de Procedimento (M)', category: 'Material Técnico', quantity: 20, expiryDate: '2024-09-30', status: 'Baixo Estoque', batch: 'LOTE202401M', presentation: 'Caixa c/ 100' },
-  { id: 'PROD-004', name: 'Resina Composta Z350', category: 'Odontológico', quantity: 0, expiryDate: '2025-01-15', status: 'Sem Estoque', batch: 'LOTE202312C', presentation: 'Seringa 4g' },
-  { id: 'PROD-005', name: 'Tubo de Coleta (Tampa Vermelha)', category: 'Laboratório', quantity: 1200, expiryDate: '2025-08-20', status: 'Em Estoque', batch: 'LOTE202405F', presentation: 'Unidade' },
-  { id: 'PROD-006', name: 'Paracetamol 750mg', category: 'Medicamento', quantity: 80, expiryDate: '2025-05-10', status: 'Em Estoque', batch: 'LOTE202403D', presentation: 'Comprimido' },
-  { id: 'PROD-007', name: 'Agulha Hipodérmica 25x7', category: 'Material Técnico', quantity: 250, expiryDate: '2026-02-28', status: 'Em Estoque', batch: 'LOTE202404E', presentation: 'Caixa c/ 100' },
-  { id: 'PROD-008', name: 'Insulina NPH', category: 'Medicamento', quantity: 50, expiryDate: '2025-11-30', status: 'Em Estoque', batch: 'LOTE-NPH-1', presentation: 'Frasco 10ml' },
-  { id: 'PROD-009', name: 'Insulina Regular', category: 'Medicamento', quantity: 40, expiryDate: '2026-01-31', status: 'Em Estoque', batch: 'LOTE-REG-2', presentation: 'Frasco 10ml' },
-  { id: 'PROD-010', name: 'Tiras de Glicemia', category: 'Material Técnico', quantity: 100, expiryDate: '2025-10-31', status: 'Em Estoque', batch: 'LOTE-TIRA-3', presentation: 'Caixa c/ 50' },
-  { id: 'PROD-011', name: 'Agulha para Caneta de Insulina 32G', category: 'Material Técnico', quantity: 300, expiryDate: '2026-04-30', status: 'Em Estoque', batch: 'LOTE-AGULHA-4', presentation: 'Caixa c/ 100' },
-  { id: 'PROD-012', name: 'Lantus (Glargina)', commercialName: 'Lantus Solostar', category: 'Medicamento', quantity: 30, expiryDate: '2025-07-31', status: 'Em Estoque', batch: 'LOTE-LANT-5', presentation: 'Caneta 3ml' },
-  { id: 'PROD-013', name: 'Apidra (Glulisina)', commercialName: 'Apidra Solostar', category: 'Medicamento', quantity: 25, expiryDate: '2025-09-30', status: 'Em Estoque', batch: 'LOTE-APID-6', presentation: 'Caneta 3ml' },
-  { id: 'PROD-014', name: 'Lantus (Glargina)', commercialName: 'Lantus', category: 'Medicamento', quantity: 20, expiryDate: '2025-08-31', status: 'Em Estoque', batch: 'LOTE-LANT-F-7', presentation: 'Frasco 10ml' }
-];
+export const products: Product[] = []; // This will now be fetched from Firestore
 
 export const units: Unit[] = [
   { id: 'UNIT001', name: 'UBS Centro', address: 'Rua Principal, 123', coordinatorName: 'Maria Silva', hasDentalOffice: true, hasPharmacy: true },
