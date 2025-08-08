@@ -12,6 +12,9 @@ export const products: Product[] = [
   { id: 'PROD009', name: 'Insulina Regular', category: 'Medicamento', quantity: 40, expiryDate: '2026-01-31', status: 'Em Estoque', batch: 'LOTE-REG-2', presentation: 'Frasco 10ml' },
   { id: 'PROD010', name: 'Tiras de Glicemia', category: 'Material Técnico', quantity: 100, expiryDate: '2025-10-31', status: 'Em Estoque', batch: 'LOTE-TIRA-3', presentation: 'Caixa c/ 50' },
   { id: 'PROD011', name: 'Agulha para Caneta de Insulina 32G', category: 'Material Técnico', quantity: 300, expiryDate: '2026-04-30', status: 'Em Estoque', batch: 'LOTE-AGULHA-4', presentation: 'Caixa c/ 100' },
+  { id: 'PROD012', name: 'Lantus (Glargina) Solostar', category: 'Medicamento', quantity: 30, expiryDate: '2025-07-31', status: 'Em Estoque', batch: 'LOTE-LANT-5', presentation: 'Caneta 3ml' },
+  { id: 'PROD013', name: 'Apidra (Glulisina) Solostar', category: 'Medicamento', quantity: 25, expiryDate: '2025-09-30', status: 'Em Estoque', batch: 'LOTE-APID-6', presentation: 'Caneta 3ml' },
+  { id: 'PROD014', name: 'Lantus (Glargina)', category: 'Medicamento', quantity: 20, expiryDate: '2025-08-31', status: 'Em Estoque', batch: 'LOTE-LANT-F-7', presentation: 'Frasco 10ml' }
 ];
 
 export const units: Unit[] = [

@@ -70,44 +70,50 @@ type Category =
 const categories: {
   name: Category;
   icon: React.ElementType;
-  productCategory: Product['category'] | 'Fralda' | 'Insulina' | 'Tira/Lanceta';
 }[] = [
-  { name: 'Insulinas', icon: Syringe, productCategory: 'Insulina' },
-  { name: 'Tiras/Lancetas', icon: ClipboardList, productCategory: 'Tira/Lanceta' },
-  { name: 'Medicamentos', icon: Pill, productCategory: 'Medicamento' },
-  { name: 'Material Técnico', icon: Stethoscope, productCategory: 'Material Técnico' },
-  { name: 'Fraldas', icon: Baby, productCategory: 'Fralda' },
-  { name: 'Outros', icon: Package, productCategory: 'Outro' },
+  { name: 'Insulinas', icon: Syringe },
+  { name: 'Tiras/Lancetas', icon: ClipboardList },
+  { name: 'Medicamentos', icon: Pill },
+  { name: 'Material Técnico', icon: Stethoscope },
+  { name: 'Fraldas', icon: Baby },
+  { name: 'Outros', icon: Package },
 ];
 
-const getProductsForCategory = (category: Category): Partial<Product>[] => {
-    const categoryInfo = categories.find(c => c.name === category);
-    if (!categoryInfo) return [];
+const insulinKeywords = ['insulina', 'lantus', 'apidra', 'nph', 'regular', 'agulha para caneta'];
+const stripKeywords = ['tira', 'lanceta'];
 
+
+const getProductsForCategory = (category: Category): Partial<Product>[] => {
     if (category === 'Fraldas') {
         return [{ id: 'FRD001', name: 'Fralda Geriátrica M', presentation: 'Pacote' }, { id: 'FRD002', name: 'Fralda Geriátrica G', presentation: 'Pacote' }];
     }
-    
-    // This is a special mapping for Insulinas, Tiras/Lancetas etc.
-    const productCategoryMapping: Record<string, Product['category'] | 'any'> = {
-      'Insulinas': 'Medicamento',
-      'Tiras/Lancetas': 'Material Técnico',
-      'Medicamentos': 'Medicamento',
-      'Material Técnico': 'Material Técnico',
-      'Outros': 'any',
-    }
-    const productCategory = productCategoryMapping[category];
 
-    let filtered = productCategory === 'any' ? allProducts : allProducts.filter(p => p.category === productCategory);
-    
     if (category === 'Insulinas') {
-        filtered = filtered.filter(p => p.name.toLowerCase().includes('insulina') || p.name.toLowerCase().includes('agulha para caneta'));
+         return allProducts.filter(p => insulinKeywords.some(keyword => p.name.toLowerCase().includes(keyword)));
     }
+    
     if (category === 'Tiras/Lancetas') {
-        filtered = filtered.filter(p => p.name.toLowerCase().includes('tira') || p.name.toLowerCase().includes('lanceta'));
+        return allProducts.filter(p => stripKeywords.some(keyword => p.name.toLowerCase().includes(keyword)));
     }
 
-    return filtered;
+    if(category === 'Medicamentos') {
+        return allProducts.filter(p => p.category === 'Medicamento' && !insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)));
+    }
+
+    if(category === 'Material Técnico') {
+        return allProducts.filter(p => p.category === 'Material Técnico' && !stripKeywords.some(kw => p.name.toLowerCase().includes(kw)));
+    }
+    
+    if (category === 'Outros') {
+        // Return products that don't fit well in other specific categories.
+        const usedProductIds = new Set(
+            categories.flatMap(cat => getProductsForCategory(cat.name as Category)).map(p => p.id)
+        );
+        return allProducts.filter(p => !usedProductIds.has(p.id));
+    }
+
+    // Default case to return something, though all categories should be handled above.
+    return [];
 }
 
 
