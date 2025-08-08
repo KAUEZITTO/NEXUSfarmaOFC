@@ -5,9 +5,6 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import type { Product, Patient, Dispensation, Order, Unit, StockMovement } from './types';
-import { Logo } from '@/components/logo';
-import { NEXUS_LOGO_B64, PREF_LOGO_B64, CAF_LOGO_B64 } from './logo-base64';
-
 
 // Extend jsPDF with the autoTable plugin
 interface jsPDFWithAutoTable extends jsPDF {
@@ -16,26 +13,23 @@ interface jsPDFWithAutoTable extends jsPDF {
 
 const addHeader = (doc: jsPDFWithAutoTable, title: string) => {
     const pageWidth = doc.internal.pageSize.getWidth();
-
-    // Add logos
-    doc.addImage(PREF_LOGO_B64, 'PNG', 20, 10, 25, 25);
-    doc.addImage(NEXUS_LOGO_B64, 'PNG', (pageWidth / 2) - 12.5, 10, 25, 25);
-    doc.addImage(CAF_LOGO_B64, 'PNG', pageWidth - 45, 10, 25, 25);
     
     // Add title
     doc.setFontSize(16);
     doc.setTextColor(40);
     doc.setFont('helvetica', 'bold');
-    doc.text(title, pageWidth / 2, 45, { align: 'center' });
+    doc.text('NexusFarma', pageWidth / 2, 20, { align: 'center' });
+    doc.setFontSize(14);
+    doc.text(title, pageWidth / 2, 30, { align: 'center' });
 
     // Add subtitle/date
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Relatório Gerado em: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`, pageWidth / 2, 52, { align: 'center' });
+    doc.text(`Relatório Gerado em: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`, pageWidth / 2, 37, { align: 'center' });
 
     // Add separator line
     doc.setLineWidth(0.5);
-    doc.line(20, 60, pageWidth - 20, 60);
+    doc.line(20, 45, pageWidth - 20, 45);
 };
 
 const addFooter = (doc: jsPDFWithAutoTable) => {
@@ -63,7 +57,7 @@ export const generateCompleteReportPDF = async (
 
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text('Resumo Geral', 20, 75);
+  doc.text('Resumo Geral', 20, 60);
 
   const summaryData = [
     ['Total de Produtos em Inventário:', products.length.toString()],
@@ -75,7 +69,7 @@ export const generateCompleteReportPDF = async (
   ];
 
   doc.autoTable({
-    startY: 80,
+    startY: 65,
     head: [['Métrica', 'Valor']],
     body: summaryData,
     theme: 'striped',
@@ -97,7 +91,7 @@ export const generateCompleteReportPDF = async (
   ]);
   
   doc.autoTable({
-    startY: 65,
+    startY: 50,
     head: [['Nome', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote']],
     body: inventoryBody,
     theme: 'grid',
@@ -119,7 +113,7 @@ export const generateCompleteReportPDF = async (
   ]);
   
   doc.autoTable({
-    startY: 65,
+    startY: 50,
     head: [['Nome', 'CPF', 'CNS', 'Unidade', 'Mandado']],
     body: patientsBody,
     theme: 'grid',
@@ -147,7 +141,7 @@ export const generateStockReportPDF = async (products: Product[]): Promise<strin
     ]);
 
     doc.autoTable({
-        startY: 65,
+        startY: 50,
         head: [['Nome', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote']],
         body: inventoryBody,
         theme: 'grid',
@@ -175,7 +169,7 @@ export const generateExpiryReportPDF = async (products: Product[]): Promise<stri
     ]);
 
     doc.autoTable({
-        startY: 65,
+        startY: 50,
         head: [['Nome do Produto', 'Lote', 'Data de Validade', 'Quantidade']],
         body: body,
         theme: 'grid',
@@ -202,7 +196,7 @@ export const generatePatientReportPDF = async (dispensations: Dispensation[]): P
     });
 
     doc.autoTable({
-        startY: 65,
+        startY: 50,
         head: [['Paciente', 'CPF', 'Data da Dispensação', 'Nº de Itens']],
         body: body,
         theme: 'grid',
@@ -239,7 +233,7 @@ export const generateUnitDispensationReportPDF = async (orders: Order[], units: 
     ]);
 
     doc.autoTable({
-        startY: 65,
+        startY: 50,
         head: [['Nome da Unidade', 'Tipo', 'Total de Pedidos', 'Total de Itens Recebidos']],
         body: body,
         theme: 'grid',
@@ -262,7 +256,7 @@ export const generateBatchReportPDF = async (products: Product[]): Promise<strin
     ]);
     
     doc.autoTable({
-        startY: 65,
+        startY: 50,
         head: [['Nome do Produto', 'Lote', 'Validade', 'Quantidade']],
         body: body,
         theme: 'grid',
@@ -289,7 +283,7 @@ export const generateEntriesAndExitsReportPDF = async (movements: StockMovement[
     ]);
 
     doc.autoTable({
-        startY: 65,
+        startY: 50,
         head: [['Data', 'Produto', 'Tipo', 'Motivo', 'Alteração', 'Estoque Final', 'Usuário']],
         body: body,
         theme: 'grid',
