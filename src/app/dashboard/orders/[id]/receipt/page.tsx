@@ -62,7 +62,7 @@ const orderData = {
 };
 
 const CategoryTitle = ({ children }: { children: React.ReactNode }) => (
-  <TableRow className="bg-muted hover:bg-muted">
+  <TableRow className="bg-muted/5 hover:bg-muted/5">
     <TableCell colSpan={5} className="font-bold text-md text-muted-foreground tracking-wide uppercase">
       {children}
     </TableCell>
@@ -167,7 +167,7 @@ const ReceiptCopy = ({ showSignature, isFirstCopy }: { showSignature: boolean, i
         </div>
       )}
        <p className="text-xs text-center mt-8 text-gray-500">
-        {isFirstCopy ? "1ª VIA - UNIDADE" : "2ª VIA - CAF"}
+        {isFirstCopy ? "1ª VIA - CAF" : "2ª VIA - UNIDADE"}
       </p>
     </div>
   </div>
@@ -181,8 +181,8 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
   return (
     <>
       <div className="print-container">
-        <ReceiptCopy showSignature={true} isFirstCopy={true} />
-        <ReceiptCopy showSignature={false} isFirstCopy={false} />
+        <ReceiptCopy showSignature={false} isFirstCopy={true} />
+        <ReceiptCopy showSignature={true} isFirstCopy={false} />
       </div>
 
       <div className="fixed bottom-4 right-4 print:hidden">
