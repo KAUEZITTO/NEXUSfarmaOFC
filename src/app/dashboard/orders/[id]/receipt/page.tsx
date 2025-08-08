@@ -105,8 +105,8 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
             </div>
 
             <div className="flex flex-col items-center justify-center">
-                 <Image src="/CAF.png" alt="Logo Café de Igarapé Açu" width={80} height={80} data-ai-hint="coffee beans" />
-                 <p className="text-xs font-bold mt-1">CAFÉ DE IGARAPÉ-AÇU</p>
+                 <Image src="/CAF.png" alt="Logo CAF" width={80} height={80} data-ai-hint="pharmacy cross" />
+                 <p className="text-xs font-bold mt-1">CAF - CENTRO DE ABASTÊCIMENTO FARMACÊUTICO</p>
             </div>
         </div>
       </header>

@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Coffee, Info } from "lucide-react";
+import { Building, Info } from "lucide-react";
 
 export default function AboutPage() {
   return (
@@ -22,14 +22,13 @@ export default function AboutPage() {
       <CardContent className="space-y-6">
         <div>
           <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Coffee className="h-5 w-5 text-primary" />
-            Café de Igarapé Açu
+            <Building className="h-5 w-5 text-primary" />
+            CAF - Centro de Abastecimento Farmacêutico
           </h2>
           <p className="mt-2 text-muted-foreground">
-            Este sistema possui integração com informações do Café de Igarapé Açu,
-            exibindo dados relevantes e promovendo a cultura local. O Café de
-            Igarapé Açu é conhecido por sua qualidade excepcional e produção
-            sustentável, sendo um orgulho para a nossa região.
+            Este sistema foi desenvolvido para a gestão integrada do Centro de 
+            Abastecimento Farmacêutico (CAF), otimizando o controle de estoque,
+            pedidos e distribuição para as unidades de saúde do município.
           </p>
         </div>
         <div>
