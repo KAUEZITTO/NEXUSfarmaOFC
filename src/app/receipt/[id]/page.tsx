@@ -64,6 +64,7 @@ const orderData = {
 };
 
 const renderItemRows = (items: OrderItem[]) => {
+    if (!items || items.length === 0) return null;
     return items.map((item, index) => (
         <TableRow key={item.productId} className={`border-b print:even:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-muted/20'}`}>
             <TableCell className="font-medium">{item.name}</TableCell>
@@ -121,7 +122,7 @@ const ReceiptCopy = ({ showSignature, isFirstCopy }: { showSignature: boolean, i
                <Table className="border-collapse border border-gray-300">
                 <TableHeader>
                   <TableRow className="bg-gray-200 hover:bg-gray-200 print:bg-gray-200">
-                    <TableHead className="w-[45%] font-semibold text-slate-700 border border-gray-300">Item</TableHead>
+                    <TableHead className="w-[40%] font-semibold text-slate-700 border border-gray-300">Item</TableHead>
                     <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Apresentação</TableHead>
                     <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Lote</TableHead>
                     <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Validade</TableHead>
@@ -139,9 +140,9 @@ const ReceiptCopy = ({ showSignature, isFirstCopy }: { showSignature: boolean, i
       
       {showSignature && (
         <div className="mt-20">
-          <div className="w-1/2 mx-auto">
-            <div className="border-t border-black"></div>
-            <p className="text-center mt-2">Assinatura do Recebedor</p>
+           <div className="w-1/2 mx-auto">
+              <div className="border-t border-black"></div>
+              <p className="text-center mt-2 text-sm">Assinatura do Recebedor</p>
           </div>
         </div>
       )}
