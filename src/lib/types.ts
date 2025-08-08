@@ -1,7 +1,7 @@
 export type Product = {
   id: string;
   name: string;
-  category: 'Medicamento' | 'Material Técnico' | 'Odontológico' | 'Laboratório' | 'Outro';
+  category: 'Medicamento' | 'Material Técnico' | 'Odontológico' | 'Laboratório' | 'Fraldas' | 'Outro';
   quantity: number;
   expiryDate: string;
   status: 'Em Estoque' | 'Baixo Estoque' | 'Sem Estoque';
