@@ -3,13 +3,13 @@ import type { Product, Order, Patient, Unit } from './types';
 export const products: Product[] = [
   { id: 'PROD001', name: 'Dipirona 500mg', category: 'Medicamento', quantity: 150, expiryDate: '2025-12-31', status: 'Em Estoque', batch: 'LOTE202401A', presentation: 'Comprimido' },
   { id: 'PROD002', name: 'Seringa 10ml', category: 'Material Técnico', quantity: 500, expiryDate: '2026-06-30', status: 'Em Estoque', batch: 'LOTE202402B', presentation: 'Unidade' },
-  { id: 'PROD003', name: 'Luva de Procedimento (M)', category: 'Material Técnico', quantity: 20, expiryDate: '2024-09-30', status: 'Baixo Estoque', presentation: 'Caixa' },
-  { id: 'PROD004', name: 'Resina Composta Z350', category: 'Odontológico', quantity: 0, expiryDate: '2025-01-15', status: 'Sem Estoque', batch: 'LOTE202312C', presentation: 'Seringa' },
-  { id: 'PROD005', name: 'Tubo de Coleta (Tampa Vermelha)', category: 'Laboratório', quantity: 1200, expiryDate: '2025-08-20', status: 'Em Estoque', presentation: 'Unidade' },
+  { id: 'PROD003', name: 'Luva de Procedimento (M)', category: 'Material Técnico', quantity: 20, expiryDate: '2024-09-30', status: 'Baixo Estoque', batch: 'LOTE202401M', presentation: 'Caixa c/ 100' },
+  { id: 'PROD004', name: 'Resina Composta Z350', category: 'Odontológico', quantity: 0, expiryDate: '2025-01-15', status: 'Sem Estoque', batch: 'LOTE202312C', presentation: 'Seringa 4g' },
+  { id: 'PROD005', name: 'Tubo de Coleta (Tampa Vermelha)', category: 'Laboratório', quantity: 1200, expiryDate: '2025-08-20', status: 'Em Estoque', batch: 'LOTE202405F', presentation: 'Unidade' },
   { id: 'PROD006', name: 'Paracetamol 750mg', category: 'Medicamento', quantity: 80, expiryDate: '2025-05-10', status: 'Em Estoque', batch: 'LOTE202403D', presentation: 'Comprimido' },
-  { id: 'PROD007', name: 'Agulha Hipodérmica 25x7', category: 'Material Técnico', quantity: 250, expiryDate: '2026-02-28', status: 'Em Estoque', batch: 'LOTE202404E', presentation: 'Unidade' },
-  { id: 'PROD008', name: 'Insulina NPH', category: 'Medicamento', quantity: 50, expiryDate: '2025-11-30', status: 'Em Estoque', batch: 'LOTE-NPH-1', presentation: 'Frasco' },
-  { id: 'PROD009', name: 'Insulina Regular', category: 'Medicamento', quantity: 40, expiryDate: '2026-01-31', status: 'Em Estoque', batch: 'LOTE-REG-2', presentation: 'Frasco' },
+  { id: 'PROD007', name: 'Agulha Hipodérmica 25x7', category: 'Material Técnico', quantity: 250, expiryDate: '2026-02-28', status: 'Em Estoque', batch: 'LOTE202404E', presentation: 'Caixa c/ 100' },
+  { id: 'PROD008', name: 'Insulina NPH', category: 'Medicamento', quantity: 50, expiryDate: '2025-11-30', status: 'Em Estoque', batch: 'LOTE-NPH-1', presentation: 'Frasco 10ml' },
+  { id: 'PROD009', name: 'Insulina Regular', category: 'Medicamento', quantity: 40, expiryDate: '2026-01-31', status: 'Em Estoque', batch: 'LOTE-REG-2', presentation: 'Frasco 10ml' },
   { id: 'PROD010', name: 'Tiras de Glicemia', category: 'Material Técnico', quantity: 100, expiryDate: '2025-10-31', status: 'Em Estoque', batch: 'LOTE-TIRA-3', presentation: 'Caixa c/ 50' },
   { id: 'PROD011', name: 'Agulha para Caneta de Insulina 32G', category: 'Material Técnico', quantity: 300, expiryDate: '2026-04-30', status: 'Em Estoque', batch: 'LOTE-AGULHA-4', presentation: 'Caixa c/ 100' },
 ];
@@ -23,10 +23,10 @@ export const units: Unit[] = [
 ];
 
 export const patients: Patient[] = [
-    { id: 'PAT001', name: 'João da Silva', cpf: '111.222.333-44', mandateType: 'Legal' },
-    { id: 'PAT002', name: 'Maria Oliveira', cpf: '555.666.777-88', mandateType: 'Municipal' },
-    { id: 'PAT003', name: 'José Pereira', cpf: '999.888.777-66', mandateType: 'Legal' },
-    { id: 'PAT004', name: 'Ana Souza', cpf: '123.456.789-00', mandateType: 'N/A' },
+    { id: 'PAT001', name: 'João da Silva', cpf: '111.222.333-44', cns: '898 0010 7777 6666', mandateType: 'Legal' },
+    { id: 'PAT002', name: 'Maria Oliveira', cpf: '555.666.777-88', cns: '700 5050 4444 3333', mandateType: 'Municipal' },
+    { id: 'PAT003', name: 'José Pereira', cpf: '999.888.777-66', cns: '708 2020 1111 0000', mandateType: 'Legal' },
+    { id: 'PAT004', name: 'Ana Souza', cpf: '123.456.789-00', cns: '704 8080 2222 9999', mandateType: 'N/A' },
 ];
 
 export const orders: Order[] = [

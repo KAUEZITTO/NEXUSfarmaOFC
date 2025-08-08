@@ -27,7 +27,7 @@ import {
   ClipboardList,
 } from 'lucide-react';
 import { patients as allPatients, products as allProducts } from '@/lib/data';
-import type { Patient, Product } from '@/lib/types';
+import type { Patient, Product, DispensationItem as DispensationItemType } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -46,6 +46,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -53,16 +54,9 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
-type DispensationItem = {
-  id: string;
-  productId: string;
-  name: string;
-  quantity: number;
-  batch?: string;
-  expiryDate?: string;
-  source: 'Estoque' | 'Farmácia';
-  category: Category;
-};
+type DispensationItem = DispensationItemType & {
+  internalId: string;
+}
 
 type Category =
   | 'Insulinas'
@@ -75,15 +69,14 @@ type Category =
 const categories: {
   name: Category;
   icon: React.ElementType;
-  fields: ('lote' | 'validade' | 'nome')[];
   productCategory: Product['category'] | 'Fralda' | 'Insulina' | 'Tira/Lanceta';
 }[] = [
-  { name: 'Insulinas', icon: Syringe, fields: ['lote', 'validade'], productCategory: 'Insulina' },
-  { name: 'Tiras/Lancetas', icon: ClipboardList, fields: ['lote', 'validade'], productCategory: 'Tira/Lanceta' },
-  { name: 'Medicamentos', icon: Pill, fields: ['lote', 'validade'], productCategory: 'Medicamento' },
-  { name: 'Material Técnico', icon: Stethoscope, fields: ['nome'], productCategory: 'Material Técnico' },
-  { name: 'Fraldas', icon: Baby, fields: [], productCategory: 'Fralda' },
-  { name: 'Outros', icon: Package, fields: ['nome'], productCategory: 'Outro' },
+  { name: 'Insulinas', icon: Syringe, productCategory: 'Insulina' },
+  { name: 'Tiras/Lancetas', icon: ClipboardList, productCategory: 'Tira/Lanceta' },
+  { name: 'Medicamentos', icon: Pill, productCategory: 'Medicamento' },
+  { name: 'Material Técnico', icon: Stethoscope, productCategory: 'Material Técnico' },
+  { name: 'Fraldas', icon: Baby, productCategory: 'Fralda' },
+  { name: 'Outros', icon: Package, productCategory: 'Outro' },
 ];
 
 const getProductsForCategory = (category: Category): Partial<Product>[] => {
@@ -91,24 +84,23 @@ const getProductsForCategory = (category: Category): Partial<Product>[] => {
     if (!categoryInfo) return [];
 
     if (category === 'Fraldas') {
-        return [{ id: 'FRD001', name: 'Fralda Geriátrica M' }, { id: 'FRD002', name: 'Fralda Geriátrica G'}];
+        return [{ id: 'FRD001', name: 'Fralda Geriátrica M', presentation: 'Pacote' }, { id: 'FRD002', name: 'Fralda Geriátrica G', presentation: 'Pacote' }];
     }
     
     // This is a special mapping for Insulinas, Tiras/Lancetas etc.
-    // In a real scenario, these would also have a proper category in the database.
-    const productCategoryMapping: Record<string, Product['category']> = {
+    const productCategoryMapping: Record<string, Product['category'] | 'any'> = {
       'Insulinas': 'Medicamento',
       'Tiras/Lancetas': 'Material Técnico',
       'Medicamentos': 'Medicamento',
       'Material Técnico': 'Material Técnico',
-      'Outros': 'Outro',
+      'Outros': 'any',
     }
     const productCategory = productCategoryMapping[category];
 
-    let filtered = allProducts.filter(p => p.category === productCategory);
-
+    let filtered = productCategory === 'any' ? allProducts : allProducts.filter(p => p.category === productCategory);
+    
     if (category === 'Insulinas') {
-        filtered = filtered.filter(p => p.name.toLowerCase().includes('insulina'));
+        filtered = filtered.filter(p => p.name.toLowerCase().includes('insulina') || p.name.toLowerCase().includes('agulha para caneta'));
     }
     if (category === 'Tiras/Lancetas') {
         filtered = filtered.filter(p => p.name.toLowerCase().includes('tira') || p.name.toLowerCase().includes('lanceta'));
@@ -119,6 +111,7 @@ const getProductsForCategory = (category: Category): Partial<Product>[] => {
 
 
 export function AttendPatientDialog() {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<'selectPatient' | 'dispenseForm'>(
     'selectPatient'
@@ -149,18 +142,18 @@ export function AttendPatientDialog() {
     setItems([
       ...items,
       {
-        id: `item-${Date.now()}`,
+        internalId: `item-${Date.now()}`,
         productId: '',
         name: '',
         quantity: 1,
-        source: 'Estoque',
         category: category,
+        presentation: '',
       },
     ]);
   };
 
   const handleRemoveItem = (id: string) => {
-    setItems(items.filter((item) => item.id !== id));
+    setItems(items.filter((item) => item.internalId !== id));
   };
 
   const handleItemChange = (
@@ -169,36 +162,50 @@ export function AttendPatientDialog() {
     value: any
   ) => {
     setItems(
-      items.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+      items.map((item) => (item.internalId === id ? { ...item, [field]: value } : item))
     );
   };
   
   const handleProductSelect = (id: string, productId: string) => {
-     const itemToUpdate = items.find(i => i.id === id);
+     const itemToUpdate = items.find(i => i.internalId === id);
      if (!itemToUpdate) return;
      
-     const productList = getProductsForCategory(itemToUpdate.category);
+     const productList = getProductsForCategory(itemToUpdate.category as Category);
      const product = productList.find(p => p.id === productId);
      
      if (product) {
-         setItems(items.map(item => item.id === id ? {
+         setItems(items.map(item => item.internalId === id ? {
             ...item,
             productId: productId,
             name: product.name!,
             batch: product.batch || 'N/A',
-            expiryDate: product.expiryDate ? new Date(product.expiryDate).toLocaleDateString('pt-BR') : 'N/A'
+            expiryDate: product.expiryDate ? new Date(product.expiryDate).toLocaleDateString('pt-BR') : 'N/A',
+            presentation: product.presentation || '--'
          } : item));
      }
   }
 
 
   const handleSaveDispensation = () => {
-    console.log('Dispensa salva:', { patient: selectedPatient, items });
+    const dispensationId = `DISP-${Date.now()}`;
+    const dispensationData = {
+      id: dispensationId,
+      patient: selectedPatient,
+      date: new Date().toLocaleDateString('pt-BR'),
+      items: items,
+    };
+    
+    // In a real app, you'd save this to a DB. Here, we save to localStorage.
+    localStorage.setItem(`dispensation-${dispensationId}`, JSON.stringify(dispensationData));
+
     toast({
       title: 'Dispensação Registrada!',
-      description: `Os itens foram dispensados para ${selectedPatient?.name}.`,
+      description: `Gerando recibo para ${selectedPatient?.name}.`,
     });
+    
     setIsOpen(false);
+    router.push(`/dispensation-receipt/${dispensationId}`);
+
     // Reset state for next time
     setTimeout(() => {
         handleBack();
@@ -206,36 +213,33 @@ export function AttendPatientDialog() {
   };
   
   const renderItemInput = (item: DispensationItem) => {
-    const categoryInfo = categories.find(c => c.name === item.category);
-    if (!categoryInfo) return null;
-    
-    if (categoryInfo.fields.length > 0) {
-        const productList = getProductsForCategory(item.category);
-        if (productList.length > 0) {
-            return (
-             <Select value={item.productId} onValueChange={(value) => handleProductSelect(item.id, value)}>
-                <SelectTrigger><SelectValue placeholder="Selecione o item..." /></SelectTrigger>
-                <SelectContent>
-                    {productList.map(p => <SelectItem key={p.id} value={p.id!}>{p.name}</SelectItem>)}
-                </SelectContent>
-             </Select>
-            )
-        }
+    const productList = getProductsForCategory(item.category as Category);
+
+    if (productList.length > 0) {
+      return (
+        <Select value={item.productId} onValueChange={(value) => handleProductSelect(item.internalId, value)}>
+          <SelectTrigger><SelectValue placeholder="Selecione o item..." /></SelectTrigger>
+          <SelectContent>
+            {productList.map(p => <SelectItem key={p.id} value={p.id!}>{p.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      );
     }
     
-    // For Fraldas, Outros, etc. where we type the name
+    // For categories with manual input
     return (
         <Input 
             placeholder="Nome do item"
             value={item.name}
-            onChange={(e) => handleItemChange(item.id, 'name', e.target.value)}
+            onChange={(e) => handleItemChange(item.internalId, 'name', e.target.value)}
         />
     )
   }
   
   const renderDispensationTables = () => {
     const groupedItems = items.reduce((acc, item) => {
-        (acc[item.category] = acc[item.category] || []).push(item);
+        const category = item.category as Category;
+        (acc[category] = acc[category] || []).push(item);
         return acc;
     }, {} as Record<Category, DispensationItem[]>);
 
@@ -255,39 +259,31 @@ export function AttendPatientDialog() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead className="w-[30%]">Item</TableHead>
-                                    {categoryInfo.fields.includes('lote') && <TableHead>Lote</TableHead>}
-                                    {categoryInfo.fields.includes('validade') && <TableHead>Validade</TableHead>}
-                                    <TableHead>Origem</TableHead>
+                                    <TableHead>Apresentação</TableHead>
+                                    <TableHead>Lote</TableHead>
+                                    <TableHead>Validade</TableHead>
                                     <TableHead className="w-[100px]">Qtd.</TableHead>
                                     <TableHead></TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {categoryItems.map(item => (
-                                    <TableRow key={item.id}>
+                                    <TableRow key={item.internalId}>
                                         <TableCell>{renderItemInput(item)}</TableCell>
-                                        {categoryInfo.fields.includes('lote') && <TableCell>{item.batch || 'N/A'}</TableCell>}
-                                        {categoryInfo.fields.includes('validade') && <TableCell>{item.expiryDate || 'N/A'}</TableCell>}
-                                        <TableCell>
-                                            <Select value={item.source} onValueChange={(value) => handleItemChange(item.id, 'source', value)}>
-                                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="Estoque">Estoque</SelectItem>
-                                                    <SelectItem value="Farmácia">Farmácia</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </TableCell>
+                                        <TableCell>{item.presentation || '--'}</TableCell>
+                                        <TableCell>{item.batch || 'N/A'}</TableCell>
+                                        <TableCell>{item.expiryDate || 'N/A'}</TableCell>
                                         <TableCell>
                                             <Input
                                                 type="number"
                                                 value={item.quantity}
-                                                onChange={(e) => handleItemChange(item.id, 'quantity', parseInt(e.target.value))}
+                                                onChange={(e) => handleItemChange(item.internalId, 'quantity', parseInt(e.target.value))}
                                                 min="1"
                                                 className="w-full"
                                             />
                                         </TableCell>
                                         <TableCell>
-                                            <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.id)}>
+                                            <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.internalId)}>
                                                 <X className="h-4 w-4" />
                                             </Button>
                                         </TableCell>
@@ -372,6 +368,7 @@ export function AttendPatientDialog() {
                   <CardContent className="grid grid-cols-2 gap-4 text-sm">
                     <div><span className="font-semibold">Nome:</span> {selectedPatient.name}</div>
                     <div><span className="font-semibold">CPF:</span> {selectedPatient.cpf}</div>
+                    <div><span className="font-semibold">CNS:</span> {selectedPatient.cns}</div>
                     <div><span className="font-semibold">Mandado:</span> {selectedPatient.mandateType}</div>
                   </CardContent>
                 </Card>
@@ -411,7 +408,7 @@ export function AttendPatientDialog() {
             <Button variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
             <Button onClick={handleSaveDispensation} disabled={items.length === 0}>
               <Save className="mr-2 h-4 w-4" />
-              Salvar Dispensação
+              Salvar e Gerar Recibo
             </Button>
           </DialogFooter>
         )}

@@ -20,6 +20,7 @@ export type Patient = {
     id: string;
     name: string;
     cpf: string;
+    cns: string;
     mandateType: 'Legal' | 'Municipal' | 'N/A';
 };
 
@@ -32,4 +33,21 @@ export type Order = {
   deliveryDate?: string;
   status: 'Entregue' | 'Pendente' | 'Cancelado' | 'Em Trânsito';
   itemCount: number;
+};
+
+export type DispensationItem = {
+  productId: string;
+  name: string;
+  quantity: number;
+  batch?: string;
+  expiryDate?: string;
+  presentation?: string;
+  category: string;
+};
+
+export type Dispensation = {
+    id: string;
+    patient: Patient;
+    date: string;
+    items: DispensationItem[];
 };
