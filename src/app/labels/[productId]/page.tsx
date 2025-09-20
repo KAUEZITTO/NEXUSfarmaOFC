@@ -1,6 +1,4 @@
 
-'use server';
-
 import { getProduct } from '@/lib/actions';
 import { notFound } from 'next/navigation';
 import { LabelPageClient } from './label-page-client';
