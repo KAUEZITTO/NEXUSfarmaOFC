@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 import { UserNav } from '@/components/dashboard/user-nav';
@@ -9,12 +9,46 @@ import { DashboardNav } from '@/components/dashboard/dashboard-nav';
 import { Logo } from '@/components/logo';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TourGuide, TourProvider } from '@/components/dashboard/tour-guide';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Badge } from '@/components/ui/badge';
+
+const UPDATE_STORAGE_KEY = 'nexusfarma-last-seen-version';
+const CURRENT_VERSION = '0.9.4';
+
+const changelog = [
+    { version: '0.9.4', changes: ['Correção de erros de build na Vercel relacionados à configuração do Next.js.'] },
+    { version: '0.9.3', changes: ['Ajustes no rodapé da página inicial.'] },
+    { version: '0.9.2', changes: ['Migração completa do sistema de arquivos para o banco de dados Vercel KV, permitindo persistência de dados online.', 'Remoção de arquivos de dados JSON locais.'] },
+];
+
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+
+  useEffect(() => {
+    const lastSeenVersion = localStorage.getItem(UPDATE_STORAGE_KEY);
+    if (lastSeenVersion !== CURRENT_VERSION) {
+      setIsUpdateDialogOpen(true);
+    }
+  }, []);
+
+  const handleCloseUpdateDialog = () => {
+    localStorage.setItem(UPDATE_STORAGE_KEY, CURRENT_VERSION);
+    setIsUpdateDialogOpen(false);
+  }
 
   return (
     <SidebarProvider>
@@ -44,6 +78,35 @@ export default function DashboardLayout({
           </div>
         </div>
         <TourGuide />
+
+        <AlertDialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  Novidades da Versão <Badge>{CURRENT_VERSION}</Badge>
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Confira o que mudou na última atualização do sistema:
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="text-sm text-muted-foreground space-y-3 max-h-60 overflow-y-auto pr-4">
+                  {changelog.map(log => (
+                      <div key={log.version}>
+                          <h4 className="font-semibold text-foreground">Versão {log.version}</h4>
+                          <ul className="list-disc pl-5 space-y-1 mt-1">
+                              {log.changes.map((change, index) => (
+                                  <li key={index}>{change}</li>
+                              ))}
+                          </ul>
+                      </div>
+                  ))}
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogAction onClick={handleCloseUpdateDialog}>Entendido</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
       </TourProvider>
     </SidebarProvider>
   );
