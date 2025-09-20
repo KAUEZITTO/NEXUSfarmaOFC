@@ -1,6 +1,4 @@
 
-'use server';
-
 import { getOrdersForUnit, getUnit } from "@/lib/actions";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
