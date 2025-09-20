@@ -22,21 +22,17 @@ export function LoginForm() {
     setErrorMessage(null);
 
     const formData = new FormData(event.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-
+    
     try {
-      const result = await login({ email, password });
-       // The server action 'login' now throws a redirect on success,
-       // so we only need to handle the error case here.
-       if (!result.success) {
+      const result = await login(formData);
+       if (result && !result.success) {
            setErrorMessage(result.message);
        }
     } catch (error: any) {
         // This will catch errors thrown from the server action,
         // including the redirect error which we can safely ignore.
         if (error.digest?.startsWith('NEXT_REDIRECT')) {
-            // This is expected, do nothing.
+            // This is expected, do nothing. The redirect will happen.
         } else {
             console.error(error);
             setErrorMessage(error.message || 'Ocorreu um erro inesperado.');

@@ -22,6 +22,7 @@ async function readData<T>(filename: string): Promise<T[]> {
   } catch (error) {
     // If file doesn't exist, return empty array
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      await writeData(filename, []);
       return [];
     }
     throw error;
@@ -30,6 +31,7 @@ async function readData<T>(filename: string): Promise<T[]> {
 
 async function writeData<T>(filename: string, data: T[]): Promise<void> {
   const filePath = path.join(dataPath, filename);
+  await fs.mkdir(dataPath, { recursive: true });
   await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
@@ -74,15 +76,18 @@ export async function register(userData: Omit<User, 'id'>): Promise<{ success: b
 }
 
 
-export async function login(credentials: Omit<User, 'id'>): Promise<{ success: boolean; message: string }> {
+export async function login(formData: FormData): Promise<{ success: boolean; message: string } | undefined> {
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    
     const users = await readData<User>('users.json');
-    const user = users.find(u => u.email === credentials.email);
+    const user = users.find(u => u.email === email);
 
     if (!user) {
         return { success: false, message: 'Email ou senha inválidos.' };
     }
 
-    const passwordMatch = await bcrypt.compare(credentials.password, user.password);
+    const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (!passwordMatch) {
         return { success: false, message: 'Email ou senha inválidos.' };
