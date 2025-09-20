@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import type { Patient, PatientFilter } from "@/lib/types";
 import { PlusCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { columns } from "./columns";
+import { columns as getPatientColumns } from "./columns";
 
 const filterCategories: { label: string, value: PatientFilter }[] = [
     { label: 'Ativos', value: 'active' },
@@ -46,6 +46,13 @@ export function PatientsClient({ initialPatients, initialFilter }: PatientsClien
     });
   }
 
+  const handlePatientSaved = () => {
+    router.refresh();
+  }
+
+  const columns = getPatientColumns({ onPatientStatusChanged: handlePatientSaved });
+
+
   return (
     <Card>
       <CardHeader>
@@ -58,7 +65,7 @@ export function PatientsClient({ initialPatients, initialFilter }: PatientsClien
           </div>
           <div className="flex gap-2">
             <AttendPatientDialog />
-            <AddPatientDialog trigger={
+            <AddPatientDialog onPatientSaved={handlePatientSaved} trigger={
               <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Adicionar Paciente

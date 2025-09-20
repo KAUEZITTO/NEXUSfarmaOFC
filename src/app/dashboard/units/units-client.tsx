@@ -13,13 +13,22 @@ import {
 } from "@/components/ui/card";
 import { AddUnitDialog } from "@/components/dashboard/add-unit-dialog";
 import type { Unit } from '@/lib/types';
-import { columns } from "./columns";
+import { getColumns } from "./columns";
+import { useRouter } from "next/navigation";
+
 
 interface UnitsClientProps {
     initialUnits: Unit[];
 }
 
 export function UnitsClient({ initialUnits }: UnitsClientProps) {
+  const router = useRouter();
+
+  const handleUnitSaved = () => {
+    router.refresh();
+  }
+
+  const columns = getColumns({ onUnitSaved: handleUnitSaved });
 
   return (
     <Card>
@@ -32,6 +41,7 @@ export function UnitsClient({ initialUnits }: UnitsClientProps) {
             </CardDescription>
           </div>
           <AddUnitDialog 
+            onUnitSaved={handleUnitSaved}
             trigger={
               <Button>
                   <PlusCircle className="mr-2 h-4 w-4" />
