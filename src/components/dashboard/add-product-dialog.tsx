@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,11 +21,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Save, Loader2, Info, Upload } from 'lucide-react';
+import { Save, Loader2, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { addProduct, updateProduct, getKnowledgeBase } from '@/lib/actions';
 import type { Product, KnowledgeBaseItem } from '@/lib/types';
-import { useRouter } from 'next/navigation';
 import { ProductSavedDialog } from './product-saved-dialog';
 import { useDebounce } from 'use-debounce';
 import Image from 'next/image';
@@ -334,5 +333,6 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
     </>
   );
 }
+    
 
     
