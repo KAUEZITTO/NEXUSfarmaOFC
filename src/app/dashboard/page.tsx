@@ -237,7 +237,8 @@ export default async function Dashboard() {
                 <TableBody>
                   {dailyDepartures.length > 0 ? (
                     dailyDepartures.map(departure => (
-                      <TableRow key={departure.id} className="cursor-pointer hover:bg-muted" onClick={() => `window.open('${departure.receiptUrl}', '_blank')`}>
+                      <TableRow key={departure.id} asChild>
+                        <Link href={departure.receiptUrl} target="_blank" className="cursor-pointer hover:bg-muted/50">
                           <TableCell>
                               <div className="font-medium">{departure.destination}</div>
                           </TableCell>
@@ -247,6 +248,7 @@ export default async function Dashboard() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">{departure.itemCount}</TableCell>
+                        </Link>
                       </TableRow>
                     ))
                   ) : (
