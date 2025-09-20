@@ -2,7 +2,7 @@
 'use client';
 
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useTransition, useState } from "react";
 import { DataTable } from "@/components/ui/data-table";
 import {
   Card,
@@ -14,10 +14,12 @@ import {
 import { AttendPatientDialog } from "@/components/dashboard/attend-patient-dialog";
 import { AddPatientDialog } from "@/components/dashboard/add-patient-dialog";
 import { Button } from "@/components/ui/button";
-import type { Patient, PatientFilter } from "@/lib/types";
+import type { Patient, PatientFilter, PatientStatus } from "@/lib/types";
 import { PlusCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { columns as getPatientColumns } from "./columns";
+import { getColumns } from "./columns";
+import { useToast } from "@/hooks/use-toast";
+import { updatePatientStatus } from "@/lib/actions";
 
 const filterCategories: { label: string, value: PatientFilter }[] = [
     { label: 'Ativos', value: 'active' },
@@ -38,6 +40,7 @@ interface PatientsClientProps {
 
 export function PatientsClient({ initialPatients, initialFilter }: PatientsClientProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
   const handleFilterChange = (filter: PatientFilter) => {
@@ -49,8 +52,25 @@ export function PatientsClient({ initialPatients, initialFilter }: PatientsClien
   const handlePatientSaved = () => {
     router.refresh();
   }
+  
+  const handleUpdateStatus = async (patientId: string, status: PatientStatus) => {
+    try {
+      await updatePatientStatus(patientId, status);
+      toast({
+        title: "Status Atualizado!",
+        description: `O status do paciente foi alterado para ${status}.`,
+      });
+      router.refresh();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao atualizar status",
+        description: "Não foi possível alterar o status do paciente.",
+      });
+    }
+  };
 
-  const columns = getPatientColumns({ onPatientStatusChanged: handlePatientSaved });
+  const columns = getColumns({ onPatientSaved: handlePatientSaved, onUpdateStatus: handleUpdateStatus });
 
 
   return (

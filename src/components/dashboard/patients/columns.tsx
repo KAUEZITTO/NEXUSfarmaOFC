@@ -15,7 +15,13 @@ import { updatePatientStatus } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 
-export const columns: ColumnDef<Patient>[] = [
+type ColumnsProps = {
+  onPatientSaved: () => void;
+  onUpdateStatus: (patientId: string, status: PatientStatus) => void;
+}
+
+export const getColumns = ({ onPatientSaved, onUpdateStatus }: ColumnsProps): ColumnDef<Patient>[] => {
+  return [
   {
     id: "select",
     header: ({ table }) => (
@@ -91,26 +97,6 @@ export const columns: ColumnDef<Patient>[] = [
     id: "actions",
     cell: ({ row }) => {
       const patient = row.original
-      const { toast } = useToast();
-      const router = useRouter();
-      
-      const handleUpdateStatus = async (patientId: string, status: PatientStatus) => {
-        try {
-          await updatePatientStatus(patientId, status);
-          toast({
-            title: "Status Atualizado!",
-            description: `O status do paciente foi alterado para ${status}.`,
-          });
-          router.refresh();
-        } catch (error) {
-          toast({
-            variant: "destructive",
-            title: "Erro ao atualizar status",
-            description: "Não foi possível alterar o status do paciente.",
-          });
-        }
-      };
-
 
       return (
         <DropdownMenu>
@@ -128,8 +114,8 @@ export const columns: ColumnDef<Patient>[] = [
                 Ver Histórico
               </Link>
             </DropdownMenuItem>
-             <DropdownMenuItem asChild>
-                <AddPatientDialog patientToEdit={patient} trigger={
+             <DropdownMenuItem onSelect={e => e.preventDefault()} asChild>
+                <AddPatientDialog patientToEdit={patient} onPatientSaved={onPatientSaved} trigger={
                     <button className="w-full h-full relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
                         <Edit className="mr-2 h-4 w-4" />
                         <span>Editar Cadastro</span>
@@ -144,19 +130,19 @@ export const columns: ColumnDef<Patient>[] = [
                 </DropdownMenuSubTrigger>
                 <DropdownMenuPortal>
                     <DropdownMenuSubContent>
-                         <DropdownMenuItem onClick={() => handleUpdateStatus(patient.id, 'Ativo')}>
+                         <DropdownMenuItem onClick={() => onUpdateStatus(patient.id, 'Ativo')}>
                             <UserCheck className="mr-2 h-4 w-4" />
                             <span>Ativo</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUpdateStatus(patient.id, 'Tratamento Concluído')}>
+                        <DropdownMenuItem onClick={() => onUpdateStatus(patient.id, 'Tratamento Concluído')}>
                             <CheckCircle className="mr-2 h-4 w-4" />
                             <span>Tratamento Concluído</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUpdateStatus(patient.id, 'Tratamento Interrompido')}>
+                        <DropdownMenuItem onClick={() => onUpdateStatus(patient.id, 'Tratamento Interrompido')}>
                             <XCircle className="mr-2 h-4 w-4" />
                             <span>Tratamento Interrompido</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUpdateStatus(patient.id, 'Óbito')}>
+                        <DropdownMenuItem onClick={() => onUpdateStatus(patient.id, 'Óbito')}>
                             <UserX className="mr-2 h-4 w-4" />
                             <span>Óbito</span>
                         </DropdownMenuItem>
@@ -169,3 +155,4 @@ export const columns: ColumnDef<Patient>[] = [
     },
   },
 ]
+}

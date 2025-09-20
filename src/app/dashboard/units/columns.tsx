@@ -1,3 +1,4 @@
+
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
@@ -5,7 +6,7 @@ import { Unit } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown, MoreHorizontal, Check, X, Edit, Eye } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
-import { AddUnitDialog } from "@/components/dashboard/add-unit-dialog"
+import { AddUnitDialog } from "@/app/dashboard/add-unit-dialog"
 import Link from "next/link"
 
 type ColumnsProps = {
@@ -83,7 +84,7 @@ export const getColumns = ({ onUnitSaved }: ColumnsProps): ColumnDef<Unit>[] => 
                 </Link>
             </DropdownMenuItem>
              <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
+            <DropdownMenuItem onSelect={(e) => e.preventDefault()} asChild>
                  <AddUnitDialog unitToEdit={unit} onUnitSaved={onUnitSaved} trigger={
                     <button className="w-full h-full relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
                         <Edit className="mr-2 h-4 w-4" />

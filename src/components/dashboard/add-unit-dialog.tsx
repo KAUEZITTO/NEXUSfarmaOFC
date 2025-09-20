@@ -24,11 +24,11 @@ import { useRouter } from 'next/navigation';
 type AddUnitDialogProps = {
   trigger: React.ReactNode;
   unitToEdit?: Unit;
+  onUnitSaved: () => void;
 };
 
-export function AddUnitDialog({ trigger, unitToEdit }: AddUnitDialogProps) {
+export function AddUnitDialog({ trigger, unitToEdit, onUnitSaved }: AddUnitDialogProps) {
   const { toast } = useToast();
-  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const isEditing = !!unitToEdit;
@@ -55,10 +55,10 @@ export function AddUnitDialog({ trigger, unitToEdit }: AddUnitDialogProps) {
         setCoordinatorName(unitToEdit.coordinatorName || '');
         setHasDentalOffice(unitToEdit.hasDentalOffice || false);
         setHasPharmacy(unitToEdit.hasPharmacy || false);
-    } else {
+    } else if (!isEditing && isOpen) {
         resetForm();
     }
-  }, [unitToEdit, isOpen]);
+  }, [unitToEdit, isOpen, isEditing]);
 
   const handleSave = async () => {
     if (!name || !address) {
@@ -99,7 +99,10 @@ export function AddUnitDialog({ trigger, unitToEdit }: AddUnitDialogProps) {
             });
         }
 
-        router.refresh();
+        if(onUnitSaved) {
+          onUnitSaved();
+        }
+        
         setIsOpen(false);
         resetForm();
 
