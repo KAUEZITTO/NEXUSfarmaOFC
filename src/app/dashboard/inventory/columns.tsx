@@ -2,15 +2,10 @@
 
 import { useState } from "react";
 import { ColumnDef } from "@tanstack/react-table"
-import { Product } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, Edit, MoreHorizontal, Printer } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { ArrowUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { AddProductDialog } from "@/components/dashboard/add-product-dialog"
-import Link from "next/link"
 import type { GroupedProduct } from "./page";
 import { BatchDetailsDialog } from "./batch-details-dialog";
 

@@ -8,11 +8,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, FileText, Loader2 } from "lucide-react";
+import { Download, FileText, Loader2, BarChart2, Package, Users, AlertTriangle } from "lucide-react";
 import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF, generatePatientReportPDF, generateUnitDispensationReportPDF, generateBatchReportPDF, generateEntriesAndExitsReportPDF } from "@/lib/pdf-generator";
 import { useState, Children, cloneElement, isValidElement } from "react";
 import type { Product, Patient, Dispensation, Unit, Order, StockMovement } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
 
 type GeneratingState = {
     complete: boolean;
@@ -31,7 +32,14 @@ interface ReportsClientProps {
     units: Unit[];
     orders: Order[];
     stockMovements: StockMovement[];
-    children: React.ReactNode;
+    reportStats: {
+        itemsDispensedThisMonth: number;
+        monthlyChangePercentage: number;
+        judicialPatients: number;
+        totalStockAlerts: number;
+        lowStockItems: number;
+        expiringSoonItems: number;
+    }
 }
 
 
@@ -42,7 +50,7 @@ export function ReportsClient({
     units,
     orders,
     stockMovements,
-    children 
+    reportStats,
 }: ReportsClientProps) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState<GeneratingState>({
@@ -102,69 +110,115 @@ export function ReportsClient({
   const handleExportBatch = () => generatePdf('batch', () => generateBatchReportPDF(products));
   const handleExportEntriesAndExits = () => generatePdf('entriesAndExits', () => generateEntriesAndExitsReportPDF(stockMovements));
   
-  const reportHandlers = [
-    handleExportUnitDispensation,
-    handleExportStock,
-    handleExportExpiry,
-    handleExportPatient,
-    handleExportEntriesAndExits,
-    handleExportBatch
-  ];
+  const reportHandlers: Record<string, () => void> = {
+    "Dispensação por Unidade": handleExportUnitDispensation,
+    "Estoque Atual": handleExportStock,
+    "Produtos a Vencer": handleExportExpiry,
+    "Atendimento de Pacientes": handleExportPatient,
+    "Entradas e Saídas": handleExportEntriesAndExits,
+    "Relatório de Lotes": handleExportBatch,
+  };
 
-  const buttonKeys: (keyof GeneratingState)[] = [
-    'unitDispensation',
-    'stock',
-    'expiry',
-    'patient',
-    'entriesAndExits',
-    'batch'
-  ];
-  
-  const childrenArray = Children.toArray(children);
+  const buttonKeys: Record<string, keyof GeneratingState> = {
+    "Dispensação por Unidade": 'unitDispensation',
+    "Estoque Atual": 'stock',
+    "Produtos a Vencer": 'expiry',
+    "Atendimento de Pacientes": 'patient',
+    "Entradas e Saídas": 'entriesAndExits',
+    "Relatório de Lotes": 'batch',
+  };
 
-  // For the main "Complete Report" button
-  if (childrenArray.length === 1) {
-    const child = childrenArray[0];
-    if (isValidElement(child)) {
-        return cloneElement(child as React.ReactElement<any>, {
-            onClick: handleExportComplete,
-            disabled: isGenerating.complete,
-            children: isGenerating.complete ? (
-                <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Gerando...
-                </>
-            ) : (
-                <>
-                    <Download className="mr-2 h-4 w-4" /> Exportar Relatório Completo
-                </>
-            ),
-        });
-    }
-    return null;
-  }
-
-  // For the list of specific report buttons
   return (
-    <>
-      {Children.map(children, (child, index) => {
-        if (isValidElement(child)) {
-            const handler = reportHandlers[index];
-            const key = buttonKeys[index];
-            const originalChildren = child.props.children;
-            return cloneElement(child as React.ReactElement<any>, {
-                onClick: handler,
-                disabled: isGenerating[key],
-                children: isGenerating[key] ? (
-                    <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Gerando...
-                    </>
-                ) : (
-                   originalChildren
-                ),
-            });
-        }
-        return child;
-      })}
-    </>
+     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Relatórios Gerenciais</h1>
+          <p className="text-muted-foreground">
+            Gere e visualize relatórios de dispensação, estoque e mais.
+          </p>
+        </div>
+        <Button onClick={handleExportComplete} disabled={isGenerating.complete}>
+            {isGenerating.complete ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+            {isGenerating.complete ? 'Gerando...' : 'Exportar Relatório Completo'}
+        </Button>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Itens Dispensados (Mês)</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{reportStats.itemsDispensedThisMonth.toLocaleString('pt-BR')}</div>
+            <p className="text-xs text-muted-foreground">
+                 {reportStats.monthlyChangePercentage >= 0 ? `+${reportStats.monthlyChangePercentage.toFixed(1)}%` : `${reportStats.monthlyChangePercentage.toFixed(1)}%`} em relação ao mês anterior
+            </p>
+          </CardContent>
+        </Card>
+         <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pacientes Atendidos</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{reportStats.judicialPatients}</div>
+            <p className="text-xs text-muted-foreground">Pacientes com mandado judicial/municipal</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Alertas de Estoque</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{reportStats.totalStockAlerts}</div>
+            <p className="text-xs text-muted-foreground">{reportStats.lowStockItems} baixo estoque, {reportStats.expiringSoonItems} perto do vencimento</p>
+          </CardContent>
+        </Card>
+      </div>
+
+       <Card className="col-span-1 lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart2 className="h-5 w-5" />
+              Consumo Mensal de Itens
+            </CardTitle>
+            <CardDescription>
+              Visualize a quantidade de itens dispensados nos últimos 6 meses.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pl-2">
+             <MonthlyConsumptionChart dispensations={dispensations} />
+          </CardContent>
+        </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Gerar Relatórios Específicos</CardTitle>
+          <CardDescription>
+            Selecione um tipo de relatório para gerar um documento PDF.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+             {Object.keys(reportHandlers).map((reportName) => {
+                const key = buttonKeys[reportName];
+                const isGen = isGenerating[key];
+                 return (
+                    <Button 
+                        key={reportName}
+                        variant="outline" 
+                        className="justify-start"
+                        onClick={reportHandlers[reportName]}
+                        disabled={isGen}
+                    >
+                        {isGen ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                        {isGen ? 'Gerando...' : reportName}
+                    </Button>
+                )
+             })}
+        </CardContent>
+      </Card>
+    </div>
   )
 }
