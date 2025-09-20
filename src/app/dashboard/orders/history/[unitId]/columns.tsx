@@ -48,7 +48,7 @@ export const columns: ColumnDef<Order>[] = [
         variant={variantMap[status] || "default"} 
         className={cn({
             'bg-accent text-accent-foreground': status === 'Pendente',
-            'bg-blue-500 text-white': status === 'Em Trânsito', // A specific color for this one is fine
+            'bg-blue-500 text-white': status === 'Em Trânsito',
             'bg-secondary text-secondary-foreground': status === 'Entregue'
         })}
       >
