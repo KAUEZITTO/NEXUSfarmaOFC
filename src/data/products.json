@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "id": "prod-1758378709706",
+    "name": "paracetamol",
+    "commercialName": "tylenol",
+    "manufacturer": "",
+    "category": "Medicamento",
+    "therapeuticClass": "",
+    "mainFunction": "",
+    "quantity": 15,
+    "batch": "",
+    "expiryDate": "",
+    "supplier": "Casmed",
+    "presentation": "Unidade",
+    "status": "Baixo Estoque"
+  }
+]

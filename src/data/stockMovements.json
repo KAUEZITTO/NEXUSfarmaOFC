@@ -1,1 +1,15 @@
-[]
+[
+  {
+    "id": "mov-1758378710979",
+    "productId": "prod-1758378709706",
+    "productName": "paracetamol",
+    "type": "Entrada",
+    "reason": "Entrada Inicial",
+    "quantityChange": 15,
+    "quantityBefore": 0,
+    "quantityAfter": 15,
+    "date": "2025-09-20T14:31:50.979Z",
+    "relatedId": "",
+    "user": "Sistema"
+  }
+]

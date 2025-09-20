@@ -82,6 +82,9 @@ export function AddProductDialog({ trigger, productToEdit }: AddProductDialogPro
           if(match) {
               setTherapeuticClass(match.therapeuticClass);
               setMainFunction(match.mainFunction);
+          } else {
+              setTherapeuticClass('');
+              setMainFunction('');
           }
       }
   }, [debouncedName, knowledgeBase]);
@@ -253,11 +256,11 @@ export function AddProductDialog({ trigger, productToEdit }: AddProductDialogPro
             </div>
             <div className="space-y-2 md:col-span-2 lg:col-span-1">
                 <Label htmlFor="therapeuticClass">Classe Terapêutica</Label>
-                <Input id="therapeuticClass" value={therapeuticClass} onChange={e => setTherapeuticClass(e.target.value)} placeholder="Ex: Analgésico" />
+                <Input id="therapeuticClass" value={therapeuticClass} placeholder="Preenchido automaticamente..." readOnly className="bg-muted/50" />
             </div>
             <div className="space-y-2 col-span-1 md:col-span-2 lg:col-span-3">
                 <Label htmlFor="mainFunction">Função Principal</Label>
-                <Input id="mainFunction" value={mainFunction} onChange={e => setMainFunction(e.target.value)} placeholder="Ex: Para dor e febre" />
+                <Input id="mainFunction" value={mainFunction} placeholder="Preenchido automaticamente..." readOnly className="bg-muted/50" />
             </div>
           </div>
           <DialogFooter>

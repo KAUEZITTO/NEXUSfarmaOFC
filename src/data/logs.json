@@ -1,5 +1,11 @@
 [
   {
+    "user": "Sistema",
+    "action": "Produto Adicionado",
+    "details": "Novo produto \"paracetamol\" (ID: prod-1758378709706) foi adicionado com quantidade 15.",
+    "timestamp": "2025-09-20T14:31:51.668Z"
+  },
+  {
     "user": "kauemoreiraofc2@gmail.com",
     "action": "Login",
     "details": "Usuário fez login: kauemoreiraofc2@gmail.com",
