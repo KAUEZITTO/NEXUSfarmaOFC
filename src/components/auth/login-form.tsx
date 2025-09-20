@@ -2,27 +2,14 @@
 'use client';
 
 import { useState } from 'react';
-import { useFormStatus } from 'react-dom';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { createSessionCookie } from '@/lib/actions';
+import { login } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
 import { LoadingCapsule } from '../ui/loading-capsule';
-
-function LoginButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" className="w-full" aria-disabled={pending}>
-      {pending ? <LoadingCapsule /> : null}
-      {pending ? 'Entrando...' : 'Entrar'}
-    </Button>
-  );
-}
 
 export function LoginForm() {
   const router = useRouter();
@@ -39,16 +26,20 @@ export function LoginForm() {
     const password = formData.get('password') as string;
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const idToken = await userCredential.user.getIdToken();
-      await createSessionCookie(idToken);
-      // The redirect is handled in the server action
+      const result = await login({ email, password });
+       // The server action 'login' now throws a redirect on success,
+       // so we only need to handle the error case here.
+       if (!result.success) {
+           setErrorMessage(result.message);
+       }
     } catch (error: any) {
-        console.error(error);
-        if (error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-email') {
-            setErrorMessage('Email ou senha inválidos.');
+        // This will catch errors thrown from the server action,
+        // including the redirect error which we can safely ignore.
+        if (error.digest?.startsWith('NEXT_REDIRECT')) {
+            // This is expected, do nothing.
         } else {
-            setErrorMessage('Ocorreu um erro ao fazer login. Tente novamente.');
+            console.error(error);
+            setErrorMessage(error.message || 'Ocorreu um erro inesperado.');
         }
     } finally {
         setIsPending(false);

@@ -8,7 +8,7 @@ export default function RegisterPage() {
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
        <div className="hidden bg-muted lg:block">
         <Image
-          src="https://placehold.co/1920x1080.png"
+          src="/placeholder.png"
           alt="Image"
           width="1920"
           height="1080"

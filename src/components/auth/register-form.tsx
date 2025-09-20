@@ -1,16 +1,14 @@
 'use client'
 
 import React, { useState } from 'react';
-import { useFormStatus } from 'react-dom';
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { register } from '@/lib/actions';
 
 
 function RegisterButton({ isPending }: { isPending: boolean }) {
@@ -43,23 +41,27 @@ export function RegisterForm() {
       setIsPending(false);
       return;
     }
+    
+    if (password.length < 6) {
+        setErrorMessage("A senha deve ter pelo menos 6 caracteres.");
+        setIsPending(false);
+        return;
+    }
 
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      toast({
-        title: "Conta Criada!",
-        description: "Sua conta foi criada com sucesso. Faça o login.",
-      });
-      router.push('/');
+      const result = await register({ email, password });
+      if (result.success) {
+        toast({
+            title: "Conta Criada!",
+            description: "Sua conta foi criada com sucesso. Faça o login.",
+        });
+        router.push('/login');
+      } else {
+        setErrorMessage(result.message);
+      }
     } catch (error: any) {
       console.error(error);
-      if (error.code === 'auth/email-already-in-use') {
-        setErrorMessage('Este e-mail já está em uso.');
-      } else if (error.code === 'auth/weak-password') {
-        setErrorMessage('A senha deve ter pelo menos 6 caracteres.');
-      } else {
-        setErrorMessage('Ocorreu um erro ao criar a conta.');
-      }
+      setErrorMessage(error.message || 'Ocorreu um erro ao criar a conta.');
     } finally {
       setIsPending(false);
     }

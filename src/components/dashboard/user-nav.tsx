@@ -28,6 +28,7 @@ export function UserNav() {
 
   const handleLogout = async () => {
     await logout();
+    // The redirect is handled in the server action, but a client-side redirect can be a fallback.
     router.push('/');
   };
 
@@ -46,25 +47,10 @@ export function UserNav() {
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
               <p className="text-sm font-medium leading-none">Usuário</p>
-              <p className="text-xs leading-none text-muted-foreground">
-                kaue23@example.com
-              </p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/settings">
-                <User className="mr-2 h-4 w-4" />
-                <span>Perfil</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/settings">
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Configurações</span>
-              </Link>
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={startTour}>
                 <HelpCircle className="mr-2 h-4 w-4" />
                 <span>Fazer Tour</span>

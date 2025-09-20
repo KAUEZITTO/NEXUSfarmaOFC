@@ -117,3 +117,9 @@ export type StockMovement = {
   relatedId?: string; // e.g., Order ID or Dispensation ID
   user: string;
 };
+
+export type User = {
+    id: string;
+    email: string;
+    password: string; // This will be the hashed password
+}

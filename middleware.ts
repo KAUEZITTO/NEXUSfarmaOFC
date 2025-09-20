@@ -1,6 +1,18 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import * as jose from 'jose';
+
+const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
+
+async function verifyToken(token: string): Promise<boolean> {
+  try {
+    await jose.jwtVerify(token, secret);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
 
 export async function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get('session')?.value;
@@ -8,7 +20,7 @@ export async function middleware(request: NextRequest) {
 
   const isAuthPage = pathname === '/login' || pathname === '/register';
 
-  if (!sessionCookie) {
+  if (!sessionCookie || !(await verifyToken(sessionCookie))) {
     // Allow access to the landing page at the root
     if (pathname === '/') {
         return NextResponse.next();
@@ -34,5 +46,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$).*)'],
 };
