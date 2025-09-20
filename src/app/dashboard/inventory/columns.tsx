@@ -54,6 +54,11 @@ export const getColumns = ({ onProductSaved }: ColumnsProps): ColumnDef<Product>
     },
     cell: ({ row }) => <div className="capitalize font-medium">{row.getValue("name")}</div>,
   },
+    {
+    accessorKey: "presentation",
+    header: "Apresentação",
+    cell: ({ row }) => <div className="capitalize">{row.getValue("presentation") || "N/A"}</div>
+  },
   {
     accessorKey: "therapeuticClass",
     header: "Classe",
