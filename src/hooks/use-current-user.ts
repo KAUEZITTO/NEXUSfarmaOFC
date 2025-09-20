@@ -31,7 +31,6 @@ export function CurrentUserProvider({ children }: { children: React.ReactNode })
             }
         };
 
-        // Fetch user data only on the client side when the path changes.
         fetchUser();
     }, [pathname]);
 
