@@ -13,5 +13,20 @@
     "supplier": "Casmed",
     "presentation": "Unidade",
     "status": "Baixo Estoque"
+  },
+  {
+    "id": "prod-1758379595305",
+    "name": "loratadina 10mg",
+    "commercialName": "lorasil",
+    "manufacturer": "neolab",
+    "category": "Medicamento",
+    "therapeuticClass": "",
+    "mainFunction": "",
+    "quantity": 50,
+    "batch": "AB56A90",
+    "expiryDate": "",
+    "supplier": "Casmed",
+    "presentation": "Unidade",
+    "status": "Em Estoque"
   }
 ]

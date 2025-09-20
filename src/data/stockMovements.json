@@ -1,5 +1,18 @@
 [
   {
+    "id": "mov-1758379596383",
+    "productId": "prod-1758379595305",
+    "productName": "loratadina 10mg",
+    "type": "Entrada",
+    "reason": "Entrada Inicial",
+    "quantityChange": 50,
+    "quantityBefore": 0,
+    "quantityAfter": 50,
+    "date": "2025-09-20T14:46:36.383Z",
+    "relatedId": "",
+    "user": "Sistema"
+  },
+  {
     "id": "mov-1758378710979",
     "productId": "prod-1758378709706",
     "productName": "paracetamol",
