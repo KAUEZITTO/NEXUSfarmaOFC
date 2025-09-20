@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,12 +21,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Save, Loader2 } from 'lucide-react';
+import { Save, Loader2, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { addProduct, updateProduct } from '@/lib/actions';
-import type { Product } from '@/lib/types';
+import { addProduct, updateProduct, getKnowledgeBase } from '@/lib/actions';
+import type { Product, KnowledgeBaseItem } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { ProductSavedDialog } from './product-saved-dialog';
+import { useDebounce } from 'use-debounce';
 
 type AddProductDialogProps = {
   trigger: React.ReactNode;
@@ -44,7 +45,6 @@ export function AddProductDialog({ trigger, productToEdit }: AddProductDialogPro
   const [isSaving, setIsSaving] = useState(false);
   const isEditing = !!productToEdit;
 
-  // State for post-save dialog
   const [savedProduct, setSavedProduct] = useState<Product | null>(null);
   const [showSavedDialog, setShowSavedDialog] = useState(false);
 
@@ -58,6 +58,34 @@ export function AddProductDialog({ trigger, productToEdit }: AddProductDialogPro
   const [supplier, setSupplier] = useState<Product['supplier']>('Casmed');
   const [quantity, setQuantity] = useState(0);
   const [presentation, setPresentation] = useState<Product['presentation']>('Unidade');
+  const [therapeuticClass, setTherapeuticClass] = useState('');
+  const [mainFunction, setMainFunction] = useState('');
+  
+  const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeBaseItem[]>([]);
+  const [debouncedName] = useDebounce(name, 300);
+
+
+  useEffect(() => {
+    async function loadKnowledgeBase() {
+        if(isOpen) {
+            const kb = await getKnowledgeBase();
+            setKnowledgeBase(kb);
+        }
+    }
+    loadKnowledgeBase();
+  }, [isOpen]);
+
+  useEffect(() => {
+      if(debouncedName && knowledgeBase.length > 0) {
+          const searchTerm = debouncedName.toLowerCase();
+          const match = knowledgeBase.find(item => searchTerm.includes(item.name.toLowerCase()));
+          if(match) {
+              setTherapeuticClass(match.therapeuticClass);
+              setMainFunction(match.mainFunction);
+          }
+      }
+  }, [debouncedName, knowledgeBase]);
+
 
   const resetForm = () => {
     setName('');
@@ -69,6 +97,8 @@ export function AddProductDialog({ trigger, productToEdit }: AddProductDialogPro
     setSupplier('Casmed');
     setQuantity(0);
     setPresentation('Unidade');
+    setTherapeuticClass('');
+    setMainFunction('');
   }
 
   useEffect(() => {
@@ -77,6 +107,8 @@ export function AddProductDialog({ trigger, productToEdit }: AddProductDialogPro
         setCommercialName(productToEdit.commercialName || '');
         setManufacturer(productToEdit.manufacturer || '');
         setCategory(productToEdit.category);
+        setTherapeuticClass(productToEdit.therapeuticClass || '');
+        setMainFunction(productToEdit.mainFunction || '');
         setBatch(productToEdit.batch || '');
         setExpiryDate(productToEdit.expiryDate || '');
         setSupplier(productToEdit.supplier || 'Outro');
@@ -106,6 +138,8 @@ export function AddProductDialog({ trigger, productToEdit }: AddProductDialogPro
                 commercialName: category === 'Medicamento' ? commercialName : undefined,
                 manufacturer,
                 category,
+                therapeuticClass,
+                mainFunction,
                 quantity,
                 batch,
                 expiryDate,
@@ -123,6 +157,8 @@ export function AddProductDialog({ trigger, productToEdit }: AddProductDialogPro
                 commercialName: category === 'Medicamento' ? commercialName : undefined,
                 manufacturer: manufacturer,
                 category,
+                therapeuticClass,
+                mainFunction,
                 quantity,
                 batch,
                 expiryDate,
@@ -157,11 +193,11 @@ export function AddProductDialog({ trigger, productToEdit }: AddProductDialogPro
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>{trigger}</DialogTrigger>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>{isEditing ? 'Editar Produto' : 'Adicionar Novo Produto'}</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nome do Produto (Princípio Ativo/Descrição)</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -214,6 +250,14 @@ export function AddProductDialog({ trigger, productToEdit }: AddProductDialogPro
                   {suppliers.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2 md:col-span-2 lg:col-span-1">
+                <Label htmlFor="therapeuticClass">Classe Terapêutica</Label>
+                <Input id="therapeuticClass" value={therapeuticClass} onChange={e => setTherapeuticClass(e.target.value)} placeholder="Ex: Analgésico" />
+            </div>
+            <div className="space-y-2 col-span-1 md:col-span-2 lg:col-span-3">
+                <Label htmlFor="mainFunction">Função Principal</Label>
+                <Input id="mainFunction" value={mainFunction} onChange={e => setMainFunction(e.target.value)} placeholder="Ex: Para dor e febre" />
             </div>
           </div>
           <DialogFooter>

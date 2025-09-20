@@ -36,11 +36,6 @@ export const getColumns = (): ColumnDef<Product>[] => [
     enableHiding: false,
   },
   {
-    accessorKey: "id",
-    header: "ID do Produto",
-    cell: ({ row }) => <div className="font-mono">{row.getValue("id")}</div>,
-  },
-  {
     accessorKey: "name",
     header: ({ column }) => {
       return (
@@ -56,11 +51,16 @@ export const getColumns = (): ColumnDef<Product>[] => [
     cell: ({ row }) => <div className="capitalize font-medium">{row.getValue("name")}</div>,
   },
   {
-    accessorKey: "category",
-    header: "Categoria",
-    cell: ({ row }) => <div className="capitalize">{row.getValue("category")}</div>,
+    accessorKey: "therapeuticClass",
+    header: "Classe",
+    cell: ({ row }) => <div className="capitalize">{row.getValue("therapeuticClass") || "N/A"}</div>
   },
-    {
+  {
+    accessorKey: "mainFunction",
+    header: "Função",
+    cell: ({ row }) => <div className="capitalize">{row.getValue("mainFunction") || "N/A"}</div>
+  },
+  {
     accessorKey: "quantity",
     header: () => <div className="text-right">Quantidade</div>,
     cell: ({ row }) => {
@@ -93,7 +93,6 @@ export const getColumns = (): ColumnDef<Product>[] => [
     cell: ({ row }) => {
       const dateString = row.getValue("expiryDate") as string;
       if (!dateString) return null;
-      // Date is yyyy-mm-dd, need to convert to local format
       const [year, month, day] = dateString.split('-');
       const date = new Date(Number(year), Number(month) - 1, Number(day));
       return <div>{date.toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</div>

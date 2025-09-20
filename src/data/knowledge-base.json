@@ -1,0 +1,68 @@
+
+[
+    {
+        "name": "Paracetamol 500mg",
+        "therapeuticClass": "Analgésico e Antipirético",
+        "mainFunction": "Para alívio de dores de cabeça, dores no corpo e febre."
+    },
+    {
+        "name": "Dipirona 500mg",
+        "therapeuticClass": "Analgésico e Antipirético",
+        "mainFunction": "Para alívio de dores agudas e febre alta."
+    },
+    {
+        "name": "Amoxicilina 500mg",
+        "therapeuticClass": "Antibiótico",
+        "mainFunction": "Para tratamento de infecções bacterianas."
+    },
+    {
+        "name": "Sonda de Demora Foley",
+        "therapeuticClass": "Material de Drenagem",
+        "mainFunction": "Para drenagem urinária de longa permanência."
+    },
+    {
+        "name": "Fio de Sutura Nylon 4-0",
+        "therapeuticClass": "Material de Sutura",
+        "mainFunction": "Para sutura de pele e tecidos superficiais."
+    },
+    {
+        "name": "Luva de Procedimento",
+        "therapeuticClass": "EPI",
+        "mainFunction": "Para proteção do profissional em procedimentos não cirúrgicos."
+    },
+    {
+        "name": "Gaze Estéril",
+        "therapeuticClass": "Curativo",
+        "mainFunction": "Para limpeza e cobertura de ferimentos."
+    },
+    {
+        "name": "Insulina NPH",
+        "therapeuticClass": "Antidiabético",
+        "mainFunction": "Para controle de glicemia em pacientes com diabetes."
+    },
+    {
+        "name": "Insulina Regular",
+        "therapeuticClass": "Antidiabético",
+        "mainFunction": "Para controle de picos de glicemia em pacientes com diabetes."
+    },
+    {
+        "name": "Lantus (Glargina)",
+        "therapeuticClass": "Antidiabético (Análogo de Insulina)",
+        "mainFunction": "Para controle basal de glicemia de longa duração."
+    },
+    {
+        "name": "Apidra (Glulisina)",
+        "therapeuticClass": "Antidiabético (Análogo de Insulina)",
+        "mainFunction": "Para controle rápido de glicemia, geralmente antes das refeições."
+    },
+    {
+        "name": "Tiras de Glicemia",
+        "therapeuticClass": "Diagnóstico",
+        "mainFunction": "Para medição dos níveis de glicose no sangue."
+    },
+    {
+        "name": "Fralda Geriátrica",
+        "therapeuticClass": "Insumo de Higiene",
+        "mainFunction": "Para manejo da incontinência em adultos."
+    }
+]

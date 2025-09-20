@@ -3,7 +3,7 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
-import { Product, Unit, Patient, Order, Dispensation, StockMovement, PatientFilter, PatientStatus, User } from './types';
+import { Product, Unit, Patient, Order, Dispensation, StockMovement, PatientFilter, PatientStatus, User, KnowledgeBaseItem } from './types';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -166,6 +166,12 @@ async function logStockMovement(
     movements.unshift(movement);
     await writeData('stockMovements.json', movements);
 }
+
+// --- KNOWLEDGE BASE ---
+export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
+    return await readData<KnowledgeBaseItem>('knowledge-base.json');
+}
+
 
 // --- PRODUCTS ACTIONS ---
 

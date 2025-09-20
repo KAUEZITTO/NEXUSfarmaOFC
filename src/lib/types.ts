@@ -6,6 +6,8 @@ export type Product = {
   commercialName?: string;
   manufacturer?: string;
   category: 'Medicamento' | 'Material Técnico' | 'Odontológico' | 'Laboratório' | 'Fraldas' | 'Outro';
+  therapeuticClass?: string; // e.g., Analgésico, Antibiótico
+  mainFunction?: string; // e.g., Para dor e febre
   quantity: number;
   expiryDate: string;
   status: 'Em Estoque' | 'Baixo Estoque' | 'Sem Estoque';
@@ -118,4 +120,8 @@ export type User = {
     password: string; // This will be the hashed password
 }
 
-    
+export type KnowledgeBaseItem = {
+    name: string;
+    therapeuticClass: string;
+    mainFunction: string;
+}
