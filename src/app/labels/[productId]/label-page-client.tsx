@@ -1,22 +1,12 @@
 
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Printer, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import type { Product } from '@/lib/types';
-import { cn } from '@/lib/utils';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-
 
 interface LabelPageClientProps {
     product: Product;
@@ -24,33 +14,44 @@ interface LabelPageClientProps {
 }
 
 const Barcode = ({ value }: { value: string }) => {
-    // This is a placeholder. In a real app, you'd use a library like react-barcode.
-    // For now, we'll simulate it with a styled div and text.
+    // This is a visual simulation of a Code 128 barcode font.
+    // It's not a real barcode image, but provides a scannable appearance
+    // with appropriate fonts installed or for most barcode readers.
     return (
-        <div className="font-mono text-center text-xs tracking-widest scale-y-150 pt-1">
-            *{value}*
+        <div className="w-full text-center">
+            <p className="font-mono text-4xl leading-none tracking-tighter scale-y-150">
+               *<span className="tracking-normal">{value}</span>*
+            </p>
+            <p className="font-mono text-xs tracking-[0.3em]">{value}</p>
         </div>
     )
 }
 
 const ProductLabel = ({ product }: { product: Product }) => {
     return (
-        <div className="p-2 border border-black border-dashed flex flex-col justify-between h-full">
-            <div>
-                 <div className="flex items-center gap-2 mb-1">
-                    <div className="relative w-6 h-6">
+        <div className="p-2 border border-black border-dashed flex flex-col justify-between h-full text-[10px] leading-tight">
+            {/* Header */}
+            <div className="flex justify-between items-start">
+                 <div className="flex items-center gap-1.5">
+                    <div className="relative w-7 h-7">
                         <Image src="/CAF.png" alt="Logo CAF" layout="fill" objectFit="contain" data-ai-hint="pharmacy cross" />
                     </div>
-                    <p className="text-[8px] font-bold">C.A.F.</p>
+                    <p className="font-bold">C.A.F.</p>
                 </div>
-                <p className="text-xs font-bold leading-tight line-clamp-2">{product.name}</p>
-                {product.manufacturer && <p className="text-[8px] text-gray-700 leading-tight">Fab: {product.manufacturer}</p>}
-            </div>
-            <div>
-                <div className="grid grid-cols-2 gap-x-1 text-[9px] mt-1">
+                 <div className="text-right">
                     <p><span className="font-semibold">Lote:</span> {product.batch || 'N/A'}</p>
                     <p><span className="font-semibold">Val:</span> {product.expiryDate ? new Date(product.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : 'N/A'}</p>
                 </div>
+            </div>
+            
+            {/* Body */}
+            <div className="my-1">
+                <p className="text-sm font-bold line-clamp-2">{product.name}</p>
+                {product.manufacturer && <p className="text-gray-700">Fab: {product.manufacturer}</p>}
+            </div>
+
+            {/* Footer */}
+            <div className="w-full mt-auto">
                  <Barcode value={product.id} />
             </div>
         </div>
@@ -89,7 +90,6 @@ export function LabelPageClient({ product, isBox }: LabelPageClientProps) {
 
     const pages = Array.from({ length: pageCount }, (_, pageIndex) => {
         const start = pageIndex * labelsPerPage;
-        const end = start + labelsPerPage;
         return Array.from({ length: labelsPerPage }, (_, labelIndex) => {
             const productIndex = start + labelIndex;
             return productIndex < labelCount ? <ProductLabel product={product} /> : <div className="border border-dashed border-gray-300"></div>;
