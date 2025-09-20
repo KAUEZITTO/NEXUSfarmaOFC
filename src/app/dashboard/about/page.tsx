@@ -43,7 +43,7 @@ export default function AboutPage() {
                     Versão do Sistema
                 </h3>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  NexusFarma v0.9.1 (Beta)
+                  NexusFarma v0.9.2 (Beta)
                 </p>
               </div>
           </CardContent>
