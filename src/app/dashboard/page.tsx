@@ -1,3 +1,4 @@
+
 import {
   Activity,
   ArrowUpRight,
@@ -42,6 +43,7 @@ import {
 import { OverviewChart } from "@/components/dashboard/overview-chart"
 import { getProducts, getOrders, getAllDispensations } from "@/lib/actions"
 import type { Product, Order, Unit, Dispensation } from "@/lib/types"
+import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart"
 
 
 const getUnitsServed = (orders: Order[]) => {
@@ -237,18 +239,18 @@ export default async function Dashboard() {
                 <TableBody>
                   {dailyDepartures.length > 0 ? (
                     dailyDepartures.map(departure => (
-                      <TableRow key={departure.id} asChild>
-                        <Link href={departure.receiptUrl} target="_blank" className="cursor-pointer hover:bg-muted/50">
-                          <TableCell>
-                              <div className="font-medium">{departure.destination}</div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={departure.type === 'Remessa' ? 'secondary' : 'default'} className={departure.type === 'Remessa' ? 'bg-blue-100 text-blue-800' : ''}>
-                                {departure.type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">{departure.itemCount}</TableCell>
-                        </Link>
+                      <TableRow key={departure.id}>
+                        <TableCell>
+                          <Link href={departure.receiptUrl} target="_blank" className="cursor-pointer hover:underline font-medium text-primary">
+                            {departure.destination}
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={departure.type === 'Remessa' ? 'secondary' : 'default'} className={departure.type === 'Remessa' ? 'bg-blue-100 text-blue-800' : ''}>
+                              {departure.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">{departure.itemCount}</TableCell>
                       </TableRow>
                     ))
                   ) : (
@@ -263,6 +265,21 @@ export default async function Dashboard() {
             </CardContent>
         </Card>
       </div>
+       <div className="grid gap-4 md:gap-8 mt-6">
+         <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              Consumo Mensal de Itens
+            </CardTitle>
+            <CardDescription>
+              Visualize a quantidade de itens dispensados nos últimos 6 meses.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pl-2">
+             <MonthlyConsumptionChart dispensations={dispensations} />
+          </CardContent>
+        </Card>
+       </div>
     </div>
   )
 }

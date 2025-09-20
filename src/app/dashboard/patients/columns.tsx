@@ -111,14 +111,12 @@ export const getColumns = ({ onPatientSaved, onUpdateStatus }: ColumnsProps): Co
                 Ver Histórico
               </Link>
             </DropdownMenuItem>
-             <DropdownMenuItem onSelect={(e) => e.preventDefault()} asChild>
-                <AddPatientDialog patientToEdit={patient} onPatientSaved={onPatientSaved} trigger={
-                    <button className="w-full h-full relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
-                        <Edit className="mr-2 h-4 w-4" />
-                        <span>Editar Cadastro</span>
-                    </button>
-                } />
-            </DropdownMenuItem>
+             <AddPatientDialog patientToEdit={patient} onPatientSaved={onPatientSaved} trigger={
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    <span>Editar Cadastro</span>
+                </DropdownMenuItem>
+            } />
             <DropdownMenuSeparator />
              <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
