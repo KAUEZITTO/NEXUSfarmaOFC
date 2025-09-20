@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -10,10 +11,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Download, FileText, Loader2, BarChart2, Package, Users, AlertTriangle } from "lucide-react";
 import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF, generatePatientReportPDF, generateUnitDispensationReportPDF, generateBatchReportPDF, generateEntriesAndExitsReportPDF } from "@/lib/pdf-generator";
-import { useState, Children, cloneElement, isValidElement } from "react";
+import { useState } from "react";
 import type { Product, Patient, Dispensation, Unit, Order, StockMovement } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
+import { AnalyticsChat } from "@/components/dashboard/analytics-chat";
 
 type GeneratingState = {
     complete: boolean;
@@ -130,55 +132,91 @@ export function ReportsClient({
 
   return (
      <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Relatórios Gerenciais</h1>
-          <p className="text-muted-foreground">
-            Gere e visualize relatórios de dispensação, estoque e mais.
-          </p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+                <div className="flex justify-between items-center">
+                    <div>
+                    <h1 className="text-2xl font-bold tracking-tight">Relatórios Gerenciais</h1>
+                    <p className="text-muted-foreground">
+                        Gere e visualize relatórios de dispensação, estoque e mais.
+                    </p>
+                    </div>
+                    <Button onClick={handleExportComplete} disabled={isGenerating.complete}>
+                        {isGenerating.complete ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                        {isGenerating.complete ? 'Gerando...' : 'Relatório Completo'}
+                    </Button>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                    <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Itens Dispensados (Mês)</CardTitle>
+                        <Package className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{reportStats.itemsDispensedThisMonth.toLocaleString('pt-BR')}</div>
+                        <p className="text-xs text-muted-foreground">
+                            {reportStats.monthlyChangePercentage >= 0 ? `+${reportStats.monthlyChangePercentage.toFixed(1)}%` : `${reportStats.monthlyChangePercentage.toFixed(1)}%`} em relação ao mês anterior
+                        </p>
+                    </CardContent>
+                    </Card>
+                    <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Pacientes Atendidos</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{reportStats.judicialPatients}</div>
+                        <p className="text-xs text-muted-foreground">Pacientes com mandado judicial/municipal</p>
+                    </CardContent>
+                    </Card>
+                    <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Alertas de Estoque</CardTitle>
+                        <AlertTriangle className="h-4 w-4 text-destructive" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{reportStats.totalStockAlerts}</div>
+                        <p className="text-xs text-muted-foreground">{reportStats.lowStockItems} baixo estoque, {reportStats.expiringSoonItems} perto do vencimento</p>
+                    </CardContent>
+                    </Card>
+                </div>
+
+                <Card>
+                    <CardHeader>
+                    <CardTitle>Gerar Relatórios Específicos</CardTitle>
+                    <CardDescription>
+                        Selecione um tipo de relatório para gerar um documento PDF.
+                    </CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                        {Object.keys(reportHandlers).map((reportName) => {
+                            const key = buttonKeys[reportName];
+                            const isGen = isGenerating[key];
+                            return (
+                                <Button 
+                                    key={reportName}
+                                    variant="outline" 
+                                    className="justify-start"
+                                    onClick={reportHandlers[reportName]}
+                                    disabled={isGen}
+                                >
+                                    {isGen ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                                    {isGen ? 'Gerando...' : reportName}
+                                </Button>
+                            )
+                        })}
+                    </CardContent>
+                </Card>
+            </div>
+            
+            <Card className="lg:col-span-1 h-full flex flex-col">
+               <AnalyticsChat />
+            </Card>
+
         </div>
-        <Button onClick={handleExportComplete} disabled={isGenerating.complete}>
-            {isGenerating.complete ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-            {isGenerating.complete ? 'Gerando...' : 'Exportar Relatório Completo'}
-        </Button>
-      </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Itens Dispensados (Mês)</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{reportStats.itemsDispensedThisMonth.toLocaleString('pt-BR')}</div>
-            <p className="text-xs text-muted-foreground">
-                 {reportStats.monthlyChangePercentage >= 0 ? `+${reportStats.monthlyChangePercentage.toFixed(1)}%` : `${reportStats.monthlyChangePercentage.toFixed(1)}%`} em relação ao mês anterior
-            </p>
-          </CardContent>
-        </Card>
-         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pacientes Atendidos</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{reportStats.judicialPatients}</div>
-            <p className="text-xs text-muted-foreground">Pacientes com mandado judicial/municipal</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Alertas de Estoque</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{reportStats.totalStockAlerts}</div>
-            <p className="text-xs text-muted-foreground">{reportStats.lowStockItems} baixo estoque, {reportStats.expiringSoonItems} perto do vencimento</p>
-          </CardContent>
-        </Card>
-      </div>
-
-       <Card className="col-span-1 lg:col-span-2">
+       <Card className="mt-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart2 className="h-5 w-5" />
@@ -192,33 +230,6 @@ export function ReportsClient({
              <MonthlyConsumptionChart dispensations={dispensations} />
           </CardContent>
         </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Gerar Relatórios Específicos</CardTitle>
-          <CardDescription>
-            Selecione um tipo de relatório para gerar um documento PDF.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-             {Object.keys(reportHandlers).map((reportName) => {
-                const key = buttonKeys[reportName];
-                const isGen = isGenerating[key];
-                 return (
-                    <Button 
-                        key={reportName}
-                        variant="outline" 
-                        className="justify-start"
-                        onClick={reportHandlers[reportName]}
-                        disabled={isGen}
-                    >
-                        {isGen ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
-                        {isGen ? 'Gerando...' : reportName}
-                    </Button>
-                )
-             })}
-        </CardContent>
-      </Card>
     </div>
   )
 }
