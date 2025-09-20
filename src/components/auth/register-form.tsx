@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState } from 'react';
@@ -9,6 +10,8 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { register } from '@/lib/actions';
+import type { Role, SubRole } from '@/lib/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 
 function RegisterButton({ isPending }: { isPending: boolean }) {
@@ -20,11 +23,15 @@ function RegisterButton({ isPending }: { isPending: boolean }) {
   );
 }
 
+const roles: Role[] = ['Farmacêutico', 'Coordenador', 'Enfermeiro(a)', 'Odontólogo(a)', 'Biomédico(a)', 'Técnico de Enfermagem', 'Auxiliar de Farmácia', 'Digitador'];
+const subRoles: SubRole[] = ['CAF', 'CAPS', 'Hospital', 'e-Multi', 'Outro'];
+
 export function RegisterForm() {
   const { toast } = useToast();
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<Role | ''>('');
   
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -35,6 +42,8 @@ export function RegisterForm() {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     const confirmPassword = formData.get('confirm-password') as string;
+    const role = formData.get('role') as Role;
+    const subRole = formData.get('subRole') as SubRole | undefined;
 
     if (password !== confirmPassword) {
       setErrorMessage("As senhas não coincidem.");
@@ -48,8 +57,14 @@ export function RegisterForm() {
         return;
     }
 
+    if (!role) {
+        setErrorMessage("Por favor, selecione um cargo.");
+        setIsPending(false);
+        return;
+    }
+
     try {
-      const result = await register({ email, password });
+      const result = await register({ email, password, role, subRole });
       if (result.success) {
         toast({
             title: "Conta Criada com Sucesso!",
@@ -81,6 +96,27 @@ export function RegisterForm() {
         <Label htmlFor="confirm-password">Confirmar Senha</Label>
         <Input id="confirm-password" name="confirm-password" type="password" required placeholder="••••••••" />
       </div>
+      <div className="grid gap-2">
+          <Label htmlFor="role">Cargo</Label>
+          <Select name="role" required onValueChange={(v) => setSelectedRole(v as Role)}>
+              <SelectTrigger><SelectValue placeholder="Selecione seu cargo" /></SelectTrigger>
+              <SelectContent>
+                  {roles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+              </SelectContent>
+          </Select>
+      </div>
+       {selectedRole === 'Farmacêutico' && (
+           <div className="grid gap-2">
+              <Label htmlFor="subRole">Especifique a Lotação</Label>
+              <Select name="subRole" required>
+                  <SelectTrigger><SelectValue placeholder="Selecione a lotação" /></SelectTrigger>
+                  <SelectContent>
+                      {subRoles.map(sr => <SelectItem key={sr} value={sr}>{sr}</SelectItem>)}
+                  </SelectContent>
+              </Select>
+           </div>
+       )}
+
       <RegisterButton isPending={isPending} />
 
       {errorMessage && (

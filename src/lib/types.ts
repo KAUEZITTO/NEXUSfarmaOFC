@@ -1,13 +1,36 @@
 
 
+export type Role =
+  | 'Farmacêutico'
+  | 'Coordenador'
+  | 'Enfermeiro(a)'
+  | 'Odontólogo(a)'
+  | 'Biomédico(a)'
+  | 'Técnico de Enfermagem'
+  | 'Auxiliar de Farmácia'
+  | 'Digitador';
+
+export type SubRole = 'CAF' | 'CAPS' | 'Hospital' | 'e-Multi' | 'Outro';
+
+export type AccessLevel = 'Admin' | 'User';
+
+export type User = {
+    id: string;
+    email: string;
+    password: string; 
+    role: Role;
+    subRole?: SubRole;
+    accessLevel: AccessLevel;
+}
+
 export type Product = {
   id: string;
   name: string;
   commercialName?: string;
   manufacturer?: string;
   category: 'Medicamento' | 'Material Técnico' | 'Odontológico' | 'Laboratório' | 'Fraldas' | 'Outro';
-  therapeuticClass?: string; // e.g., Analgésico, Antibiótico
-  mainFunction?: string; // e.g., Para dor e febre
+  therapeuticClass?: string; 
+  mainFunction?: string; 
   quantity: number;
   expiryDate: string;
   status: 'Em Estoque' | 'Baixo Estoque' | 'Sem Estoque';
@@ -95,7 +118,7 @@ export type DispensationItem = {
 
 export type Dispensation = {
     id: string;
-    patientId: string; // Keep patientId for easy filtering
+    patientId: string; 
     patient: Omit<Patient, 'files'>;
     date: string;
     items: DispensationItem[];
@@ -111,15 +134,9 @@ export type StockMovement = {
   quantityBefore: number;
   quantityAfter: number;
   date: string;
-  relatedId?: string; // e.g., Order ID or Dispensation ID
+  relatedId?: string; 
   user: string;
 };
-
-export type User = {
-    id: string;
-    email: string;
-    password: string; // This will be the hashed password
-}
 
 export type KnowledgeBaseItem = {
     name: string;

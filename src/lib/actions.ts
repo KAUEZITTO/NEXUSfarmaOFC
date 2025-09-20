@@ -3,7 +3,7 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
-import { Product, Unit, Patient, Order, Dispensation, StockMovement, PatientFilter, PatientStatus, User, KnowledgeBaseItem } from './types';
+import { Product, Unit, Patient, Order, Dispensation, StockMovement, PatientFilter, PatientStatus, User, KnowledgeBaseItem, Role, SubRole } from './types';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -19,7 +19,6 @@ const uploadPath = path.join(process.cwd(), 'public', 'uploads');
 
 // --- FILE I/O HELPERS ---
 
-// Replaced with Vercel KV
 const readData = cache(async <T>(key: string): Promise<T[]> => {
     const data = await kv.get<T[]>(key);
     return data || [];
@@ -35,20 +34,25 @@ async function writeData<T>(key: string, data: T[]): Promise<void> {
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 const saltRounds = 10;
 
-const getCurrentUser = cache(async () => {
+export const getCurrentUser = cache(async (): Promise<User | null> => {
     const sessionCookie = cookies().get('session')?.value;
     if (!sessionCookie) return null;
 
     try {
         const { payload } = await jose.jwtVerify(sessionCookie, secret);
-        return payload.user as { email: string; id: string };
+        const userId = payload.sub;
+        if (!userId) return null;
+
+        const users = await readData<User>('users');
+        return users.find(u => u.id === userId) || null;
+
     } catch (error) {
         console.error("Failed to verify session cookie:", error);
         return null;
     }
 });
 
-export async function register(userData: Omit<User, 'id'>): Promise<{ success: boolean; message: string }> {
+export async function register(userData: Omit<User, 'id' | 'password' | 'accessLevel'> & { password: string }): Promise<{ success: boolean; message: string }> {
     const users = await readData<User>('users');
     if (users.find(u => u.email === userData.email)) {
         return { success: false, message: 'Este e-mail já está em uso.' };
@@ -56,15 +60,21 @@ export async function register(userData: Omit<User, 'id'>): Promise<{ success: b
 
     const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
     
+    // First user registered is an Admin, others are Users
+    const accessLevel = users.length === 0 ? 'Admin' : 'User';
+
     const newUser: User = {
         id: `user-${Date.now()}`,
         email: userData.email,
         password: hashedPassword,
+        role: userData.role,
+        subRole: userData.subRole,
+        accessLevel,
     };
     
     users.push(newUser);
     await writeData('users', users);
-    await logActivity('Cadastro de Usuário', `Novo usuário cadastrado: ${userData.email}`);
+    await logActivity('Cadastro de Usuário', `Novo usuário cadastrado: ${userData.email} com cargo ${userData.role} e nível ${accessLevel}.`);
 
     return { success: true, message: 'Conta criada com sucesso!' };
 }
@@ -87,10 +97,12 @@ export async function login(formData: FormData): Promise<{ success: boolean; mes
         return { success: false, message: 'Email ou senha inválidos.' };
     }
 
-    // Create session cookie (JWT)
-    const token = await new jose.SignJWT({ user: { id: user.id, email: user.email } })
+    const token = await new jose.SignJWT({ 'urn:example:claim': true })
         .setProtectedHeader({ alg: 'HS256' })
         .setIssuedAt()
+        .setSubject(user.id)
+        .setIssuer('urn:example:issuer')
+        .setAudience('urn:example:audience')
         .setExpirationTime('7d')
         .sign(secret);
     
@@ -99,8 +111,6 @@ export async function login(formData: FormData): Promise<{ success: boolean; mes
 
     redirect('/dashboard');
     
-    // Although redirect is called, returning a success message can be useful for client-side feedback.
-    // The actual redirection will be handled by Next.js.
     return { success: true, message: "Login bem-sucedido!" };
 }
 
@@ -111,6 +121,14 @@ export async function logout() {
     await logActivity('Logout', `Usuário ${user.email} saiu.`);
   }
   cookies().delete('session');
+}
+
+export async function getAllUsers(): Promise<User[]> {
+    const currentUser = await getCurrentUser();
+    if (currentUser?.accessLevel !== 'Admin') {
+        throw new Error("Acesso não autorizado.");
+    }
+    return await readData<User>('users');
 }
 
 
@@ -132,8 +150,8 @@ async function logActivity(action: string, details: string) {
         details,
         timestamp: new Date().toISOString(),
     };
-    logs.unshift(logEntry); // Add to the beginning
-    await writeData('logs', logs.slice(0, 1000)); // Keep last 1000 logs
+    logs.unshift(logEntry); 
+    await writeData('logs', logs.slice(0, 1000)); 
 }
 
 // --- STOCK MOVEMENT LOGGING ---
@@ -157,7 +175,7 @@ async function logStockMovement(
         reason,
         quantityChange,
         quantityBefore,
-        quantityAfter: quantityBefore + quantityChange, // quantityChange is negative for 'Saída'
+        quantityAfter: quantityBefore + quantityChange, 
         date: new Date().toISOString(),
         relatedId: relatedId || '',
         user: user?.email || 'Sistema'
@@ -189,7 +207,6 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
             return { success: false, error: 'Nenhum arquivo enviado.' };
         }
 
-        // Ensure upload directory exists
         await mkdir(uploadPath, { recursive: true });
 
         const buffer = Buffer.from(await file.arrayBuffer());
@@ -493,3 +510,25 @@ export async function getDispensation(dispensationId: string): Promise<Dispensat
 export const getStockMovements = cache(async (): Promise<StockMovement[]> => {
     return await readData<StockMovement>('stockMovements');
 });
+
+// --- DATA RESET ---
+export async function resetAllData() {
+    const currentUser = await getCurrentUser();
+    if (currentUser?.accessLevel !== 'Admin') {
+        throw new Error("Acesso não autorizado para limpar dados.");
+    }
+    
+    // Lista de todas as chaves de dados
+    const dataKeys = ['products', 'units', 'patients', 'orders', 'dispensations', 'stockMovements', 'logs'];
+
+    for (const key of dataKeys) {
+        await writeData(key, []);
+    }
+
+    // A chave de usuários não é limpa, mas o primeiro usuário pode ser resetado se necessário
+    // Por segurança, vamos apenas registrar a ação
+    await logActivity('Reset de Dados', `Todos os dados da aplicação foram limpos pelo administrador ${currentUser.email}.`);
+    
+    // Revalidar caminhos para refletir os dados limpos na UI
+    revalidatePath('/dashboard', 'layout');
+}

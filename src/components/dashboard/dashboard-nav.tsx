@@ -11,9 +11,11 @@ import {
   Building2,
   BarChart2,
   Info,
+  Shield,
 } from 'lucide-react';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '../ui/sidebar';
 import { useSidebar } from '../ui/sidebar';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 
 export const navItems = [
@@ -23,35 +25,42 @@ export const navItems = [
   { href: '/dashboard/patients', icon: Users, label: 'Pacientes', tourId: 'step-patients' },
   { href: '/dashboard/units', icon: Building2, label: 'Unidades', tourId: 'step-units' },
   { href: '/dashboard/reports', icon: BarChart2, label: 'Relatórios', tourId: 'step-reports' },
+  { href: '/dashboard/user-management', icon: Shield, label: 'Usuários', adminOnly: true, tourId: 'step-users' },
   { href: '/dashboard/about', icon: Info, label: 'Sobre', tourId: 'step-about' },
 ];
 
 export function DashboardNav({ isMobile = false }: { isMobile?: boolean }) {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
+  const user = useCurrentUser();
  
 
   return (
      <SidebarMenu>
-        {navItems.map(({ href, icon: Icon, label, tourId }) => (
-            <SidebarMenuItem key={label} data-tour-id={tourId}>
-                <SidebarMenuButton 
-                    asChild
-                    isActive={pathname.startsWith(href) && (href !== '/dashboard' || pathname === href)}
-                    onClick={() => {
-                        if (isMobile) {
-                            setOpenMobile(false)
-                        }
-                    }}
-                    tooltip={label}
-                >
-                  <Link href={href}>
-                    <Icon />
-                    <span>{label}</span>
-                  </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-        ))}
+        {navItems.map(({ href, icon: Icon, label, tourId, adminOnly }) => {
+            if (adminOnly && user?.accessLevel !== 'Admin') {
+                return null;
+            }
+            return (
+                <SidebarMenuItem key={label} data-tour-id={tourId}>
+                    <SidebarMenuButton 
+                        asChild
+                        isActive={pathname.startsWith(href) && (href !== '/dashboard' || pathname === href)}
+                        onClick={() => {
+                            if (isMobile) {
+                                setOpenMobile(false)
+                            }
+                        }}
+                        tooltip={label}
+                    >
+                      <Link href={href}>
+                        <Icon />
+                        <span>{label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            )
+        })}
     </SidebarMenu>
   );
 }
