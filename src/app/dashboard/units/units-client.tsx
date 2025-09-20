@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { AddUnitDialog } from "@/components/dashboard/add-unit-dialog";
+import { AddUnitDialog } from "@/app/dashboard/add-unit-dialog";
 import type { Unit } from '@/lib/types';
 import { getColumns } from "./columns";
 import { useRouter } from "next/navigation";

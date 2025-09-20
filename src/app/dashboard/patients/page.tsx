@@ -1,4 +1,6 @@
 
+'use server';
+
 import { getPatients } from "@/lib/actions";
 import { PatientsClient } from "./patients-client";
 
