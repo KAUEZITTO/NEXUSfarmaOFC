@@ -37,10 +37,10 @@ export function CurrentUserProvider({ children }: { children: React.ReactNode })
         fetchUser();
     }, [pathname]); // Refetch on path change to ensure data is fresh
 
-    const value = useMemo(() => user, [user]);
+    const userValue = useMemo(() => user, [user]);
 
     return (
-        <CurrentUserContext.Provider value={value}>
+        <CurrentUserContext.Provider value={userValue}>
             {children}
         </CurrentUserContext.Provider>
     );
