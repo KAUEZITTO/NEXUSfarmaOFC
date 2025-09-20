@@ -1,6 +1,4 @@
 
-'use server';
-
 import { getAllUsers } from "@/lib/actions";
 import {
   Card,

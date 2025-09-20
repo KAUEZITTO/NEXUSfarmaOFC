@@ -1,6 +1,4 @@
 
-'use server';
-
 import { getProducts } from "@/lib/actions";
 import {
   Card,

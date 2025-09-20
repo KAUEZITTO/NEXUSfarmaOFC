@@ -1,6 +1,4 @@
 
-'use server';
-
 import { getUnits } from "@/lib/actions";
 import {
   Card,

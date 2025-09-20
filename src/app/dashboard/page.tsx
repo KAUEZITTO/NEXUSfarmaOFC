@@ -1,6 +1,4 @@
 
-'use server';
-
 import {
   Activity,
   ArrowUpRight,

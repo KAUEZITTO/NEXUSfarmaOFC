@@ -1,6 +1,4 @@
 
-'use server';
-
 import { getProducts, getAllPatients, getAllDispensations, getUnits, getOrders, getStockMovements } from "@/lib/actions";
 import { ReportsClient } from "./reports-client";
 
