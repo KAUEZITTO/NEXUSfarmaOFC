@@ -54,7 +54,10 @@ export function AnalyticsChat() {
         title: 'Erro na Análise',
         description: 'Não foi possível se conectar com o assistente de IA. Tente novamente mais tarde.',
       });
-       setMessages((prev) => prev.slice(0, -1)); // Remove the user message on error
+       const lastMessage = messages[messages.length -1];
+       if(lastMessage.role === 'user') {
+        setMessages((prev) => prev.slice(0, -1));
+       }
     } finally {
       setIsLoading(false);
       scrollToBottom();
@@ -92,7 +95,7 @@ export function AnalyticsChat() {
                                     </div>
                                 )}
                                 <div className={`rounded-lg p-3 max-w-[85%] ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                                    <div className="prose prose-sm text-foreground">
+                                    <div className="prose prose-sm text-foreground max-w-full">
                                         <ReactMarkdown>{message.content}</ReactMarkdown>
                                     </div>
                                 </div>

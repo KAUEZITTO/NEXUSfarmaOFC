@@ -11,7 +11,9 @@ import {
   AlertTriangle,
   Package,
   Building2,
-  CalendarClock
+  CalendarClock,
+  Truck,
+  FileText
 } from "lucide-react"
 import Link from "next/link"
 
@@ -38,8 +40,9 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { OverviewChart } from "@/components/dashboard/overview-chart"
-import { getProducts, getOrders } from "@/lib/actions"
-import type { Product, Order, Unit } from "@/lib/types"
+import { getProducts, getOrders, getAllDispensations } from "@/lib/actions"
+import type { Product, Order, Unit, Dispensation } from "@/lib/types"
+import { AnalyticsChat } from "@/components/dashboard/analytics-chat"
 
 
 const getUnitsServed = (orders: Order[]) => {
@@ -74,11 +77,38 @@ const getChartData = (products: Product[]) => {
     return Array.from(categoryMap.entries()).map(([name, total]) => ({ name, total }));
 }
 
+const getDailyDepartures = (orders: Order[], dispensations: Dispensation[]) => {
+    const today = new Date().toISOString().slice(0, 10);
+
+    const orderDepartures = orders
+        .filter(o => o.sentDate.slice(0, 10) === today)
+        .map(o => ({
+            id: o.id,
+            destination: o.unitName,
+            type: 'Remessa' as const,
+            itemCount: o.itemCount,
+            receiptUrl: `/receipt/${o.id}`
+        }));
+
+    const dispensationDepartures = dispensations
+        .filter(d => d.date.slice(0, 10) === today)
+        .map(d => ({
+            id: d.id,
+            destination: d.patient.name,
+            type: 'Dispensação' as const,
+            itemCount: d.items.reduce((sum, item) => sum + item.quantity, 0),
+            receiptUrl: `/dispensation-receipt/${d.id}`
+        }));
+
+    return [...orderDepartures, ...dispensationDepartures].sort((a,b) => a.destination.localeCompare(b.destination));
+}
+
 export default async function Dashboard() {
 
-  const [products, orders] = await Promise.all([
+  const [products, orders, dispensations] = await Promise.all([
     getProducts(),
-    getOrders()
+    getOrders(),
+    getAllDispensations(),
   ]);
 
   const lowStockItems = products.filter(p => p.status === 'Baixo Estoque').length;
@@ -115,6 +145,7 @@ export default async function Dashboard() {
 
   const unitsServed = getUnitsServed(orders);
   const chartData = getChartData(products);
+  const dailyDepartures = getDailyDepartures(orders, dispensations);
 
 
   return (
@@ -174,7 +205,55 @@ export default async function Dashboard() {
         </Card>
       </div>
       <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3 mt-6">
-        <Card className="xl:col-span-3">
+        <Card className="xl:col-span-2">
+            <AnalyticsChat />
+        </Card>
+        <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                  <Truck className="h-5 w-5" />
+                  Saídas do Dia
+              </CardTitle>
+              <CardDescription>
+                Remessas e dispensações de hoje.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Destino</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead className="text-right">Itens</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {dailyDepartures.length > 0 ? (
+                    dailyDepartures.map(departure => (
+                      <TableRow key={departure.id} className="cursor-pointer hover:bg-muted" onClick={() => `window.open('${departure.receiptUrl}', '_blank')`}>
+                          <TableCell>
+                              <div className="font-medium">{departure.destination}</div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={departure.type === 'Remessa' ? 'secondary' : 'default'} className={departure.type === 'Remessa' ? 'bg-blue-100 text-blue-800' : ''}>
+                                {departure.type}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">{departure.itemCount}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                     <TableRow>
+                        <TableCell colSpan={3} className="text-center h-24">
+                            Nenhuma saída registrada hoje.
+                        </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+        </Card>
+        <Card className="xl:col-span-2">
           <CardHeader>
             <CardTitle>Níveis de Estoque por Categoria</CardTitle>
             <CardDescription>
@@ -183,44 +262,6 @@ export default async function Dashboard() {
           </CardHeader>
           <CardContent className="pl-2">
             <OverviewChart data={chartData} />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Unidades Mais Atendidas</CardTitle>
-            <CardDescription>
-              Unidades que mais receberam itens este mês.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Unidade</TableHead>
-                  <TableHead className="text-right">Itens Recebidos</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {unitsServed.map(unit => (
-                    <TableRow key={unit.name}>
-                        <TableCell>
-                            <div className="font-medium">{unit.name}</div>
-                            <div className="hidden text-sm text-muted-foreground md:inline">
-                            {unit.type}
-                            </div>
-                        </TableCell>
-                        <TableCell className="text-right">{unit.itemCount.toLocaleString('pt-BR')}</TableCell>
-                    </TableRow>
-                ))}
-                {unitsServed.length === 0 && (
-                    <TableRow>
-                        <TableCell colSpan={2} className="text-center h-24">
-                            Nenhum pedido registrado este mês.
-                        </TableCell>
-                    </TableRow>
-                )}
-              </TableBody>
-            </Table>
           </CardContent>
         </Card>
       </div>
