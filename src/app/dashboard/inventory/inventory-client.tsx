@@ -4,11 +4,13 @@
 import { useState, useEffect } from 'react';
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search } from "lucide-react";
+import { PlusCircle, Search, Printer } from "lucide-react";
 import type { Product } from '@/lib/types';
 import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
 import { getColumns } from './columns';
 import { Input } from '@/components/ui/input';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 type FilterCategory = 'Todos' | Product['category'];
 
@@ -28,7 +30,13 @@ interface InventoryClientProps {
 export function InventoryClient({ initialProducts }: InventoryClientProps) {
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('Todos');
   const [searchTerm, setSearchTerm] = useState('');
-  const columns = getColumns();
+  const router = useRouter();
+
+  const handleProductSaved = () => {
+    router.refresh();
+  }
+
+  const columns = getColumns({ onProductSaved: handleProductSaved });
   
   // Barcode scanner detection logic
   const [lastKeystrokeTime, setLastKeystrokeTime] = useState(Date.now());
@@ -81,12 +89,20 @@ export function InventoryClient({ initialProducts }: InventoryClientProps) {
                     </Button>
                 ))}
             </div>
-             <AddProductDialog trigger={
-                <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Adicionar Produto
+             <div className="flex gap-2">
+                <Button variant="outline" asChild>
+                    <Link href="/shelf-labels" target="_blank">
+                        <Printer className="mr-2 h-4 w-4" />
+                        Etiquetas de Prateleira
+                    </Link>
                 </Button>
-            } />
+                 <AddProductDialog onProductSaved={handleProductSaved} trigger={
+                    <Button>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Adicionar Produto
+                    </Button>
+                } />
+             </div>
         </div>
         
         <div className="flex items-center py-4">

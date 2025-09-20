@@ -12,7 +12,11 @@ import { cn } from "@/lib/utils"
 import { AddProductDialog } from "@/components/dashboard/add-product-dialog"
 import Link from "next/link"
 
-export const getColumns = (): ColumnDef<Product>[] => [
+type ColumnsProps = {
+  onProductSaved: () => void;
+};
+
+export const getColumns = ({ onProductSaved }: ColumnsProps): ColumnDef<Product>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -126,7 +130,7 @@ export const getColumns = (): ColumnDef<Product>[] => [
                 </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <AddProductDialog productToEdit={product} trigger={
+            <AddProductDialog productToEdit={product} onProductSaved={onProductSaved} trigger={
                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                     <Edit className="mr-2 h-4 w-4" />
                     <span>Editar</span>

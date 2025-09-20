@@ -32,15 +32,15 @@ import { useDebounce } from 'use-debounce';
 type AddProductDialogProps = {
   trigger: React.ReactNode;
   productToEdit?: Product;
+  onProductSaved: () => void;
 };
 
 const categories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Outro'];
 const presentations: Exclude<Product['presentation'], undefined>[] = ['Comprimido', 'Unidade', 'Caixa c/ 100', 'Seringa 4g', 'Frasco 10ml', 'Caixa c/ 50', 'Caneta 3ml', 'Pacote', 'Bolsa', 'Outro'];
 const suppliers: Exclude<Product['supplier'], undefined>[] = ['Casmed', 'Mednutri', 'Doação', 'Outro'];
 
-export function AddProductDialog({ trigger, productToEdit }: AddProductDialogProps) {
+export function AddProductDialog({ trigger, productToEdit, onProductSaved }: AddProductDialogProps) {
   const { toast } = useToast();
-  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const isEditing = !!productToEdit;
@@ -76,7 +76,7 @@ export function AddProductDialog({ trigger, productToEdit }: AddProductDialogPro
   }, [isOpen]);
 
   useEffect(() => {
-      if(debouncedName && knowledgeBase.length > 0) {
+      if(debouncedName && knowledgeBase.length > 0 && !isEditing) {
           const searchTerm = debouncedName.toLowerCase();
           const match = knowledgeBase.find(item => searchTerm.includes(item.name.toLowerCase()));
           if(match) {
@@ -87,7 +87,7 @@ export function AddProductDialog({ trigger, productToEdit }: AddProductDialogPro
               setMainFunction('');
           }
       }
-  }, [debouncedName, knowledgeBase]);
+  }, [debouncedName, knowledgeBase, isEditing]);
 
 
   const resetForm = () => {
@@ -175,7 +175,7 @@ export function AddProductDialog({ trigger, productToEdit }: AddProductDialogPro
             });
         }
         
-        router.refresh();
+        onProductSaved();
         setIsOpen(false);
         setSavedProduct(resultProduct);
         setShowSavedDialog(true);
