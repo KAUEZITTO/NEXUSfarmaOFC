@@ -24,26 +24,26 @@ const Barcode = ({ value }: { value: string }) => {
                 format: 'CODE128',
                 displayValue: false, // We'll display the value manually
                 margin: 0,
-                height: 40,
-                width: 1.5,
+                height: 30, // Reduced height to fit better
+                width: 1.2, // Reduced width for smaller labels
             });
         }
     }, [value]);
 
     return (
         <div className="w-full text-center flex flex-col items-center">
-            <svg ref={svgRef} className="w-full"></svg>
-            <p className="font-mono text-xs tracking-[0.2em] font-bold mt-0.5">CÓD: {shortId}</p>
+            <svg ref={svgRef} className="w-full max-w-[80%]"></svg>
+            <p className="font-mono text-[8px] tracking-wider font-bold">CÓD: {shortId}</p>
         </div>
     );
 };
 
 const ProductLabel = ({ product }: { product: Product }) => {
     return (
-        <div className="p-2 border border-black border-dashed flex flex-col justify-between h-full text-[10px] leading-tight bg-white">
+        <div className="p-1 border border-black border-dashed flex flex-col justify-between h-full text-[8px] leading-tight bg-white">
             {/* Header */}
             <div className="flex justify-between items-start">
-                 <div className="relative w-7 h-7">
+                 <div className="relative w-6 h-6">
                     <Image src="/CAF.png" alt="Logo CAF" layout="fill" objectFit="contain" data-ai-hint="pharmacy cross" />
                  </div>
                  <div className="text-right">
@@ -54,7 +54,7 @@ const ProductLabel = ({ product }: { product: Product }) => {
             
             {/* Body */}
             <div className="my-1 text-center">
-                <p className="text-sm font-bold line-clamp-2">{product.name}</p>
+                <p className="text-[10px] font-bold line-clamp-2">{product.name}</p>
                 {product.manufacturer && <p className="text-gray-700">Fab: {product.manufacturer}</p>}
             </div>
 
@@ -81,6 +81,9 @@ export function LabelPageClient({ product, isBox }: LabelPageClientProps) {
     const largeH = 50;
     const smallW = 50;
     const smallH = 25;
+    
+    // Define gap in mm
+    const gap = 2; 
 
     const labelWidth = isBox ? largeW : smallW;
     const labelHeight = isBox ? largeH : smallH;
@@ -89,18 +92,19 @@ export function LabelPageClient({ product, isBox }: LabelPageClientProps) {
     const pageW = 210;
     const pageH = 297;
     
-    // Calculate how many labels fit per row/column
-    const cols = Math.floor(pageW / labelWidth);
-    const rows = Math.floor(pageH / labelHeight);
+    // Calculate how many labels fit per row/column considering the gap
+    const cols = Math.floor(pageW / (labelWidth + gap));
+    const rows = Math.floor(pageH / (labelHeight + gap));
 
     const labelsPerPage = cols * rows;
     const pageCount = Math.ceil(labelCount / labelsPerPage);
 
     const pages = Array.from({ length: pageCount }, (_, pageIndex) => {
         const start = pageIndex * labelsPerPage;
-        return Array.from({ length: labelsPerPage }, (_, labelIndex) => {
-            const productIndex = start + labelIndex;
-            return productIndex < labelCount ? <ProductLabel product={product} /> : <div className="border border-dashed border-gray-300"></div>;
+        const pageItemsCount = Math.min(labelCount - start, labelsPerPage);
+
+        return Array.from({ length: pageItemsCount }, (_, labelIndex) => {
+            return <ProductLabel product={product} />;
         });
     });
 
@@ -136,8 +140,9 @@ export function LabelPageClient({ product, isBox }: LabelPageClientProps) {
                     key={index}
                     className={`grid bg-white w-[210mm] h-[297mm] mx-auto my-4 shadow-lg print:shadow-none print:my-0 ${index > 0 ? 'page-break-before' : ''}`}
                     style={{ 
-                        gridTemplateColumns: `repeat(${cols}, 1fr)`,
-                        gridTemplateRows: `repeat(${rows}, 1fr)`,
+                        gridTemplateColumns: `repeat(${cols}, ${labelWidth}mm)`,
+                        gridTemplateRows: `repeat(${rows}, ${labelHeight}mm)`,
+                        gap: `${gap}mm`,
                         width: `${pageW}mm`,
                         height: `${pageH}mm`,
                         boxSizing: 'border-box'
