@@ -43,12 +43,9 @@ const ProductLabel = ({ product }: { product: Product }) => {
         <div className="p-2 border border-black border-dashed flex flex-col justify-between h-full text-[10px] leading-tight bg-white">
             {/* Header */}
             <div className="flex justify-between items-start">
-                 <div className="flex items-center gap-1.5">
-                    <div className="relative w-7 h-7">
-                        <Image src="/CAF.png" alt="Logo CAF" layout="fill" objectFit="contain" data-ai-hint="pharmacy cross" />
-                    </div>
-                    <p className="font-bold">C.A.F.</p>
-                </div>
+                 <div className="relative w-7 h-7">
+                    <Image src="/CAF.png" alt="Logo CAF" layout="fill" objectFit="contain" data-ai-hint="pharmacy cross" />
+                 </div>
                  <div className="text-right">
                     <p><span className="font-semibold">Lote:</span> {product.batch || 'N/A'}</p>
                     <p><span className="font-semibold">Val:</span> {product.expiryDate ? new Date(product.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : 'N/A'}</p>
