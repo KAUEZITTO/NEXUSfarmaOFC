@@ -20,13 +20,13 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Badge } from '@/components/ui/badge';
 import { CurrentUserProvider } from '@/hooks/use-current-user';
-import { headers } from 'next/headers';
 
 
 const UPDATE_STORAGE_KEY = 'nexusfarma-last-seen-version';
-const CURRENT_VERSION = '1.0.2';
+const CURRENT_VERSION = '1.1.0';
 
 const changelog = [
+    { version: '1.1.0', changes: ['O sistema agora é considerado estável e saiu da fase Beta.', 'Atualizadas dependências internas para melhorar performance e segurança.'] },
     { version: '1.0.2', changes: ['Correção de erro que impedia a geração de etiquetas de prateleira.'] },
     { version: '1.0.1', changes: ['Correção de erro de conexão com o banco de dados no ambiente de desenvolvimento.'] },
     { version: '1.0.0', changes: ['Lançamento do sistema de Cargos e Permissões (Admin/Usuário).', 'Adicionada tela de Gerenciamento de Usuários para Admins.', 'Reinicialização completa do banco de dados para o lançamento.'] },
@@ -38,10 +38,8 @@ const changelog = [
 
 export default function DashboardLayout({
   children,
-  user,
 }: {
   children: React.ReactNode;
-  user: any;
 }) {
 
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
