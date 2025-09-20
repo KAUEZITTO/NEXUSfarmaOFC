@@ -34,7 +34,7 @@ export type Dosage = {
 
 export type PatientFile = {
     name: string;
-    url: string; // In a real app, this would be a URL to the stored file
+    url: string; 
 }
 
 export type Patient = {
