@@ -166,20 +166,13 @@ const analyticsFlow = ai.defineFlow(
   },
   async (query) => {
     const result = await analyticsPrompt(query);
-    const content = result.output?.content;
+    const text = result.text;
 
-    if (!content || !content.parts.length) {
+    if (!text) {
       return 'Não foi possível gerar uma resposta.';
     }
     
-    // Check if the model wants to call a tool
-    const toolRequestPart = content.parts.find(p => p.toolRequest);
-    if(toolRequestPart) {
-      // For this flow, we will let Genkit handle the tool calling automatically.
-      // The `result.output.content` should contain the final text response after tool execution.
-    }
-    
-    return content.parts.map(p => p.text).join('') ?? "Não foi possível gerar uma resposta.";
+    return text;
   }
 );
 
