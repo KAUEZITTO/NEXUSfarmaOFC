@@ -9,7 +9,14 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    remotePatterns: [],
+    remotePatterns: [
+        {
+            protocol: 'https',
+            hostname: 'picsum.photos',
+            port: '',
+            pathname: '/**',
+        },
+    ],
     // Allow local images
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',

@@ -10,6 +10,7 @@ import { redirect } from 'next/navigation';
 import * as jose from 'jose';
 import bcrypt from 'bcrypt';
 import { stat, mkdir } from 'fs/promises';
+import { cache } from 'react';
 
 
 const dataPath = path.join(process.cwd(), 'src', 'data');
@@ -17,24 +18,28 @@ const uploadPath = path.join(process.cwd(), 'public', 'uploads');
 
 // --- FILE I/O HELPERS ---
 
-async function readData<T>(filename: string): Promise<T[]> {
+const readData = cache(async <T>(filename: string): Promise<T[]> => {
   const filePath = path.join(dataPath, filename);
   try {
+    // Check if file exists
     await stat(filePath);
     const fileContent = await fs.readFile(filePath, 'utf-8');
     return JSON.parse(fileContent);
   } catch (error) {
+    // If file does not exist, create it with an empty array
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       await writeData(filename, []);
       return [];
     }
+    // For other errors, log and re-throw
     console.error(`Error reading ${filename}:`, error);
     throw error;
   }
-}
+});
 
 async function writeData<T>(filename: string, data: T[]): Promise<void> {
   const filePath = path.join(dataPath, filename);
+  // Ensure the directory exists
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
 }
@@ -45,7 +50,7 @@ async function writeData<T>(filename: string, data: T[]): Promise<void> {
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 const saltRounds = 10;
 
-async function getCurrentUser() {
+const getCurrentUser = cache(async () => {
     const sessionCookie = cookies().get('session')?.value;
     if (!sessionCookie) return null;
 
@@ -56,7 +61,7 @@ async function getCurrentUser() {
         console.error("Failed to verify session cookie:", error);
         return null;
     }
-}
+});
 
 export async function register(userData: Omit<User, 'id'>): Promise<{ success: boolean; message: string }> {
     const users = await readData<User>('users.json');
@@ -108,14 +113,19 @@ export async function login(formData: FormData): Promise<{ success: boolean; mes
     await logActivity('Login', `Usuário fez login: ${user.email}`);
 
     redirect('/dashboard');
+    
+    // Although redirect is called, returning a success message can be useful for client-side feedback.
+    // The actual redirection will be handled by Next.js.
+    return { success: true, message: "Login bem-sucedido!" };
 }
 
 
 export async function logout() {
   const user = await getCurrentUser();
-  await logActivity('Logout', `Usuário ${user?.email || 'desconhecido'} saiu.`);
+  if (user) {
+    await logActivity('Logout', `Usuário ${user.email} saiu.`);
+  }
   cookies().delete('session');
-  redirect('/login');
 }
 
 
@@ -172,9 +182,9 @@ async function logStockMovement(
 }
 
 // --- KNOWLEDGE BASE ---
-export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
+export const getKnowledgeBase = cache(async (): Promise<KnowledgeBaseItem[]> => {
     return await readData<KnowledgeBaseItem>('knowledge-base.json');
-}
+});
 
 // --- IMAGE UPLOAD ---
 export async function uploadImage(formData: FormData): Promise<{ success: boolean; filePath?: string; error?: string }> {
@@ -194,7 +204,7 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
         
         await fs.writeFile(filePath, buffer);
         
-        const publicPath = `/${fileName}`;
+        const publicPath = `/uploads/${fileName}`;
         return { success: true, filePath: publicPath };
 
     } catch (e) {
@@ -206,9 +216,9 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
 
 // --- PRODUCTS ACTIONS ---
 
-export async function getProducts(): Promise<Product[]> {
+export const getProducts = cache(async (): Promise<Product[]> => {
     return await readData<Product>('products.json');
-}
+});
 
 export async function getProduct(productId: string): Promise<Product | null> {
     const products = await getProducts();
@@ -261,12 +271,12 @@ export async function updateProduct(productId: string, productData: Partial<Prod
 
 // --- UNITS ACTIONS ---
 
-export async function getUnits(): Promise<Unit[]> {
+export const getUnits = cache(async (): Promise<Unit[]> => {
     return await readData<Unit>('units.json');
-}
+});
 
 export async function getUnit(unitId: string): Promise<Unit | null> {
-    const units = await readData<Unit>('units.json');
+    const units = await getUnits();
     return units.find(u => u.id === unitId) || null;
 }
 
@@ -299,7 +309,7 @@ export async function updateUnit(unitId: string, unitData: Partial<Unit>) {
 
 // --- PATIENTS ACTIONS ---
 
-export async function getPatients(filter: PatientFilter = 'active'): Promise<Patient[]> {
+export const getPatients = cache(async (filter: PatientFilter = 'active'): Promise<Patient[]> => {
     const allPatients = await readData<Patient>('patients.json');
     
     switch (filter) {
@@ -321,14 +331,14 @@ export async function getPatients(filter: PatientFilter = 'active'): Promise<Pat
         default:
             return allPatients;
     }
-}
+});
 
-export async function getAllPatients(): Promise<Patient[]> {
+export const getAllPatients = cache(async (): Promise<Patient[]> => {
     return await readData<Patient>('patients.json');
-}
+});
 
 export async function getPatient(patientId: string): Promise<Patient | null> {
-    const patients = await readData<Patient>('patients.json');
+    const patients = await getAllPatients();
     return patients.find(p => p.id === patientId) || null;
 }
 
@@ -431,17 +441,17 @@ export async function addOrder(orderData: Omit<Order, 'id' | 'status' | 'sentDat
     return newOrder;
 }
 
-export async function getOrdersForUnit(unitId: string): Promise<Order[]> {
+export const getOrdersForUnit = cache(async (unitId: string): Promise<Order[]> => {
     const allOrders = await readData<Order>('orders.json');
     return allOrders.filter(o => o.unitId === unitId);
-}
+});
 
-export async function getOrders(): Promise<Order[]> {
+export const getOrders = cache(async (): Promise<Order[]> => {
     return await readData<Order>('orders.json');
-}
+});
 
 export async function getOrder(orderId: string): Promise<Order | null> {
-    const orders = await readData<Order>('orders.json');
+    const orders = await getOrders();
     return orders.find(o => o.id === orderId) || null;
 }
 
@@ -469,22 +479,22 @@ export async function addDispensation(dispensationData: Omit<Dispensation, 'id' 
     return newDispensation;
 }
 
-export async function getDispensationsForPatient(patientId: string): Promise<Dispensation[]> {
+export const getDispensationsForPatient = cache(async (patientId: string): Promise<Dispensation[]> => {
     const allDispensations = await readData<Dispensation>('dispensations.json');
     return allDispensations.filter(d => d.patientId === patientId);
-}
+});
 
-export async function getAllDispensations(): Promise<Dispensation[]> {
+export const getAllDispensations = cache(async (): Promise<Dispensation[]> => {
     return await readData<Dispensation>('dispensations.json');
-}
+});
 
 export async function getDispensation(dispensationId: string): Promise<Dispensation | null> {
-    const dispensations = await readData<Dispensation>('dispensations.json');
+    const dispensations = await getAllDispensations();
     return dispensations.find(d => d.id === dispensationId) || null;
 }
 
 // --- REPORTS ACTIONS ---
 
-export async function getStockMovements(): Promise<StockMovement[]> {
+export const getStockMovements = cache(async (): Promise<StockMovement[]> => {
     return await readData<StockMovement>('stockMovements.json');
-}
+});

@@ -10,9 +10,11 @@ import { AlertCircle } from 'lucide-react';
 import { login } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
 import { LoadingCapsule } from '../ui/loading-capsule';
+import { useToast } from '@/hooks/use-toast';
 
 export function LoginForm() {
   const router = useRouter();
+  const { toast } = useToast();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
@@ -27,6 +29,12 @@ export function LoginForm() {
       const result = await login(formData);
        if (result && !result.success) {
            setErrorMessage(result.message);
+       } else if (result?.success) {
+            toast({
+                title: 'Login bem-sucedido!',
+                description: 'Bem-vindo(a) de volta!',
+            });
+            // The redirect will be handled by the server action
        }
     } catch (error: any) {
         // This will catch errors thrown from the server action,

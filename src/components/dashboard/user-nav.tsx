@@ -21,14 +21,19 @@ import { LogOut, User, Settings, HelpCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTour } from './tour-guide';
+import { useToast } from '@/hooks/use-toast';
 
 export function UserNav() {
   const router = useRouter();
   const { startTour } = useTour();
+  const { toast } = useToast();
 
   const handleLogout = async () => {
     await logout();
-    // The redirect is handled in the server action, but a client-side redirect can be a fallback.
+    toast({
+      title: "Logout realizado",
+      description: "Você saiu com segurança. Até a próxima!",
+    });
     router.push('/');
   };
 

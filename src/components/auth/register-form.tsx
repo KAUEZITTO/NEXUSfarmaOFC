@@ -52,8 +52,8 @@ export function RegisterForm() {
       const result = await register({ email, password });
       if (result.success) {
         toast({
-            title: "Conta Criada!",
-            description: "Sua conta foi criada com sucesso. Faça o login.",
+            title: "Conta Criada com Sucesso!",
+            description: "Você será redirecionado para a tela de login.",
         });
         router.push('/login');
       } else {

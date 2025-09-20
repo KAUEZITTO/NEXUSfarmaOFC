@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Building, Info, LifeBuoy, Lightbulb, Coffee } from "lucide-react";
+import { Building, Info, LifeBuoy, Lightbulb, Coffee, GitBranch } from "lucide-react";
 import Image from "next/image";
 
 export default function AboutPage() {
@@ -38,9 +38,12 @@ export default function AboutPage() {
                 </p>
               </div>
                <div>
-                <h3 className="font-semibold">Versão do Sistema</h3>
+                <h3 className="font-semibold flex items-center gap-2">
+                    <GitBranch className="h-5 w-5 text-primary" />
+                    Versão do Sistema
+                </h3>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  NexusFarma v1.0.0
+                  NexusFarma v0.9.0 (Beta)
                 </p>
               </div>
           </CardContent>
