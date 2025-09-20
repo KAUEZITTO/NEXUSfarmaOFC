@@ -1,6 +1,12 @@
 [
   {
     "user": "Sistema",
+    "action": "Produto Atualizado",
+    "details": "Produto \"paracetamol\" (ID: prod-1758378709706) foi atualizado.",
+    "timestamp": "2025-09-20T15:06:13.822Z"
+  },
+  {
+    "user": "Sistema",
     "action": "Produto Adicionado",
     "details": "Novo produto \"loratadina 10mg\" (ID: prod-1758380294667) foi adicionado com quantidade 63.",
     "timestamp": "2025-09-20T14:58:16.355Z"

@@ -9,29 +9,33 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import * as jose from 'jose';
 import bcrypt from 'bcrypt';
+import { stat, mkdir } from 'fs/promises';
+
 
 const dataPath = path.join(process.cwd(), 'src', 'data');
+const uploadPath = path.join(process.cwd(), 'public', 'uploads');
 
 // --- FILE I/O HELPERS ---
 
 async function readData<T>(filename: string): Promise<T[]> {
   const filePath = path.join(dataPath, filename);
   try {
+    await stat(filePath);
     const fileContent = await fs.readFile(filePath, 'utf-8');
     return JSON.parse(fileContent);
   } catch (error) {
-    // If file doesn't exist, return empty array
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       await writeData(filename, []);
       return [];
     }
+    console.error(`Error reading ${filename}:`, error);
     throw error;
   }
 }
 
 async function writeData<T>(filename: string, data: T[]): Promise<void> {
   const filePath = path.join(dataPath, filename);
-  await fs.mkdir(dataPath, { recursive: true });
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
@@ -170,6 +174,33 @@ async function logStockMovement(
 // --- KNOWLEDGE BASE ---
 export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
     return await readData<KnowledgeBaseItem>('knowledge-base.json');
+}
+
+// --- IMAGE UPLOAD ---
+export async function uploadImage(formData: FormData): Promise<{ success: boolean; filePath?: string; error?: string }> {
+    try {
+        const file = formData.get('image') as File;
+        if (!file) {
+            return { success: false, error: 'Nenhum arquivo enviado.' };
+        }
+
+        // Ensure upload directory exists
+        await mkdir(uploadPath, { recursive: true });
+
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const fileExtension = path.extname(file.name);
+        const fileName = `img-${Date.now()}${fileExtension}`;
+        const filePath = path.join(uploadPath, fileName);
+        
+        await fs.writeFile(filePath, buffer);
+        
+        const publicPath = `/uploads/${fileName}`;
+        return { success: true, filePath: publicPath };
+
+    } catch (e) {
+        console.error('Upload error:', e);
+        return { success: false, error: 'Falha ao salvar a imagem no servidor.' };
+    }
 }
 
 

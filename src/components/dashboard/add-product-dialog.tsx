@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Save, Loader2, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { addProduct, updateProduct, getKnowledgeBase } from '@/lib/actions';
+import { addProduct, updateProduct, getKnowledgeBase, uploadImage } from '@/lib/actions';
 import type { Product, KnowledgeBaseItem } from '@/lib/types';
 import { ProductSavedDialog } from './product-saved-dialog';
 import { useDebounce } from 'use-debounce';
@@ -43,6 +43,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const isEditing = !!productToEdit;
 
   const [savedProduct, setSavedProduct] = useState<Product | null>(null);
@@ -126,16 +127,28 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
     }
   }, [productToEdit, isOpen, isEditing]);
   
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+ const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImageUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+        const result = await uploadImage(formData);
+        if (result.success && result.filePath) {
+            setImageUrl(result.filePath);
+            toast({ title: 'Upload Concluído', description: 'A imagem foi carregada com sucesso.' });
+        } else {
+            throw new Error(result.error || 'Falha no upload da imagem.');
+        }
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Erro de Upload', description: (error as Error).message });
+    } finally {
+        setIsUploading(false);
     }
-  };
+};
 
 
   const handleSave = async () => {
@@ -296,6 +309,11 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
                             <p className="text-sm mt-2">Sem imagem</p>
                         </div>
                     )}
+                    {isUploading && (
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md">
+                            <Loader2 className="h-8 w-8 animate-spin text-white" />
+                        </div>
+                    )}
                 </div>
                 <Input
                     type="file"
@@ -303,20 +321,21 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
                     onChange={handleImageUpload}
                     className="hidden"
                     accept="image/*"
+                    disabled={isUploading}
                 />
-                <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full mt-2">
+                <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full mt-2" disabled={isUploading}>
                    <Upload className="mr-2 h-4 w-4" />
-                   {imageUrl ? 'Alterar Imagem' : 'Selecionar Imagem'}
+                   {isUploading ? 'Enviando...' : (imageUrl ? 'Alterar Imagem' : 'Selecionar Imagem')}
                 </Button>
             </div>
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={isSaving}>
+              <Button type="button" variant="outline" disabled={isSaving || isUploading}>
                 Cancelar
               </Button>
             </DialogClose>
-            <Button type="button" onClick={handleSave} disabled={isSaving}>
+            <Button type="button" onClick={handleSave} disabled={isSaving || isUploading}>
               {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               {isSaving ? 'Salvando...' : 'Salvar'}
             </Button>
