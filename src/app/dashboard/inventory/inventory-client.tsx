@@ -11,12 +11,13 @@ import { getColumns } from './columns';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import type { GroupedProduct } from './page';
 
 type FilterCategory = 'Todos' | Product['category'];
 
 const filterCategories: FilterCategory[] = ['Todos', 'Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Outro'];
 
-const filterProducts = (products: Product[], filter: FilterCategory): Product[] => {
+const filterProducts = (products: GroupedProduct[], filter: FilterCategory): GroupedProduct[] => {
     if (filter === 'Todos') {
         return products;
     }
@@ -24,7 +25,7 @@ const filterProducts = (products: Product[], filter: FilterCategory): Product[] 
 }
 
 interface InventoryClientProps {
-    initialProducts: Product[];
+    initialProducts: GroupedProduct[];
 }
 
 export function InventoryClient({ initialProducts }: InventoryClientProps) {
@@ -38,40 +39,8 @@ export function InventoryClient({ initialProducts }: InventoryClientProps) {
 
   const columns = getColumns({ onProductSaved: handleProductSaved });
   
-  // Barcode scanner detection logic
-  const [lastKeystrokeTime, setLastKeystrokeTime] = useState(Date.now());
-  const [barcodeBuffer, setBarcodeBuffer] = useState('');
-
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value;
-    const now = Date.now();
-    const timeDiff = now - lastKeystrokeTime;
-    setLastKeystrokeTime(now);
-
-    // If keystrokes are very fast (typical for a scanner), buffer them.
-    if (timeDiff < 50) { // 50ms threshold
-        setBarcodeBuffer(prev => prev + value.slice(-1));
-    } else {
-        setBarcodeBuffer(value.slice(-1));
-    }
-    
-    setSearchTerm(value);
-  }
-
-  const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-      if (event.key === 'Enter') {
-          // A barcode scanner often sends an "Enter" key after the scan.
-          // If the buffer has content and Enter is pressed, it's likely a scan.
-          if (barcodeBuffer.length > 5) { // Arbitrary length to qualify as a potential barcode
-              setSearchTerm(barcodeBuffer);
-          }
-      }
-  }
-
-
   const filteredProducts = filterProducts(initialProducts, activeFilter).filter(p => 
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.id.toLowerCase().includes(searchTerm.toLowerCase())
+      p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -109,10 +78,9 @@ export function InventoryClient({ initialProducts }: InventoryClientProps) {
             <div className="relative w-full max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Filtrar por nome ou ID (código de barras)..."
+                  placeholder="Filtrar por nome..."
                   value={searchTerm}
-                  onChange={handleInputChange}
-                  onKeyDown={handleInputKeyDown}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
             </div>

@@ -1,6 +1,7 @@
 
 "use client"
 
+import { useState } from "react";
 import { ColumnDef } from "@tanstack/react-table"
 import { Product } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
@@ -11,34 +12,36 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { cn } from "@/lib/utils"
 import { AddProductDialog } from "@/components/dashboard/add-product-dialog"
 import Link from "next/link"
+import type { GroupedProduct } from "./page";
+import { BatchDetailsDialog } from "./batch-details-dialog";
 
 type ColumnsProps = {
   onProductSaved: () => void;
 };
 
-export const getColumns = ({ onProductSaved }: ColumnsProps): ColumnDef<Product>[] => [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
+const NameCell = ({ row }: { row: any }) => {
+    const product = row.original as GroupedProduct;
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    return (
+        <>
+            <button 
+                onClick={() => setIsDialogOpen(true)} 
+                className="capitalize font-medium text-primary hover:underline text-left"
+            >
+                {row.getValue("name")}
+            </button>
+            <BatchDetailsDialog 
+                isOpen={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+                product={product}
+                onProductSaved={onProductSaved}
+            />
+        </>
+    );
+};
+
+export const getColumns = ({ onProductSaved }: ColumnsProps): ColumnDef<GroupedProduct>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -52,7 +55,7 @@ export const getColumns = ({ onProductSaved }: ColumnsProps): ColumnDef<Product>
         </Button>
       )
     },
-    cell: ({ row }) => <div className="capitalize font-medium">{row.getValue("name")}</div>,
+    cell: NameCell,
   },
     {
     accessorKey: "presentation",
@@ -71,10 +74,10 @@ export const getColumns = ({ onProductSaved }: ColumnsProps): ColumnDef<Product>
   },
   {
     accessorKey: "quantity",
-    header: () => <div className="text-right">Quantidade</div>,
+    header: () => <div className="text-right">Quantidade Total</div>,
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue("quantity"))
-      return <div className="text-right font-medium">{amount}</div>
+      return <div className="text-right font-medium">{amount.toLocaleString('pt-BR')}</div>
     },
   },
   {
@@ -94,56 +97,6 @@ export const getColumns = ({ onProductSaved }: ColumnsProps): ColumnDef<Product>
       >
         {status}
       </Badge>
-    },
-  },
-  {
-    accessorKey: "expiryDate",
-    header: "Vencimento",
-    cell: ({ row }) => {
-      const dateString = row.getValue("expiryDate") as string;
-      if (!dateString) return null;
-      const [year, month, day] = dateString.split('-');
-      const date = new Date(Number(year), Number(month) - 1, Number(day));
-      return <div>{date.toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</div>
-    }
-  },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => {
-      const product = row.original
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Ações</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(product.id)}
-            >
-              Copiar ID do Produto
-            </DropdownMenuItem>
-             <DropdownMenuItem asChild>
-                <Link href={`/labels/${product.id}`} target="_blank" className="w-full h-full flex items-center cursor-pointer">
-                    <Printer className="mr-2 h-4 w-4" />
-                    <span>Imprimir Etiquetas</span>
-                </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <AddProductDialog productToEdit={product} onProductSaved={onProductSaved} trigger={
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    <span>Editar</span>
-                </DropdownMenuItem>
-            } />
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
     },
   },
 ]
