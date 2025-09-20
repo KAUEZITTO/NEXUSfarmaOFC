@@ -1,3 +1,4 @@
+
 [
   {
     "id": "prod-1758378709706",
@@ -5,8 +6,8 @@
     "commercialName": "tylenol",
     "manufacturer": "",
     "category": "Medicamento",
-    "therapeuticClass": "",
-    "mainFunction": "",
+    "therapeuticClass": "Analgésico e Antipirético",
+    "mainFunction": "Para alívio de dores de cabeça, dores no corpo e febre.",
     "quantity": 15,
     "batch": "",
     "expiryDate": "",
@@ -20,8 +21,8 @@
     "commercialName": "lorasil",
     "manufacturer": "neolab",
     "category": "Medicamento",
-    "therapeuticClass": "",
-    "mainFunction": "",
+    "therapeuticClass": "Antialérgico (Anti-histamínico)",
+    "mainFunction": "Para alívio dos sintomas de alergias, como coriza e coceira.",
     "quantity": 50,
     "batch": "AB56A90",
     "expiryDate": "",
