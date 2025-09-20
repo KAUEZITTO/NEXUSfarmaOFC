@@ -1,5 +1,17 @@
 [
   {
+    "user": "kauemoreiraofc2@gmail.com",
+    "action": "Login",
+    "details": "Usuário fez login: kauemoreiraofc2@gmail.com",
+    "timestamp": "2025-09-20T14:05:06.087Z"
+  },
+  {
+    "user": "Sistema",
+    "action": "Cadastro de Usuário",
+    "details": "Novo usuário cadastrado: kauemoreiraofc2@gmail.com",
+    "timestamp": "2025-09-20T14:04:53.263Z"
+  },
+  {
     "user": "Sistema",
     "action": "Cadastro de Usuário",
     "details": "Novo usuário cadastrado: kauemoreiraofc2@gmaill.com",

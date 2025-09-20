@@ -9,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { Product } from '@/lib/types';
 import { InventoryClient } from "./inventory-client";
 
 

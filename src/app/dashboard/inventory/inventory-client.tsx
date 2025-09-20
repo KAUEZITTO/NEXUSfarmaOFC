@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import type { Product } from '@/lib/types';
 import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
-import { columns } from './columns';
+import { getColumns } from './columns';
+import { useRouter } from 'next/navigation';
 
 type FilterCategory = 'Todos' | Product['category'];
 
@@ -26,7 +27,13 @@ interface InventoryClientProps {
 
 export function InventoryClient({ initialProducts }: InventoryClientProps) {
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('Todos');
+  const router = useRouter();
 
+  const handleProductSaved = () => {
+    router.refresh();
+  }
+
+  const columns = getColumns({ onProductSaved: handleProductSaved });
   const filteredProducts = filterProducts(initialProducts, activeFilter);
 
   return (
@@ -44,7 +51,7 @@ export function InventoryClient({ initialProducts }: InventoryClientProps) {
                     </Button>
                 ))}
             </div>
-             <AddProductDialog trigger={
+             <AddProductDialog onProductSaved={handleProductSaved} trigger={
                 <Button>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Adicionar Produto
