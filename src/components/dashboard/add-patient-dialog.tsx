@@ -30,8 +30,6 @@ import { getUnits, addPatient, updatePatient } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { Patient, Dosage, Unit } from '@/lib/types';
 import { Separator } from '../ui/separator';
-import { useRouter } from 'next/navigation';
-
 
 const dosagePeriods: Dosage['period'][] = ['Manhã', 'Tarde', 'Noite', 'Ao deitar', 'Após Café', 'Jejum'];
 
@@ -424,5 +422,3 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
     </Dialog>
   );
 }
-
-    
