@@ -32,11 +32,6 @@ export type Dosage = {
     quantity: number;
 }
 
-export type PatientFile = {
-    name: string;
-    url: string; 
-}
-
 export type Patient = {
     id: string;
     name: string;
@@ -59,7 +54,6 @@ export type Patient = {
     unitId?: string;
     status: PatientStatus;
     isBedridden?: boolean;
-    files?: PatientFile[];
 };
 
 export type PatientFilter = 'active' | 'inactive' | 'insulin' | 'diapers' | 'bedridden' | 'legal' | 'municipal' | 'all';
@@ -123,3 +117,5 @@ export type User = {
     email: string;
     password: string; // This will be the hashed password
 }
+
+    

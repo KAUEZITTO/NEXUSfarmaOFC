@@ -270,7 +270,6 @@ export function AttendPatientDialog() {
     
     setIsSaving(true);
     const patientForDispensation = { ...selectedPatient };
-    delete patientForDispensation.files; // Don't embed huge file lists in dispensation history
 
     const dispensationItems = items.map(({ internalId, ...rest }) => ({...rest}));
 
@@ -523,3 +522,5 @@ export function AttendPatientDialog() {
     </Dialog>
   );
 }
+
+    

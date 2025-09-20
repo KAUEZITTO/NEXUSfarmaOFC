@@ -25,13 +25,11 @@ import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { PlusCircle, Save, Trash2, FileUp, X, Loader2 } from 'lucide-react';
+import { PlusCircle, Save, Trash2, Loader2 } from 'lucide-react';
 import { getUnits, addPatient, updatePatient } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import type { Patient, Dosage, PatientFile, Unit } from '@/lib/types';
+import type { Patient, Dosage, Unit } from '@/lib/types';
 import { Separator } from '../ui/separator';
-import { storage } from '@/lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 
 
@@ -84,11 +82,11 @@ const DosageInput = ({ dosages, setDosages, unitLabel }: { dosages: Dosage[], se
 type AddPatientDialogProps = {
     patientToEdit?: Patient;
     trigger: React.ReactNode;
+    onPatientSaved?: () => void;
 }
 
-export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogProps) {
+export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: AddPatientDialogProps) {
   const { toast } = useToast();
-  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const isEditing = !!patientToEdit;
@@ -115,8 +113,6 @@ export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogPro
   const [insulinType, setInsulinType] = useState<'Lantus (Glargina)' | 'Apidra (Glulisina)'>('Lantus (Glargina)');
   const [insulinPresentation, setInsulinPresentation] = useState<'Caneta' | 'Frasco'>('Caneta');
 
-  const [files, setFiles] = useState<PatientFile[]>([]);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
 
 
@@ -147,8 +143,6 @@ export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogPro
     setJudicialItems([]);
     setMunicipalItems([]);
     setHasInsulinReport(false);
-    setFiles([]);
-    setUploadedFiles([]);
   }
 
   useEffect(() => {
@@ -171,23 +165,10 @@ export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogPro
         setDemandType(patientToEdit.mandateType === 'Legal' ? 'judicial' : patientToEdit.mandateType === 'Municipal' ? 'municipal' : 'none');
         setJudicialItems(patientToEdit.judicialItems || []);
         setMunicipalItems(patientToEdit.municipalItems || []);
-        setFiles(patientToEdit.files || []);
-        setUploadedFiles([]);
     } else if (!isEditing && isOpen) {
         resetForm();
     }
   }, [patientToEdit, isOpen, isEditing])
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setUploadedFiles(prev => [...prev, ...Array.from(e.target.files)]);
-    }
-  };
-
-  const removeFile = (fileName: string) => {
-    setUploadedFiles(prev => prev.filter(f => f.name !== fileName));
-  }
-
 
   const handleSavePatient = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,20 +184,8 @@ export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogPro
         return;
     }
     
-    const patientId = isEditing ? patientToEdit.id : `PAT-${Date.now()}`;
-    
-    // Upload files to Firebase Storage
-    const fileUploadPromises = uploadedFiles.map(async file => {
-        const fileRef = ref(storage, `patients/${patientId}/${file.name}`);
-        await uploadBytes(fileRef, file);
-        const url = await getDownloadURL(fileRef);
-        return { name: file.name, url: url };
-    });
-
     try {
-        const newFiles = await Promise.all(fileUploadPromises);
-
-        const patientData: Omit<Patient, 'id'> = {
+        const patientData: Omit<Patient, 'id' | 'status'> = {
             name,
             cpf,
             cns,
@@ -236,33 +205,32 @@ export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogPro
             mandateType: demandType === 'judicial' ? 'Legal' : demandType === 'municipal' ? 'Municipal' : 'N/A',
             judicialItems: demandType === 'judicial' ? judicialItems : [],
             municipalItems: demandType === 'municipal' ? municipalItems : [],
-            files: [...(files || []), ...newFiles],
-            status: isEditing ? patientToEdit.status : 'Ativo'
         }
 
-        
-        if (isEditing) {
+        if (isEditing && patientToEdit) {
             await updatePatient(patientToEdit.id, patientData);
         } else {
             await addPatient(patientData);
         }
         
-
         toast({
             title: `Paciente ${isEditing ? 'Atualizado' : 'Adicionado'}!`,
             description: `${patientData.name} foi ${isEditing ? 'atualizado' : 'cadastrado'} com sucesso.`
         });
+        
+        if (onPatientSaved) {
+            onPatientSaved();
+        }
 
-        router.refresh();
         setIsOpen(false);
         resetForm();
 
     } catch (error) {
-        console.error("Error saving patient or uploading files:", error);
+        console.error("Error saving patient:", error);
         toast({
             variant: 'destructive',
             title: 'Erro ao Salvar',
-            description: 'Ocorreu um erro ao salvar o paciente ou fazer upload dos arquivos. Verifique o console para mais detalhes.'
+            description: 'Ocorreu um erro ao salvar o paciente. Verifique o console para mais detalhes.'
         });
     } finally {
         setIsSaving(false);
@@ -440,35 +408,6 @@ export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogPro
                 )}
               </div>
               <Separator />
-
-                {/* File Upload Section */}
-                <div className="space-y-4">
-                    <Label>Anexar Documentos (Laudos, Receitas, etc.)</Label>
-                    <div className="flex items-center gap-2">
-                        <Input id="file-upload" type="file" className="hidden" onChange={handleFileChange} multiple disabled={isSaving} />
-                        <Button type="button" variant="outline" onClick={() => document.getElementById('file-upload')?.click()} disabled={isSaving}>
-                            <FileUp className="mr-2 h-4 w-4" />
-                            Escolher Arquivos
-                        </Button>
-                    </div>
-                    <div className="space-y-2">
-                        {files.map(file => (
-                            <div key={file.name} className="flex items-center justify-between text-sm p-2 bg-muted rounded-md">
-                                <a href={file.url} target="_blank" rel="noopener noreferrer" className="hover:underline">{file.name}</a>
-                                <span>(Salvo)</span>
-                            </div>
-                        ))}
-                         {uploadedFiles.map(file => (
-                            <div key={file.name} className="flex items-center justify-between text-sm p-2 bg-muted rounded-md">
-                                <span>{file.name}</span>
-                                <Button type="button" size="icon" variant="ghost" onClick={() => removeFile(file.name)} disabled={isSaving}>
-                                    <X className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
             </div>
           </ScrollArea>
           <DialogFooter className="pt-4">
@@ -485,3 +424,5 @@ export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogPro
     </Dialog>
   );
 }
+
+    
