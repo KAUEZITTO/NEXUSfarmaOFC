@@ -21,9 +21,10 @@ import {
 import { Badge } from '@/components/ui/badge';
 
 const UPDATE_STORAGE_KEY = 'nexusfarma-last-seen-version';
-const CURRENT_VERSION = '0.9.4';
+const CURRENT_VERSION = '0.9.5';
 
 const changelog = [
+    { version: '0.9.5', changes: ['Adicionado pop-up de novidades da versão para manter os usuários informados sobre as atualizações.'] },
     { version: '0.9.4', changes: ['Correção de erros de build na Vercel relacionados à configuração do Next.js.'] },
     { version: '0.9.3', changes: ['Ajustes no rodapé da página inicial.'] },
     { version: '0.9.2', changes: ['Migração completa do sistema de arquivos para o banco de dados Vercel KV, permitindo persistência de dados online.', 'Remoção de arquivos de dados JSON locais.'] },
