@@ -166,7 +166,7 @@ const analyticsFlow = ai.defineFlow(
   },
   async (query) => {
     const result = await analyticsPrompt(query);
-    const text = result.text;
+    const text = result.text();
 
     if (!text) {
       return 'Não foi possível gerar uma resposta.';
