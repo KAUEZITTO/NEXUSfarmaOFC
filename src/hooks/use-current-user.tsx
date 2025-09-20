@@ -31,6 +31,7 @@ export function CurrentUserProvider({ children }: { children: React.ReactNode })
             }
         };
 
+        // Only run on client-side and when path changes
         fetchUser();
     }, [pathname]);
 
