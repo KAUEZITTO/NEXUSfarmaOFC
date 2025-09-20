@@ -1,6 +1,10 @@
 
+'use server';
+
 import { getProducts } from '@/lib/actions';
 import { ShelfLabelsClient } from './shelf-labels-client';
+
+export const dynamic = 'force-dynamic';
 
 export default async function ShelfLabelsPage() {
   const products = await getProducts();

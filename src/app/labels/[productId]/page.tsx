@@ -1,9 +1,12 @@
 
+'use server';
+
 import { getProduct } from '@/lib/actions';
 import { notFound } from 'next/navigation';
 import { LabelPageClient } from './label-page-client';
 import type { Product } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
 
 export default async function LabelsPage({ params }: { params: { productId: string } }) {
   const product = await getProduct(params.productId);
