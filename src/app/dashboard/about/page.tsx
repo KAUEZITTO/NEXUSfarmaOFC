@@ -62,7 +62,7 @@ export default function AboutPage() {
                   Suporte Técnico
                   </h3>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  Para suporte técnico ou dúvidas, entre em contato através do e-mail: <a href="mailto:nexus.help@gmail.com" className="text-primary hover:underline">nexus.help@gmail.com</a>.
+                  Para suporte técnico ou dúvidas, entre em contato através do e-mail: <a href="mailto:nexusfarmaofc@gmail.com" className="text-primary hover:underline">nexusfarmaofc@gmail.com</a>.
                 </p>
               </div>
                <div>
