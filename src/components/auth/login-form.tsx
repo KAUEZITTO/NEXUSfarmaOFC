@@ -25,29 +25,24 @@ export function LoginForm() {
 
     const formData = new FormData(event.currentTarget);
     
-    try {
-      const result = await login(formData);
-       if (result && !result.success) {
-           setErrorMessage(result.message);
-       } else if (result?.success) {
-            toast({
-                title: 'Login bem-sucedido!',
-                description: 'Bem-vindo(a) de volta!',
-            });
-            // The redirect will be handled by the server action
-       }
-    } catch (error: any) {
-        // This will catch errors thrown from the server action,
-        // including the redirect error which we can safely ignore.
-        if (error.digest?.startsWith('NEXT_REDIRECT')) {
-            // This is expected, do nothing. The redirect will happen.
-        } else {
-            console.error(error);
-            setErrorMessage(error.message || 'Ocorreu um erro inesperado.');
-        }
-    } finally {
-        setIsPending(false);
+    // The login action is called outside the try/catch block.
+    // This is because `redirect()` in Next.js works by throwing an error,
+    // which we don't want to catch here.
+    // We will only catch specific validation errors returned from the action.
+    const result = await login(formData);
+
+    if (result && !result.success) {
+      setErrorMessage(result.message);
+    } else if (result?.success) {
+      toast({
+        title: 'Login bem-sucedido!',
+        description: 'Bem-vindo(a) de volta!',
+      });
+      // The redirect is handled by the server action itself,
+      // but we still need to handle the success case on the client.
     }
+    
+    setIsPending(false);
   };
 
 
