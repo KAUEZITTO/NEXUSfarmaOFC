@@ -1,17 +1,14 @@
 
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User } from '@/lib/types';
 import { usePathname } from 'next/navigation';
 
-type CurrentUserContextType = User | null;
-
-const CurrentUserContext = createContext<CurrentUserContextType>(null);
+const CurrentUserContext = createContext<User | null>(null);
 
 export function useCurrentUser() {
-    const context = useContext(CurrentUserContext);
-    return context;
+    return useContext(CurrentUserContext);
 }
 
 export function CurrentUserProvider({ children }: { children: React.ReactNode }) {
@@ -34,13 +31,12 @@ export function CurrentUserProvider({ children }: { children: React.ReactNode })
             }
         };
 
+        // Fetch user data only on the client side when the path changes.
         fetchUser();
-    }, [pathname]); // Refetch on path change to ensure data is fresh
-
-    const userValue = useMemo(() => user, [user]);
+    }, [pathname]);
 
     return (
-        <CurrentUserContext.Provider value={userValue}>
+        <CurrentUserContext.Provider value={user}>
             {children}
         </CurrentUserContext.Provider>
     );
