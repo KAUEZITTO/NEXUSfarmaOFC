@@ -6,19 +6,13 @@ import { Product } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, Edit, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, Edit, MoreHorizontal, Printer } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import { AddProductDialog } from "@/components/dashboard/add-product-dialog"
+import Link from "next/link"
 
-// This function needs to be passed down to the columns to trigger a re-fetch
-// A better state management (like Zustand or React Context) would be ideal for a larger app
-// But for now, we pass a callback.
-type ColumnsProps = {
-  onProductSaved: () => void;
-}
-
-export const getColumns = ({ onProductSaved }: ColumnsProps): ColumnDef<Product>[] => [
+export const getColumns = (): ColumnDef<Product>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -126,15 +120,19 @@ export const getColumns = ({ onProductSaved }: ColumnsProps): ColumnDef<Product>
             >
               Copiar ID do Produto
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-                <AddProductDialog onProductSaved={onProductSaved} productToEdit={product} trigger={
-                    <button className="w-full h-full relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
-                        <Edit className="mr-2 h-4 w-4" />
-                        <span>Editar</span>
-                    </button>
-                } />
+             <DropdownMenuItem asChild>
+                <Link href={`/labels/${product.id}`} target="_blank" className="w-full h-full flex items-center cursor-pointer">
+                    <Printer className="mr-2 h-4 w-4" />
+                    <span>Imprimir Etiquetas</span>
+                </Link>
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <AddProductDialog productToEdit={product} trigger={
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    <span>Editar</span>
+                </DropdownMenuItem>
+            } />
           </DropdownMenuContent>
         </DropdownMenu>
       )

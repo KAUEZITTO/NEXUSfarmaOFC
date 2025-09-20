@@ -173,7 +173,12 @@ export async function getProducts(): Promise<Product[]> {
     return await readData<Product>('products.json');
 }
 
-export async function addProduct(product: Omit<Product, 'id' | 'status'>) {
+export async function getProduct(productId: string): Promise<Product | null> {
+    const products = await getProducts();
+    return products.find(p => p.id === productId) || null;
+}
+
+export async function addProduct(product: Omit<Product, 'id' | 'status'>): Promise<Product> {
     const products = await readData<Product>('products.json');
     const newProduct: Product = {
         id: `prod-${Date.now()}`,
@@ -186,9 +191,10 @@ export async function addProduct(product: Omit<Product, 'id' | 'status'>) {
     await logStockMovement(newProduct.id, product.name, 'Entrada', 'Entrada Inicial', product.quantity, 0);
     await logActivity('Produto Adicionado', `Novo produto "${product.name}" (ID: ${newProduct.id}) foi adicionado com quantidade ${product.quantity}.`);
     revalidatePath('/dashboard/inventory');
+    return newProduct;
 }
 
-export async function updateProduct(productId: string, productData: Partial<Product>) {
+export async function updateProduct(productId: string, productData: Partial<Product>): Promise<Product> {
     let products = await readData<Product>('products.json');
     const productIndex = products.findIndex(p => p.id === productId);
 
@@ -211,8 +217,9 @@ export async function updateProduct(productId: string, productData: Partial<Prod
     products[productIndex] = updatedProduct;
     await writeData('products.json', products);
     
-    await logActivity('Produto Atualizado', `Produto "${productData.name}" (ID: ${productId}) foi atualizado.`);
+    await logActivity('Produto Atualizado', `Produto "${updatedProduct.name}" (ID: ${productId}) foi atualizado.`);
     revalidatePath('/dashboard/inventory');
+    return updatedProduct;
 }
 
 // --- UNITS ACTIONS ---
@@ -288,7 +295,7 @@ export async function getPatient(patientId: string): Promise<Patient | null> {
     return patients.find(p => p.id === patientId) || null;
 }
 
-export async function addPatient(patient: Omit<Patient, 'id'>) {
+export async function addPatient(patient: Omit<Patient, 'id' | 'status'>) {
     const patients = await readData<Patient>('patients.json');
     const newPatient: Patient = {
         id: `pat-${Date.now()}`,

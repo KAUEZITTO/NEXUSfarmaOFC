@@ -26,22 +26,27 @@ import { useToast } from '@/hooks/use-toast';
 import { addProduct, updateProduct } from '@/lib/actions';
 import type { Product } from '@/lib/types';
 import { useRouter } from 'next/navigation';
+import { ProductSavedDialog } from './product-saved-dialog';
 
 type AddProductDialogProps = {
   trigger: React.ReactNode;
   productToEdit?: Product;
-  onProductSaved: () => void;
 };
 
 const categories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Outro'];
 const presentations: Exclude<Product['presentation'], undefined>[] = ['Comprimido', 'Unidade', 'Caixa c/ 100', 'Seringa 4g', 'Frasco 10ml', 'Caixa c/ 50', 'Caneta 3ml', 'Pacote', 'Bolsa', 'Outro'];
 const suppliers: Exclude<Product['supplier'], undefined>[] = ['Casmed', 'Mednutri', 'Doação', 'Outro'];
 
-export function AddProductDialog({ trigger, productToEdit, onProductSaved }: AddProductDialogProps) {
+export function AddProductDialog({ trigger, productToEdit }: AddProductDialogProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const isEditing = !!productToEdit;
+
+  // State for post-save dialog
+  const [savedProduct, setSavedProduct] = useState<Product | null>(null);
+  const [showSavedDialog, setShowSavedDialog] = useState(false);
 
   // Form state
   const [name, setName] = useState('');
@@ -94,6 +99,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
     setIsSaving(true);
 
     try {
+        let resultProduct: Product;
         if (isEditing && productToEdit) {
             const productDataToUpdate = {
                 name,
@@ -106,13 +112,13 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
                 supplier,
                 presentation,
             };
-            await updateProduct(productToEdit.id, productDataToUpdate);
+            resultProduct = await updateProduct(productToEdit.id, productDataToUpdate);
             toast({
               title: 'Produto Atualizado!',
               description: `${name} foi atualizado com sucesso.`,
             });
         } else {
-            const newProduct: Omit<Product, 'id' | 'status'> = {
+            const newProductData: Omit<Product, 'id' | 'status'> = {
                 name,
                 commercialName: category === 'Medicamento' ? commercialName : undefined,
                 manufacturer: manufacturer,
@@ -123,15 +129,17 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
                 supplier,
                 presentation,
             };
-            await addProduct(newProduct);
+            resultProduct = await addProduct(newProductData);
             toast({
                 title: 'Produto Adicionado!',
-                description: `${newProduct.name} foi adicionado ao inventário com sucesso.`,
+                description: `${newProductData.name} foi adicionado ao inventário com sucesso.`,
             });
         }
         
-        onProductSaved();
+        router.refresh();
         setIsOpen(false);
+        setSavedProduct(resultProduct);
+        setShowSavedDialog(true);
         resetForm();
     } catch (error) {
          toast({
@@ -146,79 +154,88 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? 'Editar Produto' : 'Adicionar Novo Produto'}</DialogTitle>
-        </DialogHeader>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nome do Produto (Princípio Ativo/Descrição)</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="category">Categoria</Label>
-            <Select onValueChange={(v) => setCategory(v as any)} value={category}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {categories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          {category === 'Medicamento' && (
+    <>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{isEditing ? 'Editar Produto' : 'Adicionar Novo Produto'}</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="commercialName">Nome Comercial (Opcional)</Label>
-              <Input id="commercialName" value={commercialName} onChange={(e) => setCommercialName(e.target.value)} />
+              <Label htmlFor="name">Nome do Produto (Princípio Ativo/Descrição)</Label>
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
             </div>
-          )}
-           <div className="space-y-2">
-              <Label htmlFor="manufacturer">Laboratório/Indústria (Opcional)</Label>
-              <Input id="manufacturer" value={manufacturer} onChange={(e) => setManufacturer(e.target.value)} />
+            <div className="space-y-2">
+              <Label htmlFor="category">Categoria</Label>
+              <Select onValueChange={(v) => setCategory(v as any)} value={category}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {categories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-          <div className="space-y-2">
-            <Label htmlFor="batch">Lote</Label>
-            <Input id="batch" value={batch} onChange={(e) => setBatch(e.target.value)} />
+            {category === 'Medicamento' && (
+              <div className="space-y-2">
+                <Label htmlFor="commercialName">Nome Comercial (Opcional)</Label>
+                <Input id="commercialName" value={commercialName} onChange={(e) => setCommercialName(e.target.value)} />
+              </div>
+            )}
+             <div className="space-y-2">
+                <Label htmlFor="manufacturer">Laboratório/Indústria (Opcional)</Label>
+                <Input id="manufacturer" value={manufacturer} onChange={(e) => setManufacturer(e.target.value)} />
+              </div>
+            <div className="space-y-2">
+              <Label htmlFor="batch">Lote</Label>
+              <Input id="batch" value={batch} onChange={(e) => setBatch(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="expiryDate">Data de Validade</Label>
+              <Input id="expiryDate" type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="quantity">Quantidade</Label>
+              <Input id="quantity" type="number" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value, 10) || 0)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="presentation">Apresentação</Label>
+               <Select onValueChange={(v) => setPresentation(v as any)} value={presentation}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {presentations.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="supplier">Fornecedor</Label>
+               <Select onValueChange={(v) => setSupplier(v as any)} value={supplier}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {suppliers.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="expiryDate">Data de Validade</Label>
-            <Input id="expiryDate" type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="quantity">Quantidade</Label>
-            <Input id="quantity" type="number" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value, 10) || 0)} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="presentation">Apresentação</Label>
-             <Select onValueChange={(v) => setPresentation(v as any)} value={presentation}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {presentations.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-           <div className="space-y-2">
-            <Label htmlFor="supplier">Fornecedor</Label>
-             <Select onValueChange={(v) => setSupplier(v as any)} value={supplier}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {suppliers.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="outline" disabled={isSaving}>
-              Cancelar
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" disabled={isSaving}>
+                Cancelar
+              </Button>
+            </DialogClose>
+            <Button type="button" onClick={handleSave} disabled={isSaving}>
+              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              {isSaving ? 'Salvando...' : 'Salvar'}
             </Button>
-          </DialogClose>
-          <Button type="button" onClick={handleSave} disabled={isSaving}>
-            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            {isSaving ? 'Salvando...' : 'Salvar'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {savedProduct && (
+          <ProductSavedDialog
+            isOpen={showSavedDialog}
+            onOpenChange={setShowSavedDialog}
+            product={savedProduct}
+          />
+      )}
+    </>
   );
 }

@@ -1,14 +1,14 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Search } from "lucide-react";
 import type { Product } from '@/lib/types';
 import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
 import { getColumns } from './columns';
-import { useRouter } from 'next/navigation';
+import { Input } from '@/components/ui/input';
 
 type FilterCategory = 'Todos' | Product['category'];
 
@@ -27,14 +27,44 @@ interface InventoryClientProps {
 
 export function InventoryClient({ initialProducts }: InventoryClientProps) {
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('Todos');
-  const router = useRouter();
+  const [searchTerm, setSearchTerm] = useState('');
+  const columns = getColumns();
+  
+  // Barcode scanner detection logic
+  const [lastKeystrokeTime, setLastKeystrokeTime] = useState(Date.now());
+  const [barcodeBuffer, setBarcodeBuffer] = useState('');
 
-  const handleProductSaved = () => {
-    router.refresh();
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    const now = Date.now();
+    const timeDiff = now - lastKeystrokeTime;
+    setLastKeystrokeTime(now);
+
+    // If keystrokes are very fast (typical for a scanner), buffer them.
+    if (timeDiff < 50) { // 50ms threshold
+        setBarcodeBuffer(prev => prev + value.slice(-1));
+    } else {
+        setBarcodeBuffer(value.slice(-1));
+    }
+    
+    setSearchTerm(value);
   }
 
-  const columns = getColumns({ onProductSaved: handleProductSaved });
-  const filteredProducts = filterProducts(initialProducts, activeFilter);
+  const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === 'Enter') {
+          // A barcode scanner often sends an "Enter" key after the scan.
+          // If the buffer has content and Enter is pressed, it's likely a scan.
+          if (barcodeBuffer.length > 5) { // Arbitrary length to qualify as a potential barcode
+              setSearchTerm(barcodeBuffer);
+          }
+      }
+  }
+
+
+  const filteredProducts = filterProducts(initialProducts, activeFilter).filter(p => 
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <>
@@ -51,12 +81,25 @@ export function InventoryClient({ initialProducts }: InventoryClientProps) {
                     </Button>
                 ))}
             </div>
-             <AddProductDialog onProductSaved={handleProductSaved} trigger={
+             <AddProductDialog trigger={
                 <Button>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Adicionar Produto
                 </Button>
             } />
+        </div>
+        
+        <div className="flex items-center py-4">
+            <div className="relative w-full max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Filtrar por nome ou ID (código de barras)..."
+                  value={searchTerm}
+                  onChange={handleInputChange}
+                  onKeyDown={handleInputKeyDown}
+                  className="pl-10"
+                />
+            </div>
         </div>
       
         <DataTable columns={columns} data={filteredProducts} filterColumn="name" />
