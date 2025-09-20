@@ -2,6 +2,12 @@
   {
     "user": "Sistema",
     "action": "Produto Adicionado",
+    "details": "Novo produto \"loratadina 10mg\" (ID: prod-1758380294667) foi adicionado com quantidade 63.",
+    "timestamp": "2025-09-20T14:58:16.355Z"
+  },
+  {
+    "user": "Sistema",
+    "action": "Produto Adicionado",
     "details": "Novo produto \"loratadina 10mg\" (ID: prod-1758379595305) foi adicionado com quantidade 50.",
     "timestamp": "2025-09-20T14:46:36.842Z"
   },

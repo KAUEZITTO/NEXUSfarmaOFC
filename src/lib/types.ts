@@ -14,6 +14,7 @@ export type Product = {
   batch?: string;
   presentation?: 'Comprimido' | 'Unidade' | 'Caixa c/ 100' | 'Seringa 4g' | 'Frasco 10ml' | 'Caixa c/ 50' | 'Caneta 3ml' | 'Pacote' | 'Bolsa' | 'Outro';
   supplier?: 'Casmed' | 'Mednutri' | 'Doação' | 'Outro';
+  imageUrl?: string;
 };
 
 export type Unit = {

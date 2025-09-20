@@ -60,6 +60,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
   const [presentation, setPresentation] = useState<Product['presentation']>('Unidade');
   const [therapeuticClass, setTherapeuticClass] = useState('');
   const [mainFunction, setMainFunction] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   
   const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeBaseItem[]>([]);
   const [debouncedName] = useDebounce(name, 300);
@@ -102,6 +103,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
     setPresentation('Unidade');
     setTherapeuticClass('');
     setMainFunction('');
+    setImageUrl('');
   }
 
   useEffect(() => {
@@ -117,6 +119,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
         setSupplier(productToEdit.supplier || 'Outro');
         setQuantity(productToEdit.quantity);
         setPresentation(productToEdit.presentation || 'Outro');
+        setImageUrl(productToEdit.imageUrl || '');
     } else if (!isEditing && isOpen) {
         resetForm();
     }
@@ -148,6 +151,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
                 expiryDate,
                 supplier,
                 presentation,
+                imageUrl,
             };
             resultProduct = await updateProduct(productToEdit.id, productDataToUpdate);
             toast({
@@ -167,6 +171,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
                 expiryDate,
                 supplier,
                 presentation,
+                imageUrl,
             };
             resultProduct = await addProduct(newProductData);
             toast({
@@ -261,6 +266,10 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
             <div className="space-y-2 col-span-1 md:col-span-2 lg:col-span-3">
                 <Label htmlFor="mainFunction">Função Principal</Label>
                 <Input id="mainFunction" value={mainFunction} placeholder="Preenchido automaticamente..." readOnly className="bg-muted/50" />
+            </div>
+            <div className="space-y-2 col-span-1 md:col-span-3">
+              <Label htmlFor="imageUrl">URL da Imagem (Opcional)</Label>
+              <Input id="imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://exemplo.com/imagem.png" />
             </div>
           </div>
           <DialogFooter>

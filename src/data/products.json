@@ -1,4 +1,3 @@
-
 [
   {
     "id": "prod-1758378709706",
@@ -27,6 +26,21 @@
     "batch": "AB56A90",
     "expiryDate": "",
     "supplier": "Casmed",
+    "presentation": "Unidade",
+    "status": "Em Estoque"
+  },
+  {
+    "id": "prod-1758380294667",
+    "name": "loratadina 10mg",
+    "commercialName": "loratadina 10mg",
+    "manufacturer": "teuto",
+    "category": "Medicamento",
+    "therapeuticClass": "Antialérgico (Anti-histamínico)",
+    "mainFunction": "Para alívio dos sintomas de alergias, como coriza e coceira.",
+    "quantity": 63,
+    "batch": "AH67789",
+    "expiryDate": "",
+    "supplier": "Mednutri",
     "presentation": "Unidade",
     "status": "Em Estoque"
   }
