@@ -17,12 +17,13 @@ const Barcode = ({ value }: { value: string }) => {
     // This is a visual simulation of a Code 128 barcode font.
     // It's not a real barcode image, but provides a scannable appearance
     // with appropriate fonts installed or for most barcode readers.
+    const shortId = value.slice(-4);
     return (
         <div className="w-full text-center">
             <p className="font-mono text-4xl leading-none tracking-tighter scale-y-150">
-               *<span className="tracking-normal">{value}</span>*
+               *{value}*
             </p>
-            <p className="font-mono text-xs tracking-[0.3em]">{value}</p>
+            <p className="font-mono text-xs tracking-[0.2em] font-bold">CÓD: {shortId}</p>
         </div>
     )
 }
