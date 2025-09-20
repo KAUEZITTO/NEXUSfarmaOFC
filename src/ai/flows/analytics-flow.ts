@@ -166,13 +166,13 @@ const analyticsFlow = ai.defineFlow(
   },
   async (query) => {
     const result = await analyticsPrompt(query);
-    const text = result.text();
+    const text = result.output;
 
     if (!text) {
       return 'Não foi possível gerar uma resposta.';
     }
     
-    return text;
+    return text as string;
   }
 );
 
