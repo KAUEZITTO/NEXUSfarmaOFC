@@ -19,29 +19,31 @@ type ColumnsProps = {
   onProductSaved: () => void;
 };
 
+// Componente de Célula dedicado para encapsular o estado
+const NameCell = ({ row, onProductSaved }: { row: any, onProductSaved: () => void; }) => {
+    const product = row.original as GroupedProduct;
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    return (
+        <>
+            <button
+                onClick={() => setIsDialogOpen(true)}
+                className="capitalize font-medium text-primary hover:underline text-left"
+            >
+                {row.getValue("name")}
+            </button>
+            <BatchDetailsDialog
+                isOpen={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+                product={product}
+                onProductSaved={onProductSaved}
+            />
+        </>
+    );
+};
+
+
 export const getColumns = ({ onProductSaved }: ColumnsProps): ColumnDef<GroupedProduct>[] => {
-
-  const NameCell = ({ row }: { row: any }) => {
-      const product = row.original as GroupedProduct;
-      const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-      return (
-          <>
-              <button 
-                  onClick={() => setIsDialogOpen(true)} 
-                  className="capitalize font-medium text-primary hover:underline text-left"
-              >
-                  {row.getValue("name")}
-              </button>
-              <BatchDetailsDialog 
-                  isOpen={isDialogOpen}
-                  onOpenChange={setIsDialogOpen}
-                  product={product}
-                  onProductSaved={onProductSaved}
-              />
-          </>
-      );
-  };
 
   return [
     {
@@ -57,7 +59,7 @@ export const getColumns = ({ onProductSaved }: ColumnsProps): ColumnDef<GroupedP
           </Button>
         )
       },
-      cell: NameCell,
+      cell: ({ row }) => <NameCell row={row} onProductSaved={onProductSaved} />,
     },
       {
       accessorKey: "presentation",

@@ -45,7 +45,7 @@ export function DashboardNav({ isMobile = false }: { isMobile?: boolean }) {
                 <SidebarMenuItem key={label} data-tour-id={tourId}>
                     <SidebarMenuButton 
                         asChild
-                        isActive={pathname.startsWith(href) && (href !== '/dashboard' || pathname === href)}
+                        isActive={pathname === href || (pathname.startsWith(href) && href !== '/dashboard')}
                         onClick={() => {
                             if (isMobile) {
                                 setOpenMobile(false)
