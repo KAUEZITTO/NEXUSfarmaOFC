@@ -28,11 +28,11 @@ export default function LoginPage() {
       </div>
       <div className="hidden bg-muted lg:block">
         <Image
-          src="/placeholder.png"
-          alt="Image"
+          src="/login-background.png"
+          alt="Imagem de fundo do login"
           width="1920"
           height="1080"
-          data-ai-hint="warehouse medical supplies"
+          data-ai-hint="pharmacy pill leaves"
           className="h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
         />
       </div>
