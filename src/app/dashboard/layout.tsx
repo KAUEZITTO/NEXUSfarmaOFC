@@ -26,7 +26,7 @@ const UPDATE_STORAGE_KEY = 'nexusfarma-last-seen-version';
 const CURRENT_VERSION = '1.1.1';
 
 const changelog = [
-    { version: '1.1.1', changes: ['Correção de erros de compilação que impediam a publicação de novas versões.'] },
+    { version: '1.1.1', changes: ['Correção de erros críticos de compilação que impediam a publicação de novas versões.'] },
     { version: '1.1.0', changes: ['O sistema agora é considerado estável e saiu da fase Beta.', 'Atualizadas dependências internas para melhorar performance e segurança.'] },
     { version: '1.0.2', changes: ['Correção de erro que impedia a geração de etiquetas de prateleira.'] },
     { version: '1.0.1', changes: ['Correção de erro de conexão com o banco de dados no ambiente de desenvolvimento.'] },
