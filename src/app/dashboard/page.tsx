@@ -42,7 +42,6 @@ import {
 import { OverviewChart } from "@/components/dashboard/overview-chart"
 import { getProducts, getOrders, getAllDispensations } from "@/lib/actions"
 import type { Product, Order, Unit, Dispensation } from "@/lib/types"
-import { AnalyticsChat } from "@/components/dashboard/analytics-chat"
 
 
 const getUnitsServed = (orders: Order[]) => {
@@ -206,7 +205,15 @@ export default async function Dashboard() {
       </div>
       <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3 mt-6">
         <Card className="xl:col-span-2">
-            <AnalyticsChat />
+           <CardHeader>
+            <CardTitle>Níveis de Estoque por Categoria</CardTitle>
+            <CardDescription>
+              Distribuição de itens de estoque nas principais categorias.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pl-2">
+            <OverviewChart data={chartData} />
+          </CardContent>
         </Card>
         <Card>
             <CardHeader>
@@ -252,17 +259,6 @@ export default async function Dashboard() {
                 </TableBody>
               </Table>
             </CardContent>
-        </Card>
-        <Card className="xl:col-span-2">
-          <CardHeader>
-            <CardTitle>Níveis de Estoque por Categoria</CardTitle>
-            <CardDescription>
-              Distribuição de itens de estoque nas principais categorias.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pl-2">
-            <OverviewChart data={chartData} />
-          </CardContent>
         </Card>
       </div>
     </div>
