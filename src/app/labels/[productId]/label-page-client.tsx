@@ -1,12 +1,13 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Printer, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import type { Product } from '@/lib/types';
+import JsBarcode from 'jsbarcode';
 
 interface LabelPageClientProps {
     product: Product;
@@ -14,23 +15,32 @@ interface LabelPageClientProps {
 }
 
 const Barcode = ({ value }: { value: string }) => {
-    // This is a visual simulation of a Code 128 barcode font.
-    // It's not a real barcode image, but provides a scannable appearance
-    // with appropriate fonts installed or for most barcode readers.
+    const svgRef = useRef<SVGSVGElement | null>(null);
     const shortId = value.slice(-4);
+
+    useEffect(() => {
+        if (svgRef.current) {
+            JsBarcode(svgRef.current, value, {
+                format: 'CODE128',
+                displayValue: false, // We'll display the value manually
+                margin: 0,
+                height: 40,
+                width: 1.5,
+            });
+        }
+    }, [value]);
+
     return (
-        <div className="w-full text-center">
-            <p className="font-mono text-4xl leading-none tracking-tighter scale-y-150">
-               *{value}*
-            </p>
-            <p className="font-mono text-xs tracking-[0.2em] font-bold">CÓD: {shortId}</p>
+        <div className="w-full text-center flex flex-col items-center">
+            <svg ref={svgRef} className="w-full"></svg>
+            <p className="font-mono text-xs tracking-[0.2em] font-bold mt-0.5">CÓD: {shortId}</p>
         </div>
-    )
-}
+    );
+};
 
 const ProductLabel = ({ product }: { product: Product }) => {
     return (
-        <div className="p-2 border border-black border-dashed flex flex-col justify-between h-full text-[10px] leading-tight">
+        <div className="p-2 border border-black border-dashed flex flex-col justify-between h-full text-[10px] leading-tight bg-white">
             {/* Header */}
             <div className="flex justify-between items-start">
                  <div className="flex items-center gap-1.5">
@@ -46,7 +56,7 @@ const ProductLabel = ({ product }: { product: Product }) => {
             </div>
             
             {/* Body */}
-            <div className="my-1">
+            <div className="my-1 text-center">
                 <p className="text-sm font-bold line-clamp-2">{product.name}</p>
                 {product.manufacturer && <p className="text-gray-700">Fab: {product.manufacturer}</p>}
             </div>
@@ -118,7 +128,7 @@ export function LabelPageClient({ product, isBox }: LabelPageClientProps) {
             }
             @page {
                 size: A4;
-                margin: 5mm;
+                margin: 5mm; /* Give a little margin for the printer */
             }
         }
       `}</style>
@@ -133,10 +143,11 @@ export function LabelPageClient({ product, isBox }: LabelPageClientProps) {
                         gridTemplateRows: `repeat(${rows}, 1fr)`,
                         width: `${pageW}mm`,
                         height: `${pageH}mm`,
+                        boxSizing: 'border-box'
                      }}
                 >
                     {pageLabels.map((label, i) => (
-                        <div key={i} style={{width: `${labelWidth}mm`, height: `${labelHeight}mm`}}>
+                        <div key={i} style={{width: `${labelWidth}mm`, height: `${labelHeight}mm`, boxSizing: 'border-box'}}>
                            {label}
                         </div>
                     ))}
