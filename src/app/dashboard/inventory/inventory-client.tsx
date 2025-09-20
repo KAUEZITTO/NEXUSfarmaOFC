@@ -1,15 +1,16 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Search, Printer } from "lucide-react";
-import type { Product } from '@/lib/types';
-import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
-import { getColumns } from './columns';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
+import { getColumns } from './columns';
+import type { Product } from '@/lib/types';
 import type { GroupedProduct } from './page';
 
 type FilterCategory = 'Todos' | Product['category'];

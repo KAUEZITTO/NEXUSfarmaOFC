@@ -1,15 +1,6 @@
 
-
 'use server';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Package, Users, AlertTriangle, BarChart2 } from "lucide-react";
 import { getProducts, getAllPatients, getAllDispensations, getUnits, getOrders, getStockMovements } from "@/lib/actions";
 import { ReportsClient } from "./reports-client";
 

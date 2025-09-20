@@ -9,8 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { DataTable } from "@/components/ui/data-table";
-import { columns } from "./columns";
+import { UserManagementClient } from "./user-management-client";
 
 export default async function UserManagementPage() {
   const users = await getAllUsers();
@@ -24,7 +23,7 @@ export default async function UserManagementPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <DataTable columns={columns} data={users} filterColumn="email" />
+        <UserManagementClient initialUsers={users} />
       </CardContent>
     </Card>
   );

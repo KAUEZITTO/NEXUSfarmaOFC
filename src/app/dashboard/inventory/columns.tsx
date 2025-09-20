@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react";
@@ -9,11 +10,9 @@ import { cn } from "@/lib/utils"
 import type { GroupedProduct } from "./page";
 import { BatchDetailsDialog } from "./batch-details-dialog";
 
-type ColumnsProps = {
-  onProductSaved: () => void;
-};
-
-// Componente de Célula dedicado para encapsular o estado
+// Este componente de célula dedicado encapsula o estado do diálogo.
+// Isso garante que o estado (`useState`) seja contido em um componente cliente,
+// resolvendo o erro de pré-renderização.
 const NameCell = ({ row, onProductSaved }: { row: any, onProductSaved: () => void; }) => {
     const product = row.original as GroupedProduct;
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -37,8 +36,7 @@ const NameCell = ({ row, onProductSaved }: { row: any, onProductSaved: () => voi
 };
 
 
-export const getColumns = ({ onProductSaved }: ColumnsProps): ColumnDef<GroupedProduct>[] => {
-
+export const getColumns = ({ onProductSaved }: { onProductSaved: () => void; }): ColumnDef<GroupedProduct>[] => {
   return [
     {
       accessorKey: "name",
@@ -53,9 +51,10 @@ export const getColumns = ({ onProductSaved }: ColumnsProps): ColumnDef<GroupedP
           </Button>
         )
       },
+      // Usamos o componente NameCell aqui, que é um Client Component
       cell: ({ row }) => <NameCell row={row} onProductSaved={onProductSaved} />,
     },
-      {
+    {
       accessorKey: "presentation",
       header: "Apresentação",
       cell: ({ row }) => <div className="capitalize">{row.getValue("presentation") || "N/A"}</div>

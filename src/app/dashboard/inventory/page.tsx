@@ -17,9 +17,11 @@ export type GroupedProduct = Product & {
     totalQuantity: number;
 }
 
+// Este é um Server Component. Sua única responsabilidade é buscar os dados.
 export default async function InventoryPage() {
   const products = await getProducts();
   
+  // A lógica de agrupamento permanece no servidor, pois é computação de dados.
   const groupedProductsMap = new Map<string, GroupedProduct>();
 
   products.forEach(product => {
@@ -31,8 +33,8 @@ export default async function InventoryPage() {
           existing.totalQuantity += product.quantity;
       } else {
           groupedProductsMap.set(key, {
-              ...product, // Use first product as representative
-              id: key, // Use a stable key for the group
+              ...product,
+              id: key, 
               batches: [product],
               totalQuantity: product.quantity,
           });
@@ -40,7 +42,6 @@ export default async function InventoryPage() {
   });
 
   const groupedProducts = Array.from(groupedProductsMap.values()).map(group => {
-      // Recalculate status based on total quantity
       const total = group.totalQuantity;
       let status: Product['status'] = 'Em Estoque';
       if (total === 0) {
@@ -49,7 +50,6 @@ export default async function InventoryPage() {
           status = 'Baixo Estoque';
       }
       group.status = status;
-      // Overwrite quantity with total for display
       group.quantity = total;
       return group;
   });
@@ -67,6 +67,7 @@ export default async function InventoryPage() {
         </div>
       </CardHeader>
       <CardContent>
+         {/* Os dados são passados para o Client Component que lida com a interatividade. */}
          <InventoryClient initialProducts={groupedProducts} />
       </CardContent>
     </Card>

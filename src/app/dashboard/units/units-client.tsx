@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
@@ -14,8 +15,6 @@ import {
 import { AddUnitDialog } from "@/components/dashboard/add-unit-dialog";
 import type { Unit } from '@/lib/types';
 import { getColumns } from "./columns";
-import { useRouter } from "next/navigation";
-
 
 interface UnitsClientProps {
     initialUnits: Unit[];

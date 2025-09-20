@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useRouter } from "next/navigation";
-import { useTransition, useState } from "react";
+import { useTransition } from "react";
 import { DataTable } from "@/components/ui/data-table";
 import {
   Card,
@@ -36,7 +37,6 @@ interface PatientsClientProps {
     initialFilter: PatientFilter;
 }
 
-
 export function PatientsClient({ initialPatients, initialFilter }: PatientsClientProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -49,7 +49,9 @@ export function PatientsClient({ initialPatients, initialFilter }: PatientsClien
   }
 
   const handlePatientSaved = () => {
-    router.refresh();
+    startTransition(() => {
+      router.refresh();
+    });
   }
   
   const handleUpdateStatus = async (patientId: string, status: PatientStatus) => {
@@ -59,7 +61,9 @@ export function PatientsClient({ initialPatients, initialFilter }: PatientsClien
         title: "Status Atualizado!",
         description: `O status do paciente foi alterado para ${status}.`,
       });
-      router.refresh();
+      startTransition(() => {
+        router.refresh();
+      });
     } catch (error) {
       toast({
         variant: "destructive",
@@ -83,7 +87,7 @@ export function PatientsClient({ initialPatients, initialFilter }: PatientsClien
             </CardDescription>
           </div>
           <div className="flex gap-2">
-            <AttendPatientDialog />
+            <AttendPatientDialog onDispensationSaved={handlePatientSaved} />
             <AddPatientDialog onPatientSaved={handlePatientSaved} trigger={
               <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,6 @@ import { Input } from '@/components/ui/input';
 import {
   UserCheck,
   Search,
-  PlusCircle,
   X,
   Save,
   ChevronLeft,
@@ -115,8 +114,11 @@ const getProductsForCategory = (allProducts: Product[], category: Category): Par
     return [];
 }
 
+interface AttendPatientDialogProps {
+    onDispensationSaved: () => void;
+}
 
-export function AttendPatientDialog() {
+export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialogProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<'selectPatient' | 'dispenseForm'>(
@@ -285,7 +287,7 @@ export function AttendPatientDialog() {
           description: `Gerando recibo para ${selectedPatient?.name}.`,
         });
         
-        router.refresh();
+        onDispensationSaved();
         setIsOpen(false);
         
         router.push(`/dispensation-receipt/${newDispensation.id}?new=true`);
@@ -522,5 +524,3 @@ export function AttendPatientDialog() {
     </Dialog>
   );
 }
-
-    
