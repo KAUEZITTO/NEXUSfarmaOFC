@@ -113,13 +113,13 @@ export default function LandingPage() {
       </main>
       <footer className="flex flex-col gap-4 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
         <div className="flex-1 text-xs text-muted-foreground text-center sm:text-left">
-            <p>&copy; 2024 NexusFarma. Todos os direitos reservados.</p>
+            <p>&copy; 2025 NexusFarma. Todos os direitos reservados.</p>
             <p>Desenvolvido por Kauê Moreira para a Prefeitura de Igarapé-Açu.</p>
         </div>
         <div className="flex items-center gap-4">
-            <span className="text-xs text-muted-foreground">Apoio:</span>
-            <Image src="/SMS-PREF.png" alt="Logo Prefeitura" width={40} height={40} data-ai-hint="city hall government" />
-            <Image src="/CAF.png" alt="Logo CAF" width={40} height={40} data-ai-hint="pharmacy cross" />
+            <span className="text-sm text-muted-foreground font-semibold">Apoio:</span>
+            <Image src="/SMS-PREF.png" alt="Logo Prefeitura" width={80} height={80} data-ai-hint="city hall government" />
+            <Image src="/CAF.png" alt="Logo CAF" width={80} height={80} data-ai-hint="pharmacy cross" />
         </div>
       </footer>
     </div>
