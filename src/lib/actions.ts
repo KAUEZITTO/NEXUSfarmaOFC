@@ -194,7 +194,7 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
         
         await fs.writeFile(filePath, buffer);
         
-        const publicPath = `/uploads/${fileName}`;
+        const publicPath = `/${fileName}`;
         return { success: true, filePath: publicPath };
 
     } catch (e) {
