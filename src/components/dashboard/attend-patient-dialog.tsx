@@ -116,7 +116,7 @@ const getProductsForCategory = (allProducts: Product[], category: Category): Par
 }
 
 
-export function AttendPatientDialog({ onDispensationSaved }: { onDispensationSaved?: () => void }) {
+export function AttendPatientDialog() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<'selectPatient' | 'dispenseForm'>(
@@ -286,7 +286,7 @@ export function AttendPatientDialog({ onDispensationSaved }: { onDispensationSav
           description: `Gerando recibo para ${selectedPatient?.name}.`,
         });
         
-        onDispensationSaved?.();
+        router.refresh();
         setIsOpen(false);
         
         router.push(`/dispensation-receipt/${newDispensation.id}?new=true`);

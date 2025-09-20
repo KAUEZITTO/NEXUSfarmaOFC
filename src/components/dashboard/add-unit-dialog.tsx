@@ -19,15 +19,16 @@ import { Save, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { addUnit, updateUnit } from '@/lib/actions';
 import type { Unit } from '@/lib/types';
+import { useRouter } from 'next/navigation';
 
 type AddUnitDialogProps = {
   trigger: React.ReactNode;
   unitToEdit?: Unit;
-  onUnitSaved?: () => void;
 };
 
-export function AddUnitDialog({ trigger, unitToEdit, onUnitSaved }: AddUnitDialogProps) {
+export function AddUnitDialog({ trigger, unitToEdit }: AddUnitDialogProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const isEditing = !!unitToEdit;
@@ -98,7 +99,7 @@ export function AddUnitDialog({ trigger, unitToEdit, onUnitSaved }: AddUnitDialo
             });
         }
 
-        onUnitSaved?.();
+        router.refresh();
         setIsOpen(false);
         resetForm();
 

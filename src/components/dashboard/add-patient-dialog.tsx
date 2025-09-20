@@ -32,6 +32,7 @@ import type { Patient, Dosage, PatientFile, Unit } from '@/lib/types';
 import { Separator } from '../ui/separator';
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useRouter } from 'next/navigation';
 
 
 const dosagePeriods: Dosage['period'][] = ['Manhã', 'Tarde', 'Noite', 'Ao deitar', 'Após Café', 'Jejum'];
@@ -83,11 +84,11 @@ const DosageInput = ({ dosages, setDosages, unitLabel }: { dosages: Dosage[], se
 type AddPatientDialogProps = {
     patientToEdit?: Patient;
     trigger: React.ReactNode;
-    onPatientSaved?: () => void;
 }
 
-export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: AddPatientDialogProps) {
+export function AddPatientDialog({ patientToEdit, trigger }: AddPatientDialogProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const isEditing = !!patientToEdit;
@@ -252,7 +253,7 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
             description: `${patientData.name} foi ${isEditing ? 'atualizado' : 'cadastrado'} com sucesso.`
         });
 
-        onPatientSaved?.();
+        router.refresh();
         setIsOpen(false);
         resetForm();
 

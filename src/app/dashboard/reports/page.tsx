@@ -1,6 +1,6 @@
 
 
-'use client';
+'use server';
 
 import {
   Card,
@@ -10,182 +10,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, FileText, BarChart2, AlertTriangle, Package, Users, Loader2 } from "lucide-react";
+import { Download, FileText, BarChart2, AlertTriangle, Package, Users } from "lucide-react";
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
 import { getProducts, getAllPatients, getAllDispensations, getUnits, getOrders, getStockMovements } from "@/lib/actions";
-import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF, generatePatientReportPDF, generateUnitDispensationReportPDF, generateBatchReportPDF, generateEntriesAndExitsReportPDF } from "@/lib/pdf-generator";
-import { useEffect, useState } from "react";
-import type { Product, Patient, Dispensation, Unit, Order, StockMovement } from "@/lib/types";
-import { useToast } from "@/hooks/use-toast";
+import { ReportsClient } from "./reports-client";
 
-type GeneratingState = {
-    complete: boolean;
-    stock: boolean;
-    expiry: boolean;
-    patient: boolean;
-    unitDispensation: boolean;
-    entriesAndExits: boolean;
-    batch: boolean;
-}
 
-export default function ReportsPage() {
-  const { toast } = useToast();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [dispensations, setDispensations] = useState<Dispensation[]>([]);
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [stockMovements, setStockMovements] = useState<StockMovement[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isGenerating, setIsGenerating] = useState<GeneratingState>({
-    complete: false,
-    stock: false,
-    expiry: false,
-    patient: false,
-    unitDispensation: false,
-    entriesAndExits: false,
-    batch: false,
-  });
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      const [productsData, patientsData, dispensationsData, unitsData, ordersData, movementsData] = await Promise.all([
+export default async function ReportsPage() {
+    const [products, patients, dispensations, units, orders, stockMovements] = await Promise.all([
         getProducts(),
         getAllPatients(),
         getAllDispensations(),
         getUnits(),
         getOrders(),
         getStockMovements(),
-      ]);
-      setProducts(productsData);
-      setPatients(patientsData);
-      setDispensations(dispensationsData);
-      setUnits(unitsData);
-      setOrders(ordersData);
-      setStockMovements(movementsData);
-      setLoading(false);
-    };
-    fetchData();
-  }, []);
-
-  const openPdfPrintDialog = (pdfDataUri: string) => {
-    const byteCharacters = atob(pdfDataUri.split(',')[1]);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: 'application/pdf' });
-    const blobUrl = URL.createObjectURL(blob);
-
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = blobUrl;
-    document.body.appendChild(iframe);
-    iframe.onload = () => {
-        setTimeout(() => {
-            if (iframe.contentWindow) {
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-            }
-            document.body.removeChild(iframe);
-            URL.revokeObjectURL(blobUrl);
-        }, 1);
-    };
-  }
-
-  const handleExportComplete = async () => {
-    setIsGenerating(prev => ({...prev, complete: true}));
-    try {
-        const pdfDataUri = await generateCompleteReportPDF(products, patients, dispensations);
-        openPdfPrintDialog(pdfDataUri);
-    } catch(e) {
-        console.error("Failed to generate complete PDF", e);
-        toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
-    } finally {
-        setIsGenerating(prev => ({...prev, complete: false}));
-    }
-  }
-
-  const handleExportStock = async () => {
-    setIsGenerating(prev => ({...prev, stock: true}));
-    try {
-      const pdfDataUri = await generateStockReportPDF(products);
-      openPdfPrintDialog(pdfDataUri);
-    } catch(e) {
-      console.error("Failed to generate stock PDF", e);
-      toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
-    } finally {
-      setIsGenerating(prev => ({...prev, stock: false}));
-    }
-  }
-
-  const handleExportExpiry = async () => {
-    setIsGenerating(prev => ({...prev, expiry: true}));
-    try {
-      const pdfDataUri = await generateExpiryReportPDF(products);
-      openPdfPrintDialog(pdfDataUri);
-    } catch(e) {
-      console.error("Failed to generate expiry PDF", e);
-      toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
-    } finally {
-      setIsGenerating(prev => ({...prev, expiry: false}));
-    }
-  }
-
-    const handleExportPatient = async () => {
-    setIsGenerating(prev => ({...prev, patient: true}));
-    try {
-      const pdfDataUri = await generatePatientReportPDF(dispensations);
-      openPdfPrintDialog(pdfDataUri);
-    } catch(e) {
-      console.error("Failed to generate patient PDF", e);
-      toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
-    } finally {
-      setIsGenerating(prev => ({...prev, patient: false}));
-    }
-  }
-
-  const handleExportUnitDispensation = async () => {
-    setIsGenerating(prev => ({...prev, unitDispensation: true}));
-    try {
-        const pdfDataUri = await generateUnitDispensationReportPDF(orders, units);
-        openPdfPrintDialog(pdfDataUri);
-    } catch(e) {
-        console.error("Failed to generate unit dispensation PDF", e);
-        toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
-    } finally {
-        setIsGenerating(prev => ({...prev, unitDispensation: false}));
-    }
-  }
-
-  const handleExportBatch = async () => {
-    setIsGenerating(prev => ({...prev, batch: true}));
-    try {
-        const pdfDataUri = await generateBatchReportPDF(products);
-        openPdfPrintDialog(pdfDataUri);
-    } catch(e) {
-        console.error("Failed to generate batch report PDF", e);
-        toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
-    } finally {
-        setIsGenerating(prev => ({...prev, batch: false}));
-    }
-  }
-
-    const handleExportEntriesAndExits = async () => {
-    setIsGenerating(prev => ({...prev, entriesAndExits: true}));
-    try {
-        const pdfDataUri = await generateEntriesAndExitsReportPDF(stockMovements);
-        openPdfPrintDialog(pdfDataUri);
-    } catch(e) {
-        console.error("Failed to generate entries and exits PDF", e);
-        toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
-    } finally {
-        setIsGenerating(prev => ({...prev, entriesAndExits: false}));
-    }
-  }
-
+    ]);
 
   const now = new Date();
   const thirtyDaysFromNow = new Date();
@@ -225,14 +64,6 @@ export default function ReportsPage() {
   
   const judicialPatients = patients.filter(p => p.mandateType === 'Legal' || p.mandateType === 'Municipal').length;
 
-  if (loading) {
-    return (
-       <div className="flex items-center justify-center h-full">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-4 text-muted-foreground">Carregando dados dos relatórios...</span>
-       </div>
-    )
-  }
 
   return (
     <div className="space-y-6">
@@ -243,14 +74,19 @@ export default function ReportsPage() {
             Gere e visualize relatórios de dispensação, estoque e mais.
           </p>
         </div>
-        <Button onClick={handleExportComplete} disabled={isGenerating.complete}>
-          {isGenerating.complete ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Download className="mr-2 h-4 w-4" />
-          )}
-          {isGenerating.complete ? 'Gerando...' : 'Exportar Relatório Completo'}
-        </Button>
+        <ReportsClient
+            products={products}
+            patients={patients}
+            dispensations={dispensations}
+            units={units}
+            orders={orders}
+            stockMovements={stockMovements}
+        >
+             <Button>
+                <Download className="mr-2 h-4 w-4" />
+                Exportar Relatório Completo
+            </Button>
+        </ReportsClient>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -311,60 +147,41 @@ export default function ReportsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-          <Button variant="outline" className="justify-start" onClick={handleExportUnitDispensation} disabled={isGenerating.unitDispensation}>
-             {isGenerating.unitDispensation ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-             ) : (
-                <FileText className="mr-2 h-4 w-4" />
-             )}
-            Dispensação por Unidade
-          </Button>
-          <Button variant="outline" className="justify-start" onClick={handleExportStock} disabled={isGenerating.stock}>
-             {isGenerating.stock ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-             ) : (
-                <FileText className="mr-2 h-4 w-4" />
-             )}
-            Estoque Atual
-          </Button>
-           <Button variant="outline" className="justify-start" onClick={handleExportExpiry} disabled={isGenerating.expiry}>
-             {isGenerating.expiry ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-             ) : (
-                <FileText className="mr-2 h-4 w-4" />
-             )}
-            Produtos a Vencer
-          </Button>
-          <Button variant="outline" className="justify-start" onClick={handleExportPatient} disabled={isGenerating.patient}>
-            {isGenerating.patient ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                <FileText className="mr-2 h-4 w-4" />
-                )}
-            Atendimento de Pacientes
-          </Button>
-           <Button variant="outline" className="justify-start" onClick={handleExportEntriesAndExits} disabled={isGenerating.entriesAndExits}>
-                {isGenerating.entriesAndExits ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
+             <ReportsClient
+                products={products}
+                patients={patients}
+                dispensations={dispensations}
+                units={units}
+                orders={orders}
+                stockMovements={stockMovements}
+            >
+                <Button variant="outline" className="justify-start">
                     <FileText className="mr-2 h-4 w-4" />
-                )}
-                Entradas e Saídas
-            </Button>
-           <Button variant="outline" className="justify-start" onClick={handleExportBatch} disabled={isGenerating.batch}>
-                {isGenerating.batch ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
+                    Dispensação por Unidade
+                </Button>
+                <Button variant="outline" className="justify-start">
                     <FileText className="mr-2 h-4 w-4" />
-                )}
-                Relatório de Lotes
-            </Button>
+                    Estoque Atual
+                </Button>
+                <Button variant="outline" className="justify-start">
+                    <FileText className="mr-2 h-4 w-4" />
+                    Produtos a Vencer
+                </Button>
+                <Button variant="outline" className="justify-start">
+                    <FileText className="mr-2 h-4 w-4" />
+                    Atendimento de Pacientes
+                </Button>
+                <Button variant="outline" className="justify-start">
+                    <FileText className="mr-2 h-4 w-4" />
+                    Entradas e Saídas
+                </Button>
+                <Button variant="outline" className="justify-start">
+                    <FileText className="mr-2 h-4 w-4" />
+                    Relatório de Lotes
+                </Button>
+            </ReportsClient>
         </CardContent>
       </Card>
     </div>
   );
 }
-
-    
-
-    
