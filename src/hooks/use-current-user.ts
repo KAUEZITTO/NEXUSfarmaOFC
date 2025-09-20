@@ -1,23 +1,24 @@
 
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import type { User } from '@/lib/types';
 import { usePathname } from 'next/navigation';
 
-const CurrentUserContext = createContext<User | null>(null);
+type CurrentUserContextType = User | null;
 
-export const useCurrentUser = () => {
-    return useContext(CurrentUserContext);
+const CurrentUserContext = createContext<CurrentUserContextType>(null);
+
+export function useCurrentUser() {
+    const context = useContext(CurrentUserContext);
+    return context;
 }
 
-export const CurrentUserProvider = ({ children }: { children: React.ReactNode }) => {
+export function CurrentUserProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const pathname = usePathname();
 
     useEffect(() => {
-        // Function to fetch user data from a client-side endpoint
-        // This avoids exposing the raw header logic to every component
         const fetchUser = async () => {
             try {
                 const res = await fetch('/api/user');
@@ -36,8 +37,10 @@ export const CurrentUserProvider = ({ children }: { children: React.ReactNode })
         fetchUser();
     }, [pathname]); // Refetch on path change to ensure data is fresh
 
+    const value = useMemo(() => user, [user]);
+
     return (
-        <CurrentUserContext.Provider value={user}>
+        <CurrentUserContext.Provider value={value}>
             {children}
         </CurrentUserContext.Provider>
     );
