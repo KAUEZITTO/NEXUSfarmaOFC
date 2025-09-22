@@ -97,7 +97,7 @@ export async function login(formData: FormData): Promise<{ success: boolean; mes
         return { success: false, message: 'Email ou senha inválidos.' };
     }
 
-    const token = await new jose.SignJWT({ 'urn:example:claim': true, accessLevel: user.accessLevel })
+    const token = await new jose.SignJWT({ accessLevel: user.accessLevel })
         .setProtectedHeader({ alg: 'HS256' })
         .setIssuedAt()
         .setSubject(user.id)
@@ -532,5 +532,3 @@ export async function resetAllData() {
     // Revalidar caminhos para refletir os dados limpos na UI
     revalidatePath('/dashboard', 'layout');
 }
-
-    
