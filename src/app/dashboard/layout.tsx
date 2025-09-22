@@ -23,16 +23,9 @@ import { CurrentUserProvider } from '@/hooks/use-current-user';
 
 
 const UPDATE_STORAGE_KEY = 'nexusfarma-last-seen-version';
-const CURRENT_VERSION = '1.2.6';
+const CURRENT_VERSION = '1.1.6';
 
 const changelog = [
-    { version: '1.2.6', changes: ['Correção de bugs 10: Forçada renderização dinâmica da API de usuário para resolver erro de coleta de dados no build.'] },
-    { version: '1.2.5', changes: ['Correção de bugs 8: Refatorado middleware novamente para garantir que nenhuma chamada ao banco de dados ocorra durante o build, resolvendo o erro de coleta de dados.'] },
-    { version: '1.2.4', changes: ['Correção de bugs 7: Refatorado middleware para remover chamadas ao banco de dados durante o build, resolvendo erro crítico de coleta de dados.'] },
-    { version: '1.2.3', changes: ['Correção de bugs 6: Remoção completa da funcionalidade de IA para estabilizar o build.'] },
-    { version: '1.2.2', changes: ['Correção de Bugs: Removida dependência `@genkit-ai/google-cloud` para resolver erro crítico de build.'] },
-    { version: '1.2.1', changes: ['Cadastros e Serviços 1: Corrigido erro crítico na conexão com o banco de dados que impedia login e salvamento de qualquer cadastro.'] },
-    { version: '1.2.0', changes: ['Implementada renderização dinâmica em todo o dashboard para resolver erros de pré-renderização no build.'] },
     { version: '1.1.6', changes: ['Refatoração global da arquitetura do dashboard para corrigir erros de pré-renderização.'] },
     { version: '1.1.5', changes: ['Correção de bugs 5.'] },
     { version: '1.1.4', changes: ['Remoção da dependência `@genkit-ai/google-cloud` para resolver erro crítico de build na Vercel.'] },
