@@ -1,3 +1,4 @@
+
 'use server';
 
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, PatientStatus, User, Role, SubRole } from './types';
@@ -73,9 +74,8 @@ export async function login(formData: FormData): Promise<{ success: boolean; mes
     cookies().set('session', token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 7 });
     await logActivity('Login', `Usuário fez login: ${user.email}`);
 
+    // Redirect handles the rest, no need to return a success message here that the client will wait for
     redirect('/dashboard');
-    
-    return { success: true, message: "Login bem-sucedido!" };
 }
 
 

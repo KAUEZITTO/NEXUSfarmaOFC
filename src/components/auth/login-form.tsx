@@ -6,10 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { login } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
-import { LoadingCapsule } from '../ui/loading-capsule';
 import { useToast } from '@/hooks/use-toast';
 
 export function LoginForm() {
@@ -26,23 +25,21 @@ export function LoginForm() {
     const formData = new FormData(event.currentTarget);
     
     // The login action is called outside the try/catch block.
-    // This is because `redirect()` in Next.js works by throwing an error,
-    // which we don't want to catch here.
+    // Next.js's `redirect()` works by throwing an error, which we don't want to catch.
     // We will only catch specific validation errors returned from the action.
     const result = await login(formData);
 
     if (result && !result.success) {
       setErrorMessage(result.message);
-    } else if (result?.success) {
-      toast({
-        title: 'Login bem-sucedido!',
-        description: 'Bem-vindo(a) de volta!',
-      });
-      // The redirect is handled by the server action itself,
-      // but we still need to handle the success case on the client.
+      setIsPending(false);
+    } else {
+        // On successful login, the server action will handle the redirect.
+        // We show a toast here. The pending state will be ended by the page navigation.
+         toast({
+            title: 'Login bem-sucedido!',
+            description: 'Bem-vindo(a) de volta! Redirecionando...',
+        });
     }
-    
-    setIsPending(false);
   };
 
 
@@ -71,7 +68,7 @@ export function LoginForm() {
         />
       </div>
        <Button type="submit" className="w-full" disabled={isPending}>
-          {isPending && <LoadingCapsule />}
+          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {isPending ? 'Entrando...' : 'Entrar'}
         </Button>
       {errorMessage && (
