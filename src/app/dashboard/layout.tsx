@@ -23,9 +23,10 @@ import { CurrentUserProvider } from '@/hooks/use-current-user';
 
 
 const UPDATE_STORAGE_KEY = 'nexusfarma-last-seen-version';
-const CURRENT_VERSION = '1.1.4';
+const CURRENT_VERSION = '1.1.5';
 
 const changelog = [
+    { version: '1.1.5', changes: ['Correção de bugs 5.'] },
     { version: '1.1.4', changes: ['Remoção da dependência `@genkit-ai/google-cloud` para resolver erro crítico de build na Vercel.'] },
     { version: '1.1.3', changes: ['Refatoração de componentes para corrigir erros de pré-renderização (prerender-error) em múltiplas páginas do dashboard.'] },
     { version: '1.1.2', changes: ['Refatoração de componentes para corrigir erros de pré-renderização (prerender-error) em múltiplas páginas do dashboard.'] },
