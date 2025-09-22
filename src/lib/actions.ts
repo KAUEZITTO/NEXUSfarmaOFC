@@ -10,7 +10,6 @@ import { redirect } from 'next/navigation';
 import * as jose from 'jose';
 import bcrypt from 'bcrypt';
 import { stat, mkdir } from 'fs/promises';
-import { cache } from 'react';
 import { kv } from './kv';
 
 
@@ -19,10 +18,10 @@ const uploadPath = path.join(process.cwd(), 'public', 'uploads');
 
 // --- FILE I/O HELPERS ---
 
-const readData = cache(async <T>(key: string): Promise<T[]> => {
+const readData = async <T>(key: string): Promise<T[]> => {
     const data = await kv.get<T[]>(key);
     return data || [];
-});
+};
 
 async function writeData<T>(key: string, data: T[]): Promise<void> {
     await kv.set(key, data);
@@ -44,7 +43,13 @@ export async function getCurrentUser(): Promise<User | null> {
         if (!userId) return null;
 
         const users = await readData<User>('users');
-        return users.find(u => u.id === userId) || null;
+        const user = users.find(u => u.id === userId) || null;
+        if (user) {
+            // Never return the password hash
+            const { password, ...userWithoutPassword } = user;
+            return userWithoutPassword as User;
+        }
+        return null;
 
     } catch (error) {
         console.error("Failed to verify session cookie:", error);
@@ -128,7 +133,12 @@ export async function getAllUsers(): Promise<User[]> {
     if (currentUser?.accessLevel !== 'Admin') {
         throw new Error("Acesso não autorizado.");
     }
-    return await readData<User>('users');
+    const users = await readData<User>('users');
+    // Ensure passwords are not returned
+    return users.map(u => {
+        const { password, ...userWithoutPassword } = u;
+        return userWithoutPassword as User;
+    });
 }
 
 
@@ -185,7 +195,7 @@ async function logStockMovement(
 }
 
 // --- KNOWLEDGE BASE ---
-export const getKnowledgeBase = cache(async (): Promise<KnowledgeBaseItem[]> => {
+export const getKnowledgeBase = async (): Promise<KnowledgeBaseItem[]> => {
     const filePath = path.join(dataPath, 'knowledge-base.json');
      try {
         const fileContent = await fs.readFile(filePath, 'utf-8');
@@ -197,7 +207,7 @@ export const getKnowledgeBase = cache(async (): Promise<KnowledgeBaseItem[]> => 
         console.error(`Error reading knowledge-base.json:`, error);
         throw error;
   }
-});
+};
 
 // --- IMAGE UPLOAD ---
 export async function uploadImage(formData: FormData): Promise<{ success: boolean; filePath?: string; error?: string }> {
@@ -228,9 +238,9 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
 
 // --- PRODUCTS ACTIONS ---
 
-export const getProducts = cache(async (): Promise<Product[]> => {
+export const getProducts = async (): Promise<Product[]> => {
     return await readData<Product>('products');
-});
+};
 
 export async function getProduct(productId: string): Promise<Product | null> {
     const products = await getProducts();
@@ -283,9 +293,9 @@ export async function updateProduct(productId: string, productData: Partial<Prod
 
 // --- UNITS ACTIONS ---
 
-export const getUnits = cache(async (): Promise<Unit[]> => {
+export const getUnits = async (): Promise<Unit[]> => {
     return await readData<Unit>('units');
-});
+};
 
 export async function getUnit(unitId: string): Promise<Unit | null> {
     const units = await getUnits();
@@ -321,7 +331,7 @@ export async function updateUnit(unitId: string, unitData: Partial<Unit>) {
 
 // --- PATIENTS ACTIONS ---
 
-export const getPatients = cache(async (filter: PatientFilter = 'active'): Promise<Patient[]> => {
+export const getPatients = async (filter: PatientFilter = 'active'): Promise<Patient[]> => {
     const allPatients = await readData<Patient>('patients');
     
     switch (filter) {
@@ -343,11 +353,11 @@ export const getPatients = cache(async (filter: PatientFilter = 'active'): Promi
         default:
             return allPatients;
     }
-});
+};
 
-export const getAllPatients = cache(async (): Promise<Patient[]> => {
+export const getAllPatients = async (): Promise<Patient[]> => {
     return await readData<Patient>('patients');
-});
+};
 
 export async function getPatient(patientId: string): Promise<Patient | null> {
     const patients = await getAllPatients();
@@ -453,14 +463,14 @@ export async function addOrder(orderData: Omit<Order, 'id' | 'status' | 'sentDat
     return newOrder;
 }
 
-export const getOrdersForUnit = cache(async (unitId: string): Promise<Order[]> => {
+export const getOrdersForUnit = async (unitId: string): Promise<Order[]> => {
     const allOrders = await readData<Order>('orders');
     return allOrders.filter(o => o.unitId === unitId);
-});
+};
 
-export const getOrders = cache(async (): Promise<Order[]> => {
+export const getOrders = async (): Promise<Order[]> => {
     return await readData<Order>('orders');
-});
+};
 
 export async function getOrder(orderId: string): Promise<Order | null> {
     const orders = await getOrders();
@@ -491,14 +501,14 @@ export async function addDispensation(dispensationData: Omit<Dispensation, 'id' 
     return newDispensation;
 }
 
-export const getDispensationsForPatient = cache(async (patientId: string): Promise<Dispensation[]> => {
+export const getDispensationsForPatient = async (patientId: string): Promise<Dispensation[]> => {
     const allDispensations = await readData<Dispensation>('dispensations');
     return allDispensations.filter(d => d.patientId === patientId);
-});
+};
 
-export const getAllDispensations = cache(async (): Promise<Dispensation[]> => {
+export const getAllDispensations = async (): Promise<Dispensation[]> => {
     return await readData<Dispensation>('dispensations');
-});
+};
 
 export async function getDispensation(dispensationId: string): Promise<Dispensation | null> {
     const dispensations = await getAllDispensations();
@@ -507,9 +517,9 @@ export async function getDispensation(dispensationId: string): Promise<Dispensat
 
 // --- REPORTS ACTIONS ---
 
-export const getStockMovements = cache(async (): Promise<StockMovement[]> => {
+export const getStockMovements = async (): Promise<StockMovement[]> => {
     return await readData<StockMovement>('stockMovements');
-});
+};
 
 // --- DATA RESET ---
 export async function resetAllData() {
