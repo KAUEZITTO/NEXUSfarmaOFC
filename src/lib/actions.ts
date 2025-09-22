@@ -58,6 +58,7 @@ export async function getCurrentUser(): Promise<User | null> {
 };
 
 export async function register(userData: Omit<User, 'id' | 'password' | 'accessLevel'> & { password: string }): Promise<{ success: boolean; message: string }> {
+    'use server';
     const users = await readData<User>('users');
     if (users.find(u => u.email === userData.email)) {
         return { success: false, message: 'Este e-mail já está em uso.' };
@@ -86,6 +87,7 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
 
 
 export async function login(formData: FormData): Promise<{ success: boolean; message: string } | undefined> {
+    'use server';
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     
@@ -121,6 +123,7 @@ export async function login(formData: FormData): Promise<{ success: boolean; mes
 
 
 export async function logout() {
+  'use server';
   const user = await getCurrentUser();
   if (user) {
     await logActivity('Logout', `Usuário ${user.email} saiu.`);
@@ -129,6 +132,7 @@ export async function logout() {
 }
 
 export async function getAllUsers(): Promise<User[]> {
+    'use server';
     const currentUser = await getCurrentUser();
     if (currentUser?.accessLevel !== 'Admin') {
         throw new Error("Acesso não autorizado.");
@@ -211,6 +215,7 @@ export const getKnowledgeBase = async (): Promise<KnowledgeBaseItem[]> => {
 
 // --- IMAGE UPLOAD ---
 export async function uploadImage(formData: FormData): Promise<{ success: boolean; filePath?: string; error?: string }> {
+    'use server';
     try {
         const file = formData.get('image') as File;
         if (!file) {
@@ -248,6 +253,7 @@ export async function getProduct(productId: string): Promise<Product | null> {
 }
 
 export async function addProduct(product: Omit<Product, 'id' | 'status'>): Promise<Product> {
+    'use server';
     const products = await readData<Product>('products');
     const newProduct: Product = {
         id: `prod-${Date.now()}`,
@@ -264,6 +270,7 @@ export async function addProduct(product: Omit<Product, 'id' | 'status'>): Promi
 }
 
 export async function updateProduct(productId: string, productData: Partial<Product>): Promise<Product> {
+    'use server';
     let products = await readData<Product>('products');
     const productIndex = products.findIndex(p => p.id === productId);
 
@@ -303,6 +310,7 @@ export async function getUnit(unitId: string): Promise<Unit | null> {
 }
 
 export async function addUnit(unit: Omit<Unit, 'id'>) {
+    'use server';
     const units = await readData<Unit>('units');
     const newUnit: Unit = {
         id: `unit-${Date.now()}`,
@@ -317,6 +325,7 @@ export async function addUnit(unit: Omit<Unit, 'id'>) {
 }
 
 export async function updateUnit(unitId: string, unitData: Partial<Unit>) {
+    'use server';
     let units = await readData<Unit>('units');
     const unitIndex = units.findIndex(u => u.id === unitId);
     if (unitIndex === -1) throw new Error('Unit not found');
@@ -365,6 +374,7 @@ export async function getPatient(patientId: string): Promise<Patient | null> {
 }
 
 export async function addPatient(patient: Omit<Patient, 'id' | 'status'>) {
+    'use server';
     const patients = await readData<Patient>('patients');
     const newPatient: Patient = {
         id: `pat-${Date.now()}`,
@@ -379,6 +389,7 @@ export async function addPatient(patient: Omit<Patient, 'id' | 'status'>) {
 }
 
 export async function updatePatient(patientId: string, patientData: Partial<Patient>) {
+    'use server';
     let patients = await readData<Patient>('patients');
     const patientIndex = patients.findIndex(p => p.id === patientId);
     if (patientIndex === -1) throw new Error('Patient not found');
@@ -392,6 +403,7 @@ export async function updatePatient(patientId: string, patientData: Partial<Pati
 }
 
 export async function updatePatientStatus(patientId: string, status: PatientStatus) {
+    'use server';
     let patients = await readData<Patient>('patients');
     const patientIndex = patients.findIndex(p => p.id === patientId);
     if (patientIndex === -1) throw new Error('Patient not found');
@@ -441,6 +453,7 @@ async function processStockUpdate(items: (Order['items'] | Dispensation['items']
 // --- ORDERS ACTIONS ---
 
 export async function addOrder(orderData: Omit<Order, 'id' | 'status' | 'sentDate' | 'itemCount'>): Promise<Order> {
+    'use server';
     const newOrderId = `ord-${Date.now()}`;
     await processStockUpdate(orderData.items, 'Saída por Remessa', newOrderId);
     
@@ -480,6 +493,7 @@ export async function getOrder(orderId: string): Promise<Order | null> {
 // --- DISPENSATIONS ACTIONS ---
 
 export async function addDispensation(dispensationData: Omit<Dispensation, 'id' | 'date'>): Promise<Dispensation> {
+    'use server';
     const newDispensationId = `disp-${Date.now()}`;
     await processStockUpdate(dispensationData.items, 'Saída por Dispensação', newDispensationId);
     
@@ -523,6 +537,7 @@ export const getStockMovements = async (): Promise<StockMovement[]> => {
 
 // --- DATA RESET ---
 export async function resetAllData() {
+    'use server';
     const currentUser = await getCurrentUser();
     if (currentUser?.accessLevel !== 'Admin') {
         throw new Error("Acesso não autorizado para limpar dados.");

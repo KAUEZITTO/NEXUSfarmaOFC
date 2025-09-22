@@ -1,7 +1,5 @@
 
 
-'use server';
-
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import * as jose from 'jose';
@@ -53,22 +51,12 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
   }
 
-  // To avoid fetching user data here, we will handle it on the client side using an API route
-  // or a client component that fetches user data based on the cookie.
-  // We can pass a header to indicate the user is logged in, if needed, but not the full user object.
-  const response = NextResponse.next();
-  // We no longer pass the full user object to avoid KV calls in middleware.
-  // The client will fetch user data via an API route.
-  
-  // A better approach is to fetch user data in a client component layout
-  // This avoids passing sensitive data in headers and removes KV calls from middleware
-  
-  return response;
+  // Allow authenticated users to proceed
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$).*)'],
 };
-    
 
     
