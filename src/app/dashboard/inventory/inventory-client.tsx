@@ -37,6 +37,7 @@ export function InventoryClient({ initialProducts }: InventoryClientProps) {
     router.refresh();
   }
 
+  // getColumns is now called inside the client component
   const columns = getColumns(handleProductSaved);
   
   const filteredProducts = filterProducts(initialProducts, activeFilter).filter(p => 
@@ -86,6 +87,7 @@ export function InventoryClient({ initialProducts }: InventoryClientProps) {
             </div>
         </div>
       
+        {/* DataTable receives the columns and data directly */}
         <DataTable columns={columns} data={filteredProducts} filterColumn="name" />
     </>
   );

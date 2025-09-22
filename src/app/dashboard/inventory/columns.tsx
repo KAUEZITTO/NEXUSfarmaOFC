@@ -10,9 +10,9 @@ import { cn } from "@/lib/utils"
 import type { GroupedProduct } from "./page";
 import { BatchDetailsDialog } from "./batch-details-dialog";
 
-// Este componente de célula dedicado encapsula o estado do diálogo.
-// Isso garante que o estado (`useState`) seja contido em um componente cliente,
-// resolvendo o erro de pré-renderização.
+// This dedicated cell component encapsulates the dialog state.
+// This ensures that state (`useState`) is contained within a client component,
+// resolving the prerender error.
 const NameCell = ({ row, onProductSaved }: { row: any, onProductSaved: () => void; }) => {
     const product = row.original as GroupedProduct;
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -51,7 +51,7 @@ export const getColumns = (onProductSaved: () => void): ColumnDef<GroupedProduct
           </Button>
         )
       },
-      // Usamos o componente NameCell aqui, que é um Client Component
+      // We use the NameCell component here, which is a Client Component
       cell: ({ row }) => <NameCell row={row} onProductSaved={onProductSaved} />,
     },
     {

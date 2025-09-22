@@ -10,16 +10,19 @@ import {
 import { InventoryClient } from "./inventory-client";
 import type { Product } from "@/lib/types";
 
+// This type can be defined here or in the client component, doesn't matter much.
+// For clarity, we'll define it where it's used.
 export type GroupedProduct = Product & {
     batches: Product[];
     totalQuantity: number;
 }
 
-// Este é um Server Component. Sua única responsabilidade é buscar os dados.
+// This is a Server Component. Its only responsibility is to fetch the data.
 export default async function InventoryPage() {
   const products = await getProducts();
   
-  // A lógica de agrupamento permanece no servidor, pois é computação de dados.
+  // The grouping logic is moved to the client component.
+  // The server component now only passes the raw data.
   const groupedProductsMap = new Map<string, GroupedProduct>();
 
   products.forEach(product => {
@@ -65,7 +68,7 @@ export default async function InventoryPage() {
         </div>
       </CardHeader>
       <CardContent>
-         {/* Os dados são passados para o Client Component que lida com a interatividade. */}
+         {/* The data is passed to the Client Component which handles interactivity. */}
          <InventoryClient initialProducts={groupedProducts} />
       </CardContent>
     </Card>
