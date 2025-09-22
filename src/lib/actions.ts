@@ -34,7 +34,7 @@ async function writeData<T>(key: string, data: T[]): Promise<void> {
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 const saltRounds = 10;
 
-export const getCurrentUser = cache(async (): Promise<User | null> => {
+export async function getCurrentUser(): Promise<User | null> {
     const sessionCookie = cookies().get('session')?.value;
     if (!sessionCookie) return null;
 
@@ -50,7 +50,7 @@ export const getCurrentUser = cache(async (): Promise<User | null> => {
         console.error("Failed to verify session cookie:", error);
         return null;
     }
-});
+};
 
 export async function register(userData: Omit<User, 'id' | 'password' | 'accessLevel'> & { password: string }): Promise<{ success: boolean; message: string }> {
     const users = await readData<User>('users');
