@@ -9,13 +9,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, FileText, Loader2, BarChart2, Package, Users, AlertTriangle } from "lucide-react";
+import { Download, FileText, Loader2, BarChart2, Package, Users, AlertTriangle, Sparkles } from "lucide-react";
 import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF, generatePatientReportPDF, generateUnitDispensationReportPDF, generateBatchReportPDF, generateEntriesAndExitsReportPDF } from "@/lib/pdf-generator";
 import { useState } from "react";
 import type { Product, Patient, Dispensation, Unit, Order, StockMovement } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
-import { AnalyticsChat } from "@/components/dashboard/analytics-chat";
 
 type GeneratingState = {
     complete: boolean;
@@ -211,7 +210,20 @@ export function ReportsClient({
             </div>
             
             <Card className="lg:col-span-1 h-full flex flex-col">
-               <AnalyticsChat />
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-primary" />
+                        Análise com IA
+                    </CardTitle>
+                    <CardDescription>
+                        Funcionalidade temporariamente desativada.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow flex flex-col items-center justify-center text-center text-muted-foreground">
+                    <Loader2 className="h-8 w-8 animate-spin mb-4" />
+                    <p>O assistente de IA está em manutenção.</p>
+                    <p className="text-xs">Esta funcionalidade será reativada em breve.</p>
+                </CardContent>
             </Card>
 
         </div>
