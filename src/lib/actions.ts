@@ -1,4 +1,3 @@
-
 'use server';
 
 import { promises as fs } from 'fs';
@@ -132,7 +131,6 @@ export async function logout() {
 }
 
 export async function getAllUsers(): Promise<User[]> {
-    'use server';
     const currentUser = await getCurrentUser();
     if (currentUser?.accessLevel !== 'Admin') {
         throw new Error("Acesso não autorizado.");
@@ -557,5 +555,3 @@ export async function resetAllData() {
     // Revalidar caminhos para refletir os dados limpos na UI
     revalidatePath('/dashboard', 'layout');
 }
-
-    
