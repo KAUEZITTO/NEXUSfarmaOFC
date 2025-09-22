@@ -155,5 +155,3 @@ export const getKnowledgeBase = async (): Promise<KnowledgeBaseItem[]> => {
         throw error;
   }
 };
-
-    
