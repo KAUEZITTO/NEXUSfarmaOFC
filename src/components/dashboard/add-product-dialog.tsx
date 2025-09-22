@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -23,7 +22,8 @@ import {
 } from '@/components/ui/select';
 import { Save, Loader2, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { addProduct, updateProduct, getKnowledgeBase, uploadImage } from '@/lib/actions';
+import { addProduct, updateProduct, uploadImage } from '@/lib/actions';
+import { getKnowledgeBase } from '@/lib/data';
 import type { Product, KnowledgeBaseItem } from '@/lib/types';
 import { ProductSavedDialog } from './product-saved-dialog';
 import { useDebounce } from 'use-debounce';

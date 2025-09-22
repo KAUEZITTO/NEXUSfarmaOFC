@@ -41,7 +41,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { OverviewChart } from "@/components/dashboard/overview-chart"
-import { getProducts, getOrders, getAllDispensations } from "@/lib/actions"
+import { getProducts, getOrders, getAllDispensations } from "@/lib/data"
 import type { Product, Order, Unit, Dispensation } from "@/lib/types"
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart"
 

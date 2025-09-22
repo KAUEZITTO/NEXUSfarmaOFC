@@ -1,5 +1,5 @@
 
-import { getProducts } from "@/lib/actions";
+import { getProducts } from "@/lib/data";
 import {
   Card,
   CardContent,

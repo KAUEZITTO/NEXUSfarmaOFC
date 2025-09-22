@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useEffect, useState } from "react";
@@ -17,7 +15,7 @@ import { Logo } from "@/components/logo";
 import Image from "next/image";
 import { useRouter } from 'next/navigation';
 import type { Order, OrderItem } from "@/lib/types";
-import { getOrder } from "@/lib/actions";
+import { getOrder } from "@/lib/data";
 
 const renderItemRows = (items: OrderItem[]) => {
     if (!items || items.length === 0) return null;

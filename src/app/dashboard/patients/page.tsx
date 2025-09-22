@@ -1,5 +1,5 @@
 
-import { getPatients } from "@/lib/actions";
+import { getPatients } from "@/lib/data";
 import { PatientsClient } from "./patients-client";
 
 export const dynamic = 'force-dynamic';

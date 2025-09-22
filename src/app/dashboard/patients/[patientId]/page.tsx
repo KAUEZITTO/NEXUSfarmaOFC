@@ -1,5 +1,5 @@
 
-import { getPatient, getDispensationsForPatient } from "@/lib/actions";
+import { getPatient, getDispensationsForPatient } from "@/lib/data";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
 import {

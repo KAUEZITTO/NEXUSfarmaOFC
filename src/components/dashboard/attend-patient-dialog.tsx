@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
@@ -26,7 +25,8 @@ import {
   ClipboardList,
   Loader2,
 } from 'lucide-react';
-import { getPatients, getProducts, addDispensation } from '@/lib/actions';
+import { addDispensation } from '@/lib/actions';
+import { getPatients, getProducts } from '@/lib/data';
 import type { Patient, Product, DispensationItem as DispensationItemType } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';

@@ -1,5 +1,5 @@
 
-import { getUnits } from "@/lib/actions";
+import { getUnits } from "@/lib/data";
 import { UnitsClient } from './units-client';
 
 export const dynamic = 'force-dynamic';

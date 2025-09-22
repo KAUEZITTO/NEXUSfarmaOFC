@@ -1,5 +1,5 @@
 
-import { getProduct } from '@/lib/actions';
+import { getProduct } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { LabelPageClient } from './label-page-client';
 import type { Product } from '@/lib/types';

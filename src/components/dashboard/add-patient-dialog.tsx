@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -26,7 +25,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PlusCircle, Save, Trash2, Loader2 } from 'lucide-react';
-import { getUnits, addPatient, updatePatient } from '@/lib/actions';
+import { addPatient, updatePatient } from '@/lib/actions';
+import { getUnits } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import type { Patient, Dosage, Unit } from '@/lib/types';
 import { Separator } from '../ui/separator';

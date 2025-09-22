@@ -1,63 +1,24 @@
 'use server';
 
-import { promises as fs } from 'fs';
-import path from 'path';
-import { Product, Unit, Patient, Order, Dispensation, StockMovement, PatientFilter, PatientStatus, User, KnowledgeBaseItem, Role, SubRole } from './types';
+import { Product, Unit, Patient, Order, Dispensation, StockMovement, PatientStatus, User, Role, SubRole } from './types';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import * as jose from 'jose';
 import bcrypt from 'bcrypt';
-import { stat, mkdir } from 'fs/promises';
-import { kv } from './kv';
+import { mkdir } from 'fs/promises';
+import { promises as fs } from 'fs';
+import path from 'path';
+import { readData, writeData } from './data';
+import { getCurrentUser } from './data';
 
-
-const dataPath = path.join(process.cwd(), 'src', 'data');
 const uploadPath = path.join(process.cwd(), 'public', 'uploads');
-
-// --- FILE I/O HELPERS ---
-
-const readData = async <T>(key: string): Promise<T[]> => {
-    const data = await kv.get<T[]>(key);
-    return data || [];
-};
-
-async function writeData<T>(key: string, data: T[]): Promise<void> {
-    await kv.set(key, data);
-}
-
-
-// --- AUTH ACTIONS ---
-
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 const saltRounds = 10;
 
-export async function getCurrentUser(): Promise<User | null> {
-    const sessionCookie = cookies().get('session')?.value;
-    if (!sessionCookie) return null;
-
-    try {
-        const { payload } = await jose.jwtVerify(sessionCookie, secret);
-        const userId = payload.sub;
-        if (!userId) return null;
-
-        const users = await readData<User>('users');
-        const user = users.find(u => u.id === userId) || null;
-        if (user) {
-            // Never return the password hash
-            const { password, ...userWithoutPassword } = user;
-            return userWithoutPassword as User;
-        }
-        return null;
-
-    } catch (error) {
-        console.error("Failed to verify session cookie:", error);
-        return null;
-    }
-};
+// --- AUTH ACTIONS ---
 
 export async function register(userData: Omit<User, 'id' | 'password' | 'accessLevel'> & { password: string }): Promise<{ success: boolean; message: string }> {
-    'use server';
     const users = await readData<User>('users');
     if (users.find(u => u.email === userData.email)) {
         return { success: false, message: 'Este e-mail já está em uso.' };
@@ -65,7 +26,6 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
 
     const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
     
-    // First user registered is an Admin, others are Users
     const accessLevel = users.length === 0 ? 'Admin' : 'User';
 
     const newUser: User = {
@@ -86,7 +46,6 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
 
 
 export async function login(formData: FormData): Promise<{ success: boolean; message: string } | undefined> {
-    'use server';
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     
@@ -122,27 +81,12 @@ export async function login(formData: FormData): Promise<{ success: boolean; mes
 
 
 export async function logout() {
-  'use server';
   const user = await getCurrentUser();
   if (user) {
     await logActivity('Logout', `Usuário ${user.email} saiu.`);
   }
   cookies().delete('session');
 }
-
-export async function getAllUsers(): Promise<User[]> {
-    const currentUser = await getCurrentUser();
-    if (currentUser?.accessLevel !== 'Admin') {
-        throw new Error("Acesso não autorizado.");
-    }
-    const users = await readData<User>('users');
-    // Ensure passwords are not returned
-    return users.map(u => {
-        const { password, ...userWithoutPassword } = u;
-        return userWithoutPassword as User;
-    });
-}
-
 
 // --- ACTIVITY LOGGING ---
 
@@ -196,24 +140,8 @@ async function logStockMovement(
     await writeData('stockMovements', movements);
 }
 
-// --- KNOWLEDGE BASE ---
-export const getKnowledgeBase = async (): Promise<KnowledgeBaseItem[]> => {
-    const filePath = path.join(dataPath, 'knowledge-base.json');
-     try {
-        const fileContent = await fs.readFile(filePath, 'utf-8');
-        return JSON.parse(fileContent);
-    } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-          return [];
-        }
-        console.error(`Error reading knowledge-base.json:`, error);
-        throw error;
-  }
-};
-
 // --- IMAGE UPLOAD ---
 export async function uploadImage(formData: FormData): Promise<{ success: boolean; filePath?: string; error?: string }> {
-    'use server';
     try {
         const file = formData.get('image') as File;
         if (!file) {
@@ -241,17 +169,7 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
 
 // --- PRODUCTS ACTIONS ---
 
-export const getProducts = async (): Promise<Product[]> => {
-    return await readData<Product>('products');
-};
-
-export async function getProduct(productId: string): Promise<Product | null> {
-    const products = await getProducts();
-    return products.find(p => p.id === productId) || null;
-}
-
 export async function addProduct(product: Omit<Product, 'id' | 'status'>): Promise<Product> {
-    'use server';
     const products = await readData<Product>('products');
     const newProduct: Product = {
         id: `prod-${Date.now()}`,
@@ -268,7 +186,6 @@ export async function addProduct(product: Omit<Product, 'id' | 'status'>): Promi
 }
 
 export async function updateProduct(productId: string, productData: Partial<Product>): Promise<Product> {
-    'use server';
     let products = await readData<Product>('products');
     const productIndex = products.findIndex(p => p.id === productId);
 
@@ -285,7 +202,7 @@ export async function updateProduct(productId: string, productData: Partial<Prod
         updatedProduct.status = productData.quantity > 0 ? (productData.quantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque';
         const quantityChange = productData.quantity - quantityBefore;
         const type = quantityChange > 0 ? 'Entrada' : 'Saída';
-        await logStockMovement(productId, productData.name || oldProductData.name, type, 'Ajuste de Inventário', quantityChange, quantityBefore);
+        await logStockMovement(productId, productData.name || oldProductData.name, 'Ajuste', 'Ajuste de Inventário', quantityChange, quantityBefore);
     }
     
     products[productIndex] = updatedProduct;
@@ -298,17 +215,7 @@ export async function updateProduct(productId: string, productData: Partial<Prod
 
 // --- UNITS ACTIONS ---
 
-export const getUnits = async (): Promise<Unit[]> => {
-    return await readData<Unit>('units');
-};
-
-export async function getUnit(unitId: string): Promise<Unit | null> {
-    const units = await getUnits();
-    return units.find(u => u.id === unitId) || null;
-}
-
 export async function addUnit(unit: Omit<Unit, 'id'>) {
-    'use server';
     const units = await readData<Unit>('units');
     const newUnit: Unit = {
         id: `unit-${Date.now()}`,
@@ -323,7 +230,6 @@ export async function addUnit(unit: Omit<Unit, 'id'>) {
 }
 
 export async function updateUnit(unitId: string, unitData: Partial<Unit>) {
-    'use server';
     let units = await readData<Unit>('units');
     const unitIndex = units.findIndex(u => u.id === unitId);
     if (unitIndex === -1) throw new Error('Unit not found');
@@ -338,41 +244,7 @@ export async function updateUnit(unitId: string, unitData: Partial<Unit>) {
 
 // --- PATIENTS ACTIONS ---
 
-export const getPatients = async (filter: PatientFilter = 'active'): Promise<Patient[]> => {
-    const allPatients = await readData<Patient>('patients');
-    
-    switch (filter) {
-        case 'active':
-            return allPatients.filter(p => p.status === 'Ativo');
-        case 'inactive':
-            return allPatients.filter(p => p.status !== 'Ativo');
-        case 'insulin':
-            return allPatients.filter(p => p.isAnalogInsulinUser && p.status === 'Ativo');
-        case 'diapers':
-             return allPatients.filter(p => p.municipalItems?.includes('Fraldas') && p.status === 'Ativo');
-        case 'bedridden':
-            return allPatients.filter(p => p.isBedridden && p.status === 'Ativo');
-        case 'legal':
-            return allPatients.filter(p => p.mandateType === 'Legal' && p.status === 'Ativo');
-        case 'municipal':
-            return allPatients.filter(p => p.mandateType === 'Municipal' && p.status === 'Ativo');
-        case 'all':
-        default:
-            return allPatients;
-    }
-};
-
-export const getAllPatients = async (): Promise<Patient[]> => {
-    return await readData<Patient>('patients');
-};
-
-export async function getPatient(patientId: string): Promise<Patient | null> {
-    const patients = await getAllPatients();
-    return patients.find(p => p.id === patientId) || null;
-}
-
 export async function addPatient(patient: Omit<Patient, 'id' | 'status'>) {
-    'use server';
     const patients = await readData<Patient>('patients');
     const newPatient: Patient = {
         id: `pat-${Date.now()}`,
@@ -387,7 +259,6 @@ export async function addPatient(patient: Omit<Patient, 'id' | 'status'>) {
 }
 
 export async function updatePatient(patientId: string, patientData: Partial<Patient>) {
-    'use server';
     let patients = await readData<Patient>('patients');
     const patientIndex = patients.findIndex(p => p.id === patientId);
     if (patientIndex === -1) throw new Error('Patient not found');
@@ -401,7 +272,6 @@ export async function updatePatient(patientId: string, patientData: Partial<Pati
 }
 
 export async function updatePatientStatus(patientId: string, status: PatientStatus) {
-    'use server';
     let patients = await readData<Patient>('patients');
     const patientIndex = patients.findIndex(p => p.id === patientId);
     if (patientIndex === -1) throw new Error('Patient not found');
@@ -451,7 +321,6 @@ async function processStockUpdate(items: (Order['items'] | Dispensation['items']
 // --- ORDERS ACTIONS ---
 
 export async function addOrder(orderData: Omit<Order, 'id' | 'status' | 'sentDate' | 'itemCount'>): Promise<Order> {
-    'use server';
     const newOrderId = `ord-${Date.now()}`;
     await processStockUpdate(orderData.items, 'Saída por Remessa', newOrderId);
     
@@ -474,24 +343,9 @@ export async function addOrder(orderData: Omit<Order, 'id' | 'status' | 'sentDat
     return newOrder;
 }
 
-export const getOrdersForUnit = async (unitId: string): Promise<Order[]> => {
-    const allOrders = await readData<Order>('orders');
-    return allOrders.filter(o => o.unitId === unitId);
-};
-
-export const getOrders = async (): Promise<Order[]> => {
-    return await readData<Order>('orders');
-};
-
-export async function getOrder(orderId: string): Promise<Order | null> {
-    const orders = await getOrders();
-    return orders.find(o => o.id === orderId) || null;
-}
-
 // --- DISPENSATIONS ACTIONS ---
 
 export async function addDispensation(dispensationData: Omit<Dispensation, 'id' | 'date'>): Promise<Dispensation> {
-    'use server';
     const newDispensationId = `disp-${Date.now()}`;
     await processStockUpdate(dispensationData.items, 'Saída por Dispensação', newDispensationId);
     
@@ -513,45 +367,20 @@ export async function addDispensation(dispensationData: Omit<Dispensation, 'id' 
     return newDispensation;
 }
 
-export const getDispensationsForPatient = async (patientId: string): Promise<Dispensation[]> => {
-    const allDispensations = await readData<Dispensation>('dispensations');
-    return allDispensations.filter(d => d.patientId === patientId);
-};
-
-export const getAllDispensations = async (): Promise<Dispensation[]> => {
-    return await readData<Dispensation>('dispensations');
-};
-
-export async function getDispensation(dispensationId: string): Promise<Dispensation | null> {
-    const dispensations = await getAllDispensations();
-    return dispensations.find(d => d.id === dispensationId) || null;
-}
-
-// --- REPORTS ACTIONS ---
-
-export const getStockMovements = async (): Promise<StockMovement[]> => {
-    return await readData<StockMovement>('stockMovements');
-};
-
 // --- DATA RESET ---
 export async function resetAllData() {
-    'use server';
     const currentUser = await getCurrentUser();
     if (currentUser?.accessLevel !== 'Admin') {
         throw new Error("Acesso não autorizado para limpar dados.");
     }
     
-    // Lista de todas as chaves de dados
     const dataKeys = ['products', 'units', 'patients', 'orders', 'dispensations', 'stockMovements', 'logs'];
 
     for (const key of dataKeys) {
         await writeData(key, []);
     }
-
-    // A chave de usuários não é limpa, mas o primeiro usuário pode ser resetado se necessário
-    // Por segurança, vamos apenas registrar a ação
+    
     await logActivity('Reset de Dados', `Todos os dados da aplicação foram limpos pelo administrador ${currentUser.email}.`);
     
-    // Revalidar caminhos para refletir os dados limpos na UI
     revalidatePath('/dashboard', 'layout');
 }

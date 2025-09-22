@@ -1,5 +1,5 @@
 
-import { getUnits } from "@/lib/actions";
+import { getUnits } from "@/lib/data";
 import {
   Card,
   CardContent,

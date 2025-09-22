@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useEffect, useState } from "react";
@@ -17,7 +15,7 @@ import { Logo } from "@/components/logo";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { Dispensation, DispensationItem } from "@/lib/types";
-import { getDispensation } from "@/lib/actions";
+import { getDispensation } from "@/lib/data";
 
 
 const renderItemRows = (items: DispensationItem[]) => {

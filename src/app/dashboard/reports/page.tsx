@@ -1,5 +1,5 @@
 
-import { getProducts, getAllPatients, getAllDispensations, getUnits, getOrders, getStockMovements } from "@/lib/actions";
+import { getProducts, getAllPatients, getAllDispensations, getUnits, getOrders, getStockMovements } from "@/lib/data";
 import { ReportsClient } from "./reports-client";
 
 export const dynamic = 'force-dynamic';

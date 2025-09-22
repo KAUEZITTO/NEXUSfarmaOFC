@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -29,7 +28,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { X, Save, Trash2, Loader2, Barcode, Warehouse, PackagePlus } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
-import { getUnits, getProducts, addOrder } from '@/lib/actions';
+import { addOrder } from '@/lib/actions';
+import { getUnits, getProducts } from '@/lib/data';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { Unit, Product } from '@/lib/types';

@@ -1,5 +1,5 @@
 
-import { getAllUsers } from "@/lib/actions";
+import { getAllUsers } from "@/lib/data";
 import {
   Card,
   CardContent,
