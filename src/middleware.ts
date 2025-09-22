@@ -2,19 +2,13 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import * as jose from 'jose';
-import { User } from '@/lib/types';
-import { kv } from '@/lib/kv';
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 
-async function getUserFromToken(token: string): Promise<User | null> {
+async function verifyToken(token: string): Promise<jose.JWTPayload | null> {
   try {
     const { payload } = await jose.jwtVerify(token, secret);
-    const userId = payload.sub;
-    if (!userId) return null;
-
-    const users = await kv.get<User[]>('users');
-    return users?.find(u => u.id === userId) || null;
+    return payload;
   } catch (e) {
     return null;
   }
@@ -27,9 +21,9 @@ export async function middleware(request: NextRequest) {
   const isAuthPage = pathname === '/login' || pathname === '/register';
   const isAdminRoute = pathname.startsWith('/dashboard/user-management');
 
-  const user = sessionCookie ? await getUserFromToken(sessionCookie) : null;
+  const payload = sessionCookie ? await verifyToken(sessionCookie) : null;
 
-  if (!user) {
+  if (!payload) {
     // Allow access to the landing page at the root
     if (pathname === '/') {
         return NextResponse.next();
@@ -47,7 +41,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // If user is not an admin and tries to access admin routes, redirect to dashboard
-  if (isAdminRoute && user.accessLevel !== 'Admin') {
+  if (isAdminRoute && payload.accessLevel !== 'Admin') {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
@@ -56,12 +50,21 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
   }
 
+  // To avoid fetching user data here, we will handle it on the client side using an API route
+  // or a client component that fetches user data based on the cookie.
+  // We can pass a header to indicate the user is logged in, if needed, but not the full user object.
   const response = NextResponse.next();
-  // Pass user data to the client-side via headers for easy access
-  response.headers.set('x-user-data', JSON.stringify(user));
+  // We no longer pass the full user object to avoid KV calls in middleware.
+  // The client will fetch user data via an API route.
+  
+  // A better approach is to fetch user data in a client component layout
+  // This avoids passing sensitive data in headers and removes KV calls from middleware
+  
   return response;
 }
 
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$).*)'],
 };
+
+    

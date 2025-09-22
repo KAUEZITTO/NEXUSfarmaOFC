@@ -1,19 +1,17 @@
 
-import { headers } from 'next/headers';
+import { getCurrentUser } from '@/lib/actions';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
-  const headersList = headers();
-  const userData = headersList.get('x-user-data');
+  const user = await getCurrentUser();
 
-  if (userData) {
-    try {
-      const user = JSON.parse(userData);
-      return NextResponse.json(user);
-    } catch (error) {
-      return new NextResponse('Error parsing user data', { status: 500 });
-    }
+  if (user) {
+    // We don't want to expose the password hash
+    const { password, ...userData } = user;
+    return NextResponse.json(userData);
   }
 
-  return new NextResponse('User data not found', { status: 404 });
+  return new NextResponse('User not found', { status: 404 });
 }
+
+    
