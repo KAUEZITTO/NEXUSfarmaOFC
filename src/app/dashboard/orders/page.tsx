@@ -21,7 +21,7 @@ export default async function OrdersPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-          <OrdersClient initialUnits={units} />
+          <OrdersClient units={units} />
       </CardContent>
     </Card>
   );

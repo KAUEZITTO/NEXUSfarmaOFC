@@ -1,8 +1,10 @@
+
 "use client"
 
 import { useEffect, useState } from "react";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from "recharts"
 import type { Dispensation } from "@/lib/types";
+import { Skeleton } from "../ui/skeleton";
 
 const getChartData = (dispensations: Dispensation[]) => {
   const data: { month: string; total: number }[] = [];
@@ -27,15 +29,17 @@ const getChartData = (dispensations: Dispensation[]) => {
 
 export function MonthlyConsumptionChart({ dispensations }: { dispensations: Dispensation[] }) {
     const [chartData, setChartData] = useState<{ month: string; total: number }[]>([]);
+    const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
-        // Prevent hydration mismatch by calculating on the client
+        // This ensures the component has mounted on the client before doing calculations
+        setIsClient(true);
         setChartData(getChartData(dispensations));
     }, [dispensations]);
 
     // Render a placeholder or nothing until client-side calculation is done
-    if (chartData.length === 0) {
-        return <div className="h-[350px] w-full flex items-center justify-center text-muted-foreground">Carregando dados do gráfico...</div>;
+    if (!isClient) {
+        return <Skeleton className="h-[350px] w-full" />;
     }
 
   return (

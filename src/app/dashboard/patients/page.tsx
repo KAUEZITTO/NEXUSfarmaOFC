@@ -2,9 +2,6 @@
 import { getPatients } from "@/lib/actions";
 import { PatientsClient } from "./patients-client";
 
-// A diretiva 'force-dynamic' garante que a página sempre busque os dados mais recentes.
-export const dynamic = 'force-dynamic';
-
 export default async function PatientsPage({
   searchParams,
 }: {
