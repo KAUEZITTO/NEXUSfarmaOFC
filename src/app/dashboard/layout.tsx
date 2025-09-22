@@ -23,9 +23,10 @@ import { CurrentUserProvider } from '@/hooks/use-current-user';
 
 
 const UPDATE_STORAGE_KEY = 'nexusfarma-last-seen-version';
-const CURRENT_VERSION = '1.1.7';
+const CURRENT_VERSION = '1.1.8';
 
 const changelog = [
+    { version: '1.1.8', changes: ['Refatoração do middleware de autenticação para corrigir erro crítico de build.'] },
     { version: '1.1.7', changes: ['Correção de bugs 12.'] },
     { version: '1.1.6', changes: ['Refatoração global da arquitetura do dashboard para corrigir erros de pré-renderização.'] },
     { version: '1.1.5', changes: ['Correção de bugs 5.'] },
