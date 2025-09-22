@@ -12,6 +12,8 @@ import {
 import { notFound } from "next/navigation";
 import { User } from "lucide-react";
 
+export const dynamic = 'force-dynamic';
+
 export default async function PatientHistoryPage({ params }: { params: { patientId: string } }) {
   const patient = await getPatient(params.patientId);
 

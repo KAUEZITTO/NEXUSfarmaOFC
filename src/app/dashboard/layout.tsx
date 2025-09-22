@@ -90,7 +90,9 @@ export default function DashboardLayout({
                 </main>
               </div>
             </div>
-            <TourGuide />
+            <TourGuide isTourActive={false} setIsTourActive={function (isActive: boolean): void {
+            throw new Error('Function not implemented.');
+          } } />
 
             <AlertDialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
                 <AlertDialogContent>

@@ -2,6 +2,8 @@
 import { getPatients } from "@/lib/actions";
 import { PatientsClient } from "./patients-client";
 
+export const dynamic = 'force-dynamic';
+
 export default async function PatientsPage({
   searchParams,
 }: {
