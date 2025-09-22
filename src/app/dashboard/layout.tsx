@@ -23,9 +23,10 @@ import { CurrentUserProvider } from '@/hooks/use-current-user';
 
 
 const UPDATE_STORAGE_KEY = 'nexusfarma-last-seen-version';
-const CURRENT_VERSION = '1.2.5';
+const CURRENT_VERSION = '1.2.6';
 
 const changelog = [
+    { version: '1.2.6', changes: ['Correção de bugs 10: Forçada renderização dinâmica da API de usuário para resolver erro de coleta de dados no build.'] },
     { version: '1.2.5', changes: ['Correção de bugs 8: Refatorado middleware novamente para garantir que nenhuma chamada ao banco de dados ocorra durante o build, resolvendo o erro de coleta de dados.'] },
     { version: '1.2.4', changes: ['Correção de bugs 7: Refatorado middleware para remover chamadas ao banco de dados durante o build, resolvendo erro crítico de coleta de dados.'] },
     { version: '1.2.3', changes: ['Correção de bugs 6: Remoção completa da funcionalidade de IA para estabilizar o build.'] },
