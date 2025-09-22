@@ -23,14 +23,9 @@ import { CurrentUserProvider } from '@/hooks/use-current-user';
 
 
 const UPDATE_STORAGE_KEY = 'nexusfarma-last-seen-version';
-const CURRENT_VERSION = '1.2.2';
+const CURRENT_VERSION = '1.1.4';
 
 const changelog = [
-    { version: '1.2.2', changes: ['Correção de Bugs: Removida dependência não utilizada que causava erro crítico de build na Vercel.'] },
-    { version: '1.2.1', changes: ['Cadastros e Serviços 1: Corrigido erro crítico que impedia a conexão com o banco de dados, reativando o login e o salvamento de todos os cadastros.'] },
-    { version: '1.2.0', changes: ['Implementada renderização dinâmica em todas as páginas do dashboard para resolver erros de pré-renderização.'] },
-    { version: '1.1.6', changes: ['Refatoração global de todos os componentes do dashboard para corrigir os erros de pré-renderização que persistiam.'] },
-    { version: '1.1.5', changes: ['Refatoração de componentes para corrigir erros de pré-renderização (prerender-error) em múltiplas páginas do dashboard.'] },
     { version: '1.1.4', changes: ['Remoção da dependência `@genkit-ai/google-cloud` para resolver erro crítico de build na Vercel.'] },
     { version: '1.1.3', changes: ['Refatoração de componentes para corrigir erros de pré-renderização (prerender-error) em múltiplas páginas do dashboard.'] },
     { version: '1.1.2', changes: ['Refatoração de componentes para corrigir erros de pré-renderização (prerender-error) em múltiplas páginas do dashboard.'] },
