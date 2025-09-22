@@ -2,6 +2,8 @@
 import { getCurrentUser } from '@/lib/actions';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   const user = await getCurrentUser();
 
@@ -13,5 +15,3 @@ export async function GET(request: Request) {
 
   return new NextResponse('User not found', { status: 404 });
 }
-
-    
