@@ -1,4 +1,3 @@
-
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
@@ -49,7 +48,7 @@ export const columns: ColumnDef<Unit>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
             <DropdownMenuItem asChild>
-                <Link href={`/dashboard/orders/history/${unit.id}`} className="w-full h-full flex items-center">
+                <Link href={`/dashboard/orders/history/${unit.id}`} className="w-full h-full flex items-center cursor-pointer">
                     <Eye className="mr-2 h-4 w-4" />
                     Ver Histórico de Pedidos
                 </Link>

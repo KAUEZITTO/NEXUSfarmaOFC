@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -37,7 +36,7 @@ export function InventoryClient({ initialProducts }: InventoryClientProps) {
     router.refresh();
   }
 
-  const columns = getColumns({ onProductSaved: handleProductSaved });
+  const columns = getColumns(handleProductSaved);
   
   const filteredProducts = filterProducts(initialProducts, activeFilter).filter(p => 
       p.name.toLowerCase().includes(searchTerm.toLowerCase())

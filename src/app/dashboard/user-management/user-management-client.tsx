@@ -1,8 +1,7 @@
-
 'use client';
 
 import { DataTable } from "@/components/ui/data-table";
-import { columns } from "./columns";
+import { getColumns } from "./columns";
 import type { User } from "@/lib/types";
 
 interface UserManagementClientProps {
@@ -10,6 +9,7 @@ interface UserManagementClientProps {
 }
 
 export function UserManagementClient({ initialUsers }: UserManagementClientProps) {
+    const columns = getColumns();
     return (
         <DataTable columns={columns} data={initialUsers} filterColumn="email" />
     );

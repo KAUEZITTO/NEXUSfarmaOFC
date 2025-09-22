@@ -1,4 +1,3 @@
-
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
@@ -8,7 +7,7 @@ import { ArrowUpDown, MoreHorizontal, ShieldCheck } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from "@/components/ui/dropdown-menu"
 
-export const columns: ColumnDef<User>[] = [
+export const getColumns = (): ColumnDef<User>[] => [
   {
     accessorKey: "email",
     header: ({ column }) => {

@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react";
@@ -36,7 +35,7 @@ const NameCell = ({ row, onProductSaved }: { row: any, onProductSaved: () => voi
 };
 
 
-export const getColumns = ({ onProductSaved }: { onProductSaved: () => void; }): ColumnDef<GroupedProduct>[] => {
+export const getColumns = (onProductSaved: () => void): ColumnDef<GroupedProduct>[] => {
   return [
     {
       accessorKey: "name",

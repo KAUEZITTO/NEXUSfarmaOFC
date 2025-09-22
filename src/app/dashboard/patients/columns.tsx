@@ -1,4 +1,3 @@
-
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
@@ -12,12 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { AddPatientDialog } from "@/components/dashboard/add-patient-dialog"
 
-type ColumnsProps = {
-  onPatientSaved: () => void;
-  onUpdateStatus: (patientId: string, status: PatientStatus) => void;
-}
-
-export const getColumns = ({ onPatientSaved, onUpdateStatus }: ColumnsProps): ColumnDef<Patient>[] => {
+export const getColumns = (onPatientSaved: () => void, onUpdateStatus: (patientId: string, status: PatientStatus) => void): ColumnDef<Patient>[] => {
   return [
   {
     id: "select",
@@ -106,7 +100,7 @@ export const getColumns = ({ onPatientSaved, onUpdateStatus }: ColumnsProps): Co
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
             <DropdownMenuItem asChild>
-              <Link href={`/dashboard/patients/${patient.id}`}>
+              <Link href={`/dashboard/patients/${patient.id}`} className="cursor-pointer">
                 <Eye className="mr-2 h-4 w-4" />
                 Ver Histórico
               </Link>

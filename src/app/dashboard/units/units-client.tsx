@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRouter } from "next/navigation";
@@ -27,7 +26,7 @@ export function UnitsClient({ initialUnits }: UnitsClientProps) {
     router.refresh();
   }
 
-  const columns = getColumns({ onUnitSaved: handleUnitSaved });
+  const columns = getColumns(handleUnitSaved);
 
   return (
     <Card>

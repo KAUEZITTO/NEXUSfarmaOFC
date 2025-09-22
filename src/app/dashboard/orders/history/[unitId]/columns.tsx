@@ -19,7 +19,7 @@ export const columns: ColumnDef<Order>[] = [
     header: "Data de Envio",
     cell: ({ row }) => {
       const date = new Date(row.getValue("sentDate"))
-      return <div>{date.toLocaleDateString('pt-BR')}</div>
+      return <div>{date.toLocaleDateString('pt-BR', { timeZone: 'UTC'})}</div>
     }
   },
   {
@@ -29,7 +29,7 @@ export const columns: ColumnDef<Order>[] = [
       const dateValue = row.getValue("deliveryDate") as string | undefined;
       if (!dateValue) return <div className="text-muted-foreground">Pendente</div>
       const date = new Date(dateValue)
-      return <div>{date.toLocaleDateString('pt-BR')}</div>
+      return <div>{date.toLocaleDateString('pt-BR', { timeZone: 'UTC'})}</div>
     }
   },
   {
@@ -79,7 +79,7 @@ export const columns: ColumnDef<Order>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
             <DropdownMenuItem asChild>
-                <Link href={`/receipt/${order.id}`} target="_blank" className="w-full h-full flex items-center">
+                <Link href={`/receipt/${order.id}`} target="_blank" className="w-full h-full flex items-center cursor-pointer">
                     <Eye className="mr-2 h-4 w-4" />
                     Visualizar Recibo
                 </Link>

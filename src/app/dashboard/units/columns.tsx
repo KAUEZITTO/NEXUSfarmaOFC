@@ -1,4 +1,3 @@
-
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
@@ -9,12 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { AddUnitDialog } from "@/components/dashboard/add-unit-dialog"
 import Link from "next/link"
 
-type ColumnsProps = {
-  onUnitSaved: () => void;
-};
-
-
-export const getColumns = ({ onUnitSaved }: ColumnsProps): ColumnDef<Unit>[] => [
+export const getColumns = ( onUnitSaved: () => void ): ColumnDef<Unit>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -31,7 +25,7 @@ export const getColumns = ({ onUnitSaved }: ColumnsProps): ColumnDef<Unit>[] => 
     cell: ({ row }) => {
         const unit = row.original
         return (
-            <Link href={`/dashboard/units/${unit.id}`} className="capitalize font-medium text-primary hover:underline">
+            <Link href={`/dashboard/units/${unit.id}`} className="capitalize font-medium text-primary hover:underline cursor-pointer">
                 {row.getValue("name")}
             </Link>
         )
@@ -78,7 +72,7 @@ export const getColumns = ({ onUnitSaved }: ColumnsProps): ColumnDef<Unit>[] => 
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
              <DropdownMenuItem asChild>
-                <Link href={`/dashboard/units/${unit.id}`} className="w-full h-full flex items-center">
+                <Link href={`/dashboard/units/${unit.id}`} className="w-full h-full flex items-center cursor-pointer">
                     <Eye className="mr-2 h-4 w-4" />
                     Ver Detalhes
                 </Link>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRouter } from "next/navigation";
@@ -55,25 +54,25 @@ export function PatientsClient({ initialPatients, initialFilter }: PatientsClien
   }
   
   const handleUpdateStatus = async (patientId: string, status: PatientStatus) => {
-    try {
-      await updatePatientStatus(patientId, status);
-      toast({
-        title: "Status Atualizado!",
-        description: `O status do paciente foi alterado para ${status}.`,
-      });
-      startTransition(() => {
+    startTransition(async () => {
+      try {
+        await updatePatientStatus(patientId, status);
+        toast({
+          title: "Status Atualizado!",
+          description: `O status do paciente foi alterado para ${status}.`,
+        });
         router.refresh();
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao atualizar status",
-        description: "Não foi possível alterar o status do paciente.",
-      });
-    }
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao atualizar status",
+          description: "Não foi possível alterar o status do paciente.",
+        });
+      }
+    });
   };
 
-  const columns = getColumns({ onPatientSaved: handlePatientSaved, onUpdateStatus: handleUpdateStatus });
+  const columns = getColumns(handlePatientSaved, handleUpdateStatus);
 
 
   return (
