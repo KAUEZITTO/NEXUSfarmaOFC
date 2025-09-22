@@ -23,17 +23,9 @@ import { CurrentUserProvider } from '@/hooks/use-current-user';
 
 
 const UPDATE_STORAGE_KEY = 'nexusfarma-last-seen-version';
-const CURRENT_VERSION = '1.1.8';
+const CURRENT_VERSION = '1.1.0';
 
 const changelog = [
-    { version: '1.1.8', changes: ['Refatoração do middleware de autenticação para corrigir erro crítico de build.'] },
-    { version: '1.1.7', changes: ['Correção de bugs 12.'] },
-    { version: '1.1.6', changes: ['Refatoração global da arquitetura do dashboard para corrigir erros de pré-renderização.'] },
-    { version: '1.1.5', changes: ['Correção de bugs 5.'] },
-    { version: '1.1.4', changes: ['Remoção da dependência `@genkit-ai/google-cloud` para resolver erro crítico de build na Vercel.'] },
-    { version: '1.1.3', changes: ['Refatoração de componentes para corrigir erros de pré-renderização (prerender-error) em múltiplas páginas do dashboard.'] },
-    { version: '1.1.2', changes: ['Refatoração de componentes para corrigir erros de pré-renderização (prerender-error) em múltiplas páginas do dashboard.'] },
-    { version: '1.1.1', changes: ['Correção de erros críticos de compilação que impediam a publicação de novas versões.'] },
     { version: '1.1.0', changes: ['O sistema agora é considerado estável e saiu da fase Beta.', 'Atualizadas dependências internas para melhorar performance e segurança.'] },
     { version: '1.0.2', changes: ['Correção de erro que impedia a geração de etiquetas de prateleira.'] },
     { version: '1.0.1', changes: ['Correção de erro de conexão com o banco de dados no ambiente de desenvolvimento.'] },

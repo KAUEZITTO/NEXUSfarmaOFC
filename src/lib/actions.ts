@@ -532,5 +532,3 @@ export async function resetAllData() {
     // Revalidar caminhos para refletir os dados limpos na UI
     revalidatePath('/dashboard', 'layout');
 }
-
-    
