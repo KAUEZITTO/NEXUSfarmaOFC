@@ -23,11 +23,9 @@ import { CurrentUserProvider } from '@/hooks/use-current-user';
 
 
 const UPDATE_STORAGE_KEY = 'nexusfarma-last-seen-version';
-const CURRENT_VERSION = '1.3.0';
+const CURRENT_VERSION = '1.2.0';
 
 const changelog = [
-    { version: '1.3.0', changes: ['Refatoração majoritária da arquitetura de autenticação e acesso a dados para resolver erros persistentes de build, garantindo a estabilidade da aplicação.'] },
-    { version: '1.2.1', changes: ['Melhoria na experiência de login com redirecionamento corrigido e atualização do indicador de carregamento para melhor contraste visual.'] },
     { version: '1.2.0', changes: ['Refatoração completa do sistema de autenticação e acesso a dados para resolver definitivamente o erro de build `Failed to collect page data`, garantindo a estabilidade da aplicação.'] },
     { version: '1.1.4', changes: ['Refatoração da função `getCurrentUser` para remover a diretiva de Server Action, resolvendo definitivamente o erro de build `Failed to collect page data`.'] },
     { version: '1.1.3', changes: ['Remoção definitiva do `cache` do React da função `getCurrentUser`, resolvendo o erro de build `Failed to collect page data`.'] },

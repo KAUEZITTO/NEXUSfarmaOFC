@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -17,6 +18,8 @@ export function CurrentUserProvider({ children }: { children: React.ReactNode })
     useEffect(() => {
         const fetchUser = async () => {
             try {
+                // This fetch will be intercepted by the middleware which checks the cookie.
+                // If valid, the API route will then provide the user data.
                 const res = await fetch('/api/user');
                 if (res.ok) {
                     const userData = await res.json();
@@ -30,6 +33,8 @@ export function CurrentUserProvider({ children }: { children: React.ReactNode })
             }
         };
 
+        // We fetch the user on initial load and whenever the path changes.
+        // This keeps the user session fresh across navigations.
         fetchUser();
     }, [pathname]);
 

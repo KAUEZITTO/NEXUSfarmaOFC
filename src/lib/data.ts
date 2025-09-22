@@ -1,54 +1,44 @@
 
 // This file contains functions for reading data from the database.
 // It is separate from actions.ts to avoid breaking the build process.
-// `actions.ts` is a "use server" file, which can't be imported into
-// API routes without causing build errors.
+// It should NOT contain any 'use server' directives or import functions
+// that are only available in server components (e.g., `cookies` from `next/headers`).
 
 import { kv } from './kv';
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, KnowledgeBaseItem, PatientFilter } from './types';
-import { cookies } from 'next/headers';
-import * as jose from 'jose';
 import path from 'path';
 import { promises as fs } from 'fs';
 
 const dataPath = path.join(process.cwd(), 'src', 'data');
-const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 
 // --- GENERIC DATA ACCESS ---
 
 export const readData = async <T>(key: string): Promise<T[]> => {
-    const data = await kv.get<T[]>(key);
-    return data || [];
+    try {
+        const data = await kv.get<T[]>(key);
+        return data || [];
+    } catch (error) {
+        console.error(`Error reading data from KV for key "${key}":`, error);
+        return [];
+    }
 };
 
 export async function writeData<T>(key: string, data: T[]): Promise<void> {
-    await kv.set(key, data);
+    try {
+        await kv.set(key, data);
+    } catch (error) {
+        console.error(`Error writing data to KV for key "${key}":`, error);
+        throw error;
+    }
 }
 
 // --- SPECIFIC DATA ACCESSORS ---
 
-export async function getCurrentUser(): Promise<User | null> {
-    const sessionCookie = cookies().get('session')?.value;
-    if (!sessionCookie) return null;
-
-    try {
-        const { payload } = await jose.jwtVerify(sessionCookie, secret);
-        const userId = payload.sub;
-        if (!userId) return null;
-
-        const users = await readData<User>('users');
-        const user = users.find(u => u.id === userId) || null;
-        
-        if (user) {
-            const { password, ...userWithoutPassword } = user;
-            return userWithoutPassword as User;
-        }
-        return null;
-
-    } catch (error) {
-        console.error("Failed to verify session cookie:", error);
-        return null;
-    }
+export async function getCurrentUser(userId: string): Promise<User | null> {
+    if (!userId) return null;
+    const users = await readData<User>('users');
+    const user = users.find(u => u.id === userId) || null;
+    return user;
 };
 
 export const getProducts = async (): Promise<Product[]> => {

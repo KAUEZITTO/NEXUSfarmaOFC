@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -17,27 +18,41 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { logout } from '@/lib/actions';
 import { LogOut, User, Settings, HelpCircle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useTour } from './tour-guide';
 import { useToast } from '@/hooks/use-toast';
+import { useTour } from './tour-guide';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { Badge } from '../ui/badge';
+import { Skeleton } from '../ui/skeleton';
 
 export function UserNav() {
-  const router = useRouter();
   const { startTour } = useTour();
   const { toast } = useToast();
   const user = useCurrentUser();
 
   const handleLogout = async () => {
-    await logout();
-    toast({
-      title: "Logout realizado",
-      description: "Você saiu com segurança. Até a próxima!",
-    });
-    router.push('/');
+    try {
+        await logout();
+        toast({
+          title: "Logout realizado",
+          description: "Você saiu com segurança. Até a próxima!",
+        });
+        // The redirect is handled by the server action
+    } catch (error) {
+        // This catch block will handle the special error thrown by `redirect()`
+        if (!(error as any).digest?.startsWith('NEXT_REDIRECT')) {
+            console.error("Logout error:", error);
+            toast({
+                variant: 'destructive',
+                title: "Erro ao Sair",
+                description: "Não foi possível fazer logout. Tente novamente.",
+            });
+        }
+    }
   };
+
+  if (!user) {
+    return <Skeleton className="h-8 w-8 rounded-full" />;
+  }
 
   return (
     <div data-tour-id="step-user-nav">
@@ -53,10 +68,10 @@ export function UserNav() {
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{user?.email}</p>
+              <p className="text-sm font-medium leading-none">{user.email}</p>
               <div className="flex items-center gap-1">
-                <Badge variant="secondary" className="text-xs">{user?.role}</Badge>
-                {user?.accessLevel === 'Admin' && <Badge variant="destructive" className="text-xs">Admin</Badge>}
+                <Badge variant="secondary" className="text-xs">{user.role}</Badge>
+                {user.accessLevel === 'Admin' && <Badge variant="destructive" className="text-xs">Admin</Badge>}
               </div>
             </div>
           </DropdownMenuLabel>

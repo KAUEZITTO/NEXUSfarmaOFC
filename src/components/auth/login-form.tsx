@@ -8,11 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { login } from '@/lib/actions';
-import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
 export function LoginForm() {
-  const router = useRouter();
   const { toast } = useToast();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
@@ -24,24 +22,34 @@ export function LoginForm() {
 
     const formData = new FormData(event.currentTarget);
     
-    // The login action is called outside the try/catch block.
-    // Next.js's `redirect()` works by throwing an error, which we don't want to catch.
-    // We will only catch specific validation errors returned from the action.
-    const result = await login(formData);
+    try {
+        const result = await login(formData);
 
-    if (result && !result.success) {
-      setErrorMessage(result.message);
-      setIsPending(false);
-    } else {
-        // On successful login, the server action will handle the redirect.
-        // We show a toast here. The pending state will be ended by the page navigation.
-         toast({
-            title: 'Login bem-sucedido!',
-            description: 'Bem-vindo(a) de volta! Redirecionando...',
-        });
+        // This code will only execute if the server action returns an error
+        if (result && !result.success) {
+          setErrorMessage(result.message);
+          setIsPending(false);
+        } else {
+            // The server action will handle the redirect on success.
+            // If we get here without an error, it means the redirect is happening.
+            toast({
+                title: 'Login bem-sucedido!',
+                description: 'Bem-vindo(a) de volta! Redirecionando...',
+            });
+        }
+    } catch (error) {
+        // This catch block will handle the special error thrown by `redirect()`
+        // in Next.js. We can safely ignore it. Any other real errors will
+        // be caught and can be handled here if needed.
+        if ((error as any).digest?.startsWith('NEXT_REDIRECT')) {
+            // This is expected, do nothing.
+        } else {
+            console.error("Login form error:", error);
+            setErrorMessage("Ocorreu um erro inesperado. Tente novamente.");
+            setIsPending(false);
+        }
     }
   };
-
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-4">

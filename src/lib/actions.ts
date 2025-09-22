@@ -10,11 +10,37 @@ import bcrypt from 'bcrypt';
 import { mkdir } from 'fs/promises';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { readData, writeData, getCurrentUser } from './data';
+import { readData, writeData, getCurrentUser as getCurrentUserFromDb } from './data';
 
 const uploadPath = path.join(process.cwd(), 'public', 'uploads');
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 const saltRounds = 10;
+
+// This is a server-side only function to get the current user, used internally by other actions.
+async function getCurrentUser(): Promise<User | null> {
+    const sessionCookie = cookies().get('session')?.value;
+    if (!sessionCookie) return null;
+
+    try {
+        const { payload } = await jose.jwtVerify(sessionCookie, secret);
+        const userId = payload.sub;
+        if (!userId) return null;
+        
+        // Directly use the DB fetcher function
+        const user = await getCurrentUserFromDb(userId);
+        
+        if (user) {
+            const { password, ...userWithoutPassword } = user;
+            return userWithoutPassword as User;
+        }
+        return null;
+
+    } catch (error) {
+        console.error("Failed to verify session cookie in action:", error);
+        return null;
+    }
+}
+
 
 // --- AUTH ACTIONS ---
 
@@ -74,7 +100,6 @@ export async function login(formData: FormData): Promise<{ success: boolean; mes
     cookies().set('session', token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 7 });
     await logActivity('Login', `Usuário fez login: ${user.email}`);
 
-    // Redirect handles the rest, no need to return a success message here that the client will wait for
     redirect('/dashboard');
 }
 
@@ -85,6 +110,7 @@ export async function logout() {
     await logActivity('Logout', `Usuário ${user.email} saiu.`);
   }
   cookies().delete('session');
+  redirect('/');
 }
 
 // --- ACTIVITY LOGGING ---
