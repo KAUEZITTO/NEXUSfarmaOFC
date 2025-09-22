@@ -9,8 +9,7 @@ import bcrypt from 'bcrypt';
 import { mkdir } from 'fs/promises';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { readData, writeData } from './data';
-import { getCurrentUser } from './data';
+import { readData, writeData, getCurrentUser } from './data';
 
 const uploadPath = path.join(process.cwd(), 'public', 'uploads');
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
