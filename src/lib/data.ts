@@ -6,10 +6,7 @@
 
 import { kv } from '@/lib/kv';
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, KnowledgeBaseItem, PatientFilter } from './types';
-import path from 'path';
-import { promises as fs } from 'fs';
 
-const dataPath = path.join(process.cwd(), 'src', 'data');
 
 // --- GENERIC DATA ACCESS ---
 
@@ -131,17 +128,3 @@ export async function getAllUsers(): Promise<User[]> {
         return userWithoutPassword as User;
     });
 }
-
-export const getKnowledgeBase = async (): Promise<KnowledgeBaseItem[]> => {
-    const filePath = path.join(dataPath, 'knowledge-base.json');
-     try {
-        const fileContent = await fs.readFile(filePath, 'utf-8');
-        return JSON.parse(fileContent);
-    } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-          return [];
-        }
-        console.error(`Error reading knowledge-base.json:`, error);
-        throw error;
-  }
-};

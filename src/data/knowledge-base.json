@@ -1,0 +1,98 @@
+
+[
+    {
+        "name": "paracetamol",
+        "therapeuticClass": "Analgésico e Antipirético",
+        "mainFunction": "Alívio de dores leves a moderadas e redução da febre."
+    },
+    {
+        "name": "dipirona",
+        "therapeuticClass": "Analgésico e Antipirético",
+        "mainFunction": "Tratamento de dor e febre."
+    },
+    {
+        "name": "ibuprofeno",
+        "therapeuticClass": "Anti-inflamatório não esteroide (AINE)",
+        "mainFunction": "Alívio de dor, febre e inflamação."
+    },
+    {
+        "name": "amoxicilina",
+        "therapeuticClass": "Antibiótico (Penicilina)",
+        "mainFunction": "Tratamento de infecções bacterianas."
+    },
+    {
+        "name": "azitromicina",
+        "therapeuticClass": "Antibiótico (Macrolídeo)",
+        "mainFunction": "Tratamento de infecções bacterianas respiratórias e de pele."
+    },
+    {
+        "name": "losartana",
+        "therapeuticClass": "Anti-hipertensivo (BRA)",
+        "mainFunction": "Controle da pressão arterial elevada."
+    },
+    {
+        "name": "hidroclorotiazida",
+        "therapeuticClass": "Diurético Tiazídico",
+        "mainFunction": "Tratamento da hipertensão e edemas."
+    },
+    {
+        "name": "metformina",
+        "therapeuticClass": "Antidiabético (Biguanida)",
+        "mainFunction": "Controle do diabetes tipo 2."
+    },
+    {
+        "name": "gliclazida",
+        "therapeuticClass": "Antidiabético (Sulfonilureia)",
+        "mainFunction": "Estimula a produção de insulina para controlar o diabetes tipo 2."
+    },
+    {
+        "name": "insulina nph",
+        "therapeuticClass": "Insulina de Ação Intermediária",
+        "mainFunction": "Controle da glicemia em pacientes com diabetes."
+    },
+    {
+        "name": "insulina regular",
+        "therapeuticClass": "Insulina de Ação Rápida",
+        "mainFunction": "Controle da glicemia em pacientes com diabetes, geralmente antes das refeições."
+    },
+    {
+        "name": "sinvastatina",
+        "therapeuticClass": "Hipolipemiante (Estatina)",
+        "mainFunction": "Redução dos níveis de colesterol no sangue."
+    },
+    {
+        "name": "aas (ácido acetilsalicílico)",
+        "therapeuticClass": "Antiagregante Plaquetário / AINE",
+        "mainFunction": "Prevenção de eventos cardiovasculares e alívio de dor/febre."
+    },
+    {
+        "name": "omeprazol",
+        "therapeuticClass": "Inibidor da Bomba de Prótons (IBP)",
+        "mainFunction": "Tratamento de gastrite, úlceras e refluxo gastroesofágico."
+    },
+    {
+        "name": "salbutamol",
+        "therapeuticClass": "Broncodilatador",
+        "mainFunction": "Alívio rápido de sintomas de asma e outras doenças pulmonares."
+    },
+    {
+        "name": "prednisona",
+        "therapeuticClass": "Corticosteroide",
+        "mainFunction": "Tratamento de processos inflamatórios e alérgicos."
+    },
+    {
+        "name": "loratadina",
+        "therapeuticClass": "Anti-histamínico",
+        "mainFunction": "Alívio de sintomas de alergias, como rinite e urticária."
+    },
+    {
+        "name": "insulina glargina",
+        "therapeuticClass": "Insulina de Ação Longa (Análogo)",
+        "mainFunction": "Controle basal da glicemia em pacientes com diabetes (Lantus)."
+    },
+    {
+        "name": "insulina glulisina",
+        "therapeuticClass": "Insulina de Ação Ultrarrápida (Análogo)",
+        "mainFunction": "Controle rápido da glicemia pós-prandial (Apidra)."
+    }
+]

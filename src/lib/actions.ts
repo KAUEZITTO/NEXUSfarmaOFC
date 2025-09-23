@@ -1,7 +1,7 @@
 
 'use server';
 
-import { Product, Unit, Patient, Order, Dispensation, StockMovement, PatientStatus, User, Role, SubRole } from './types';
+import { Product, Unit, Patient, Order, Dispensation, StockMovement, PatientStatus, User, Role, SubRole, KnowledgeBaseItem } from './types';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -11,6 +11,7 @@ import { mkdir } from 'fs/promises';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { readData, writeData, getCurrentUser as getCurrentUserFromDb } from './data';
+import knowledgeBaseData from '@/data/knowledge-base.json';
 
 const uploadPath = path.join(process.cwd(), 'public', 'uploads');
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
@@ -164,6 +165,14 @@ async function logStockMovement(
     movements.unshift(movement);
     await writeData('stockMovements', movements);
 }
+
+// --- KNOWLEDGE BASE ---
+export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
+    // Directly return the imported JSON data.
+    // This is now a safe server action.
+    return knowledgeBaseData;
+}
+
 
 // --- IMAGE UPLOAD ---
 export async function uploadImage(formData: FormData): Promise<{ success: boolean; filePath?: string; error?: string }> {
@@ -409,5 +418,3 @@ export async function resetAllData() {
     
     revalidatePath('/dashboard', 'layout');
 }
-
-    
