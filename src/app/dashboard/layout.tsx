@@ -23,9 +23,10 @@ import { CurrentUserProvider } from '@/hooks/use-current-user';
 
 
 const UPDATE_STORAGE_KEY = 'nexusfarma-last-seen-version';
-const CURRENT_VERSION = '1.3.3';
+const CURRENT_VERSION = '1.3.5';
 
 const changelog = [
+    { version: '1.3.5', changes: ['Sistema quase pronto 5.'] },
     { version: '1.3.3', changes: ['Sistema quase pronto 3.'] },
     { version: '1.3.2', changes: ['Sistema quase pronto 2.'] },
     { version: '1.3.1', changes: ['Sistema quase pronto para o lançamento final.'] },
