@@ -1,7 +1,7 @@
 
 'use server';
 
-import { Product, Unit, Patient, Order, Dispensation, StockMovement, PatientStatus, User, Role, SubRole } from './types';
+import { Product, Unit, Patient, Order, Dispensation, StockMovement, PatientStatus, User, Role, SubRole, KnowledgeBaseItem } from './types';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -11,13 +11,14 @@ import { mkdir } from 'fs/promises';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { readData, writeData, getCurrentUser as getCurrentUserFromDb } from './data';
+import knowledgeBaseData from '@/data/knowledge-base.json';
 
 const uploadPath = path.join(process.cwd(), 'public', 'uploads');
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 const saltRounds = 10;
 
 // This is a server-side only function to get the current user, used internally by other actions.
-async function getActionCurrentUser(): Promise<User | null> {
+async function getCurrentUser(): Promise<User | null> {
     const sessionCookie = cookies().get('session')?.value;
     if (!sessionCookie) return null;
 
@@ -26,6 +27,7 @@ async function getActionCurrentUser(): Promise<User | null> {
         const userId = payload.sub;
         if (!userId) return null;
         
+        // Directly use the DB fetcher function
         const user = await getCurrentUserFromDb(userId);
         
         if (user) {
@@ -104,7 +106,7 @@ export async function login(formData: FormData): Promise<{ success: boolean; mes
 
 
 export async function logout() {
-  const user = await getActionCurrentUser();
+  const user = await getCurrentUser();
   if (user) {
     await logActivity('Logout', `Usuário ${user.email} saiu.`);
   }
@@ -122,7 +124,7 @@ type ActivityLog = {
 }
 
 async function logActivity(action: string, details: string) {
-    const user = await getActionCurrentUser();
+    const user = await getCurrentUser();
     const logs = await readData<ActivityLog>('logs');
     const logEntry: ActivityLog = {
         user: user?.email || 'Sistema',
@@ -145,7 +147,7 @@ async function logStockMovement(
     quantityBefore: number,
     relatedId?: string
 ) {
-    const user = await getActionCurrentUser();
+    const user = await getCurrentUser();
     const movements = await readData<StockMovement>('stockMovements');
     const movement: StockMovement = {
         id: `mov-${Date.now()}`,
@@ -163,6 +165,14 @@ async function logStockMovement(
     movements.unshift(movement);
     await writeData('stockMovements', movements);
 }
+
+// --- KNOWLEDGE BASE ---
+export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
+    // Directly return the imported JSON data.
+    // This is now a safe server action.
+    return knowledgeBaseData;
+}
+
 
 // --- IMAGE UPLOAD ---
 export async function uploadImage(formData: FormData): Promise<{ success: boolean; filePath?: string; error?: string }> {
@@ -393,7 +403,7 @@ export async function addDispensation(dispensationData: Omit<Dispensation, 'id' 
 
 // --- DATA RESET ---
 export async function resetAllData() {
-    const currentUser = await getActionCurrentUser();
+    const currentUser = await getCurrentUser();
     if (currentUser?.accessLevel !== 'Admin') {
         throw new Error("Acesso não autorizado para limpar dados.");
     }
