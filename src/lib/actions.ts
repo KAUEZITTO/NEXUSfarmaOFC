@@ -7,8 +7,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import * as jose from 'jose';
 import bcrypt from 'bcrypt';
-import { mkdir } from 'fs/promises';
-import { promises as fs } from 'fs';
+import { mkdir, promises as fs } from 'fs';
 import path from 'path';
 import { readData, writeData, getCurrentUser as getCurrentUserFromDb } from './data';
 import knowledgeBaseData from '@/data/knowledge-base.json';
@@ -17,7 +16,7 @@ const uploadPath = path.join(process.cwd(), 'public', 'uploads');
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 const saltRounds = 10;
 
-// This is a server-side only function to get the current user, used internally by other actions.
+// Internal helper to get user from session. NOT exported.
 async function getCurrentUser(): Promise<User | null> {
     const sessionCookie = cookies().get('session')?.value;
     if (!sessionCookie) return null;
@@ -27,7 +26,6 @@ async function getCurrentUser(): Promise<User | null> {
         const userId = payload.sub;
         if (!userId) return null;
         
-        // Directly use the DB fetcher function
         const user = await getCurrentUserFromDb(userId);
         
         if (user) {
@@ -123,6 +121,7 @@ type ActivityLog = {
     timestamp: string;
 }
 
+// Internal helper, not exported as a server action
 async function logActivity(action: string, details: string) {
     const user = await getCurrentUser();
     const logs = await readData<ActivityLog>('logs');
@@ -138,6 +137,7 @@ async function logActivity(action: string, details: string) {
 
 // --- STOCK MOVEMENT LOGGING ---
 
+// Internal helper, not exported as a server action
 async function logStockMovement(
     productId: string,
     productName: string,
@@ -168,8 +168,7 @@ async function logStockMovement(
 
 // --- KNOWLEDGE BASE ---
 export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
-    // Directly return the imported JSON data.
-    // This is now a safe server action.
+    // Directly return the imported JSON data. This is safe.
     return knowledgeBaseData;
 }
 
@@ -235,7 +234,6 @@ export async function updateProduct(productId: string, productData: Partial<Prod
     if (productData.quantity !== undefined && productData.quantity !== quantityBefore) {
         updatedProduct.status = productData.quantity > 0 ? (productData.quantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque';
         const quantityChange = productData.quantity - quantityBefore;
-        const type = quantityChange > 0 ? 'Entrada' : 'Saída';
         await logStockMovement(productId, productData.name || oldProductData.name, 'Ajuste', 'Ajuste de Inventário', quantityChange, quantityBefore);
     }
     
@@ -244,6 +242,7 @@ export async function updateProduct(productId: string, productData: Partial<Prod
     
     await logActivity('Produto Atualizado', `Produto "${updatedProduct.name}" (ID: ${productId}) foi atualizado.`);
     revalidatePath('/dashboard/inventory');
+    revalidatePath(`/labels/${productId}`);
     return updatedProduct;
 }
 
@@ -320,6 +319,7 @@ export async function updatePatientStatus(patientId: string, status: PatientStat
 
 // --- ORDERS / DISPENSATIONS (STOCK UPDATE) ---
 
+// Internal helper, not exported.
 async function processStockUpdate(items: (Order['items'] | Dispensation['items']), reason: StockMovement['reason'], relatedId: string) {
     let products = await readData<Product>('products');
     let productsUpdated = false;

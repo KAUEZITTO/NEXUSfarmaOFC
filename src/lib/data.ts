@@ -5,7 +5,7 @@
 // that are only available in server components (e.g., `cookies` from `next/headers`).
 
 import { kv } from '@/lib/kv';
-import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, KnowledgeBaseItem, PatientFilter } from './types';
+import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
 
 
 // --- GENERIC DATA ACCESS ---
@@ -35,7 +35,11 @@ export async function getCurrentUser(userId: string): Promise<User | null> {
     if (!userId) return null;
     const users = await readData<User>('users');
     const user = users.find(u => u.id === userId) || null;
-    return user;
+    if (user) {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword as User;
+    }
+    return null;
 };
 
 export const getProducts = async (): Promise<Product[]> => {

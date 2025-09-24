@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import * as jose from 'jose';
 import { getCurrentUser } from '@/lib/data';
-import type { User } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,12 +21,12 @@ export async function GET(request: Request) {
         return new NextResponse('Invalid token', { status: 401 });
     }
 
+    // This now calls the clean, build-safe function from data.ts
     const user = await getCurrentUser(userId);
 
     if (user) {
-      // We don't want to expose the password hash
-      const { password, ...userData } = user;
-      return NextResponse.json(userData);
+      // The password is already removed by the new getCurrentUser function
+      return NextResponse.json(user);
     }
 
     return new NextResponse('User not found', { status: 404 });
