@@ -44,3 +44,5 @@ export function CurrentUserProvider({ children }: { children: React.ReactNode })
         </CurrentUserContext.Provider>
     );
 };
+
+    

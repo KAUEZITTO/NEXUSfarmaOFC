@@ -29,8 +29,8 @@ async function getCurrentUser(): Promise<User | null> {
         const user = await getCurrentUserFromDb(userId);
         
         if (user) {
-            const { password, ...userWithoutPassword } = user;
-            return userWithoutPassword as User;
+            // The password is removed by the getCurrentUserFromDb function now.
+            return user as User;
         }
         return null;
 
@@ -181,7 +181,7 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
             return { success: false, error: 'Nenhum arquivo enviado.' };
         }
 
-        await mkdir(uploadPath, { recursive: true });
+        await fs.mkdir(uploadPath, { recursive: true });
 
         const buffer = Buffer.from(await file.arrayBuffer());
         const fileExtension = path.extname(file.name);
@@ -418,3 +418,5 @@ export async function resetAllData() {
     
     revalidatePath('/dashboard', 'layout');
 }
+
+    
