@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -39,5 +38,3 @@ export function CurrentUserProvider({ children }: { children: React.ReactNode })
         </CurrentUserContext.Provider>
     );
 };
-
-    
