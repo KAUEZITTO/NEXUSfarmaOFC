@@ -19,30 +19,27 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isAuthPage = pathname === '/login' || pathname === '/register';
-
-  if (!sessionCookie || !(await verifyToken(sessionCookie))) {
-    // Allow access to the landing page at the root
-    if (pathname === '/') {
-        return NextResponse.next();
-    }
-    if (isAuthPage) {
-      return NextResponse.next();
-    }
-    // Redirect non-authenticated users from protected routes to login
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
+  const isPublicPage = pathname === '/';
   
-  // If user is authenticated and tries to access login/register, redirect to dashboard
-  if(isAuthPage) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+  const isAuthenticated = sessionCookie && await verifyToken(sessionCookie);
+
+  if (isAuthenticated) {
+    // If authenticated, and trying to access login/register, redirect to dashboard
+    if (isAuthPage) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+    // Allow access to all other pages
+    return NextResponse.next();
   }
 
-  // Allow access to landing page even if authenticated
-  if (pathname === '/') {
-      return NextResponse.next();
+  // If not authenticated
+  // Allow access to public and auth pages
+  if (isPublicPage || isAuthPage) {
+    return NextResponse.next();
   }
 
-  return NextResponse.next();
+  // For any other protected page, redirect to login
+  return NextResponse.redirect(new URL('/login', request.url));
 }
 
 export const config = {
