@@ -1,5 +1,3 @@
-'use server';
-
 import { createClient } from '@vercel/kv';
 
 export const kv = createClient({
