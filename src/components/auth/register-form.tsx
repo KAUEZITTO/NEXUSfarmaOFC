@@ -9,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { register } from '@/lib/actions';
+import * as actions from '@/lib/actions';
 import type { Role, SubRole } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
@@ -64,7 +64,7 @@ export function RegisterForm() {
     }
 
     try {
-      const result = await register({ email, password, role, subRole });
+      const result = await actions.register({ email, password, role, subRole });
       if (result.success) {
         toast({
             title: "Conta Criada com Sucesso!",
