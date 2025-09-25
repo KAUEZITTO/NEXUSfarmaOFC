@@ -405,13 +405,21 @@ export async function resetAllData() {
         throw new Error("Acesso não autorizado para limpar dados.");
     }
     
-    const dataKeys = ['products', 'units', 'patients', 'orders', 'dispensations', 'stockMovements', 'logs'];
+    const dataKeys = ['products', 'units', 'patients', 'orders', 'dispensations', 'stockMovements', 'logs', 'users'];
 
     for (const key of dataKeys) {
         await writeData(key, []);
     }
     
-    await logActivity('Reset de Dados', `Todos os dados da aplicação foram limpos pelo administrador ${currentUser.email}.`, currentUser.email);
+    // After clearing users, re-register the admin user to avoid being locked out.
+    await register({
+        email: currentUser.email,
+        password: 'admin-password-reset-placeholder', // This password won't be used, but the field is required. The original password is lost.
+        role: currentUser.role,
+        subRole: currentUser.subRole
+    });
+
+    await logActivity('Reset de Dados', `Todos os dados da aplicação foram limpos pelo administrador ${currentUser.email}. O usuário admin foi recriado.`, currentUser.email);
     
     revalidatePath('/dashboard', 'layout');
 }
