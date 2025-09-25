@@ -1,4 +1,3 @@
-
 'use server';
 
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, PatientStatus, User, Role, SubRole, KnowledgeBaseItem } from './types';
@@ -7,9 +6,9 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import * as jose from 'jose';
 import bcrypt from 'bcrypt';
-import { mkdir, promises as fs } from 'fs';
+import { promises as fs } from 'fs';
 import path from 'path';
-import { readData, writeData, getCurrentUser as getCurrentUserFromDb } from './data';
+import { readData, writeData } from './data';
 import knowledgeBaseData from '@/data/knowledge-base.json';
 
 const uploadPath = path.join(process.cwd(), 'public', 'uploads');
@@ -26,11 +25,12 @@ async function getCurrentUser(): Promise<User | null> {
         const userId = payload.sub;
         if (!userId) return null;
         
-        const user = await getCurrentUserFromDb(userId);
+        const allUsers = await readData<User>('users');
+        const user = allUsers.find(u => u.id === userId);
         
         if (user) {
-            // The password is removed by the getCurrentUserFromDb function now.
-            return user as User;
+            const { password, ...userWithoutPassword } = user;
+            return userWithoutPassword as User;
         }
         return null;
 
@@ -418,5 +418,3 @@ export async function resetAllData() {
     
     revalidatePath('/dashboard', 'layout');
 }
-
-    

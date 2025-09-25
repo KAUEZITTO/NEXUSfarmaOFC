@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import * as jose from 'jose';
@@ -35,5 +34,3 @@ export async function GET(request: Request) {
       return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
-
-    
