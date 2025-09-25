@@ -8,9 +8,10 @@ import { PlusCircle, Search, Printer } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
-import { getColumns } from './columns';
+import { columns } from './columns';
 import type { Product } from '@/lib/types';
 import type { GroupedProduct } from './page';
+import { BatchDetailsDialog } from './batch-details-dialog';
 
 type FilterCategory = 'Todos' | Product['category'];
 
@@ -70,11 +71,20 @@ export function InventoryClient({ rawProducts }: InventoryClientProps) {
   const [products, setProducts] = useState<GroupedProduct[]>([]);
   const router = useRouter();
 
+  // State for the details dialog
+  const [selectedProduct, setSelectedProduct] = useState<GroupedProduct | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   const handleProductSaved = () => {
     router.refresh();
+    // Also close the dialog if it's open
+    setIsDialogOpen(false);
   }
 
-  const columns = getColumns(handleProductSaved);
+  const handleRowClick = (product: GroupedProduct) => {
+      setSelectedProduct(product);
+      setIsDialogOpen(true);
+  }
   
   useEffect(() => {
     const processedProducts = groupAndFilterProducts(rawProducts, activeFilter, searchTerm);
@@ -124,7 +134,14 @@ export function InventoryClient({ rawProducts }: InventoryClientProps) {
             </div>
         </div>
       
-        <DataTable columns={columns} data={products} filterColumn="name" />
+        <DataTable columns={columns} data={products} onRowClick={handleRowClick} />
+        
+        <BatchDetailsDialog
+            isOpen={isDialogOpen}
+            onOpenChange={setIsDialogOpen}
+            product={selectedProduct!}
+            onProductSaved={handleProductSaved}
+        />
     </>
   );
 }

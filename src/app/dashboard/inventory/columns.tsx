@@ -1,42 +1,15 @@
 "use client"
 
-import { useState } from "react";
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { GroupedProduct } from "./page";
-import { BatchDetailsDialog } from "./batch-details-dialog";
 
-// This dedicated cell component encapsulates the dialog state.
-// This ensures that state (`useState`) is contained within a client component,
-// resolving the prerender error.
-const NameCell = ({ row, onProductSaved }: { row: any, onProductSaved: () => void; }) => {
-    const product = row.original as GroupedProduct;
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-    return (
-        <>
-            <button
-                onClick={() => setIsDialogOpen(true)}
-                className="capitalize font-medium text-primary hover:underline text-left"
-            >
-                {row.getValue("name")}
-            </button>
-            <BatchDetailsDialog
-                isOpen={isDialogOpen}
-                onOpenChange={setIsDialogOpen}
-                product={product}
-                onProductSaved={onProductSaved}
-            />
-        </>
-    );
-};
-
-
-export const getColumns = (onProductSaved: () => void): ColumnDef<GroupedProduct>[] => {
-  return [
+// The columns definition is now a pure function, with no client-side hooks or state.
+// The interactive part (clicking to open a dialog) will be handled by the parent DataTable/ClientComponent.
+export const columns: ColumnDef<GroupedProduct>[] = [
     {
       accessorKey: "name",
       header: ({ column }) => {
@@ -50,8 +23,11 @@ export const getColumns = (onProductSaved: () => void): ColumnDef<GroupedProduct
           </Button>
         )
       },
-      // We use the NameCell component here, which is a Client Component
-      cell: ({ row }) => <NameCell row={row} onProductSaved={onProductSaved} />,
+      cell: ({ row }) => (
+        <div className="capitalize font-medium text-primary hover:underline cursor-pointer">
+          {row.getValue("name")}
+        </div>
+      ),
     },
     {
       accessorKey: "presentation",
@@ -96,4 +72,3 @@ export const getColumns = (onProductSaved: () => void): ColumnDef<GroupedProduct
       },
     },
   ]
-}
