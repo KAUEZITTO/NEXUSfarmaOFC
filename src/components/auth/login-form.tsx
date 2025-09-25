@@ -32,8 +32,9 @@ export function LoginForm() {
           description: 'Bem-vindo(a) de volta! Redirecionando...',
       });
       router.push('/dashboard');
-      // No need to set isPending to false here, as the page will navigate away.
+      // A navegação começará, não precisamos definir isPending como false aqui.
     } else {
+      // Se houver um erro, a action retornará a mensagem.
       setErrorMessage(result.message || 'Ocorreu um erro desconhecido.');
       setIsPending(false);
     }

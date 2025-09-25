@@ -45,30 +45,35 @@ async function getCurrentUserAction(): Promise<User | null> {
 // --- AUTH ACTIONS ---
 
 export async function register(userData: Omit<User, 'id' | 'password' | 'accessLevel'> & { password: string }): Promise<{ success: boolean; message: string }> {
-    const users = await readData<User>('users');
-    if (users.find(u => u.email === userData.email)) {
-        return { success: false, message: 'Este e-mail já está em uso.' };
+    try {
+        const users = await readData<User>('users');
+        if (users.find(u => u.email === userData.email)) {
+            return { success: false, message: 'Este e-mail já está em uso.' };
+        }
+
+        const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
+        
+        const accessLevel = users.length === 0 ? 'Admin' : 'User';
+
+        const newUser: User = {
+            id: `user-${Date.now()}`,
+            email: userData.email,
+            password: hashedPassword,
+            role: userData.role,
+            subRole: userData.subRole,
+            accessLevel,
+        };
+        
+        users.push(newUser);
+        await writeData('users', users);
+        // On registration, the user is not logged in, so the action is performed by the "Sistema".
+        await logActivity('Cadastro de Usuário', `Novo usuário cadastrado: ${userData.email} com cargo ${userData.role} e nível ${accessLevel}.`, 'Sistema');
+
+        return { success: true, message: 'Conta criada com sucesso!' };
+    } catch (error) {
+        console.error('Registration Error:', error);
+        return { success: false, message: 'Não foi possível criar a conta. Tente novamente mais tarde.' };
     }
-
-    const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
-    
-    const accessLevel = users.length === 0 ? 'Admin' : 'User';
-
-    const newUser: User = {
-        id: `user-${Date.now()}`,
-        email: userData.email,
-        password: hashedPassword,
-        role: userData.role,
-        subRole: userData.subRole,
-        accessLevel,
-    };
-    
-    users.push(newUser);
-    await writeData('users', users);
-    // On registration, the user is not logged in, so the action is performed by the "Sistema".
-    await logActivity('Cadastro de Usuário', `Novo usuário cadastrado: ${userData.email} com cargo ${userData.role} e nível ${accessLevel}.`, 'Sistema');
-
-    return { success: true, message: 'Conta criada com sucesso!' };
 }
 
 
@@ -102,11 +107,13 @@ export async function login(formData: FormData): Promise<{ success: boolean; mes
         cookies().set('session', token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 7 });
         await logActivity('Login', `Usuário fez login: ${user.email}`, user.email);
 
+        // Return success to the client, which will handle the redirect.
         return { success: true };
 
     } catch (error) {
         console.error("Login error:", error);
-        return { success: false, message: 'Ocorreu um erro inesperado.'}
+        // Return a generic error message to the client.
+        return { success: false, message: 'Ocorreu um erro inesperado durante o login.'}
     }
 }
 
