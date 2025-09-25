@@ -17,7 +17,8 @@ export const dynamic = 'force-dynamic';
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 
-async function getCurrentUserAction(): Promise<User | null> {
+// This function is now self-contained within the layout, preventing build errors.
+async function getCurrentUser(): Promise<User | null> {
     const sessionCookie = cookies().get('session')?.value;
     if (!sessionCookie) return null;
 
@@ -68,7 +69,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUserAction();
+  const user = await getCurrentUser();
 
   return (
     <CurrentUserProvider user={user}>

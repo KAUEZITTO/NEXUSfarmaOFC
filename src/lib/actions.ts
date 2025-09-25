@@ -9,12 +9,37 @@ import * as jose from 'jose';
 import bcrypt from 'bcrypt';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { readData, writeData, getCurrentUserAction } from './data';
+import { readData, writeData } from './data';
 import knowledgeBaseData from '@/data/knowledge-base.json';
 
 const uploadPath = path.join(process.cwd(), 'public', 'uploads');
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 const saltRounds = 10;
+
+// Moved from data.ts to be co-located with actions that use it.
+async function getCurrentUserAction(): Promise<User | null> {
+    const sessionCookie = cookies().get('session')?.value;
+    if (!sessionCookie) return null;
+
+    try {
+        const { payload } = await jose.jwtVerify(sessionCookie, secret);
+        const userId = payload.sub;
+        if (!userId) return null;
+        
+        const allUsers = await readData<User>('users');
+        const user = allUsers.find(u => u.id === userId);
+        
+        if (user) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { password, ...userWithoutPassword } = user;
+            return userWithoutPassword as User;
+        }
+        return null;
+
+    } catch (error) {
+        return null;
+    }
+}
 
 
 // --- AUTH ACTIONS ---
@@ -47,34 +72,42 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
 }
 
 
-export async function login(formData: FormData): Promise<{ success: boolean; message: string } | undefined> {
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    
-    const users = await readData<User>('users');
-    const user = users.find(u => u.email === email);
+export async function login(formData: FormData) {
+    try {
+        const email = formData.get('email') as string;
+        const password = formData.get('password') as string;
+        
+        const users = await readData<User>('users');
+        const user = users.find(u => u.email === email);
 
-    if (!user) {
-        return { success: false, message: 'Email ou senha inválidos.' };
+        if (!user) {
+            return { success: false, message: 'Email ou senha inválidos.' };
+        }
+
+        const passwordMatch = await bcrypt.compare(password, user.password);
+
+        if (!passwordMatch) {
+            return { success: false, message: 'Email ou senha inválidos.' };
+        }
+
+        const token = await new jose.SignJWT({ id: user.id, accessLevel: user.accessLevel })
+            .setProtectedHeader({ alg: 'HS256' })
+            .setIssuedAt()
+            .setSubject(user.id)
+            .setIssuer('urn:nexusfarma')
+            .setAudience('urn:nexusfarma:users')
+            .setExpirationTime('7d')
+            .sign(secret);
+        
+        cookies().set('session', token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 7 });
+        await logActivity('Login', `Usuário fez login: ${user.email}`, user.email);
+    } catch (error) {
+        if ((error as any).message.includes('credentialssignin')) {
+            return { success: false, message: 'Email ou senha inválidos.' };
+        }
+        console.error("Login error:", error);
+        return { success: false, message: 'Ocorreu um erro inesperado.'}
     }
-
-    const passwordMatch = await bcrypt.compare(password, user.password);
-
-    if (!passwordMatch) {
-        return { success: false, message: 'Email ou senha inválidos.' };
-    }
-
-    const token = await new jose.SignJWT({ id: user.id, accessLevel: user.accessLevel })
-        .setProtectedHeader({ alg: 'HS256' })
-        .setIssuedAt()
-        .setSubject(user.id)
-        .setIssuer('urn:nexusfarma')
-        .setAudience('urn:nexusfarma:users')
-        .setExpirationTime('7d')
-        .sign(secret);
-    
-    cookies().set('session', token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 7 });
-    await logActivity('Login', `Usuário fez login: ${user.email}`, user.email);
 
     redirect('/dashboard');
 }
