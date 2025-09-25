@@ -15,7 +15,7 @@ export function LoginForm() {
   const [isPending, setIsPending] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); // Prevenir o recarregamento padrão do formulário
+    event.preventDefault(); // Garante que o envio padrão do formulário seja prevenido
     setIsPending(true);
     setErrorMessage(null);
 
@@ -29,10 +29,9 @@ export function LoginForm() {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        // Forçar um recarregamento completo da página para o dashboard
+        // Forçar um recarregamento completo para o dashboard é a abordagem mais robusta
         window.location.href = '/dashboard';
       } else {
-        // Se a API retornar um erro, exibi-lo
         setErrorMessage(result.message || 'Ocorreu um erro desconhecido.');
         setIsPending(false);
       }
