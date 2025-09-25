@@ -30,17 +30,6 @@ export async function writeData<T>(key: string, data: T[]): Promise<void> {
 
 // --- SPECIFIC DATA ACCESSORS ---
 
-export async function getCurrentUser(userId: string): Promise<User | null> {
-    if (!userId) return null;
-    const users = await readData<User>('users');
-    const user = users.find(u => u.id === userId) || null;
-    if (user) {
-        const { password, ...userWithoutPassword } = user;
-        return userWithoutPassword as User;
-    }
-    return null;
-};
-
 export const getProducts = async (): Promise<Product[]> => {
     return await readData<Product>('products');
 };
