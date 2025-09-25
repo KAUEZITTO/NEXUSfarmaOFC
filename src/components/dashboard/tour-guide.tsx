@@ -24,7 +24,6 @@ export const useTour = () => {
     return context;
 };
 
-
 const tourSteps = [
     {
         element: '[data-tour-id="step-logo"]',
@@ -51,6 +50,9 @@ const tourSteps = [
             case 'Relatórios':
                 intro = 'A área de <strong>Relatórios</strong> é poderosa. Gere documentos PDF para auditoria e análise, como consumo mensal, estoque atual, validades e muito mais.';
                 break;
+             case 'Usuários':
+                intro = 'Como <strong>Administrador</strong>, você pode gerenciar os usuários do sistema, alterando seus níveis de acesso e cargos.';
+                break;
             case 'Sobre':
                 intro = 'Na seção <strong>Sobre</strong>, você encontra informações de contato para suporte técnico, sugestões e detalhes sobre a versão do sistema.';
                 break;
@@ -64,14 +66,13 @@ const tourSteps = [
         element: '[data-tour-id="step-user-nav"]',
         intro: 'Por fim, aqui você pode acessar as <strong>Configurações</strong> da sua conta, refazer este tour, ou sair do sistema com segurança. Explore o NexusFarma!',
     }
-];
+].filter(Boolean); // Filter out any undefined steps (like admin route for non-admin)
 
-export function TourProvider({ children }: { children: React.ReactNode }) {
+export function TourGuideWrapper({ children }: { children: React.ReactNode }) {
     const [isTourActive, setIsTourActive] = useState(false);
     const { setOpen } = useSidebar();
 
     const startTour = () => {
-        // Ensure sidebar is open on desktop for the tour
         setOpen(true); 
         setIsTourActive(true);
     };
@@ -106,35 +107,31 @@ export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boo
     };
 
     const onBeforeChange = (nextStepIndex: number) => {
-        const step = tourSteps[nextStepIndex];
-        if (!step) return true; // continue tour
+        // Ensure we don't go out of bounds
+        if (nextStepIndex < 0 || nextStepIndex >= tourSteps.length) {
+            onExit();
+            return false;
+        }
 
-        const tourId = step.element.replace(/\[data-tour-id="|"\]/g, '');
-        
-        // Find associated nav item
-        const navItem = navItems.find(item => item.tourId === tourId);
-        
-        if (navItem && navItem.href !== pathname) {
-            router.push(navItem.href);
-            // We can't proceed immediately, so we stop the tour and restart it on the new page
-            // This is a common pattern for multi-page tours.
-            // A more complex solution would involve a global state manager to handle the step index across navigations.
-            // For this app, this approach is simple and effective.
+        const step = tourSteps[nextStepIndex];
+        if (!step || !step.element) {
+             return false;
         }
-        
-        // Check if the element exists, if not, wait a bit.
-        const checkElement = (retries: number) => {
-            if (retries <= 0) {
-                // If we can't find it, we just skip to the next step or exit.
-                console.warn(`Tour element not found: ${step.element}`);
-                return;
+
+        const targetElement = document.querySelector(step.element);
+         if (!targetElement) {
+            // Find the nav item associated with the step
+            const tourId = step.element.replace(/\[data-tour-id="|"\]/g, '');
+            const navItem = navItems.find(item => item.tourId === tourId);
+
+            // If it's a nav item and we're not on its page, navigate
+            if (navItem && navItem.href !== pathname) {
+                router.push(navItem.href);
             }
-            if (!document.querySelector(step.element)) {
-                setTimeout(() => checkElement(retries - 1), 100);
-            }
+            // If the element still doesn't exist, it's probably better to just skip
+            // or end the tour to avoid getting stuck.
+            return false;
         }
-        
-        checkElement(10); // Check for 1 second max.
 
         return true;
     };
@@ -159,7 +156,76 @@ export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boo
                 tooltipClass: 'custom-tooltip-class',
                 highlightClass: 'custom-highlight-class',
                 exitOnOverlayClick: false,
+                showBullets: false,
             }}
         />
+    );
+}
+
+// Separate component for the update dialog
+export function UpdateDialog({ currentVersion, changelog }: { currentVersion: string, changelog: any[] }) {
+    const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+    const UPDATE_STORAGE_KEY = `nexusfarma-last-seen-version-${currentVersion}`;
+
+    useEffect(() => {
+        const lastSeenVersion = localStorage.getItem(UPDATE_STORAGE_KEY);
+        if (lastSeenVersion !== currentVersion) {
+            setIsUpdateDialogOpen(true);
+        }
+    }, [currentVersion, UPDATE_STORAGE_KEY]);
+
+    const handleCloseUpdateDialog = () => {
+        localStorage.setItem(UPDATE_STORAGE_KEY, currentVersion);
+        setIsUpdateDialogOpen(false);
+    }
+    
+    // Lazy-load the AlertDialog to avoid issues with server components
+    const [AlertDialog, setAlertDialog] = useState<any>(null);
+    useEffect(() => {
+        import('../ui/alert-dialog').then(mod => {
+            setAlertDialog(() => mod.AlertDialog);
+        });
+    }, []);
+
+    if (!AlertDialog) return null;
+
+    const {
+        AlertDialogAction,
+        AlertDialogContent,
+        AlertDialogDescription,
+        AlertDialogFooter,
+        AlertDialogHeader,
+        AlertDialogTitle,
+    } = require('../ui/alert-dialog');
+    const { Badge } = require('../ui/badge');
+
+    return (
+        <AlertDialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>
+                        Novidades da Versão <Badge>{currentVersion}</Badge>
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Confira o que mudou na última atualização do sistema:
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="text-sm text-muted-foreground space-y-3 max-h-60 overflow-y-auto pr-4">
+                    {changelog.map(log => (
+                        <div key={log.version}>
+                            <h4 className="font-semibold text-foreground">Versão {log.version}</h4>
+                            <ul className="list-disc pl-5 space-y-1 mt-1">
+                                {log.changes.map((change, index) => (
+                                    <li key={index}>{change}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    ))}
+                </div>
+                <AlertDialogFooter>
+                    <AlertDialogAction onClick={handleCloseUpdateDialog}>Entendido</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }

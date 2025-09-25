@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { logout } from '@/lib/actions';
-import { LogOut, User, Settings, HelpCircle } from 'lucide-react';
+import { LogOut, HelpCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTour } from './tour-guide';
 import { useCurrentUser } from '@/hooks/use-current-user';
@@ -92,5 +92,3 @@ export function UserNav() {
     </div>
   );
 }
-
-    

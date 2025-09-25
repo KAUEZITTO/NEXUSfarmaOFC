@@ -1,27 +1,17 @@
-'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 
 import { UserNav } from '@/components/dashboard/user-nav';
 import { DashboardNav } from '@/components/dashboard/dashboard-nav';
 import { Logo } from '@/components/logo';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { TourGuide, TourProvider } from '@/components/dashboard/tour-guide';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Badge } from '@/components/ui/badge';
-import { CurrentUserProvider } from '@/hooks/use-current-user';
+import { TourGuideWrapper } from '@/components/dashboard/tour-guide';
+import { UpdateDialog } from '@/components/dashboard/update-dialog';
+import { CurrentUserProvider } from '@/hooks/use-current-user-provider';
+import { getCurrentUserAction } from '@/lib/actions';
 
 
-const UPDATE_STORAGE_KEY = 'nexusfarma-last-seen-version';
 const CURRENT_VERSION = '1.3.7';
 
 const changelog = [
@@ -35,7 +25,7 @@ const changelog = [
     { version: '1.2.0', changes: ['Correção de bugs 20: Refatoração completa do sistema de autenticação e acesso a dados para resolver definitivamente o erro de build `Failed to collect page data`, garantindo a estabilidade da aplicação.'] },
     { version: '1.1.4', changes: ['Refatoração da função `getCurrentUser` para remover a diretiva de Server Action, resolvendo definitivamente o erro de build `Failed to collect page data`.'] },
     { version: '1.1.3', changes: ['Remoção definitiva do `cache` do React da função `getCurrentUser`, resolvendo o erro de build `Failed to collect page data`.'] },
-    { version: '1.1.2', changes: ['Correção de bugs 16: Refatorada a função `getCurrentUser` para remover o `cache` do React, evitando que o processo de build do Next.js a analise e cause erros.'] },
+    { version '1.1.2', changes: ['Correção de bugs 16: Refatorada a função `getCurrentUser` para remover o `cache` do React, evitando que o processo de build do Next.js a analise e cause erros.'] },
     { version: '1.1.1', changes: ['Correção de bugs 15: Correção final do erro de build `Failed to collect page data` ao forçar a renderização dinâmica da rota de API do usuário.'] },
     { version: '1.1.0', changes: ['O sistema agora é considerado estável e saiu da fase Beta.', 'Atualizadas dependências internas para melhorar performance e segurança.'] },
     { version: '1.0.2', changes: ['Correção de erro que impedia a geração de etiquetas de prateleira.'] },
@@ -47,30 +37,17 @@ const changelog = [
     { version: '0.9.2', changes: ['Migração completa do sistema de arquivos para o banco de dados Vercel KV, permitindo persistência de dados online.', 'Remoção de arquivos de dados JSON locais.'] },
 ];
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-
-  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
-
-  useEffect(() => {
-    const lastSeenVersion = localStorage.getItem(UPDATE_STORAGE_KEY);
-    if (lastSeenVersion !== CURRENT_VERSION) {
-      setIsUpdateDialogOpen(true);
-    }
-  }, []);
-
-  const handleCloseUpdateDialog = () => {
-    localStorage.setItem(UPDATE_STORAGE_KEY, CURRENT_VERSION);
-    setIsUpdateDialogOpen(false);
-  }
+  const user = await getCurrentUserAction();
 
   return (
-    <CurrentUserProvider>
+    <CurrentUserProvider user={user}>
         <SidebarProvider>
-          <TourProvider>
+          <TourGuideWrapper>
             <div className="grid min-h-screen w-full md:grid-cols-[var(--sidebar-width)_1fr] peer-data-[state=collapsed]:md:grid-cols-[var(--sidebar-width-icon)_1fr] transition-[grid-template-columns] duration-300 ease-in-out">
               <Sidebar>
                   <SidebarHeader>
@@ -95,39 +72,10 @@ export default function DashboardLayout({
                 </main>
               </div>
             </div>
-            <TourGuide isTourActive={false} setIsTourActive={function (isActive: boolean): void {
-            throw new Error('Function not implemented.');
-          } } />
+            
+            <UpdateDialog currentVersion={CURRENT_VERSION} changelog={changelog} />
 
-            <AlertDialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Novidades da Versão <Badge>{CURRENT_VERSION}</Badge>
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Confira o que mudou na última atualização do sistema:
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <div className="text-sm text-muted-foreground space-y-3 max-h-60 overflow-y-auto pr-4">
-                      {changelog.map(log => (
-                          <div key={log.version}>
-                              <h4 className="font-semibold text-foreground">Versão {log.version}</h4>
-                              <ul className="list-disc pl-5 space-y-1 mt-1">
-                                  {log.changes.map((change, index) => (
-                                      <li key={index}>{change}</li>
-                                  ))}
-                              </ul>
-                          </div>
-                      ))}
-                  </div>
-                  <AlertDialogFooter>
-                    <AlertDialogAction onClick={handleCloseUpdateDialog}>Entendido</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
-          </TourProvider>
+          </TourGuideWrapper>
         </SidebarProvider>
     </CurrentUserProvider>
   );
