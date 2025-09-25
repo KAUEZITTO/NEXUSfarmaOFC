@@ -10,12 +10,11 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
 
 export function LoginForm() {
-  const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+    event.preventDefault(); // Prevent default form submission immediately.
     setIsPending(true);
     setErrorMessage(null);
 
@@ -34,7 +33,6 @@ export function LoginForm() {
 
       if (response.ok && result.success) {
         // Force a full page reload to the dashboard.
-        // This is a more robust method than router.push if client-side routing is failing.
         window.location.href = '/dashboard';
       } else {
         // If API returns an error, display it.
