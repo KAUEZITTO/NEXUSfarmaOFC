@@ -10,32 +10,12 @@ import bcrypt from 'bcrypt';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { kv } from './kv';
-import { getCurrentUserAction as getCurrentUserFromData } from './data';
+import { getCurrentUserAction as getCurrentUserFromData, readData, writeData } from './data';
 import knowledgeBaseData from '@/data/knowledge-base.json';
 
 const uploadPath = path.join(process.cwd(), 'public', 'uploads');
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 const saltRounds = 10;
-
-// Internal helpers to read/write from KV store, used by actions below.
-const readData = async <T>(key: string): Promise<T[]> => {
-    try {
-        const data = await kv.get<T[]>(key);
-        return data || [];
-    } catch (error) {
-        console.error(`Error reading data from KV for key "${key}":`, error);
-        return [];
-    }
-};
-
-const writeData = async <T>(key: string, data: T[]): Promise<void> => {
-    try {
-        await kv.set(key, data);
-    } catch (error) {
-        console.error(`Error writing data to KV for key "${key}":`, error);
-        throw error;
-    }
-};
 
 
 // --- AUTH ACTIONS ---
@@ -441,5 +421,3 @@ export async function resetAllData() {
     
     revalidatePath('/dashboard', 'layout');
 }
-
-    
