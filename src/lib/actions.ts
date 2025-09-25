@@ -9,7 +9,7 @@ import * as jose from 'jose';
 import bcrypt from 'bcrypt';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { getCurrentUserAction, readData, writeData } from './data';
+import { readData, writeData, getCurrentUserAction } from './data';
 import knowledgeBaseData from '@/data/knowledge-base.json';
 
 const uploadPath = path.join(process.cwd(), 'public', 'uploads');
@@ -421,5 +421,3 @@ export async function resetAllData() {
     
     revalidatePath('/dashboard', 'layout');
 }
-
-    

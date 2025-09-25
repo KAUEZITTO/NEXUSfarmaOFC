@@ -46,6 +46,7 @@ export async function getCurrentUserAction(): Promise<User | null> {
         const user = allUsers.find(u => u.id === userId);
         
         if (user) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { password, ...userWithoutPassword } = user;
             return userWithoutPassword as User;
         }
@@ -142,10 +143,6 @@ export const getStockMovements = async (): Promise<StockMovement[]> => {
 
 export async function getAllUsers(): Promise<User[]> {
     const users = await readData<User>('users');
-    return users.map(u => {
-        const { password, ...userWithoutPassword } = u;
-        return userWithoutPassword as User;
-    });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    return users.map(u => { const { password, ...userWithoutPassword } = u; return userWithoutPassword as User; });
 }
-
-    
