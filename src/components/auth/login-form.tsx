@@ -33,9 +33,9 @@ export function LoginForm() {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        // On successful login, the API sets the cookie.
-        // We just need to navigate to the dashboard.
-        router.push('/dashboard');
+        // Force a full page reload to the dashboard.
+        // This is a more robust method than router.push if client-side routing is failing.
+        window.location.href = '/dashboard';
       } else {
         // If API returns an error, display it.
         setErrorMessage(result.message || 'Ocorreu um erro desconhecido.');
