@@ -21,31 +21,23 @@ export async function middleware(request: NextRequest) {
   const isAuthPage = pathname === '/login' || pathname === '/register';
 
   if (!sessionCookie || !(await verifyToken(sessionCookie))) {
-    // Permitir acesso à página inicial na raiz
-    if (pathname === '/') {
+    // Permite acesso à página inicial e às páginas de autenticação se não estiver logado.
+    if (pathname === '/' || isAuthPage) {
         return NextResponse.next();
     }
-    // Permitir acesso às páginas de autenticação se não estiver logado
-    if (isAuthPage) {
-      return NextResponse.next();
-    }
-    // Redirecionar usuários não autenticados de rotas protegidas para o login
+    // Redireciona usuários não autenticados de rotas protegidas para o login.
     return NextResponse.redirect(new URL('/login', request.url));
   }
   
-  // Se o usuário estiver autenticado e tentar acessar login/registro, redirecione para o dashboard
+  // Se o usuário estiver autenticado e tentar acessar login/registro, redireciona para o dashboard.
   if(isAuthPage) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-
-  // Permitir acesso à página inicial mesmo se autenticado
-  if (pathname === '/') {
-      return NextResponse.next();
   }
 
   return NextResponse.next();
 }
 
 export const config = {
+  // Executa o middleware em todas as rotas, exceto para arquivos estáticos e imagens.
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$).*)'],
 };

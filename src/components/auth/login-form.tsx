@@ -30,6 +30,7 @@ export function LoginForm() {
 
       if (response.ok && result.success) {
         // Forçar um recarregamento completo para o dashboard é a abordagem mais robusta
+        // para garantir que o middleware e o layout do servidor processem a nova sessão.
         window.location.href = '/dashboard';
       } else {
         setErrorMessage(result.message || 'Ocorreu um erro desconhecido.');
