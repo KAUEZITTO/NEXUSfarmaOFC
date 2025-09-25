@@ -2,7 +2,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,17 +9,15 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
 
 export function LoginForm() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); // Prevent default form submission immediately.
+    event.preventDefault(); // Prevenir o recarregamento padrão do formulário
     setIsPending(true);
     setErrorMessage(null);
-
-    const formData = new FormData(event.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -32,10 +29,10 @@ export function LoginForm() {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        // Force a full page reload to the dashboard.
+        // Forçar um recarregamento completo da página para o dashboard
         window.location.href = '/dashboard';
       } else {
-        // If API returns an error, display it.
+        // Se a API retornar um erro, exibi-lo
         setErrorMessage(result.message || 'Ocorreu um erro desconhecido.');
         setIsPending(false);
       }
@@ -56,6 +53,9 @@ export function LoginForm() {
           type="email"
           placeholder="seu@email.com"
           required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={isPending}
         />
       </div>
       <div className="grid gap-2">
@@ -68,6 +68,9 @@ export function LoginForm() {
           type="password" 
           required 
           placeholder="••••••••"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={isPending}
         />
       </div>
        <Button type="submit" className="w-full" disabled={isPending}>
