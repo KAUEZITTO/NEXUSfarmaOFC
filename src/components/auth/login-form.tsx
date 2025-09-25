@@ -26,14 +26,20 @@ export function LoginForm() {
         body: JSON.stringify({ email, password }),
       });
 
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        // Forçar um recarregamento completo para o dashboard é a abordagem mais robusta
-        // para garantir que o middleware e o layout do servidor processem a nova sessão.
-        window.location.href = '/dashboard';
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          // Forçar um recarregamento completo para o dashboard é a abordagem mais robusta
+          // para garantir que o middleware e o layout do servidor processem a nova sessão.
+          window.location.href = '/dashboard';
+        } else {
+           setErrorMessage(result.message || 'Ocorreu um erro desconhecido.');
+           setIsPending(false);
+        }
       } else {
-        setErrorMessage(result.message || 'Ocorreu um erro desconhecido.');
+        // Handle non-200 responses
+        const errorResult = await response.json();
+        setErrorMessage(errorResult.message || `Erro: ${response.status} ${response.statusText}`);
         setIsPending(false);
       }
     } catch (error) {

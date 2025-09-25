@@ -219,8 +219,8 @@ export function ReportsClient({
                         Funcionalidade temporariamente desativada.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="flex-grow flex flex-col items-center justify-center text-center text-muted-foreground">
-                    <Loader2 className="h-8 w-8 text-gray-400 animate-spin mb-4" />
+                <CardContent className="flex-grow flex flex-col items-center justify-center text-center text-muted-foreground bg-muted/50 rounded-b-lg">
+                    {/* <Loader2 className="h-8 w-8 text-gray-400 animate-spin mb-4" /> */}
                     <p>O assistente de IA está em manutenção.</p>
                     <p className="text-xs">Esta funcionalidade será reativada em breve.</p>
                 </CardContent>
