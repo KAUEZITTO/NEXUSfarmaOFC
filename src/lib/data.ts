@@ -117,5 +117,3 @@ export async function getAllUsers(): Promise<User[]> {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return users.map(u => { const { password, ...userWithoutPassword } = u; return userWithoutPassword as User; });
 }
-
-    
