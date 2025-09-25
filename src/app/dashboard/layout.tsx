@@ -6,8 +6,7 @@ import { UserNav } from '@/components/dashboard/user-nav';
 import { DashboardNav } from '@/components/dashboard/dashboard-nav';
 import { Logo } from '@/components/logo';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { TourGuideWrapper } from '@/components/dashboard/tour-guide';
-import { UpdateDialog } from '@/components/dashboard/update-dialog';
+import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guide';
 import { CurrentUserProvider } from '@/hooks/use-current-user-provider';
 import { getCurrentUserAction } from '@/lib/actions';
 
