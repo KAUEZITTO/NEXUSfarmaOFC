@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, PatientStatus, User, Role, SubRole, KnowledgeBaseItem } from './types';
@@ -74,46 +75,8 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
     }
 }
 
-
-export async function login(formData: FormData): Promise<{ message: string } | void> {
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-
-    try {
-        const users = await readData<User>('users');
-        const user = users.find(u => u.email === email);
-
-        if (!user) {
-            return { message: 'Email ou senha inválidos.' };
-        }
-
-        const passwordMatch = await bcrypt.compare(password, user.password);
-
-        if (!passwordMatch) {
-            return { message: 'Email ou senha inválidos.' };
-        }
-
-        const token = await new jose.SignJWT({ id: user.id, accessLevel: user.accessLevel })
-            .setProtectedHeader({ alg: 'HS256' })
-            .setIssuedAt()
-            .setSubject(user.id)
-            .setIssuer('urn:nexusfarma')
-            .setAudience('urn:nexusfarma:users')
-            .setExpirationTime('7d')
-            .sign(secret);
-        
-        cookies().set('session', token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 7 });
-        await logActivity('Login', `Usuário fez login: ${user.email}`, user.email);
-
-    } catch (error) {
-        console.error("Login error:", error);
-        return { message: 'Ocorreu um erro inesperado durante o login.'};
-    }
-    
-    // Redirect on success, handled by Next.js server-side.
-    redirect('/dashboard');
-}
-
+// NOTE: The login logic has been moved to /api/auth/login/route.ts
+// This file no longer contains a `login` server action.
 
 export async function logout() {
   const currentUser = await getCurrentUserAction();

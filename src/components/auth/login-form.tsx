@@ -8,9 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { login } from '@/lib/actions';
 
 export function LoginForm() {
+  const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
@@ -20,27 +20,31 @@ export function LoginForm() {
     setErrorMessage(null);
 
     const formData = new FormData(event.currentTarget);
-    
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
     try {
-      const result = await login(formData);
-      // If the login action returns an error message, display it.
-      if (result?.message) {
-        setErrorMessage(result.message);
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // On successful login, the API sets the cookie.
+        // We just need to navigate to the dashboard.
+        router.push('/dashboard');
+      } else {
+        // If API returns an error, display it.
+        setErrorMessage(result.message || 'Ocorreu um erro desconhecido.');
         setIsPending(false);
       }
-      // If login is successful, the server action will redirect, and this component
-      // will unmount. If it's still mounted and there's no error, something is wrong.
-    } catch (error: any) {
-        // The `redirect()` function throws a special NEXT_REDIRECT error.
-        // We should not treat it as an actual error in the form.
-        // Any other error, however, should be displayed.
-        if (error.digest?.startsWith('NEXT_REDIRECT')) {
-           // This is expected, do nothing. The browser will be redirected.
-        } else {
-            console.error("An unexpected error occurred during login:", error);
-            setErrorMessage("Ocorreu um erro inesperado. Tente novamente.");
-            setIsPending(false);
-        }
+    } catch (error) {
+      console.error("An unexpected error occurred during login:", error);
+      setErrorMessage("Não foi possível conectar ao servidor. Tente novamente.");
+      setIsPending(false);
     }
   };
 
