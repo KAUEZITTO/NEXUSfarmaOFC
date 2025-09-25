@@ -40,8 +40,6 @@ export async function POST(request: Request) {
       
     cookies().set('session', token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 7 });
     
-    // Do not log here to avoid action complexity
-    
     return NextResponse.json({ success: true });
 
   } catch (error) {
@@ -49,3 +47,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, message: 'Ocorreu um erro inesperado no servidor.' }, { status: 500 });
   }
 }
+
+    
