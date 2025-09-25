@@ -1,3 +1,4 @@
+
 // This file contains functions for reading data from the database.
 // It is separate from actions.ts to avoid breaking the build process.
 // It should NOT contain any 'use server' directives or import functions
@@ -120,3 +121,5 @@ export async function getAllUsers(): Promise<User[]> {
         return userWithoutPassword as User;
     });
 }
+
+    
