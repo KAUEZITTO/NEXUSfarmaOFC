@@ -28,6 +28,11 @@ export async function POST(request: Request) {
     if (!passwordMatch) {
       return NextResponse.json({ success: false, message: 'Email ou senha inválidos.' }, { status: 401 });
     }
+    
+    if (!user.accessLevel) {
+       console.error(`[API LOGIN ERROR] User ${user.email} has no accessLevel defined.`);
+       return NextResponse.json({ success: false, message: 'Erro de configuração de conta. Contate o suporte.' }, { status: 500 });
+    }
 
     const token = await new jose.SignJWT({ id: user.id, accessLevel: user.accessLevel })
       .setProtectedHeader({ alg: 'HS256' })
@@ -47,5 +52,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, message: 'Ocorreu um erro inesperado no servidor.' }, { status: 500 });
   }
 }
-
-    
