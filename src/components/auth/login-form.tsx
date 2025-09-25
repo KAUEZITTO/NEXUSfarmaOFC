@@ -22,32 +22,21 @@ export function LoginForm() {
 
     const formData = new FormData(event.currentTarget);
     
-    try {
-        const result = await login(formData);
+    // The server action will handle the redirect on success.
+    // If it returns a result, it's always an error message.
+    const result = await login(formData);
 
-        // This code will only execute if the server action returns an error
-        if (result && !result.success) {
-          setErrorMessage(result.message);
-          setIsPending(false);
-        } else {
-            // The server action will handle the redirect on success.
-            // If we get here without an error, it means the redirect is happening.
-            toast({
-                title: 'Login bem-sucedido!',
-                description: 'Bem-vindo(a) de volta! Redirecionando...',
-            });
-        }
-    } catch (error) {
-        // This catch block will handle the special error thrown by `redirect()`
-        // in Next.js. We can safely ignore it. Any other real errors will
-        // be caught and can be handled here if needed.
-        if ((error as any).digest?.startsWith('NEXT_REDIRECT')) {
-            // This is expected, do nothing.
-        } else {
-            console.error("Login form error:", error);
-            setErrorMessage("Ocorreu um erro inesperado. Tente novamente.");
-            setIsPending(false);
-        }
+    if (result && result.message) {
+      setErrorMessage(result.message);
+      setIsPending(false);
+    } else {
+      // If there's no error message, the redirect is in progress.
+      // We show a toast and the server handles the rest.
+      // The pending state will remain true until the page unloads.
+      toast({
+          title: 'Login bem-sucedido!',
+          description: 'Bem-vindo(a) de volta! Redirecionando...',
+      });
     }
   };
 
@@ -89,5 +78,3 @@ export function LoginForm() {
     </form>
   );
 }
-
-    
