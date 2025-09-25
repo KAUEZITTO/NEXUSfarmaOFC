@@ -15,13 +15,6 @@ async function verifyToken(token: string): Promise<jose.JWTPayload | null> {
 }
 
 export async function middleware(request: NextRequest) {
-  // START: TEMPORARY BYPASS FOR DEVELOPMENT
-  // This line disables all authentication checks.
-  // To re-enable security, remove this line.
-  return NextResponse.next();
-  // END: TEMPORARY BYPASS FOR DEVELOPMENT
-
-
   const sessionCookie = request.cookies.get('session')?.value;
   const { pathname } = request.nextUrl;
 
