@@ -10,8 +10,6 @@ import {
 import { InventoryClient } from "./inventory-client";
 import type { Product } from "@/lib/types";
 
-export const dynamic = 'force-dynamic';
-
 // The GroupedProduct type now lives here as it's a conceptual representation
 // of what the client component will create.
 export type GroupedProduct = Product & {

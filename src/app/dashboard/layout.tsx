@@ -10,6 +10,7 @@ import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guid
 import { CurrentUserProvider } from '@/hooks/use-current-user-provider';
 import { getCurrentUserAction } from '@/lib/data';
 
+export const dynamic = 'force-dynamic';
 
 const CURRENT_VERSION = '1.3.7';
 

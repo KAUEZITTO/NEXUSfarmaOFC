@@ -45,8 +45,6 @@ import { getProducts, getOrders, getAllDispensations } from "@/lib/data"
 import type { Product, Order, Unit, Dispensation } from "@/lib/types"
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart"
 
-export const dynamic = 'force-dynamic';
-
 const getUnitsServed = (orders: Order[]) => {
     const unitsMap = new Map<string, { name: string, itemCount: number, type: string }>();
 
