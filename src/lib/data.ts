@@ -1,8 +1,4 @@
 
-// This file contains functions for reading data from the database.
-// It is separate from actions.ts to avoid breaking the build process.
-// It should NOT contain any 'use server' directives or import functions
-// that are only available in server components (e.g., `cookies` from `next/headers`).
 import { kv } from '@/lib/kv';
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
 

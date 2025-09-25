@@ -74,6 +74,7 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
             accessLevel,
         };
         
+        // Re-read data in case it was cleared
         const currentUsers = await readData<User>('users');
         currentUsers.push(newUser);
         await writeData('users', currentUsers);
@@ -435,5 +436,3 @@ export async function resetAllData() {
     
     revalidatePath('/dashboard', 'layout');
 }
-
-    
