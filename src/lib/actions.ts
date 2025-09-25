@@ -16,7 +16,6 @@ const uploadPath = path.join(process.cwd(), 'public', 'uploads');
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 const saltRounds = 10;
 
-// This function is now self-contained within the actions file to avoid build issues.
 async function getCurrentUserAction(): Promise<User | null> {
     const sessionCookie = cookies().get('session')?.value;
     if (!sessionCookie) return null;
@@ -66,7 +65,6 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
         
         users.push(newUser);
         await writeData('users', users);
-        // On registration, the user is not logged in, so the action is performed by the "Sistema".
         await logActivity('Cadastro de Usuário', `Novo usuário cadastrado: ${userData.email} com cargo ${userData.role} e nível ${accessLevel}.`, 'Sistema');
 
         return { success: true, message: 'Conta criada com sucesso!' };
@@ -107,13 +105,11 @@ export async function login(formData: FormData): Promise<{ success: boolean; mes
         cookies().set('session', token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 7 });
         await logActivity('Login', `Usuário fez login: ${user.email}`, user.email);
 
-        // Return success to the client, which will handle the redirect.
         return { success: true };
 
     } catch (error) {
         console.error("Login error:", error);
-        // Return a generic error message to the client.
-        return { success: false, message: 'Ocorreu um erro inesperado durante o login.'}
+        return { success: false, message: 'Ocorreu um erro inesperado durante o login. Verifique o console do servidor.'}
     }
 }
 
@@ -136,7 +132,6 @@ type ActivityLog = {
     timestamp: string;
 }
 
-// Internal helper, not exported as a server action
 async function logActivity(action: string, details: string, userEmail: string) {
     const logs = await readData<ActivityLog>('logs');
     const logEntry: ActivityLog = {
@@ -151,7 +146,6 @@ async function logActivity(action: string, details: string, userEmail: string) {
 
 // --- STOCK MOVEMENT LOGGING ---
 
-// Internal helper, not exported as a server action
 async function logStockMovement(
     productId: string,
     productName: string,
@@ -182,7 +176,6 @@ async function logStockMovement(
 
 // --- KNOWLEDGE BASE ---
 export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
-    // Directly return the imported JSON data. This is safe.
     return knowledgeBaseData;
 }
 
@@ -354,7 +347,6 @@ export async function updatePatientStatus(patientId: string, status: PatientStat
 
 // --- ORDERS / DISPENSATIONS (STOCK UPDATE) ---
 
-// Internal helper, not exported.
 async function processStockUpdate(items: (Order['items'] | Dispensation['items']), reason: StockMovement['reason'], relatedId: string, userEmail: string) {
     let products = await readData<Product>('products');
     let productsUpdated = false;
