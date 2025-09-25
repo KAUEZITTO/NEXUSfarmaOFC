@@ -8,15 +8,36 @@ import * as jose from 'jose';
 import bcrypt from 'bcrypt';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { readData, writeData } from './data';
+import { kv } from './kv';
 import knowledgeBaseData from '@/data/knowledge-base.json';
 
 const uploadPath = path.join(process.cwd(), 'public', 'uploads');
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 const saltRounds = 10;
 
+// Internal helpers to read/write from KV store, used by actions below.
+const readData = async <T>(key: string): Promise<T[]> => {
+    try {
+        const data = await kv.get<T[]>(key);
+        return data || [];
+    } catch (error) {
+        console.error(`Error reading data from KV for key "${key}":`, error);
+        return [];
+    }
+};
+
+const writeData = async <T>(key: string, data: T[]): Promise<void> => {
+    try {
+        await kv.set(key, data);
+    } catch (error) {
+        console.error(`Error writing data to KV for key "${key}":`, error);
+        throw error;
+    }
+};
+
+
 // Internal helper to get user from session. NOT exported.
-async function getCurrentUser(): Promise<User | null> {
+async function getInternalCurrentUser(): Promise<User | null> {
     const sessionCookie = cookies().get('session')?.value;
     if (!sessionCookie) return null;
 
@@ -42,6 +63,31 @@ async function getCurrentUser(): Promise<User | null> {
 
 
 // --- AUTH ACTIONS ---
+
+export async function getCurrentUserAction(): Promise<User | null> {
+    const sessionCookie = cookies().get('session')?.value;
+    if (!sessionCookie) return null;
+
+    try {
+        const { payload } = await jose.jwtVerify(sessionCookie, secret);
+        const userId = payload.sub;
+        if (!userId) return null;
+        
+        const allUsers = await readData<User>('users');
+        const user = allUsers.find(u => u.id === userId);
+        
+        if (user) {
+            const { password, ...userWithoutPassword } = user;
+            return userWithoutPassword as User;
+        }
+        return null;
+
+    } catch (error) {
+        // This is not a critical error if the token is just expired.
+        // console.error("Failed to get current user in action:", error);
+        return null;
+    }
+}
 
 export async function register(userData: Omit<User, 'id' | 'password' | 'accessLevel'> & { password: string }): Promise<{ success: boolean; message: string }> {
     const users = await readData<User>('users');
@@ -104,7 +150,7 @@ export async function login(formData: FormData): Promise<{ success: boolean; mes
 
 
 export async function logout() {
-  const user = await getCurrentUser();
+  const user = await getInternalCurrentUser();
   if (user) {
     await logActivity('Logout', `Usuário ${user.email} saiu.`);
   }
@@ -123,7 +169,7 @@ type ActivityLog = {
 
 // Internal helper, not exported as a server action
 async function logActivity(action: string, details: string) {
-    const user = await getCurrentUser();
+    const user = await getInternalCurrentUser();
     const logs = await readData<ActivityLog>('logs');
     const logEntry: ActivityLog = {
         user: user?.email || 'Sistema',
@@ -147,7 +193,7 @@ async function logStockMovement(
     quantityBefore: number,
     relatedId?: string
 ) {
-    const user = await getCurrentUser();
+    const user = await getInternalCurrentUser();
     const movements = await readData<StockMovement>('stockMovements');
     const movement: StockMovement = {
         id: `mov-${Date.now()}`,
@@ -403,7 +449,7 @@ export async function addDispensation(dispensationData: Omit<Dispensation, 'id' 
 
 // --- DATA RESET ---
 export async function resetAllData() {
-    const currentUser = await getCurrentUser();
+    const currentUser = await getInternalCurrentUser();
     if (currentUser?.accessLevel !== 'Admin') {
         throw new Error("Acesso não autorizado para limpar dados.");
     }

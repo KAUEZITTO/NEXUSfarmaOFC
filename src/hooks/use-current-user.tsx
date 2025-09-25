@@ -4,6 +4,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User } from '@/lib/types';
 import { usePathname } from 'next/navigation';
+import { getCurrentUserAction } from '@/lib/actions';
 
 const CurrentUserContext = createContext<User | null>(null);
 
@@ -18,17 +19,11 @@ export function CurrentUserProvider({ children }: { children: React.ReactNode })
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                // This fetch will be intercepted by the middleware which checks the cookie.
-                // If valid, the API route will then provide the user data.
-                const res = await fetch('/api/user');
-                if (res.ok) {
-                    const userData = await res.json();
-                    setUser(userData);
-                } else {
-                    setUser(null);
-                }
+                // Call the Server Action directly to get the current user.
+                const userData = await getCurrentUserAction();
+                setUser(userData);
             } catch (error) {
-                console.error("Failed to fetch user data", error);
+                console.error("Failed to fetch user data via action", error);
                 setUser(null);
             }
         };
