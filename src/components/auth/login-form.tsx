@@ -15,7 +15,7 @@ export function LoginForm() {
   const [isPending, setIsPending] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); // Garante que o envio padrão do formulário seja prevenido
+    event.preventDefault();
     setIsPending(true);
     setErrorMessage(null);
 
@@ -86,5 +86,3 @@ export function LoginForm() {
     </form>
   );
 }
-
-    
