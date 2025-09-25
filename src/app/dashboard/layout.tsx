@@ -8,7 +8,7 @@ import { Logo } from '@/components/logo';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guide';
 import { CurrentUserProvider } from '@/hooks/use-current-user-provider';
-import { getCurrentUserAction } from '@/lib/actions';
+import { getCurrentUserAction } from '@/lib/data';
 
 
 const CURRENT_VERSION = '1.3.7';
@@ -79,3 +79,5 @@ export default async function DashboardLayout({
     </CurrentUserProvider>
   );
 }
+
+    

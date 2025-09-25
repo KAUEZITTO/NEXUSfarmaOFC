@@ -3,10 +3,12 @@
 // It is separate from actions.ts to avoid breaking the build process.
 // It should NOT contain any 'use server' directives or import functions
 // that are only available in server components (e.g., `cookies` from `next/headers`).
-
+import { cookies } from 'next/headers';
+import * as jose from 'jose';
 import { kv } from '@/lib/kv';
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
 
+const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 
 // --- GENERIC DATA ACCESS ---
 
@@ -30,6 +32,30 @@ export async function writeData<T>(key: string, data: T[]): Promise<void> {
 }
 
 // --- SPECIFIC DATA ACCESSORS ---
+
+export async function getCurrentUserAction(): Promise<User | null> {
+    const sessionCookie = cookies().get('session')?.value;
+    if (!sessionCookie) return null;
+
+    try {
+        const { payload } = await jose.jwtVerify(sessionCookie, secret);
+        const userId = payload.sub;
+        if (!userId) return null;
+        
+        const allUsers = await readData<User>('users');
+        const user = allUsers.find(u => u.id === userId);
+        
+        if (user) {
+            const { password, ...userWithoutPassword } = user;
+            return userWithoutPassword as User;
+        }
+        return null;
+
+    } catch (error) {
+        return null;
+    }
+}
+
 
 export const getProducts = async (): Promise<Product[]> => {
     return await readData<Product>('products');
