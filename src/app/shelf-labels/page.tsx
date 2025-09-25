@@ -30,3 +30,5 @@ export default async function ShelfLabelsPage() {
 
   return <ShelfLabelsClient products={uniqueProducts} />;
 }
+
+    
