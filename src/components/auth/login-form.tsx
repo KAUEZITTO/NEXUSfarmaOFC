@@ -26,16 +26,18 @@ export function LoginForm() {
     
     const result = await login(formData);
 
-    if (result.success) {
+    if (result?.message) {
+      setErrorMessage(result.message);
+      setIsPending(false);
+    } else {
       toast({
           title: 'Login bem-sucedido!',
           description: 'Bem-vindo(a) de volta! Redirecionando...',
       });
+      // The server action was successful (no error message returned),
+      // so we can safely redirect on the client.
       router.push('/dashboard');
-      router.refresh(); // Força a atualização da página para carregar o novo estado
-    } else {
-      setErrorMessage(result.message || 'Ocorreu um erro desconhecido.');
-      setIsPending(false);
+      router.refresh(); 
     }
   };
 

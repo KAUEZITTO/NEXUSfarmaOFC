@@ -75,7 +75,7 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
 }
 
 
-export async function login(formData: FormData): Promise<{ success: boolean; message?: string }> {
+export async function login(formData: FormData): Promise<{ message: string } | void> {
     try {
         const email = formData.get('email') as string;
         const password = formData.get('password') as string;
@@ -84,13 +84,13 @@ export async function login(formData: FormData): Promise<{ success: boolean; mes
         const user = users.find(u => u.email === email);
 
         if (!user) {
-            return { success: false, message: 'Email ou senha inválidos.' };
+            return { message: 'Email ou senha inválidos.' };
         }
 
         const passwordMatch = await bcrypt.compare(password, user.password);
 
         if (!passwordMatch) {
-            return { success: false, message: 'Email ou senha inválidos.' };
+            return { message: 'Email ou senha inválidos.' };
         }
 
         const token = await new jose.SignJWT({ id: user.id, accessLevel: user.accessLevel })
@@ -105,11 +105,10 @@ export async function login(formData: FormData): Promise<{ success: boolean; mes
         cookies().set('session', token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 7 });
         await logActivity('Login', `Usuário fez login: ${user.email}`, user.email);
 
-        return { success: true };
-
+        // On success, do not return anything. The client will handle the redirect.
     } catch (error) {
         console.error("Login error:", error);
-        return { success: false, message: 'Ocorreu um erro inesperado durante o login.'}
+        return { message: 'Ocorreu um erro inesperado durante o login.'};
     }
 }
 
