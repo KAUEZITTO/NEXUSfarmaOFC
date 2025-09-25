@@ -1,4 +1,3 @@
-
 'use server';
 
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, PatientStatus, User, Role, SubRole, KnowledgeBaseItem } from './types';
@@ -40,6 +39,7 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
     
     users.push(newUser);
     await writeData('users', users);
+    // On registration, the user is not logged in, so the action is performed by the "Sistema".
     await logActivity('Cadastro de Usuário', `Novo usuário cadastrado: ${userData.email} com cargo ${userData.role} e nível ${accessLevel}.`, 'Sistema');
 
     return { success: true, message: 'Conta criada com sucesso!' };
@@ -67,8 +67,8 @@ export async function login(formData: FormData): Promise<{ success: boolean; mes
         .setProtectedHeader({ alg: 'HS256' })
         .setIssuedAt()
         .setSubject(user.id)
-        .setIssuer('urn:example:issuer')
-        .setAudience('urn:example:audience')
+        .setIssuer('urn:nexusfarma')
+        .setAudience('urn:nexusfarma:users')
         .setExpirationTime('7d')
         .sign(secret);
     

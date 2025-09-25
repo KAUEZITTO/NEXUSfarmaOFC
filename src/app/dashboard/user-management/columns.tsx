@@ -7,6 +7,11 @@ import { ArrowUpDown, MoreHorizontal, ShieldCheck } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from "@/components/ui/dropdown-menu"
 
+// Note: The 'Alterar Nível de Acesso' functionality is currently disabled in the UI
+// because the corresponding server action has not been implemented yet.
+// To enable it, you would need to create an action to update the user's accessLevel
+// and then re-enable the DropdownMenuSub component below and pass the handler function.
+
 export const getColumns = (): ColumnDef<User>[] => [
   {
     accessorKey: "email",
@@ -57,8 +62,10 @@ export const getColumns = (): ColumnDef<User>[] => [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
-            <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
+            {/* 
+              This functionality is disabled until the server action is implemented.
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger disabled>
                     <ShieldCheck className="mr-2 h-4 w-4" />
                     <span>Alterar Nível de Acesso</span>
                 </DropdownMenuSubTrigger>
@@ -72,7 +79,12 @@ export const getColumns = (): ColumnDef<User>[] => [
                         </DropdownMenuItem>
                     </DropdownMenuSubContent>
                 </DropdownMenuPortal>
-            </DropdownMenuSub>
+              </DropdownMenuSub>
+            */}
+             <DropdownMenuItem disabled>
+                <ShieldCheck className="mr-2 h-4 w-4" />
+                <span>Alterar Acesso (Em breve)</span>
+             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )

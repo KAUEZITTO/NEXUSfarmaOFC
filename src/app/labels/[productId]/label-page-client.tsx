@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useRef } from 'react';
@@ -73,8 +72,10 @@ export function LabelPageClient({ product, isBox }: LabelPageClientProps) {
         // Automatically trigger print dialog when the page loads
         window.print();
     }, []);
-
-    const labelCount = product.quantity > 0 ? product.quantity : 1;
+    
+    // For a specific product/batch label, we want a full page of that one label.
+    // The quantity is irrelevant for this specific label printing page.
+    const labelCount = 1; 
 
     // Define dimensions in mm
     const largeW = 100;
@@ -97,16 +98,10 @@ export function LabelPageClient({ product, isBox }: LabelPageClientProps) {
     const rows = Math.floor(pageH / (labelHeight + gap));
 
     const labelsPerPage = cols * rows;
-    const pageCount = Math.ceil(labelCount / labelsPerPage);
 
-    const pages = Array.from({ length: pageCount }, (_, pageIndex) => {
-        const start = pageIndex * labelsPerPage;
-        const pageItemsCount = Math.min(labelCount - start, labelsPerPage);
-
-        return Array.from({ length: pageItemsCount }, (_, labelIndex) => {
-            return <ProductLabel product={product} />;
-        });
-    });
+    const labelsToPrint = Array.from({ length: labelsPerPage }, (_, i) => (
+      <ProductLabel key={i} product={product} />
+    ));
 
 
   return (
@@ -135,10 +130,8 @@ export function LabelPageClient({ product, isBox }: LabelPageClientProps) {
       `}</style>
 
         <div className="print-container bg-gray-100 print:bg-white text-black">
-            {pages.map((pageLabels, index) => (
                 <div 
-                    key={index}
-                    className={`grid bg-white w-[210mm] h-[297mm] mx-auto my-4 shadow-lg print:shadow-none print:my-0 ${index > 0 ? 'page-break-before' : ''}`}
+                    className="grid bg-white w-[210mm] h-[297mm] mx-auto my-4 shadow-lg print:shadow-none print:my-0"
                     style={{ 
                         gridTemplateColumns: `repeat(${cols}, ${labelWidth}mm)`,
                         gridTemplateRows: `repeat(${rows}, ${labelHeight}mm)`,
@@ -148,13 +141,12 @@ export function LabelPageClient({ product, isBox }: LabelPageClientProps) {
                         boxSizing: 'border-box'
                      }}
                 >
-                    {pageLabels.map((label, i) => (
+                    {labelsToPrint.map((label, i) => (
                         <div key={i} style={{width: `${labelWidth}mm`, height: `${labelHeight}mm`, boxSizing: 'border-box'}}>
                            {label}
                         </div>
                     ))}
                 </div>
-            ))}
         </div>
 
       <div className="fixed bottom-4 right-4 flex gap-2 print:hidden">
