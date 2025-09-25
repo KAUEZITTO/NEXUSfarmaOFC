@@ -9,11 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { login } from '@/lib/actions';
-import { useToast } from '@/hooks/use-toast';
 
 export function LoginForm() {
-  const router = useRouter();
-  const { toast } = useToast();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
@@ -24,20 +21,26 @@ export function LoginForm() {
 
     const formData = new FormData(event.currentTarget);
     
-    const result = await login(formData);
-
-    if (result?.message) {
-      setErrorMessage(result.message);
-      setIsPending(false);
-    } else {
-      toast({
-          title: 'Login bem-sucedido!',
-          description: 'Bem-vindo(a) de volta! Redirecionando...',
-      });
-      // The server action was successful (no error message returned),
-      // so we can safely redirect on the client.
-      router.push('/dashboard');
-      router.refresh(); 
+    try {
+      const result = await login(formData);
+      // If the login action returns an error message, display it.
+      if (result?.message) {
+        setErrorMessage(result.message);
+        setIsPending(false);
+      }
+      // If login is successful, the server action will redirect, and this component
+      // will unmount. If it's still mounted and there's no error, something is wrong.
+    } catch (error: any) {
+        // The `redirect()` function throws a special NEXT_REDIRECT error.
+        // We should not treat it as an actual error in the form.
+        // Any other error, however, should be displayed.
+        if (error.digest?.startsWith('NEXT_REDIRECT')) {
+           // This is expected, do nothing. The browser will be redirected.
+        } else {
+            console.error("An unexpected error occurred during login:", error);
+            setErrorMessage("Ocorreu um erro inesperado. Tente novamente.");
+            setIsPending(false);
+        }
     }
   };
 

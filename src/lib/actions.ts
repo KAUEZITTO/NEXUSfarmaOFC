@@ -76,10 +76,10 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
 
 
 export async function login(formData: FormData): Promise<{ message: string } | void> {
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
     try {
-        const email = formData.get('email') as string;
-        const password = formData.get('password') as string;
-        
         const users = await readData<User>('users');
         const user = users.find(u => u.email === email);
 
@@ -105,11 +105,13 @@ export async function login(formData: FormData): Promise<{ message: string } | v
         cookies().set('session', token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 7 });
         await logActivity('Login', `Usuário fez login: ${user.email}`, user.email);
 
-        // On success, do not return anything. The client will handle the redirect.
     } catch (error) {
         console.error("Login error:", error);
         return { message: 'Ocorreu um erro inesperado durante o login.'};
     }
+    
+    // Redirect on success, handled by Next.js server-side.
+    redirect('/dashboard');
 }
 
 
