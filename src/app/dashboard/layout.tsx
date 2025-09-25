@@ -13,8 +13,6 @@ import { CurrentUserProvider } from '@/hooks/use-current-user-provider';
 import type { User } from '@/lib/types';
 import { readData } from '@/lib/data';
 
-export const dynamic = 'force-dynamic';
-
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 
 // This function is now self-contained within the layout, preventing build errors.
@@ -35,6 +33,18 @@ async function getCurrentUser(): Promise<User | null> {
             const { password, ...userWithoutPassword } = user;
             return userWithoutPassword as User;
         }
+
+        // Handle test user case
+        if (userId === 'user-test') {
+            return {
+                id: 'user-test',
+                email: 'teste@nexus.com',
+                role: 'Farmacêutico',
+                subRole: 'CAF',
+                accessLevel: 'Admin'
+            };
+        }
+
         return null;
 
     } catch (error) {
@@ -107,5 +117,3 @@ export default async function DashboardLayout({
     </CurrentUserProvider>
   );
 }
-
-    

@@ -40,10 +40,13 @@ export async function POST(request: Request) {
       const foundUser = users.find(u => u.email === email);
 
       if (foundUser) {
-        const isMatch = await bcrypt.compare(password, foundUser.password);
-        if (isMatch) {
-          user = foundUser;
-          passwordMatch = true;
+        // Ensure foundUser.password is not undefined before comparing
+        if (foundUser.password) {
+            const isMatch = await bcrypt.compare(password, foundUser.password);
+            if (isMatch) {
+              user = foundUser;
+              passwordMatch = true;
+            }
         }
       }
     }
