@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { login } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 
 export function LoginForm() {
+  const router = useRouter();
   const { toast } = useToast();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
@@ -22,21 +24,18 @@ export function LoginForm() {
 
     const formData = new FormData(event.currentTarget);
     
-    // The server action will handle the redirect on success.
-    // If it returns a result, it's always an error message.
     const result = await login(formData);
 
-    if (result && result.message) {
-      setErrorMessage(result.message);
-      setIsPending(false);
-    } else {
-      // If there's no error message, the redirect is in progress.
-      // We show a toast and the server handles the rest.
-      // The pending state will remain true until the page unloads.
+    if (result.success) {
       toast({
           title: 'Login bem-sucedido!',
           description: 'Bem-vindo(a) de volta! Redirecionando...',
       });
+      router.push('/dashboard');
+      // No need to set isPending to false here, as the page will navigate away.
+    } else {
+      setErrorMessage(result.message || 'Ocorreu um erro desconhecido.');
+      setIsPending(false);
     }
   };
 
