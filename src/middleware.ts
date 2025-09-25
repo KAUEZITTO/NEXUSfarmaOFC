@@ -18,30 +18,32 @@ export async function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get('session')?.value;
   const { pathname } = request.nextUrl;
 
-  const isAuthPage = pathname === '/login' || pathname === '/register';
-  const isPublicPage = pathname === '/';
-  
   const isAuthenticated = sessionCookie && await verifyToken(sessionCookie);
 
+  const isAuthPage = pathname === '/login' || pathname === '/register';
+  const isPublicPage = pathname === '/';
+
+  // If the user is authenticated
   if (isAuthenticated) {
-    // If authenticated, and trying to access login/register, redirect to dashboard
+    // If they try to access login/register, redirect them to the dashboard
     if (isAuthPage) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
-    // Allow access to all other pages
+    // Otherwise, allow them to proceed to the requested page
     return NextResponse.next();
   }
 
-  // If not authenticated
-  // Allow access to public and auth pages
+  // If the user is NOT authenticated
+  // If they are trying to access a public page or an auth page, allow them
   if (isPublicPage || isAuthPage) {
     return NextResponse.next();
   }
 
-  // For any other protected page, redirect to login
+  // If they are trying to access any other protected page, redirect them to login
   return NextResponse.redirect(new URL('/login', request.url));
 }
 
 export const config = {
+  // This matcher excludes API routes, static files, and image optimization files.
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$).*)'],
 };

@@ -26,21 +26,16 @@ export function LoginForm() {
         body: JSON.stringify({ email, password }),
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          // Forçar um recarregamento completo para o dashboard é a abordagem mais robusta
-          // para garantir que o middleware e o layout do servidor processem a nova sessão.
-          window.location.href = '/dashboard';
-        } else {
-           setErrorMessage(result.message || 'Ocorreu um erro desconhecido.');
-           setIsPending(false);
-        }
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Force a full page reload to the dashboard.
+        // This is the most reliable way to ensure the middleware
+        // and server components re-evaluate with the new session cookie.
+        window.location.href = '/dashboard';
       } else {
-        // Handle non-200 responses
-        const errorResult = await response.json();
-        setErrorMessage(errorResult.message || `Erro: ${response.status} ${response.statusText}`);
-        setIsPending(false);
+         setErrorMessage(result.message || 'Ocorreu um erro desconhecido.');
+         setIsPending(false);
       }
     } catch (error) {
       console.error("An unexpected error occurred during login:", error);
