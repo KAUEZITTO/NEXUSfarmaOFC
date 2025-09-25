@@ -16,7 +16,7 @@ const uploadPath = path.join(process.cwd(), 'public', 'uploads');
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 const saltRounds = 10;
 
-// Moved from data.ts to be co-located with actions that use it.
+// This function is now self-contained within the actions file to avoid build issues.
 async function getCurrentUserAction(): Promise<User | null> {
     const sessionCookie = cookies().get('session')?.value;
     if (!sessionCookie) return null;
@@ -72,7 +72,7 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
 }
 
 
-export async function login(formData: FormData) {
+export async function login(formData: FormData): Promise<{ message: string } | void> {
     try {
         const email = formData.get('email') as string;
         const password = formData.get('password') as string;
@@ -81,13 +81,13 @@ export async function login(formData: FormData) {
         const user = users.find(u => u.email === email);
 
         if (!user) {
-            return { success: false, message: 'Email ou senha inválidos.' };
+            return { message: 'Email ou senha inválidos.' };
         }
 
         const passwordMatch = await bcrypt.compare(password, user.password);
 
         if (!passwordMatch) {
-            return { success: false, message: 'Email ou senha inválidos.' };
+            return { message: 'Email ou senha inválidos.' };
         }
 
         const token = await new jose.SignJWT({ id: user.id, accessLevel: user.accessLevel })
@@ -101,12 +101,14 @@ export async function login(formData: FormData) {
         
         cookies().set('session', token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 7 });
         await logActivity('Login', `Usuário fez login: ${user.email}`, user.email);
+
     } catch (error) {
-        if ((error as any).message.includes('credentialssignin')) {
-            return { success: false, message: 'Email ou senha inválidos.' };
+        // This specifically handles the special error thrown by redirect()
+        if (error instanceof Error && (error as any).digest?.startsWith('NEXT_REDIRECT')) {
+           throw error;
         }
         console.error("Login error:", error);
-        return { success: false, message: 'Ocorreu um erro inesperado.'}
+        return { message: 'Ocorreu um erro inesperado.'}
     }
 
     redirect('/dashboard');
