@@ -23,10 +23,11 @@ import { CurrentUserProvider } from '@/hooks/use-current-user';
 
 
 const UPDATE_STORAGE_KEY = 'nexusfarma-last-seen-version';
-const CURRENT_VERSION = '1.3.7';
+const CURRENT_VERSION = '1.4.0';
 
 const changelog = [
-    { version: '1.3.7', changes: ['Correção Total 1: Refatoração completa e final do sistema de autenticação e acesso a dados, eliminando a rota de API /api/user e substituindo-a por uma Server Action dedicada para resolver definitivamente o erro de build `Failed to collect page data`, garantindo a estabilidade da aplicação.'] },
+    { version: '1.4.0', changes: ['Versão Definitivo 1: Refatoração completa da arquitetura de componentes cliente/servidor para resolver definitivamente todos os erros de compilação, garantindo a estabilidade da aplicação.'] },
+    { version: '1.3.7', changes: ['Refatoração completa e final do sistema de autenticação e acesso a dados, eliminando a rota de API /api/user e substituindo-a por uma Server Action dedicada para resolver definitivamente o erro de build `Failed to collect page data`, garantindo a estabilidade da aplicação.'] },
     { version: '1.3.6', changes: ['Sistema quase pronto 6.'] },
     { version: '1.3.5', changes: ['Sistema quase pronto 5.'] },
     { version: '1.3.3', changes: ['Sistema quase pronto 3'] },
