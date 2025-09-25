@@ -51,9 +51,19 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
             return { success: false, message: 'Este e-mail já está em uso.' };
         }
 
+        const isFirstUser = users.length === 0;
+        
+        if (isFirstUser) {
+            // Clear all data if this is the first registration
+            const dataKeys = ['products', 'units', 'patients', 'orders', 'dispensations', 'stockMovements', 'logs', 'users'];
+            for (const key of dataKeys) {
+                await writeData(key, []);
+            }
+        }
+        
         const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
         
-        const accessLevel = users.length === 0 ? 'Admin' : 'User';
+        const accessLevel = isFirstUser ? 'Admin' : 'User';
 
         const newUser: User = {
             id: `user-${Date.now()}`,
@@ -64,8 +74,10 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
             accessLevel,
         };
         
-        users.push(newUser);
-        await writeData('users', users);
+        const currentUsers = await readData<User>('users');
+        currentUsers.push(newUser);
+        await writeData('users', currentUsers);
+        
         await logActivity('Cadastro de Usuário', `Novo usuário cadastrado: ${userData.email} com cargo ${userData.role} e nível ${accessLevel}.`, 'Sistema');
 
         return { success: true, message: 'Conta criada com sucesso!' };
