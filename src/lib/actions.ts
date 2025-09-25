@@ -69,8 +69,8 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
 
         return { success: true, message: 'Conta criada com sucesso!' };
     } catch (error) {
-        console.error('Registration Error:', error);
-        return { success: false, message: 'Não foi possível criar a conta. Tente novamente mais tarde.' };
+      console.error(error);
+      return { success: false, message: 'Ocorreu um erro ao criar a conta.' };
     }
 }
 
@@ -109,7 +109,7 @@ export async function login(formData: FormData): Promise<{ success: boolean; mes
 
     } catch (error) {
         console.error("Login error:", error);
-        return { success: false, message: 'Ocorreu um erro inesperado durante o login. Verifique o console do servidor.'}
+        return { success: false, message: 'Ocorreu um erro inesperado durante o login.'}
     }
 }
 
