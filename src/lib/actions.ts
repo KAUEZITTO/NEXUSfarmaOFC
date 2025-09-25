@@ -1,3 +1,4 @@
+
 'use server';
 
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, PatientStatus, User, Role, SubRole, KnowledgeBaseItem } from './types';
@@ -34,32 +35,6 @@ const writeData = async <T>(key: string, data: T[]): Promise<void> => {
         throw error;
     }
 };
-
-
-// Internal helper to get user from session. NOT exported.
-async function getInternalCurrentUser(): Promise<User | null> {
-    const sessionCookie = cookies().get('session')?.value;
-    if (!sessionCookie) return null;
-
-    try {
-        const { payload } = await jose.jwtVerify(sessionCookie, secret);
-        const userId = payload.sub;
-        if (!userId) return null;
-        
-        const allUsers = await readData<User>('users');
-        const user = allUsers.find(u => u.id === userId);
-        
-        if (user) {
-            const { password, ...userWithoutPassword } = user;
-            return userWithoutPassword as User;
-        }
-        return null;
-
-    } catch (error) {
-        console.error("Failed to verify session cookie in action:", error);
-        return null;
-    }
-}
 
 
 // --- AUTH ACTIONS ---
@@ -110,7 +85,7 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
     
     users.push(newUser);
     await writeData('users', users);
-    await logActivity('Cadastro de Usuário', `Novo usuário cadastrado: ${userData.email} com cargo ${userData.role} e nível ${accessLevel}.`);
+    await logActivity('Cadastro de Usuário', `Novo usuário cadastrado: ${userData.email} com cargo ${userData.role} e nível ${accessLevel}.`, 'Sistema');
 
     return { success: true, message: 'Conta criada com sucesso!' };
 }
@@ -143,16 +118,16 @@ export async function login(formData: FormData): Promise<{ success: boolean; mes
         .sign(secret);
     
     cookies().set('session', token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 7 });
-    await logActivity('Login', `Usuário fez login: ${user.email}`);
+    await logActivity('Login', `Usuário fez login: ${user.email}`, user.email);
 
     redirect('/dashboard');
 }
 
 
 export async function logout() {
-  const user = await getInternalCurrentUser();
-  if (user) {
-    await logActivity('Logout', `Usuário ${user.email} saiu.`);
+  const currentUser = await getCurrentUserAction();
+  if (currentUser) {
+    await logActivity('Logout', `Usuário ${currentUser.email} saiu.`, currentUser.email);
   }
   cookies().delete('session');
   redirect('/');
@@ -168,11 +143,10 @@ type ActivityLog = {
 }
 
 // Internal helper, not exported as a server action
-async function logActivity(action: string, details: string) {
-    const user = await getInternalCurrentUser();
+async function logActivity(action: string, details: string, userEmail: string) {
     const logs = await readData<ActivityLog>('logs');
     const logEntry: ActivityLog = {
-        user: user?.email || 'Sistema',
+        user: userEmail,
         action,
         details,
         timestamp: new Date().toISOString(),
@@ -191,9 +165,9 @@ async function logStockMovement(
     reason: StockMovement['reason'],
     quantityChange: number,
     quantityBefore: number,
+    userEmail: string,
     relatedId?: string
 ) {
-    const user = await getInternalCurrentUser();
     const movements = await readData<StockMovement>('stockMovements');
     const movement: StockMovement = {
         id: `mov-${Date.now()}`,
@@ -206,7 +180,7 @@ async function logStockMovement(
         quantityAfter: quantityBefore + quantityChange, 
         date: new Date().toISOString(),
         relatedId: relatedId || '',
-        user: user?.email || 'Sistema'
+        user: userEmail
     };
     movements.unshift(movement);
     await writeData('stockMovements', movements);
@@ -249,6 +223,9 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
 // --- PRODUCTS ACTIONS ---
 
 export async function addProduct(product: Omit<Product, 'id' | 'status'>): Promise<Product> {
+    const currentUser = await getCurrentUserAction();
+    if (!currentUser) throw new Error('Acesso não autorizado.');
+
     const products = await readData<Product>('products');
     const newProduct: Product = {
         id: `prod-${Date.now()}`,
@@ -258,13 +235,16 @@ export async function addProduct(product: Omit<Product, 'id' | 'status'>): Promi
     products.push(newProduct);
     await writeData('products', products);
     
-    await logStockMovement(newProduct.id, product.name, 'Entrada', 'Entrada Inicial', product.quantity, 0);
-    await logActivity('Produto Adicionado', `Novo produto "${product.name}" (ID: ${newProduct.id}) foi adicionado com quantidade ${product.quantity}.`);
+    await logStockMovement(newProduct.id, product.name, 'Entrada', 'Entrada Inicial', product.quantity, 0, currentUser.email);
+    await logActivity('Produto Adicionado', `Novo produto "${product.name}" (ID: ${newProduct.id}) foi adicionado com quantidade ${product.quantity}.`, currentUser.email);
     revalidatePath('/dashboard/inventory');
     return newProduct;
 }
 
 export async function updateProduct(productId: string, productData: Partial<Product>): Promise<Product> {
+    const currentUser = await getCurrentUserAction();
+    if (!currentUser) throw new Error('Acesso não autorizado.');
+    
     let products = await readData<Product>('products');
     const productIndex = products.findIndex(p => p.id === productId);
 
@@ -280,13 +260,13 @@ export async function updateProduct(productId: string, productData: Partial<Prod
     if (productData.quantity !== undefined && productData.quantity !== quantityBefore) {
         updatedProduct.status = productData.quantity > 0 ? (productData.quantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque';
         const quantityChange = productData.quantity - quantityBefore;
-        await logStockMovement(productId, productData.name || oldProductData.name, 'Ajuste', 'Ajuste de Inventário', quantityChange, quantityBefore);
+        await logStockMovement(productId, productData.name || oldProductData.name, 'Ajuste', 'Ajuste de Inventário', quantityChange, quantityBefore, currentUser.email);
     }
     
     products[productIndex] = updatedProduct;
     await writeData('products', products);
     
-    await logActivity('Produto Atualizado', `Produto "${updatedProduct.name}" (ID: ${productId}) foi atualizado.`);
+    await logActivity('Produto Atualizado', `Produto "${updatedProduct.name}" (ID: ${productId}) foi atualizado.`, currentUser.email);
     revalidatePath('/dashboard/inventory');
     revalidatePath(`/labels/${productId}`);
     return updatedProduct;
@@ -295,6 +275,9 @@ export async function updateProduct(productId: string, productData: Partial<Prod
 // --- UNITS ACTIONS ---
 
 export async function addUnit(unit: Omit<Unit, 'id'>) {
+    const currentUser = await getCurrentUserAction();
+    if (!currentUser) throw new Error('Acesso não autorizado.');
+
     const units = await readData<Unit>('units');
     const newUnit: Unit = {
         id: `unit-${Date.now()}`,
@@ -303,12 +286,15 @@ export async function addUnit(unit: Omit<Unit, 'id'>) {
     units.push(newUnit);
     await writeData('units', units);
     
-    await logActivity('Unidade Adicionada', `Nova unidade "${unit.name}" (ID: ${newUnit.id}) foi adicionada.`);
+    await logActivity('Unidade Adicionada', `Nova unidade "${unit.name}" (ID: ${newUnit.id}) foi adicionada.`, currentUser.email);
     revalidatePath('/dashboard/units');
     revalidatePath('/dashboard/orders/new');
 }
 
 export async function updateUnit(unitId: string, unitData: Partial<Unit>) {
+    const currentUser = await getCurrentUserAction();
+    if (!currentUser) throw new Error('Acesso não autorizado.');
+
     let units = await readData<Unit>('units');
     const unitIndex = units.findIndex(u => u.id === unitId);
     if (unitIndex === -1) throw new Error('Unit not found');
@@ -316,7 +302,7 @@ export async function updateUnit(unitId: string, unitData: Partial<Unit>) {
     units[unitIndex] = { ...units[unitIndex], ...unitData };
     await writeData('units', units);
 
-    await logActivity('Unidade Atualizada', `Unidade "${unitData.name}" (ID: ${unitId}) foi atualizada.`);
+    await logActivity('Unidade Atualizada', `Unidade "${unitData.name}" (ID: ${unitId}) foi atualizada.`, currentUser.email);
     revalidatePath('/dashboard/units');
     revalidatePath(`/dashboard/units/${unitId}`);
 }
@@ -324,6 +310,9 @@ export async function updateUnit(unitId: string, unitData: Partial<Unit>) {
 // --- PATIENTS ACTIONS ---
 
 export async function addPatient(patient: Omit<Patient, 'id' | 'status'>) {
+    const currentUser = await getCurrentUserAction();
+    if (!currentUser) throw new Error('Acesso não autorizado.');
+
     const patients = await readData<Patient>('patients');
     const newPatient: Patient = {
         id: `pat-${Date.now()}`,
@@ -333,11 +322,14 @@ export async function addPatient(patient: Omit<Patient, 'id' | 'status'>) {
     patients.push(newPatient);
     await writeData('patients', patients);
     
-    await logActivity('Paciente Adicionado', `Novo paciente "${patient.name}" (ID: ${newPatient.id}) foi cadastrado.`);
+    await logActivity('Paciente Adicionado', `Novo paciente "${patient.name}" (ID: ${newPatient.id}) foi cadastrado.`, currentUser.email);
     revalidatePath('/dashboard/patients');
 }
 
 export async function updatePatient(patientId: string, patientData: Partial<Patient>) {
+    const currentUser = await getCurrentUserAction();
+    if (!currentUser) throw new Error('Acesso não autorizado.');
+
     let patients = await readData<Patient>('patients');
     const patientIndex = patients.findIndex(p => p.id === patientId);
     if (patientIndex === -1) throw new Error('Patient not found');
@@ -345,12 +337,15 @@ export async function updatePatient(patientId: string, patientData: Partial<Pati
     patients[patientIndex] = { ...patients[patientIndex], ...patientData };
     await writeData('patients', patients);
 
-    await logActivity('Paciente Atualizado', `Paciente "${patientData.name}" (ID: ${patientId}) foi atualizado.`);
+    await logActivity('Paciente Atualizado', `Paciente "${patientData.name}" (ID: ${patientId}) foi atualizado.`, currentUser.email);
     revalidatePath('/dashboard/patients');
     revalidatePath(`/dashboard/patients/${patientId}`);
 }
 
 export async function updatePatientStatus(patientId: string, status: PatientStatus) {
+    const currentUser = await getCurrentUserAction();
+    if (!currentUser) throw new Error('Acesso não autorizado.');
+
     let patients = await readData<Patient>('patients');
     const patientIndex = patients.findIndex(p => p.id === patientId);
     if (patientIndex === -1) throw new Error('Patient not found');
@@ -359,14 +354,14 @@ export async function updatePatientStatus(patientId: string, status: PatientStat
     patients[patientIndex].status = status;
     await writeData('patients', patients);
     
-    await logActivity('Status do Paciente Alterado', `Status do paciente "${patientName}" (ID: ${patientId}) foi alterado para "${status}".`);
+    await logActivity('Status do Paciente Alterado', `Status do paciente "${patientName}" (ID: ${patientId}) foi alterado para "${status}".`, currentUser.email);
     revalidatePath('/dashboard/patients');
 }
 
 // --- ORDERS / DISPENSATIONS (STOCK UPDATE) ---
 
 // Internal helper, not exported.
-async function processStockUpdate(items: (Order['items'] | Dispensation['items']), reason: StockMovement['reason'], relatedId: string) {
+async function processStockUpdate(items: (Order['items'] | Dispensation['items']), reason: StockMovement['reason'], relatedId: string, userEmail: string) {
     let products = await readData<Product>('products');
     let productsUpdated = false;
 
@@ -386,7 +381,7 @@ async function processStockUpdate(items: (Order['items'] | Dispensation['items']
             products[productIndex] = product;
             productsUpdated = true;
 
-            await logStockMovement(item.productId, item.name, 'Saída', reason, -item.quantity, quantityBefore, relatedId);
+            await logStockMovement(item.productId, item.name, 'Saída', reason, -item.quantity, quantityBefore, userEmail, relatedId);
         } else {
             throw new Error(`Produto com ID ${item.productId} não encontrado.`);
         }
@@ -401,8 +396,11 @@ async function processStockUpdate(items: (Order['items'] | Dispensation['items']
 // --- ORDERS ACTIONS ---
 
 export async function addOrder(orderData: Omit<Order, 'id' | 'status' | 'sentDate' | 'itemCount'>): Promise<Order> {
+    const currentUser = await getCurrentUserAction();
+    if (!currentUser) throw new Error('Acesso não autorizado.');
+
     const newOrderId = `ord-${Date.now()}`;
-    await processStockUpdate(orderData.items, 'Saída por Remessa', newOrderId);
+    await processStockUpdate(orderData.items, 'Saída por Remessa', newOrderId, currentUser.email);
     
     const orders = await readData<Order>('orders');
     const newOrder: Order = {
@@ -415,7 +413,7 @@ export async function addOrder(orderData: Omit<Order, 'id' | 'status' | 'sentDat
     orders.unshift(newOrder);
     await writeData('orders', orders);
     
-    await logActivity('Remessa Criada', `Nova remessa (ID: ${newOrder.id}) com ${newOrder.itemCount} itens foi criada para a unidade "${newOrder.unitName}".`);
+    await logActivity('Remessa Criada', `Nova remessa (ID: ${newOrder.id}) com ${newOrder.itemCount} itens foi criada para a unidade "${newOrder.unitName}".`, currentUser.email);
     revalidatePath('/dashboard/orders');
     revalidatePath('/dashboard/inventory');
     revalidatePath('/dashboard');
@@ -426,8 +424,11 @@ export async function addOrder(orderData: Omit<Order, 'id' | 'status' | 'sentDat
 // --- DISPENSATIONS ACTIONS ---
 
 export async function addDispensation(dispensationData: Omit<Dispensation, 'id' | 'date'>): Promise<Dispensation> {
+    const currentUser = await getCurrentUserAction();
+    if (!currentUser) throw new Error('Acesso não autorizado.');
+    
     const newDispensationId = `disp-${Date.now()}`;
-    await processStockUpdate(dispensationData.items, 'Saída por Dispensação', newDispensationId);
+    await processStockUpdate(dispensationData.items, 'Saída por Dispensação', newDispensationId, currentUser.email);
     
     const dispensations = await readData<Dispensation>('dispensations');
     const newDispensation: Dispensation = {
@@ -439,7 +440,7 @@ export async function addDispensation(dispensationData: Omit<Dispensation, 'id' 
     await writeData('dispensations', dispensations);
 
     const totalItems = dispensationData.items.reduce((sum, item) => sum + item.quantity, 0);
-    await logActivity('Dispensação Registrada', `Nova dispensação (ID: ${newDispensation.id}) com ${totalItems} itens foi registrada para o paciente "${dispensationData.patient.name}".`);
+    await logActivity('Dispensação Registrada', `Nova dispensação (ID: ${newDispensation.id}) com ${totalItems} itens foi registrada para o paciente "${dispensationData.patient.name}".`, currentUser.email);
     revalidatePath(`/dashboard/patients/${dispensationData.patientId}`);
     revalidatePath('/dashboard/inventory');
     revalidatePath('/dashboard');
@@ -449,8 +450,8 @@ export async function addDispensation(dispensationData: Omit<Dispensation, 'id' 
 
 // --- DATA RESET ---
 export async function resetAllData() {
-    const currentUser = await getInternalCurrentUser();
-    if (currentUser?.accessLevel !== 'Admin') {
+    const currentUser = await getCurrentUserAction();
+    if (!currentUser || currentUser.accessLevel !== 'Admin') {
         throw new Error("Acesso não autorizado para limpar dados.");
     }
     
@@ -460,7 +461,9 @@ export async function resetAllData() {
         await writeData(key, []);
     }
     
-    await logActivity('Reset de Dados', `Todos os dados da aplicação foram limpos pelo administrador ${currentUser.email}.`);
+    await logActivity('Reset de Dados', `Todos os dados da aplicação foram limpos pelo administrador ${currentUser.email}.`, currentUser.email);
     
     revalidatePath('/dashboard', 'layout');
 }
+
+    
