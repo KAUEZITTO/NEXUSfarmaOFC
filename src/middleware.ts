@@ -1,4 +1,6 @@
 
+'use server';
+
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import * as jose from 'jose';
@@ -24,27 +26,27 @@ export async function middleware(request: NextRequest) {
   const isAuthPage = pathname === '/login' || pathname === '/register';
   const isPublicPage = pathname === '/';
 
-  // If the user is authenticated
+  // Se o usuário está autenticado
   if (isAuthenticated) {
-    // If they try to access login/register, redirect them to the dashboard
+    // Se ele tenta acessar uma página de login/registro, redireciona para o dashboard.
     if (isAuthPage) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
-    // Otherwise, allow them to proceed to the requested page (e.g., /dashboard, /inventory)
+    // Caso contrário, permite o acesso a qualquer outra página (ex: /dashboard, /inventory).
     return NextResponse.next();
   }
 
-  // If the user is NOT authenticated
-  // If they are trying to access a public page or an auth page, allow them
+  // Se o usuário NÃO está autenticado
+  // Se ele está tentando acessar uma página pública ou uma página de autenticação, permite.
   if (isPublicPage || isAuthPage) {
     return NextResponse.next();
   }
 
-  // If they are trying to access any other protected page, redirect them to login
+  // Se ele está tentando acessar qualquer outra página protegida, redireciona para o login.
   return NextResponse.redirect(new URL('/login', request.url));
 }
 
 export const config = {
-  // This matcher excludes API routes, static files, and image optimization files.
+  // Este matcher exclui rotas de API, arquivos estáticos e arquivos de otimização de imagem.
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$).*)'],
 };
