@@ -19,8 +19,6 @@ const saltRounds = 10;
 /**
  * Retrieves the current user from the session cookie.
  * This function is designed to be called from Server Components and Server Actions.
- * It is intentionally NOT wrapped in React.cache to avoid being processed
- * by the Next.js build system in a way that causes static build errors on Vercel.
  */
 export async function getCurrentUser(): Promise<User | null> {
     const sessionCookie = cookies().get('session')?.value;
@@ -30,9 +28,11 @@ export async function getCurrentUser(): Promise<User | null> {
         const { payload } = await jose.jwtVerify(sessionCookie, secret);
         const userId = payload.sub;
         if (!userId) return null;
-
+        
+        // The test user logic is now handled exclusively in the login API route.
+        // This function's sole responsibility is to verify a session and get the user.
         if (userId === 'user-test') {
-            return {
+             return {
                 id: 'user-test',
                 email: 'teste@nexus.com',
                 role: 'Farmacêutico',
@@ -40,7 +40,7 @@ export async function getCurrentUser(): Promise<User | null> {
                 accessLevel: 'Admin'
             };
         }
-        
+
         const allUsers = await readData<User>('users');
         const user = allUsers.find(u => u.id === userId);
         
@@ -53,6 +53,7 @@ export async function getCurrentUser(): Promise<User | null> {
 
     } catch (error) {
         // This is expected if the token is invalid or expired
+        console.warn("Session token verification failed:", error);
         return null;
     }
 }
@@ -457,3 +458,5 @@ export async function resetAllData() {
     
     revalidatePath('/dashboard', 'layout');
 }
+
+    
