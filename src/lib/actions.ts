@@ -16,7 +16,7 @@ const uploadPath = path.join(process.cwd(), 'public', 'uploads');
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 const saltRounds = 10;
 
-async function getCurrentUserAction(): Promise<User | null> {
+export async function getCurrentUser(): Promise<User | null> {
     const sessionCookie = cookies().get('session')?.value;
     if (!sessionCookie) return null;
 
@@ -47,6 +47,7 @@ async function getCurrentUserAction(): Promise<User | null> {
         return null;
 
     } catch (error) {
+        // This is expected if the token is invalid or expired
         return null;
     }
 }
@@ -98,11 +99,10 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
     }
 }
 
-// NOTE: The login logic has been moved to /api/auth/login/route.ts
-// This file no longer contains a `login` server action.
+// NOTE: The main login logic is in /api/auth/login/route.ts
 
 export async function logout() {
-  const currentUser = await getCurrentUserAction();
+  const currentUser = await getCurrentUser();
   if (currentUser) {
     await logActivity('Logout', `Usuário ${currentUser.email} saiu.`, currentUser.email);
   }
@@ -169,6 +169,9 @@ export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
 
 // --- IMAGE UPLOAD ---
 export async function uploadImage(formData: FormData): Promise<{ success: boolean; filePath?: string; error?: string }> {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) return { success: false, error: 'Acesso não autorizado.' };
+
     try {
         const file = formData.get('image') as File;
         if (!file) {
@@ -197,7 +200,7 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
 // --- PRODUCTS ACTIONS ---
 
 export async function addProduct(product: Omit<Product, 'id' | 'status'>): Promise<Product> {
-    const currentUser = await getCurrentUserAction();
+    const currentUser = await getCurrentUser();
     if (!currentUser) throw new Error('Acesso não autorizado.');
 
     const products = await readData<Product>('products');
@@ -216,7 +219,7 @@ export async function addProduct(product: Omit<Product, 'id' | 'status'>): Promi
 }
 
 export async function updateProduct(productId: string, productData: Partial<Product>): Promise<Product> {
-    const currentUser = await getCurrentUserAction();
+    const currentUser = await getCurrentUser();
     if (!currentUser) throw new Error('Acesso não autorizado.');
     
     let products = await readData<Product>('products');
@@ -249,7 +252,7 @@ export async function updateProduct(productId: string, productData: Partial<Prod
 // --- UNITS ACTIONS ---
 
 export async function addUnit(unit: Omit<Unit, 'id'>) {
-    const currentUser = await getCurrentUserAction();
+    const currentUser = await getCurrentUser();
     if (!currentUser) throw new Error('Acesso não autorizado.');
 
     const units = await readData<Unit>('units');
@@ -266,7 +269,7 @@ export async function addUnit(unit: Omit<Unit, 'id'>) {
 }
 
 export async function updateUnit(unitId: string, unitData: Partial<Unit>) {
-    const currentUser = await getCurrentUserAction();
+    const currentUser = await getCurrentUser();
     if (!currentUser) throw new Error('Acesso não autorizado.');
 
     let units = await readData<Unit>('units');
@@ -284,7 +287,7 @@ export async function updateUnit(unitId: string, unitData: Partial<Unit>) {
 // --- PATIENTS ACTIONS ---
 
 export async function addPatient(patient: Omit<Patient, 'id' | 'status'>) {
-    const currentUser = await getCurrentUserAction();
+    const currentUser = await getCurrentUser();
     if (!currentUser) throw new Error('Acesso não autorizado.');
 
     const patients = await readData<Patient>('patients');
@@ -301,7 +304,7 @@ export async function addPatient(patient: Omit<Patient, 'id' | 'status'>) {
 }
 
 export async function updatePatient(patientId: string, patientData: Partial<Patient>) {
-    const currentUser = await getCurrentUserAction();
+    const currentUser = await getCurrentUser();
     if (!currentUser) throw new Error('Acesso não autorizado.');
 
     let patients = await readData<Patient>('patients');
@@ -317,7 +320,7 @@ export async function updatePatient(patientId: string, patientData: Partial<Pati
 }
 
 export async function updatePatientStatus(patientId: string, status: PatientStatus) {
-    const currentUser = await getCurrentUserAction();
+    const currentUser = await getCurrentUser();
     if (!currentUser) throw new Error('Acesso não autorizado.');
 
     let patients = await readData<Patient>('patients');
@@ -369,7 +372,7 @@ async function processStockUpdate(items: (Order['items'] | Dispensation['items']
 // --- ORDERS ACTIONS ---
 
 export async function addOrder(orderData: Omit<Order, 'id' | 'status' | 'sentDate' | 'itemCount'>): Promise<Order> {
-    const currentUser = await getCurrentUserAction();
+    const currentUser = await getCurrentUser();
     if (!currentUser) throw new Error('Acesso não autorizado.');
 
     const newOrderId = `ord-${Date.now()}`;
@@ -397,7 +400,7 @@ export async function addOrder(orderData: Omit<Order, 'id' | 'status' | 'sentDat
 // --- DISPENSATIONS ACTIONS ---
 
 export async function addDispensation(dispensationData: Omit<Dispensation, 'id' | 'date'>): Promise<Dispensation> {
-    const currentUser = await getCurrentUserAction();
+    const currentUser = await getCurrentUser();
     if (!currentUser) throw new Error('Acesso não autorizado.');
     
     const newDispensationId = `disp-${Date.now()}`;
@@ -423,7 +426,7 @@ export async function addDispensation(dispensationData: Omit<Dispensation, 'id' 
 
 // --- DATA RESET ---
 export async function resetAllData() {
-    const currentUser = await getCurrentUserAction();
+    const currentUser = await getCurrentUser();
     if (!currentUser || currentUser.accessLevel !== 'Admin') {
         throw new Error("Acesso não autorizado para limpar dados.");
     }

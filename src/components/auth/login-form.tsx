@@ -26,15 +26,20 @@ export function LoginForm() {
         body: JSON.stringify({ email, password }),
       });
 
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        // Force a full page reload to the dashboard.
-        // This is the most reliable way to ensure the middleware
-        // and server components re-evaluate with the new session cookie.
-        window.location.href = '/dashboard';
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          // Force a full page reload to the dashboard.
+          // This is the most reliable way to ensure the middleware
+          // and server components re-evaluate with the new session cookie.
+          window.location.href = '/dashboard';
+        } else {
+           setErrorMessage(result.message || 'Ocorreu um erro desconhecido.');
+           setIsPending(false);
+        }
       } else {
-         setErrorMessage(result.message || 'Ocorreu um erro desconhecido.');
+         const result = await response.json();
+         setErrorMessage(result.message || `Erro: ${response.statusText}`);
          setIsPending(false);
       }
     } catch (error) {

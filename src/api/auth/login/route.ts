@@ -20,6 +20,7 @@ export async function POST(request: Request) {
     }
 
     let user: Omit<User, 'password'> & { password?: string } | null = null;
+    let passwordMatch = false;
 
     // --- Test User Logic ---
     if (email === TEST_USER_EMAIL) {
@@ -31,21 +32,26 @@ export async function POST(request: Request) {
           subRole: 'CAF',
           accessLevel: 'Admin'
         };
+        passwordMatch = true;
       }
     } else {
       // --- Standard User Logic ---
       const users = await readData<User>('users');
       const foundUser = users.find(u => u.email === email);
 
-      if (foundUser && foundUser.password) {
-        const isMatch = await bcrypt.compare(password, foundUser.password);
-        if (isMatch) {
-          user = foundUser;
+      if (foundUser) {
+        // Ensure foundUser.password is not undefined before comparing
+        if (foundUser.password) {
+            const isMatch = await bcrypt.compare(password, foundUser.password);
+            if (isMatch) {
+              user = foundUser;
+              passwordMatch = true;
+            }
         }
       }
     }
     
-    if (!user) {
+    if (!user || !passwordMatch) {
         return NextResponse.json({ success: false, message: 'Email ou senha inválidos.' }, { status: 401 });
     }
 

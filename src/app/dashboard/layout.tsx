@@ -1,8 +1,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { cookies } from 'next/headers';
-import * as jose from 'jose';
 
 import { UserNav } from '@/components/dashboard/user-nav';
 import { DashboardNav } from '@/components/dashboard/dashboard-nav';
@@ -10,47 +8,7 @@ import { Logo } from '@/components/logo';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guide';
 import { CurrentUserProvider } from '@/hooks/use-current-user-provider';
-import type { User } from '@/lib/types';
-import { readData } from '@/lib/data';
-
-const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
-
-// This function is now self-contained within the layout, preventing build errors.
-async function getCurrentUser(): Promise<User | null> {
-    const sessionCookie = cookies().get('session')?.value;
-    if (!sessionCookie) return null;
-
-    try {
-        const { payload } = await jose.jwtVerify(sessionCookie, secret);
-        const userId = payload.sub;
-        if (!userId) return null;
-        
-        // Handle test user case
-        if (userId === 'user-test') {
-            return {
-                id: 'user-test',
-                email: 'teste@nexus.com',
-                role: 'Farmacêutico',
-                subRole: 'CAF',
-                accessLevel: 'Admin'
-            };
-        }
-
-        const allUsers = await readData<User>('users');
-        const user = allUsers.find(u => u.id === userId);
-        
-        if (user) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { password, ...userWithoutPassword } = user;
-            return userWithoutPassword as User;
-        }
-
-        return null;
-
-    } catch (error) {
-        return null;
-    }
-}
+import { getCurrentUser } from '@/lib/actions';
 
 
 const CURRENT_VERSION = '2.0.0';

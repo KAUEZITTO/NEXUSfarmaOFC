@@ -29,7 +29,7 @@ export async function middleware(request: NextRequest) {
     if (isAuthPage) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
-    // Otherwise, allow them to proceed to the requested page
+    // Otherwise, allow them to proceed to the requested page (e.g., /dashboard, /inventory)
     return NextResponse.next();
   }
 
