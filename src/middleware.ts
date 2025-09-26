@@ -10,6 +10,7 @@ async function verifyToken(token: string): Promise<boolean> {
     await jose.jwtVerify(token, secret);
     return true;
   } catch (e) {
+    console.error("Token verification failed in middleware:", e);
     return false;
   }
 }
