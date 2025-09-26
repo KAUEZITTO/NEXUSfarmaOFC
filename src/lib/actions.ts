@@ -1,7 +1,7 @@
 
 'use server';
 
-import { Product, Unit, Patient, Order, Dispensation, StockMovement, PatientStatus, User, Role, SubRole, KnowledgeBaseItem } from './types';
+import type { Product, Unit, Patient, Order, Dispensation, StockMovement, PatientStatus, User, Role, SubRole, KnowledgeBaseItem } from './types';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -16,6 +16,12 @@ const uploadPath = path.join(process.cwd(), 'public', 'uploads');
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 const saltRounds = 10;
 
+/**
+ * Retrieves the current user from the session cookie.
+ * This function is designed to be called from Server Components and Server Actions.
+ * It is intentionally NOT wrapped in React.cache to avoid being processed
+ * by the Next.js build system in a way that causes static build errors on Vercel.
+ */
 export async function getCurrentUser(): Promise<User | null> {
     const sessionCookie = cookies().get('session')?.value;
     if (!sessionCookie) return null;
@@ -25,7 +31,6 @@ export async function getCurrentUser(): Promise<User | null> {
         const userId = payload.sub;
         if (!userId) return null;
 
-        // Handle test user case
         if (userId === 'user-test') {
             return {
                 id: 'user-test',
@@ -65,7 +70,6 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
         const isFirstUser = users.length === 0;
         
         if (isFirstUser) {
-            // Clear all data if this is the first registration
             const dataKeys = ['products', 'units', 'patients', 'orders', 'dispensations', 'stockMovements', 'logs', 'users'];
             for (const key of dataKeys) {
                 await writeData(key, []);
@@ -85,7 +89,6 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
             accessLevel,
         };
         
-        // Re-read data in case it was cleared
         const currentUsers = await readData<User>('users');
         currentUsers.push(newUser);
         await writeData('users', currentUsers);
@@ -98,8 +101,6 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
       return { success: false, message: 'Ocorreu um erro ao criar a conta.' };
     }
 }
-
-// NOTE: The main login logic is in /api/auth/login/route.ts
 
 export async function logout() {
   const currentUser = await getCurrentUser();
@@ -437,9 +438,7 @@ export async function resetAllData() {
         await writeData(key, []);
     }
     
-    // After clearing users, re-register the admin user to avoid being locked out.
-    // NOTE: This uses a placeholder password. The original password is lost and needs to be communicated.
-    const newPassword = 'nexus-admin-reset'; // A known password for the reset admin
+    const newPassword = 'nexus-admin-reset';
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
     const newAdminUser: User = {
