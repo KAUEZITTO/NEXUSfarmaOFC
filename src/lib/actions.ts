@@ -122,15 +122,16 @@ export async function login(prevState: { error: string } | undefined, formData: 
     await logActivity('Login', `Usuário ${user.email} efetuou login.`, user.email);
     revalidatePath('/', 'layout');
     
+    // Redirect must be inside the try block
+    redirect('/dashboard');
+
   } catch (error) {
-    console.error('[LOGIN ACTION ERROR]', error);
-    if ((error as any).type === 'CredentialsSignin') {
-        return { error: 'Email ou senha inválidos.' };
+    if ((error as any).digest?.startsWith('NEXT_REDIRECT')) {
+        throw error;
     }
+    console.error('[LOGIN ACTION ERROR]', error);
     return { error: 'Ocorreu um erro inesperado. Tente novamente.' };
   }
-
-  redirect('/dashboard');
 }
 
 
