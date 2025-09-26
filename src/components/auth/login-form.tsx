@@ -1,56 +1,30 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect } from 'react';
+import { useFormState, useFormStatus } from 'react-dom';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
+import { login } from '@/lib/actions';
 
-export function LoginForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isPending, setIsPending] = useState(false);
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsPending(true);
-    setErrorMessage(null);
-
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          // Force a full page reload to the dashboard.
-          // This is the most reliable way to ensure the middleware
-          // and server components re-evaluate with the new session cookie.
-          window.location.href = '/dashboard';
-        } else {
-           setErrorMessage(result.message || 'Ocorreu um erro desconhecido.');
-           setIsPending(false);
-        }
-      } else {
-         const result = await response.json();
-         setErrorMessage(result.message || `Erro: ${response.statusText}`);
-         setIsPending(false);
-      }
-    } catch (error) {
-      console.error("An unexpected error occurred during login:", error);
-      setErrorMessage("Não foi possível conectar ao servidor. Tente novamente.");
-      setIsPending(false);
-    }
-  };
+function LoginButton() {
+  const { pending } = useFormStatus();
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4">
+    <Button type="submit" className="w-full" disabled={pending}>
+      {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Entrar'}
+    </Button>
+  );
+}
+
+export function LoginForm() {
+  const [state, formAction] = useFormState(login, undefined);
+
+  return (
+    <form action={formAction} className="grid gap-4">
       <div className="grid gap-2">
         <Label htmlFor="email">Email</Label>
         <Input
@@ -59,9 +33,7 @@ export function LoginForm() {
           type="email"
           placeholder="seu@email.com"
           required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          disabled={isPending}
+          defaultValue="teste@nexus.com"
         />
       </div>
       <div className="grid gap-2">
@@ -74,20 +46,17 @@ export function LoginForm() {
           type="password" 
           required 
           placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          disabled={isPending}
+          defaultValue="nexus123"
         />
       </div>
-       <Button type="submit" className="w-full" disabled={isPending}>
-          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isPending ? 'Entrando...' : 'Entrar'}
-        </Button>
-      {errorMessage && (
-        <Alert variant="destructive">
+      
+      <LoginButton />
+
+      {state?.error && (
+        <Alert variant="destructive" className="mt-4">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Erro de Login</AlertTitle>
-          <AlertDescription>{errorMessage}</AlertDescription>
+          <AlertDescription>{state.error}</AlertDescription>
         </Alert>
       )}
     </form>

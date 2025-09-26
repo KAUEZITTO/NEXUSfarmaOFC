@@ -16,6 +16,9 @@ const uploadPath = path.join(process.cwd(), 'public', 'uploads');
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 const saltRounds = 10;
 
+const TEST_USER_EMAIL = 'teste@nexus.com';
+const TEST_USER_PASSWORD = 'nexus123';
+
 /**
  * Retrieves the current user from the session cookie.
  * This function is designed to be called from Server Components and Server Actions.
@@ -29,12 +32,11 @@ export async function getCurrentUser(): Promise<User | null> {
         const userId = payload.sub;
         if (!userId) return null;
         
-        // The test user logic is now handled exclusively in the login API route.
-        // This function's sole responsibility is to verify a session and get the user.
         if (userId === 'user-test') {
              return {
                 id: 'user-test',
-                email: 'teste@nexus.com',
+                email: TEST_USER_EMAIL,
+                password: '', // Password hash not needed here
                 role: 'Farmacêutico',
                 subRole: 'CAF',
                 accessLevel: 'Admin'
@@ -60,6 +62,77 @@ export async function getCurrentUser(): Promise<User | null> {
 
 
 // --- AUTH ACTIONS ---
+
+export async function login(prevState: { error: string } | undefined, formData: FormData) {
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+
+  try {
+    if (!email || !password) {
+      return { error: 'Email e senha são obrigatórios.' };
+    }
+
+    let user: Omit<User, 'password'> & { password?: string } | null = null;
+    let passwordMatch = false;
+
+    if (email === TEST_USER_EMAIL) {
+      if (password === TEST_USER_PASSWORD) {
+        user = {
+          id: 'user-test',
+          email: TEST_USER_EMAIL,
+          role: 'Farmacêutico',
+          subRole: 'CAF',
+          accessLevel: 'Admin'
+        };
+        passwordMatch = true;
+      }
+    } else {
+      const users = await readData<User>('users');
+      const foundUser = users.find(u => u.email === email);
+
+      if (foundUser?.password) {
+        const isMatch = await bcrypt.compare(password, foundUser.password);
+        if (isMatch) {
+          user = foundUser;
+          passwordMatch = true;
+        }
+      }
+    }
+    
+    if (!user || !passwordMatch) {
+        return { error: 'Email ou senha inválidos.' };
+    }
+
+    if (!user.accessLevel) {
+       console.error(`[LOGIN ACTION ERROR] User ${user.email} has no accessLevel defined.`);
+       return { error: 'Erro de configuração de conta. Contate o suporte.' };
+    }
+
+    const token = await new jose.SignJWT({ id: user.id, accessLevel: user.accessLevel })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setSubject(user.id)
+      .setIssuer('urn:nexusfarma')
+      .setAudience('urn:nexusfarma:users')
+      .setExpirationTime('7d')
+      .sign(secret);
+      
+    cookies().set('session', token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 7 });
+    
+    await logActivity('Login', `Usuário ${user.email} efetuou login.`, user.email);
+    revalidatePath('/', 'layout');
+    
+  } catch (error) {
+    console.error('[LOGIN ACTION ERROR]', error);
+    if ((error as any).type === 'CredentialsSignin') {
+        return { error: 'Email ou senha inválidos.' };
+    }
+    return { error: 'Ocorreu um erro inesperado. Tente novamente.' };
+  }
+
+  redirect('/dashboard');
+}
+
 
 export async function register(userData: Omit<User, 'id' | 'password' | 'accessLevel'> & { password: string }): Promise<{ success: boolean; message: string }> {
     try {
@@ -458,5 +531,3 @@ export async function resetAllData() {
     
     revalidatePath('/dashboard', 'layout');
 }
-
-    
