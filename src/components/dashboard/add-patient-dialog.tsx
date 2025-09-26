@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -89,7 +90,7 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
   const [isSaving, setIsSaving] = useState(false);
   const isEditing = !!patientToEdit;
 
-  // State for each form field
+  // Form state
   const [name, setName] = useState('');
   const [cpf, setCpf] = useState('');
   const [cns, setCns] = useState('');

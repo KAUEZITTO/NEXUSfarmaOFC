@@ -25,15 +25,6 @@ async function getCurrentUser(): Promise<User | null> {
         const userId = payload.sub;
         if (!userId) return null;
         
-        const allUsers = await readData<User>('users');
-        const user = allUsers.find(u => u.id === userId);
-        
-        if (user) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { password, ...userWithoutPassword } = user;
-            return userWithoutPassword as User;
-        }
-
         // Handle test user case
         if (userId === 'user-test') {
             return {
@@ -43,6 +34,15 @@ async function getCurrentUser(): Promise<User | null> {
                 subRole: 'CAF',
                 accessLevel: 'Admin'
             };
+        }
+
+        const allUsers = await readData<User>('users');
+        const user = allUsers.find(u => u.id === userId);
+        
+        if (user) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { password, ...userWithoutPassword } = user;
+            return userWithoutPassword as User;
         }
 
         return null;

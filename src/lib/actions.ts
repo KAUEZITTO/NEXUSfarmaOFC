@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, PatientStatus, User, Role, SubRole, KnowledgeBaseItem } from './types';
@@ -25,6 +24,17 @@ async function getCurrentUserAction(): Promise<User | null> {
         const { payload } = await jose.jwtVerify(sessionCookie, secret);
         const userId = payload.sub;
         if (!userId) return null;
+
+        // Handle test user case
+        if (userId === 'user-test') {
+            return {
+                id: 'user-test',
+                email: 'teste@nexus.com',
+                role: 'Farmacêutico',
+                subRole: 'CAF',
+                accessLevel: 'Admin'
+            };
+        }
         
         const allUsers = await readData<User>('users');
         const user = allUsers.find(u => u.id === userId);
@@ -425,14 +435,23 @@ export async function resetAllData() {
     }
     
     // After clearing users, re-register the admin user to avoid being locked out.
-    await register({
-        email: currentUser.email,
-        password: 'admin-password-reset-placeholder', // This password won't be used, but the field is required. The original password is lost.
-        role: currentUser.role,
-        subRole: currentUser.subRole
-    });
+    // NOTE: This uses a placeholder password. The original password is lost and needs to be communicated.
+    const newPassword = 'nexus-admin-reset'; // A known password for the reset admin
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
-    await logActivity('Reset de Dados', `Todos os dados da aplicação foram limpos pelo administrador ${currentUser.email}. O usuário admin foi recriado.`, currentUser.email);
+    const newAdminUser: User = {
+        id: currentUser.id,
+        email: currentUser.email,
+        password: hashedNewPassword,
+        role: currentUser.role,
+        subRole: currentUser.subRole,
+        accessLevel: 'Admin'
+    };
+
+    const newUsers = [newAdminUser];
+    await writeData('users', newUsers);
+
+    await logActivity('Reset de Dados', `Todos os dados da aplicação foram limpos pelo administrador ${currentUser.email}. O usuário admin foi recriado com uma nova senha padrão.`, currentUser.email);
     
     revalidatePath('/dashboard', 'layout');
 }
