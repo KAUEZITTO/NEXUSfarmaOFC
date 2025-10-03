@@ -1,7 +1,7 @@
 
 {
   "name": "nextn",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "private": true,
   "scripts": {
     "dev": "dotenv -e .env.local -- next dev -p 9002",

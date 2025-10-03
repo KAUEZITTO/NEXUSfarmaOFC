@@ -8,9 +8,10 @@ import { Logo } from '@/components/logo';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guide';
 
-const CURRENT_VERSION = '2.1.1';
+const CURRENT_VERSION = '2.2.0';
 
 const changelog = [
+    { version: '2.2.0', changes: ['Refatorada a arquitetura de acesso a dados para resolver definitivamente o erro `OAuthSignin` e estabilizar o fluxo de login com Google e Credenciais.'] },
     { version: '2.1.1', changes: ['Corrigida a integração do provedor de credenciais para usar o Firebase Auth, unificando completamente o sistema de login.', 'Resolvido erro de "Suspense Boundary" na página de login.'] },
     { version: '2.1.0', changes: ['Implementado o fluxo completo de recuperação de senha via email, utilizando a funcionalidade nativa do Firebase Auth.'] },
     { version: '2.0.2', changes: ['Otimizado o fluxo de login para garantir o redirecionamento imediato e correto para o dashboard após a autenticação, eliminando a necessidade de recarregar a página.'] },
