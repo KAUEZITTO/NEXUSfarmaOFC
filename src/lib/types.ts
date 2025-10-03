@@ -33,7 +33,7 @@ export type AccessLevel = 'Admin' | 'User';
 export type User = {
     id: string;
     email: string;
-    password: string; 
+    password?: string; // Senha é opcional, especialmente para usuários OAuth ou para não expor o hash
     role: Role;
     subRole?: SubRole;
     accessLevel: AccessLevel;

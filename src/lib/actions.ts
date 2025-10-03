@@ -1,16 +1,14 @@
 
 'use server';
 
-// As funções de autenticação agora são gerenciadas pelo NextAuth.js
-// no arquivo /src/app/api/auth/[...nextauth]/route.ts
-
-// Manteremos aqui as outras Server Actions da aplicação.
+// As principais ações de autenticação agora são tratadas via 'next-auth'.
+// As ações aqui são para registro de usuário (interagindo com Firebase) e outras lógicas de negócio.
 
 import { revalidatePath } from 'next/cache';
 import { readData, writeData, getProducts, getKnowledgeBase as getKbData } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole } from './types';
-// A função getCurrentUser será substituída pelo hook `useSession` do NextAuth no lado do cliente
-// ou `getServerSession` no lado do servidor.
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { firebaseApp } from './firebase/client';
 
 // --- UTILITIES ---
 const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -26,9 +24,7 @@ const logStockMovement = async (
 ) => {
   const movements = await readData<StockMovement>('stockMovements');
   // O usuário logado agora seria obtido da sessão do NextAuth.
-  // Como esta é uma Server Action, teríamos que importar `authOptions` e chamar `getServerSession`.
-  // Por simplicidade, manteremos 'Sistema' por enquanto.
-  const userEmail = 'Sistema'; 
+  const userEmail = 'Sistema'; // Placeholder, idealmente obter da sessão
   
   const newMovement: StockMovement = {
     id: generateId('mov'),
@@ -226,30 +222,39 @@ export async function getKnowledgeBase() {
     return await getKbData();
 }
 
-// --- REGISTER (AINDA NECESSÁRIO) ---
-import bcrypt from 'bcrypt';
-
+// --- REGISTER (agora integrado com Firebase Auth) ---
 export async function register({ email, password, role, subRole }: { email: string; password: string; role: Role; subRole?: SubRole; }) {
-    const users = await readData<User>('users');
-    const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const auth = getAuth(firebaseApp);
+    const users = await readData<User>('users'); // Ainda lemos para definir o nível de acesso
+    
+    try {
+        // 1. Cria o usuário no Firebase Authentication
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const firebaseUser = userCredential.user;
 
-    if (existingUser) {
-        return { success: false, message: 'Este email já está cadastrado.' };
+        // 2. Salva os metadados (cargo, nível de acesso) em nossa base de dados (Vercel KV)
+        const isFirstUser = users.length === 0;
+        const newUser: User = {
+            id: firebaseUser.uid, // Usa o UID do Firebase como nosso ID
+            email,
+            password: '', // Não armazenamos mais a senha
+            role,
+            subRole: role === 'Farmacêutico' ? subRole : undefined,
+            accessLevel: isFirstUser ? 'Admin' : 'User',
+        };
+
+        await writeData<User>('users', [...users, newUser]);
+
+        return { success: true, message: 'Usuário registrado com sucesso.' };
+
+    } catch (error: any) {
+        console.error("Firebase registration error:", error);
+        if (error.code === 'auth/email-already-in-use') {
+            return { success: false, message: 'Este email já está em uso.' };
+        }
+        if (error.code === 'auth/weak-password') {
+            return { success: false, message: 'A senha é muito fraca. Use pelo menos 6 caracteres.' };
+        }
+        return { success: false, message: 'Ocorreu um erro desconhecido ao criar a conta.' };
     }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-    const isFirstUser = users.length === 0;
-
-    const newUser: User = {
-        id: generateId('user'),
-        email,
-        password: passwordHash,
-        role,
-        subRole: role === 'Farmacêutico' ? subRole : undefined,
-        accessLevel: isFirstUser ? 'Admin' : 'User',
-    };
-
-    await writeData<User>('users', [...users, newUser]);
-
-    return { success: true, message: 'Usuário registrado com sucesso.' };
 }

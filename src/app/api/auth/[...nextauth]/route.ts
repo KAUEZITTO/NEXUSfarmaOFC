@@ -2,86 +2,109 @@
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from "next-auth/providers/google";
-import bcrypt from 'bcrypt';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { firebaseApp } from '@/lib/firebase/client';
 import { readData } from '@/lib/data';
 import { User } from '@/lib/types';
 
 export const authOptions: NextAuthOptions = {
-  // Configura a estratégia de sessão para usar JSON Web Tokens (JWT).
-  // Isso é essencial para que o middleware funcione corretamente no App Router.
   session: {
     strategy: 'jwt',
   },
-  // Define os provedores de autenticação que serão usados.
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
     CredentialsProvider({
-      // O nome que será exibido no formulário de login (se não for um formulário customizado).
       name: 'Credentials',
-      // As credenciais que esperamos receber do formulário de login.
       credentials: {
-        email: { label: "Email", type: "email", placeholder: "seu@email.com" },
+        email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" }
       },
-      // A lógica para autorizar o usuário.
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           console.log('Credenciais ausentes');
           return null;
         }
 
-        // Lógica para encontrar o usuário no "banco de dados" (Vercel KV).
-        const users = await readData<User>('users');
-        const user = users.find(u => u.email.toLowerCase() === credentials.email.toLowerCase());
+        const auth = getAuth(firebaseApp);
 
-        if (!user) {
-          console.log('Usuário não encontrado:', credentials.email);
-          return null; // Usuário não encontrado.
+        try {
+          // 1. Autentica o usuário com o Firebase Auth
+          const userCredential = await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
+          const firebaseUser = userCredential.user;
+
+          if (!firebaseUser) {
+            return null;
+          }
+
+          // 2. Busca os metadados (cargo, nível de acesso) em nossa base de dados (Vercel KV)
+          const users = await readData<User>('users');
+          const appUser = users.find(u => u.id === firebaseUser.uid);
+
+          if (!appUser) {
+            // Se o usuário existe no Firebase mas não em nosso DB, pode ser um caso de borda
+            // ou um usuário do Google que logou pela primeira vez.
+            console.log('Usuário autenticado no Firebase, mas não encontrado no banco de dados do app:', firebaseUser.email);
+            // Poderíamos criar um registro para ele aqui ou negar o acesso.
+            // Por segurança, vamos negar por enquanto se for login por credenciais.
+            return null;
+          }
+
+          console.log('Usuário autenticado com sucesso:', appUser.email);
+          
+          // 3. Retorna o objeto do usuário para o NextAuth criar a sessão
+          return {
+            id: appUser.id,
+            email: appUser.email,
+            name: appUser.role, // Usando role como name para exibição
+            role: appUser.role,
+            accessLevel: appUser.accessLevel,
+          };
+
+        } catch (error) {
+          console.error("Firebase sign-in error:", error);
+          // O erro pode ser 'auth/user-not-found', 'auth/wrong-password', etc.
+          // Retornar null em qualquer caso de erro é suficiente para o NextAuth.
+          return null;
         }
-
-        // Compara a senha enviada com o hash salvo no banco.
-        const passwordMatch = await bcrypt.compare(credentials.password, user.password);
-
-        if (!passwordMatch) {
-          console.log('Senha incorreta para o usuário:', credentials.email);
-          return null; // Senha incorreta.
-        }
-
-        console.log('Usuário autenticado com sucesso:', user.email);
-        // Se tudo estiver correto, retorna o objeto do usuário (sem a senha).
-        // Este objeto será usado para criar o JWT.
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.role, // Podemos usar o 'role' como nome para exibição
-          role: user.role,
-          accessLevel: user.accessLevel,
-        };
       }
     })
   ],
-  // Callbacks são funções assíncronas que permitem controlar o que acontece
-  // durante as ações do NextAuth.js.
   callbacks: {
-    // O callback `jwt` é chamado sempre que um JWT é criado ou atualizado.
-    // O token retornado aqui é o que será criptografado no cookie.
-    async jwt({ token, user }) {
-      // Se `user` existe, significa que é o momento do login.
-      // Adicionamos as propriedades do usuário (role, accessLevel) ao token.
-      if (user) {
-        token.role = user.role;
-        token.accessLevel = user.accessLevel;
+    // Chamado no login para popular o token JWT.
+    async jwt({ token, user, account }) {
+      // No primeiro login (seja por credenciais ou Google), `user` e `account` estarão presentes.
+      if (account && user) {
+        const users = await readData<User>('users');
+        let appUser = users.find(u => u.id === user.id);
+
+        // Se é um login do Google e o usuário não existe em nosso DB, criamos um registro para ele.
+        if (account.provider === 'google' && !appUser && user.email) {
+          const isFirstUser = users.length === 0;
+          const newUser: User = {
+            id: user.id,
+            email: user.email,
+            password: '', // Senha não aplicável para OAuth
+            role: 'Coordenador', // Cargo padrão para novos usuários do Google
+            accessLevel: isFirstUser ? 'Admin' : 'User',
+          };
+          await writeData('users', [...users, newUser]);
+          appUser = newUser;
+        }
+        
+        // Adiciona as propriedades do nosso DB (appUser) ao token.
+        if (appUser) {
+            token.role = appUser.role;
+            token.accessLevel = appUser.accessLevel;
+        }
       }
       return token;
     },
-    // O callback `session` é chamado sempre que uma sessão é acessada.
-    // Ele recebe o token do callback `jwt` e permite que você personalize
-    // o objeto de sessão que é retornado ao cliente.
+    // Chamado para criar o objeto de sessão que é exposto ao cliente.
     async session({ session, token }) {
-      // Adicionamos as propriedades do token (que buscamos no callback `jwt`)
+      // Adiciona as propriedades do token (que buscamos no callback `jwt`)
       // ao objeto `session.user` para que fiquem acessíveis no lado do cliente.
       if (token && session.user) {
         session.user.role = token.role;
@@ -90,13 +113,11 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
-  // Define a página de login customizada.
   pages: {
     signIn: '/login',
   },
 };
 
-// Exporta os handlers GET e POST para o Next.js, que são criados pela função NextAuth.
 const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };
