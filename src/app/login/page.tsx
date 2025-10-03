@@ -23,6 +23,14 @@ export default function LoginPage() {
         </div>
         
         <LoginForm />
+        
+        <div className="mt-4 text-center text-sm">
+          <Link href="/forgot-password"
+            className="text-sm underline"
+          >
+            Esqueceu a senha?
+          </Link>
+        </div>
 
         <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">
