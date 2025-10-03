@@ -1,16 +1,14 @@
 
 'use client';
 
-import { useEffect } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
+import { login } from '@/lib/actions';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { login } from '@/lib/actions';
-import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 function LoginButton() {
   const { pending } = useFormStatus();
@@ -24,18 +22,6 @@ function LoginButton() {
 
 export function LoginForm() {
   const [state, formAction] = useFormState(login, undefined);
-  const { toast } = useToast();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (state?.error) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro de Login',
-        description: state.error,
-      });
-    }
-  }, [state, toast]);
 
   return (
     <form action={formAction} className="grid gap-4">
@@ -45,7 +31,7 @@ export function LoginForm() {
           id="email"
           name="email"
           type="email"
-          placeholder="seu@email.com"
+          placeholder="admin@exemplo.com"
           required
         />
       </div>
@@ -62,15 +48,15 @@ export function LoginForm() {
         />
       </div>
       
-      <LoginButton />
-
-       {state?.error && (
-        <Alert variant="destructive" className="mt-4">
+      {state?.error && (
+        <Alert variant="destructive" className="mt-2">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Erro de Login</AlertTitle>
           <AlertDescription>{state.error}</AlertDescription>
         </Alert>
       )}
+
+      <LoginButton />
     </form>
   );
 }

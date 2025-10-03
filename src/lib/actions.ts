@@ -1,53 +1,19 @@
 
 'use server';
 
-import type { Product, Unit, Patient, Order, Dispensation, StockMovement, PatientStatus, User, Role, SubRole, KnowledgeBaseItem } from './types';
-import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import * as jose from 'jose';
 import bcrypt from 'bcrypt';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { readData, writeData } from './data';
-import knowledgeBaseData from '@/data/knowledge-base.json';
-import { resetAllData } from './seed';
 
-const uploadPath = path.join(process.cwd(), 'public', 'uploads');
-const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
-const saltRounds = 10;
-
-
-/**
- * Retrieves the current user from the session cookie.
- * This function is designed to be called from Server Components and Server Actions.
- */
-export async function getCurrentUser(): Promise<User | null> {
-    const sessionCookie = cookies().get('session')?.value;
-    if (!sessionCookie) return null;
-
-    try {
-        const { payload } = await jose.jwtVerify(sessionCookie, secret);
-        const userId = payload.sub;
-        if (!userId) return null;
-
-        const allUsers = await readData<User>('users');
-        const user = allUsers.find(u => u.id === userId);
-        
-        if (user) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { password, ...userWithoutPassword } = user;
-            return userWithoutPassword as User;
-        }
-        return null;
-
-    } catch (error) {
-        // This is expected if the token is invalid or expired
-        console.warn("Session token verification failed:", error);
-        return null;
-    }
-}
-
+// --- FAKE USER DATABASE ---
+// Em um app real, isso viria de um banco de dados como Vercel KV, Supabase, etc.
+const fakeUser = {
+  id: 'user_1',
+  email: 'admin@exemplo.com',
+  // Hash para a senha "123456"
+  passwordHash: '$2b$10$fVixcCFGqlp9.g7ZMvT9n.itu7Xv/Y.lBv3/aFGHY5z/Gqf3I2Lve',
+};
 
 // --- AUTH ACTIONS ---
 
@@ -55,414 +21,77 @@ export async function login(prevState: { error: string } | undefined, formData: 
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
+  if (!email || !password) {
+    return { error: 'Email e senha são obrigatórios.' };
+  }
+
+  // Validar credenciais contra o banco fake
+  if (email !== fakeUser.email) {
+    return { error: 'Credenciais inválidas.' };
+  }
+
+  const passwordMatch = await bcrypt.compare(password, fakeUser.passwordHash);
+  if (!passwordMatch) {
+    return { error: 'Credenciais inválidas.' };
+  }
+  
   try {
-    if (!email || !password) {
-      return { error: 'Email e senha são obrigatórios.' };
-    }
+    // Se as credenciais estiverem corretas, gerar o JWT
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+    const alg = 'HS256';
 
-    const users = await readData<User>('users');
-    const foundUser = users.find(u => u.email === email);
-    
-    if (!foundUser || !foundUser.password) {
-        return { error: 'Email ou senha inválidos.' };
-    }
-    
-    const isMatch = await bcrypt.compare(password, foundUser.password);
-
-    if (!isMatch) {
-        return { error: 'Email ou senha inválidos.' };
-    }
-    
-    if (!foundUser.accessLevel) {
-       console.error(`[LOGIN ACTION ERROR] User ${foundUser.email} has no accessLevel defined.`);
-       return { error: 'Erro de configuração de conta. Contate o suporte.' };
-    }
-
-    const token = await new jose.SignJWT({ id: foundUser.id, accessLevel: foundUser.accessLevel })
-      .setProtectedHeader({ alg: 'HS256' })
+    const token = await new jose.SignJWT({ id: fakeUser.id, email: fakeUser.email })
+      .setProtectedHeader({ alg })
       .setIssuedAt()
-      .setSubject(foundUser.id)
-      .setIssuer('urn:nexusfarma')
-      .setAudience('urn:nexusfarma:users')
-      .setExpirationTime('7d')
+      .setExpirationTime('1h') // Token expira em 1 hora
+      .setSubject(fakeUser.id) // Subject (sub) claim
       .sign(secret);
-      
-    cookies().set('session', token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 7 });
     
-    await logActivity('Login', `Usuário ${foundUser.email} efetuou login.`, foundUser.email);
-    
-    // Redirect must be inside the try block to work correctly with Next.js App Router
-    revalidatePath('/', 'layout');
+    // Salvar o token no cookie httpOnly
+    cookies().set('session', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60, // 1 hora
+      path: '/',
+      sameSite: 'strict',
+    });
+
+    // O redirect deve estar DENTRO do bloco try para funcionar corretamente
     redirect('/dashboard');
 
   } catch (error) {
-    // This special check is to allow the `redirect` to work.
     if ((error as any).digest?.startsWith('NEXT_REDIRECT')) {
-        throw error;
+      throw error;
     }
-    console.error('[LOGIN ACTION ERROR]', error);
-    return { error: 'Ocorreu um erro inesperado. Tente novamente.' };
+    console.error('Falha ao autenticar:', error);
+    return { error: 'Ocorreu um erro inesperado durante o login.' };
   }
-}
-
-
-export async function register(userData: Omit<User, 'id' | 'password' | 'accessLevel'> & { password: string }): Promise<{ success: boolean; message: string }> {
-    try {
-        const users = await readData<User>('users');
-        if (users.find(u => u.email === userData.email)) {
-            return { success: false, message: 'Este e-mail já está em uso.' };
-        }
-
-        const isFirstUser = users.length === 0;
-        
-        const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
-        
-        const accessLevel = isFirstUser ? 'Admin' : 'User';
-
-        const newUser: User = {
-            id: `user-${Date.now()}`,
-            email: userData.email,
-            password: hashedPassword,
-            role: userData.role,
-            subRole: userData.subRole,
-            accessLevel,
-        };
-        
-        users.push(newUser);
-        await writeData('users', users);
-        
-        await logActivity('Cadastro de Usuário', `Novo usuário cadastrado: ${userData.email} com cargo ${userData.role} e nível ${accessLevel}.`, 'Sistema');
-
-        return { success: true, message: 'Conta criada com sucesso!' };
-    } catch (error) {
-      console.error(error);
-      return { success: false, message: 'Ocorreu um erro ao criar a conta.' };
-    }
 }
 
 export async function logout() {
-  const currentUser = await getCurrentUser();
-  if (currentUser) {
-    await logActivity('Logout', `Usuário ${currentUser.email} saiu.`, currentUser.email);
-  }
-  cookies().delete('session');
-  redirect('/');
+  // Simplesmente deleta o cookie da sessão
+  cookies().set('session', '', { expires: new Date(0) });
+  redirect('/login');
 }
 
-// --- ACTIVITY LOGGING ---
 
-type ActivityLog = {
-    user: string;
-    action: string;
-    details: string;
-    timestamp: string;
-}
+export async function getCurrentUser() {
+    const sessionCookie = cookies().get('session')?.value;
+    if (!sessionCookie) return null;
 
-async function logActivity(action: string, details: string, userEmail: string) {
     try {
-        const logs = await readData<ActivityLog>('logs');
-        const logEntry: ActivityLog = {
-            user: userEmail,
-            action,
-            details,
-            timestamp: new Date().toISOString(),
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+        const { payload } = await jose.jwtVerify(sessionCookie, secret);
+        
+        // Retorna o conteúdo do token
+        return {
+            id: payload.id as string,
+            email: payload.email as string,
         };
-        logs.unshift(logEntry); 
-        await writeData('logs', logs.slice(0, 1000)); 
+
     } catch (error) {
-        console.error("Failed to log activity:", error);
+        // Se o token for inválido ou expirado, retorna null
+        console.warn("Sessão inválida:", error);
+        return null;
     }
-}
-
-// --- STOCK MOVEMENT LOGGING ---
-
-async function logStockMovement(
-    productId: string,
-    productName: string,
-    type: StockMovement['type'],
-    reason: StockMovement['reason'],
-    quantityChange: number,
-    quantityBefore: number,
-    userEmail: string,
-    relatedId?: string
-) {
-    const movements = await readData<StockMovement>('stockMovements');
-    const movement: StockMovement = {
-        id: `mov-${Date.now()}`,
-        productId,
-        productName,
-        type,
-        reason,
-        quantityChange,
-        quantityBefore,
-        quantityAfter: quantityBefore + quantityChange, 
-        date: new Date().toISOString(),
-        relatedId: relatedId || '',
-        user: userEmail
-    };
-    movements.unshift(movement);
-    await writeData('stockMovements', movements);
-}
-
-// --- KNOWLEDGE BASE ---
-export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
-    return knowledgeBaseData;
-}
-
-
-// --- IMAGE UPLOAD ---
-export async function uploadImage(formData: FormData): Promise<{ success: boolean; filePath?: string; error?: string }> {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) return { success: false, error: 'Acesso não autorizado.' };
-
-    try {
-        const file = formData.get('image') as File;
-        if (!file) {
-            return { success: false, error: 'Nenhum arquivo enviado.' };
-        }
-
-        await fs.mkdir(uploadPath, { recursive: true });
-
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const fileExtension = path.extname(file.name);
-        const fileName = `img-${Date.now()}${fileExtension}`;
-        const filePath = path.join(uploadPath, fileName);
-        
-        await fs.writeFile(filePath, buffer);
-        
-        const publicPath = `/uploads/${fileName}`;
-        return { success: true, filePath: publicPath };
-
-    } catch (e) {
-        console.error('Upload error:', e);
-        return { success: false, error: 'Falha ao salvar a imagem no servidor.' };
-    }
-}
-
-
-// --- PRODUCTS ACTIONS ---
-
-export async function addProduct(product: Omit<Product, 'id' | 'status'>): Promise<Product> {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) throw new Error('Acesso não autorizado.');
-
-    const products = await readData<Product>('products');
-    const newProduct: Product = {
-        id: `prod-${Date.now()}`,
-        ...product,
-        status: product.quantity > 0 ? (product.quantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque',
-    };
-    products.push(newProduct);
-    await writeData('products', products);
-    
-    await logStockMovement(newProduct.id, product.name, 'Entrada', 'Entrada Inicial', product.quantity, 0, currentUser.email);
-    await logActivity('Produto Adicionado', `Novo produto "${product.name}" (ID: ${newProduct.id}) foi adicionado com quantidade ${product.quantity}.`, currentUser.email);
-    revalidatePath('/dashboard/inventory');
-    return newProduct;
-}
-
-export async function updateProduct(productId: string, productData: Partial<Product>): Promise<Product> {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) throw new Error('Acesso não autorizado.');
-    
-    let products = await readData<Product>('products');
-    const productIndex = products.findIndex(p => p.id === productId);
-
-    if (productIndex === -1) {
-        throw new Error(`Product with ID ${productId} not found.`);
-    }
-    
-    const oldProductData = products[productIndex];
-    const quantityBefore = oldProductData.quantity;
-
-    const updatedProduct = { ...oldProductData, ...productData };
-
-    if (productData.quantity !== undefined && productData.quantity !== quantityBefore) {
-        updatedProduct.status = productData.quantity > 0 ? (productData.quantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque';
-        const quantityChange = productData.quantity - quantityBefore;
-        await logStockMovement(productId, productData.name || oldProductData.name, 'Ajuste', 'Ajuste de Inventário', quantityChange, quantityBefore, currentUser.email);
-    }
-    
-    products[productIndex] = updatedProduct;
-    await writeData('products', products);
-    
-    await logActivity('Produto Atualizado', `Produto "${updatedProduct.name}" (ID: ${productId}) foi atualizado.`, currentUser.email);
-    revalidatePath('/dashboard/inventory');
-    revalidatePath(`/labels/${productId}`);
-    return updatedProduct;
-}
-
-// --- UNITS ACTIONS ---
-
-export async function addUnit(unit: Omit<Unit, 'id'>) {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) throw new Error('Acesso não autorizado.');
-
-    const units = await readData<Unit>('units');
-    const newUnit: Unit = {
-        id: `unit-${Date.now()}`,
-        ...unit
-    };
-    units.push(newUnit);
-    await writeData('units', units);
-    
-    await logActivity('Unidade Adicionada', `Nova unidade "${unit.name}" (ID: ${newUnit.id}) foi adicionada.`, currentUser.email);
-    revalidatePath('/dashboard/units');
-    revalidatePath('/dashboard/orders/new');
-}
-
-export async function updateUnit(unitId: string, unitData: Partial<Unit>) {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) throw new Error('Acesso não autorizado.');
-
-    let units = await readData<Unit>('units');
-    const unitIndex = units.findIndex(u => u.id === unitId);
-    if (unitIndex === -1) throw new Error('Unit not found');
-    
-    units[unitIndex] = { ...units[unitIndex], ...unitData };
-    await writeData('units', units);
-
-    await logActivity('Unidade Atualizada', `Unidade "${unitData.name}" (ID: ${unitId}) foi atualizada.`, currentUser.email);
-    revalidatePath('/dashboard/units');
-    revalidatePath(`/dashboard/units/${unitId}`);
-}
-
-// --- PATIENTS ACTIONS ---
-
-export async function addPatient(patient: Omit<Patient, 'id' | 'status'>) {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) throw new Error('Acesso não autorizado.');
-
-    const patients = await readData<Patient>('patients');
-    const newPatient: Patient = {
-        id: `pat-${Date.now()}`,
-        status: 'Ativo' as PatientStatus,
-        ...patient,
-    };
-    patients.push(newPatient);
-    await writeData('patients', patients);
-    
-    await logActivity('Paciente Adicionado', `Novo paciente "${patient.name}" (ID: ${newPatient.id}) foi cadastrado.`, currentUser.email);
-    revalidatePath('/dashboard/patients');
-}
-
-export async function updatePatient(patientId: string, patientData: Partial<Patient>) {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) throw new Error('Acesso não autorizado.');
-
-    let patients = await readData<Patient>('patients');
-    const patientIndex = patients.findIndex(p => p.id === patientId);
-    if (patientIndex === -1) throw new Error('Patient not found');
-
-    patients[patientIndex] = { ...patients[patientIndex], ...patientData };
-    await writeData('patients', patients);
-
-    await logActivity('Paciente Atualizado', `Paciente "${patientData.name}" (ID: ${patientId}) foi atualizado.`, currentUser.email);
-    revalidatePath('/dashboard/patients');
-    revalidatePath(`/dashboard/patients/${patientId}`);
-}
-
-export async function updatePatientStatus(patientId: string, status: PatientStatus) {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) throw new Error('Acesso não autorizado.');
-
-    let patients = await readData<Patient>('patients');
-    const patientIndex = patients.findIndex(p => p.id === patientId);
-    if (patientIndex === -1) throw new Error('Patient not found');
-
-    const patientName = patients[patientIndex].name;
-    patients[patientIndex].status = status;
-    await writeData('patients', patients);
-    
-    await logActivity('Status do Paciente Alterado', `Status do paciente "${patientName}" (ID: ${patientId}) foi alterado para "${status}".`, currentUser.email);
-    revalidatePath('/dashboard/patients');
-}
-
-// --- ORDERS / DISPENSATIONS (STOCK UPDATE) ---
-
-async function processStockUpdate(items: (Order['items'] | Dispensation['items']), reason: StockMovement['reason'], relatedId: string, userEmail: string) {
-    let products = await readData<Product>('products');
-    let productsUpdated = false;
-
-    for (const item of items) {
-        const productIndex = products.findIndex(p => p.id === item.productId);
-        if (productIndex > -1) {
-            const product = products[productIndex];
-            const quantityBefore = product.quantity;
-            const newQuantity = quantityBefore - item.quantity;
-            
-            if (newQuantity < 0) {
-                throw new Error(`Estoque insuficiente para o produto ${product.name}. Apenas ${quantityBefore} disponíveis.`);
-            }
-
-            product.quantity = newQuantity;
-            product.status = newQuantity > 0 ? (newQuantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque';
-            products[productIndex] = product;
-            productsUpdated = true;
-
-            await logStockMovement(item.productId, item.name, 'Saída', reason, -item.quantity, quantityBefore, userEmail, relatedId);
-        } else {
-            throw new Error(`Produto com ID ${item.productId} não encontrado.`);
-        }
-    }
-
-    if (productsUpdated) {
-        await writeData('products', products);
-    }
-}
-
-
-// --- ORDERS ACTIONS ---
-
-export async function addOrder(orderData: Omit<Order, 'id' | 'status' | 'sentDate' | 'itemCount'>): Promise<Order> {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) throw new Error('Acesso não autorizado.');
-
-    const newOrderId = `ord-${Date.now()}`;
-    await processStockUpdate(orderData.items, 'Saída por Remessa', newOrderId, currentUser.email);
-    
-    const orders = await readData<Order>('orders');
-    const newOrder: Order = {
-        id: newOrderId,
-        ...orderData,
-        sentDate: new Date().toISOString(),
-        status: 'Em Trânsito',
-        itemCount: orderData.items.reduce((sum, item) => sum + item.quantity, 0),
-    };
-    orders.unshift(newOrder);
-    await writeData('orders', orders);
-    
-    await logActivity('Remessa Criada', `Nova remessa (ID: ${newOrder.id}) com ${newOrder.itemCount} itens foi criada para a unidade "${newOrder.unitName}".`, currentUser.email);
-    revalidatePath('/dashboard/orders');
-    revalidatePath('/dashboard/inventory');
-    revalidatePath('/dashboard');
-    
-    return newOrder;
-}
-
-// --- DISPENSATIONS ACTIONS ---
-
-export async function addDispensation(dispensationData: Omit<Dispensation, 'id' | 'date'>): Promise<Dispensation> {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) throw new Error('Acesso não autorizado.');
-    
-    const newDispensationId = `disp-${Date.now()}`;
-    await processStockUpdate(dispensationData.items, 'Saída por Dispensação', newDispensationId, currentUser.email);
-    
-    const dispensations = await readData<Dispensation>('dispensations');
-    const newDispensation: Dispensation = {
-        id: newDispensationId,
-        ...dispensationData,
-        date: new Date().toISOString(),
-    };
-    dispensations.unshift(newDispensation);
-    await writeData('dispensations', dispensations);
-
-    const totalItems = dispensationData.items.reduce((sum, item) => sum + item.quantity, 0);
-    await logActivity('Dispensação Registrada', `Nova dispensação (ID: ${newDispensation.id}) com ${totalItems} itens foi registrada para o paciente "${dispensationData.patient.name}".`, currentUser.email);
-    revalidatePath(`/dashboard/patients/${dispensationData.patientId}`);
-    revalidatePath('/dashboard/inventory');
-    revalidatePath('/dashboard');
-
-    return newDispensation;
 }
