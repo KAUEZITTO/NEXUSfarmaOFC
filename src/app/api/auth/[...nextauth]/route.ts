@@ -7,6 +7,51 @@ import { firebaseApp } from '@/lib/firebase/client';
 import { readData, writeData } from '@/lib/data';
 import { User } from '@/lib/types';
 
+// Helper function to find or create a user in the local database
+async function findOrCreateUser(
+  userId: string,
+  userEmail: string | null | undefined,
+  provider: 'credentials' | 'google'
+): Promise<User | null> {
+    if (!userEmail) return null;
+
+    const users = await readData<User>('users');
+    let appUser = users.find(u => u.email === userEmail);
+
+    // If it's a Google sign-in and the user doesn't exist, create them.
+    if (provider === 'google' && !appUser) {
+        const isFirstUser = users.length === 0;
+        const newUser: User = {
+            id: userId,
+            email: userEmail,
+            password: '', // Not applicable for OAuth
+            role: 'Coordenador', // Default role for new Google users
+            accessLevel: isFirstUser ? 'Admin' : 'User',
+        };
+        await writeData('users', [...users, newUser]);
+        console.log("New Google user created in DB:", newUser.email);
+        appUser = newUser;
+    }
+
+    if (!appUser) {
+        console.log(`User ${userEmail} authenticated via ${provider} but not found in app DB.`);
+        return null;
+    }
+    
+    // Ensure the ID in our DB matches the Firebase UID, especially for existing users logging in with Google for the first time.
+    if (appUser.id !== userId) {
+        console.log(`Updating user ID for ${userEmail} to match Firebase UID.`);
+        appUser.id = userId;
+        const userIndex = users.findIndex(u => u.email === userEmail);
+        if(userIndex > -1) {
+            users[userIndex] = appUser;
+            await writeData('users', users);
+        }
+    }
+
+    return appUser;
+}
+
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt',
@@ -24,97 +69,81 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          console.log('Credenciais ausentes');
+          console.log('Missing credentials');
           return null;
         }
 
-        // A inicialização do Firebase Auth deve ocorrer aqui dentro
-        // para garantir que as variáveis de ambiente estejam carregadas.
-        const auth = getAuth(firebaseApp);
-
         try {
-          // 1. Autentica o usuário com o Firebase Auth
+          const auth = getAuth(firebaseApp);
           const userCredential = await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
           const firebaseUser = userCredential.user;
 
-          if (!firebaseUser) {
-            return null;
-          }
+          if (!firebaseUser) return null;
 
-          // 2. Busca os metadados (cargo, nível de acesso) em nossa base de dados (Vercel KV)
-          const users = await readData<User>('users');
-          const appUser = users.find(u => u.id === firebaseUser.uid);
-
-          if (!appUser) {
-            // Se o usuário existe no Firebase mas não em nosso DB, pode ser um caso de borda.
-            // Por segurança, negamos o acesso se for login por credenciais.
-            console.log('Usuário autenticado no Firebase, mas não encontrado no banco de dados do app:', firebaseUser.email);
-            return null;
-          }
-
-          console.log('Usuário autenticado com sucesso:', appUser.email);
+          // Find the user in our database to get roles/permissions
+          const appUser = await findOrCreateUser(firebaseUser.uid, firebaseUser.email, 'credentials');
           
-          // 3. Retorna o objeto do usuário para o NextAuth criar a sessão
+          if (!appUser) return null;
+          
+          console.log('User authenticated via credentials successfully:', appUser.email);
+          
+          // Return the full user object for the JWT callback
           return {
             id: appUser.id,
             email: appUser.email,
-            name: appUser.role, // Usando role como name para exibição
+            name: appUser.role, // Using role as name for display
             role: appUser.role,
             accessLevel: appUser.accessLevel,
           };
 
         } catch (error) {
-          console.error("Firebase sign-in error:", error);
-          // Retornar null em qualquer caso de erro é suficiente para o NextAuth.
+          console.error("Firebase credentials sign-in error:", error);
           return null;
         }
       }
     })
   ],
   callbacks: {
-    // Chamado no login para popular o token JWT.
-    async jwt({ token, user, account }) {
-      // No primeiro login (seja por credenciais ou Google), `user` e `account` estarão presentes.
-      if (account && user) {
-        const users = await readData<User>('users');
-        let appUser = users.find(u => u.id === user.id);
+    // This callback is triggered when a user signs in (either via credentials or Google).
+    // We use it to ensure the user exists in our DB and to get their roles.
+    async signIn({ user, account }) {
+      if (!user.email) return false;
 
-        // Se é um login do Google e o usuário não existe em nosso DB, criamos um registro para ele.
-        if (account.provider === 'google' && !appUser && user.email) {
-          const isFirstUser = users.length === 0;
-          const newUser: User = {
-            id: user.id, // O ID vem do objeto 'user' do provedor Google
-            email: user.email,
-            password: '', // Senha não aplicável para OAuth
-            role: 'Coordenador', // Cargo padrão para novos usuários do Google
-            accessLevel: isFirstUser ? 'Admin' : 'User',
-          };
-          
-          try {
-            await writeData('users', [...users, newUser]);
-            appUser = newUser;
-            console.log("Novo usuário do Google registrado no DB:", newUser.email);
-          } catch (e) {
-             console.error("Falha ao registrar novo usuário do Google no KV:", e);
-             // Retornar o token sem as informações de role pode causar problemas,
-             // mas lançar um erro aqui resultaria em uma falha de login para o usuário.
-             // O ideal é logar o erro e permitir que o login continue sem a role.
-             return token;
-          }
-        }
-        
-        // Adiciona as propriedades do nosso DB (appUser) ao token.
-        if (appUser) {
-            token.id = appUser.id;
-            token.role = appUser.role;
-            token.accessLevel = appUser.accessLevel;
-        }
+      // For Google provider, we find or create the user here.
+      if (account?.provider === 'google') {
+          const appUser = await findOrCreateUser(user.id, user.email, 'google');
+          // If appUser is null, it means something went wrong during creation. Deny sign-in.
+          return !!appUser;
       }
-      return token;
+      
+      // For credentials, the 'authorize' function already handled user verification.
+      return true;
     },
-    // Chamado para criar o objeto de sessão que é exposto ao cliente.
+    // This is called after signIn. We add our custom data to the JWT token.
+    async jwt({ token, user }) {
+       // On the initial sign-in, the `user` object is available from the `authorize` or OAuth profile.
+       if (user && user.email) {
+          // The 'user' object might come directly from authorize (credentials) or from the OAuth provider.
+          // If role is already on it (from authorize), use it. Otherwise, fetch from DB.
+           if (user.role && user.accessLevel) {
+              token.role = user.role;
+              token.accessLevel = user.accessLevel;
+              token.id = user.id;
+           } else {
+              // This path is for providers like Google where we need to fetch details from our DB.
+              const users = await readData<User>('users');
+              const appUser = users.find(u => u.email === user.email);
+              if (appUser) {
+                  token.id = appUser.id;
+                  token.role = appUser.role;
+                  token.accessLevel = appUser.accessLevel;
+              }
+           }
+       }
+       return token;
+    },
+    // This is called to create the session object that's exposed to the client.
     async session({ session, token }) {
-      // Adiciona as propriedades do token ao objeto `session.user`
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role;
@@ -125,7 +154,7 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/login',
-    error: '/login', // Redireciona para /login em caso de erro, com uma query string ?error=
+    error: '/login', // Redirects to /login on error, with a query string like ?error=
   },
 };
 
