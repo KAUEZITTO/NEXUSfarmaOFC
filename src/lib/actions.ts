@@ -120,11 +120,7 @@ export async function login(prevState: { error: string } | undefined, formData: 
     cookies().set('session', token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 7 });
     
     await logActivity('Login', `Usuário ${user.email} efetuou login.`, user.email);
-    revalidatePath('/', 'layout');
     
-    // Redirect must be inside the try block
-    redirect('/dashboard');
-
   } catch (error) {
     if ((error as any).digest?.startsWith('NEXT_REDIRECT')) {
         throw error;
@@ -132,6 +128,10 @@ export async function login(prevState: { error: string } | undefined, formData: 
     console.error('[LOGIN ACTION ERROR]', error);
     return { error: 'Ocorreu um erro inesperado. Tente novamente.' };
   }
+
+  // Redirect must be outside the try/catch block to properly work with Next.js App Router
+  revalidatePath('/', 'layout');
+  redirect('/dashboard');
 }
 
 

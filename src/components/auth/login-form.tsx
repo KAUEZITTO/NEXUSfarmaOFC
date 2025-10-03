@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { login } from '@/lib/actions';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 function LoginButton() {
   const { pending } = useFormStatus();
@@ -22,6 +24,18 @@ function LoginButton() {
 
 export function LoginForm() {
   const [state, formAction] = useFormState(login, undefined);
+  const { toast } = useToast();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (state?.error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro de Login',
+        description: state.error,
+      });
+    }
+  }, [state, toast]);
 
   return (
     <form action={formAction} className="grid gap-4">
@@ -52,7 +66,7 @@ export function LoginForm() {
       
       <LoginButton />
 
-      {state?.error && (
+       {state?.error && (
         <Alert variant="destructive" className="mt-4">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Erro de Login</AlertTitle>

@@ -120,7 +120,7 @@ export function RegisterForm() {
       <RegisterButton isPending={isPending} />
 
       {errorMessage && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="mt-4">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Erro no Cadastro</AlertTitle>
           <AlertDescription>{errorMessage}</AlertDescription>
