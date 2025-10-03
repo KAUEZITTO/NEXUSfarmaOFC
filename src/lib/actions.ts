@@ -11,6 +11,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { readData, writeData } from './data';
 import knowledgeBaseData from '@/data/knowledge-base.json';
+import { resetAllData } from './seed';
 
 const uploadPath = path.join(process.cwd(), 'public', 'uploads');
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
@@ -61,8 +62,8 @@ export async function login(prevState: { error: string } | undefined, formData: 
 
     const users = await readData<User>('users');
     const foundUser = users.find(u => u.email === email);
-
-    if (!foundUser?.password) {
+    
+    if (!foundUser || !foundUser.password) {
         return { error: 'Email ou senha inválidos.' };
     }
     
@@ -90,17 +91,18 @@ export async function login(prevState: { error: string } | undefined, formData: 
     
     await logActivity('Login', `Usuário ${foundUser.email} efetuou login.`, foundUser.email);
     
+    // Redirect must be inside the try block to work correctly with Next.js App Router
+    revalidatePath('/', 'layout');
+    redirect('/dashboard');
+
   } catch (error) {
+    // This special check is to allow the `redirect` to work.
     if ((error as any).digest?.startsWith('NEXT_REDIRECT')) {
         throw error;
     }
     console.error('[LOGIN ACTION ERROR]', error);
     return { error: 'Ocorreu um erro inesperado. Tente novamente.' };
   }
-
-  // Redirect must be outside the try/catch block to properly work with Next.js App Router
-  revalidatePath('/', 'layout');
-  redirect('/dashboard');
 }
 
 
@@ -112,15 +114,6 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
         }
 
         const isFirstUser = users.length === 0;
-        
-        if (isFirstUser) {
-            console.log("Primeiro usuário se registrando. Limpando todos os dados da aplicação...");
-            const dataKeys = ['products', 'units', 'patients', 'orders', 'dispensations', 'stockMovements', 'logs', 'users'];
-            for (const key of dataKeys) {
-                await writeData(key, []);
-            }
-            console.log("Dados limpos com sucesso.");
-        }
         
         const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
         
@@ -135,10 +128,8 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
             accessLevel,
         };
         
-        // Re-read users data after potential cleanup
-        const currentUsers = await readData<User>('users');
-        currentUsers.push(newUser);
-        await writeData('users', currentUsers);
+        users.push(newUser);
+        await writeData('users', users);
         
         await logActivity('Cadastro de Usuário', `Novo usuário cadastrado: ${userData.email} com cargo ${userData.role} e nível ${accessLevel}.`, 'Sistema');
 
