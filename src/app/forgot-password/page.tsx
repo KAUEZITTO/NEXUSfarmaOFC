@@ -13,6 +13,8 @@ import { Loader2, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '@/components/logo';
 
+export const dynamic = 'force-dynamic';
+
 const auth = getAuth(firebaseApp);
 
 export default function ForgotPasswordPage() {

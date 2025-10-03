@@ -14,6 +14,8 @@ import { Loader2, ShieldCheck, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '@/components/logo';
 
+export const dynamic = 'force-dynamic';
+
 const auth = getAuth(firebaseApp);
 
 function ResetPasswordForm() {
