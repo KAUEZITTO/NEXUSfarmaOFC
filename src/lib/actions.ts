@@ -9,6 +9,7 @@ import { kv } from '@/lib/kv';
 import { readData, writeData, getProducts, getKnowledgeBase as getKbData } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole } from './types';
 import { revalidatePath } from 'next/cache';
+import { resetAllData } from './seed';
 
 // --- UTILITIES ---
 const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -330,3 +331,4 @@ export async function getKnowledgeBase() {
     return await getKbData();
 }
 
+    
