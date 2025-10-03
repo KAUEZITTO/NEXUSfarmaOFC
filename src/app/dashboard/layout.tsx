@@ -8,9 +8,10 @@ import { Logo } from '@/components/logo';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guide';
 
-const CURRENT_VERSION = '2.0.2';
+const CURRENT_VERSION = '2.1.0';
 
 const changelog = [
+    { version: '2.1.0', changes: ['Implementado o fluxo completo de recuperação de senha via email, utilizando a funcionalidade nativa do Firebase Auth.'] },
     { version: '2.0.2', changes: ['Otimizado o fluxo de login para garantir o redirecionamento imediato e correto para o dashboard após a autenticação, eliminando a necessidade de recarregar a página.'] },
     { version: '2.0.1', changes: ['Correção de erros críticos de importação nas Server Actions que impediam o funcionamento de cadastros.', 'Resolvido erro que impedia o registro de novos usuários.'] },
     { version: '2.0.0', changes: ['Lançamento da versão estável "Definitivo 2". Refatoração completa da arquitetura de acesso a dados e autenticação para garantir estabilidade e corrigir múltiplos erros de build.'] },
