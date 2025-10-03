@@ -1,11 +1,10 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, Printer } from "lucide-react";
+import { PlusCircle, Search, Printer, Loader2 } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
@@ -71,13 +70,16 @@ export function InventoryClient({ rawProducts }: InventoryClientProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [products, setProducts] = useState<GroupedProduct[]>([]);
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   // State for the details dialog
   const [selectedProduct, setSelectedProduct] = useState<GroupedProduct | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleProductSaved = () => {
-    router.refresh();
+    startTransition(() => {
+        router.refresh();
+    });
     // Also close the dialog if it's open
     setIsDialogOpen(false);
   }
@@ -123,16 +125,15 @@ export function InventoryClient({ rawProducts }: InventoryClientProps) {
              </div>
         </div>
         
-        <div className="flex items-center py-4">
-            <div className="relative w-full max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Filtrar por nome..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-            </div>
+        <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+                placeholder="Filtrar por nome..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 max-w-sm"
+            />
+            {isPending && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
         </div>
       
         <DataTable columns={columns} data={products} onRowClick={handleRowClick} />

@@ -1,7 +1,7 @@
-
 'use client';
 
 import { useRouter } from "next/navigation";
+import { useTransition } from 'react';
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
@@ -22,9 +22,12 @@ interface UnitsClientProps {
 
 export function UnitsClient({ initialUnits }: UnitsClientProps) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   const handleUnitSaved = () => {
-    router.refresh();
+    startTransition(() => {
+        router.refresh();
+    });
   }
 
   const columns = getColumns(handleUnitSaved);
