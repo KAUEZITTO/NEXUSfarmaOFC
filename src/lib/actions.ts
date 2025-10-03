@@ -5,11 +5,9 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import * as jose from 'jose';
 import bcrypt from 'bcrypt';
-import { kv } from '@/lib/kv';
 import { readData, writeData, getProducts, getKnowledgeBase as getKbData } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole } from './types';
 import { revalidatePath } from 'next/cache';
-import { resetAllData } from './seed';
 
 // --- UTILITIES ---
 const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -68,10 +66,10 @@ export async function login(prevState: { error: string } | undefined, formData: 
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const alg = 'HS256';
 
-    const token = await new jose.SignJWT({ id: user.id, email: user.email, role: user.role, accessLevel: user.accessLevel })
+    const token = await new jose.SignJWT({ id: user.id, email: user.email, role: user.role, accessLevel: user.accessLevel, subRole: user.subRole })
       .setProtectedHeader({ alg })
       .setIssuedAt()
-      .setExpirationTime('1h')
+      .setExpirationTime('1h') 
       .setSubject(user.id)
       .sign(secret);
     
@@ -83,12 +81,11 @@ export async function login(prevState: { error: string } | undefined, formData: 
       sameSite: 'strict',
     });
 
-    redirect('/dashboard');
+    // Ação de login não redireciona mais. Apenas retorna sucesso.
+    // O redirecionamento será tratado no lado do cliente.
+    return { success: true };
 
   } catch (error) {
-    if ((error as any).digest?.startsWith('NEXT_REDIRECT')) {
-      throw error;
-    }
     console.error('Falha ao autenticar:', error);
     return { error: 'Ocorreu um erro inesperado durante o login.' };
   }
@@ -308,19 +305,15 @@ export async function addDispensation(dispensationData: { patientId: string; pat
 }
 
 // --- FILE UPLOAD ---
-// This is a simplified example. In a real app, you'd upload to a cloud storage like Vercel Blob, S3, etc.
-// For now, we'll simulate by returning a placeholder path.
 export async function uploadImage(formData: FormData): Promise<{ success: boolean; filePath?: string; error?: string; }> {
     const file = formData.get('image') as File;
     if (!file) {
         return { success: false, error: 'Nenhum arquivo enviado.' };
     }
-    // In a real scenario, you would upload the file here and get a URL.
-    // For this project, we'll just return a placeholder from picsum.
+    
     const randomId = Math.floor(Math.random() * 1000);
     const filePath = `https://picsum.photos/seed/${randomId}/400/400`;
     
-    // Simulate upload delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     return { success: true, filePath };

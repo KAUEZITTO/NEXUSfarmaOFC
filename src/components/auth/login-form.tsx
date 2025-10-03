@@ -8,7 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 function LoginButton() {
   const { pending } = useFormStatus();
@@ -22,6 +24,20 @@ function LoginButton() {
 
 export function LoginForm() {
   const [state, formAction] = useFormState(login, undefined);
+  const router = useRouter();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (state?.success) {
+      toast({
+        title: 'Login bem-sucedido!',
+        description: 'Redirecionando para o dashboard...',
+      });
+      // Redirecionamento é feito no lado do cliente após a Server Action
+      // definir o cookie com sucesso. Isso resolve a condição de corrida.
+      router.push('/dashboard');
+    }
+  }, [state, router, toast]);
 
   return (
     <form action={formAction} className="grid gap-4">
@@ -60,3 +76,5 @@ export function LoginForm() {
     </form>
   );
 }
+
+    
