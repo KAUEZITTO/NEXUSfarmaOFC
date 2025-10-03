@@ -7,50 +7,13 @@ import { firebaseApp } from '@/lib/firebase/client';
 import { readData, writeData } from '@/lib/data';
 import { User } from '@/lib/types';
 
-// Helper function to find or create a user in the local database
-async function findOrCreateUser(
-  userId: string,
-  userEmail: string | null | undefined,
-  provider: 'credentials' | 'google'
-): Promise<User | null> {
-    if (!userEmail) return null;
-
+// This function finds a user in our DB. It does NOT create one.
+async function getUserFromDb(email: string | null | undefined): Promise<User | null> {
+    if (!email) return null;
     const users = await readData<User>('users');
-    let appUser = users.find(u => u.email === userEmail);
-
-    // If it's a Google sign-in and the user doesn't exist, create them.
-    if (provider === 'google' && !appUser) {
-        const isFirstUser = users.length === 0;
-        const newUser: User = {
-            id: userId,
-            email: userEmail,
-            password: '', // Not applicable for OAuth
-            role: 'Coordenador', // Default role for new Google users
-            accessLevel: isFirstUser ? 'Admin' : 'User',
-        };
-        await writeData('users', [...users, newUser]);
-        console.log("New Google user created in DB:", newUser.email);
-        appUser = newUser;
-    }
-
-    if (!appUser) {
-        console.log(`User ${userEmail} authenticated via ${provider} but not found in app DB.`);
-        return null;
-    }
-    
-    // Ensure the ID in our DB matches the Firebase UID, especially for existing users logging in with Google for the first time.
-    if (appUser.id !== userId) {
-        console.log(`Updating user ID for ${userEmail} to match Firebase UID.`);
-        appUser.id = userId;
-        const userIndex = users.findIndex(u => u.email === userEmail);
-        if(userIndex > -1) {
-            users[userIndex] = appUser;
-            await writeData('users', users);
-        }
-    }
-
-    return appUser;
+    return users.find(u => u.email === email) || null;
 }
+
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -68,82 +31,81 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
+        // This is where the credential login is handled.
+        const auth = getAuth(firebaseApp);
         if (!credentials?.email || !credentials?.password) {
-          console.log('Missing credentials');
           return null;
         }
 
         try {
-          const auth = getAuth(firebaseApp);
           const userCredential = await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
-          const firebaseUser = userCredential.user;
+          if (userCredential.user) {
+            // We successfully authenticated with Firebase.
+            // Now, get the user's data from our own database.
+            const appUser = await getUserFromDb(credentials.email);
 
-          if (!firebaseUser) return null;
-
-          // Find the user in our database to get roles/permissions
-          const appUser = await findOrCreateUser(firebaseUser.uid, firebaseUser.email, 'credentials');
-          
-          if (!appUser) return null;
-          
-          console.log('User authenticated via credentials successfully:', appUser.email);
-          
-          // Return the full user object for the JWT callback
-          return {
-            id: appUser.id,
-            email: appUser.email,
-            name: appUser.role, // Using role as name for display
-            role: appUser.role,
-            accessLevel: appUser.accessLevel,
-          };
-
+            if (appUser) {
+              // Return the user object that NextAuth will use to create the session.
+              return {
+                id: appUser.id,
+                email: appUser.email,
+                role: appUser.role,
+                accessLevel: appUser.accessLevel,
+              };
+            }
+          }
+          return null; // User not found in our DB or Firebase auth failed.
         } catch (error) {
           console.error("Firebase credentials sign-in error:", error);
-          return null;
+          return null; // Firebase auth failed.
         }
       }
     })
   ],
   callbacks: {
-    // This callback is triggered when a user signs in (either via credentials or Google).
-    // We use it to ensure the user exists in our DB and to get their roles.
-    async signIn({ user, account }) {
-      if (!user.email) return false;
-
-      // For Google provider, we find or create the user here.
-      if (account?.provider === 'google') {
-          const appUser = await findOrCreateUser(user.id, user.email, 'google');
-          // If appUser is null, it means something went wrong during creation. Deny sign-in.
-          return !!appUser;
+    // The JWT callback is called when a token is created or updated.
+    async jwt({ token, user, account }) {
+      // On initial sign-in (user object is present)
+      if (user) {
+        // This is the user object from the `authorize` function or Google profile.
+        
+        // If it's a Google sign-in, we need to find or create the user in our DB.
+        if (account?.provider === 'google' && user.email) {
+            let appUser = await getUserFromDb(user.email);
+            
+            // If the user doesn't exist in our DB, create them now.
+            if (!appUser) {
+                const users = await readData<User>('users');
+                const isFirstUser = users.length === 0;
+                const newUser: User = {
+                    id: user.id, // Use Google's ID
+                    email: user.email,
+                    role: 'Coordenador',
+                    accessLevel: isFirstUser ? 'Admin' : 'User',
+                };
+                await writeData('users', [...users, newUser]);
+                console.log("New Google user created in DB:", newUser.email);
+                appUser = newUser;
+            }
+            
+            // Add our DB info to the token
+            if (appUser) {
+                token.id = appUser.id;
+                token.role = appUser.role;
+                token.accessLevel = appUser.accessLevel;
+            }
+        } else {
+           // For credentials, the user object comes from our `authorize` function.
+           token.id = user.id;
+           token.role = user.role;
+           token.accessLevel = user.accessLevel;
+        }
       }
-      
-      // For credentials, the 'authorize' function already handled user verification.
-      return true;
+      return token;
     },
-    // This is called after signIn. We add our custom data to the JWT token.
-    async jwt({ token, user }) {
-       // On the initial sign-in, the `user` object is available from the `authorize` or OAuth profile.
-       if (user && user.email) {
-          // The 'user' object might come directly from authorize (credentials) or from the OAuth provider.
-          // If role is already on it (from authorize), use it. Otherwise, fetch from DB.
-           if (user.role && user.accessLevel) {
-              token.role = user.role;
-              token.accessLevel = user.accessLevel;
-              token.id = user.id;
-           } else {
-              // This path is for providers like Google where we need to fetch details from our DB.
-              const users = await readData<User>('users');
-              const appUser = users.find(u => u.email === user.email);
-              if (appUser) {
-                  token.id = appUser.id;
-                  token.role = appUser.role;
-                  token.accessLevel = appUser.accessLevel;
-              }
-           }
-       }
-       return token;
-    },
-    // This is called to create the session object that's exposed to the client.
+    // The session callback is called when a session is checked.
     async session({ session, token }) {
+      // We pass the data from the token to the session object.
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role;
@@ -154,7 +116,7 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/login',
-    error: '/login', // Redirects to /login on error, with a query string like ?error=
+    error: '/login', // On error, redirect to login page with an error query param.
   },
 };
 
