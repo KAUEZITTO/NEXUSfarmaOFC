@@ -11,9 +11,10 @@ import { CurrentUserProvider } from '@/hooks/use-current-user-provider';
 import { getCurrentUser } from '@/lib/actions';
 
 
-const CURRENT_VERSION = '2.0.1';
+const CURRENT_VERSION = '2.0.2';
 
 const changelog = [
+    { version: '2.0.2', changes: ['Otimizado o fluxo de login para garantir o redirecionamento imediato e correto para o dashboard após a autenticação, eliminando a necessidade de recarregar a página.'] },
     { version: '2.0.1', changes: ['Correção de erros críticos de importação nas Server Actions que impediam o funcionamento de cadastros.', 'Resolvido erro que impedia o registro de novos usuários.'] },
     { version: '2.0.0', changes: ['Lançamento da versão estável "Definitivo 2". Refatoração completa da arquitetura de acesso a dados e autenticação para garantir estabilidade e corrigir múltiplos erros de build.'] },
     { version: '1.3.0', changes: ['Refatoração completa do sistema de autenticação e acesso a dados para resolver definitivamente o erro de build `Failed to collect page data`, garantindo a estabilidade da aplicação.'] },
