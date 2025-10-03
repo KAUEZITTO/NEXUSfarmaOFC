@@ -1,12 +1,30 @@
 
 'use client';
 
+import { Suspense } from 'react';
 import { Logo } from '@/components/logo';
 import Link from 'next/link';
 import { LoginForm } from '@/components/auth/login-form';
 import { Button } from '@/components/ui/button';
 import { signIn } from 'next-auth/react';
 import Image from 'next/image';
+import { Skeleton } from '@/components/ui/skeleton';
+
+function LoginFormSkeleton() {
+  return (
+    <div className="grid gap-4">
+      <div className="grid gap-2">
+        <Skeleton className="h-4 w-16" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      <div className="grid gap-2">
+        <Skeleton className="h-4 w-16" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      <Skeleton className="h-10 w-full" />
+    </div>
+  )
+}
 
 export default function LoginPage() {
   return (
@@ -22,7 +40,9 @@ export default function LoginPage() {
           </p>
         </div>
         
-        <LoginForm />
+        <Suspense fallback={<LoginFormSkeleton />}>
+          <LoginForm />
+        </Suspense>
         
         <div className="mt-4 text-center text-sm">
           <Link href="/forgot-password"
