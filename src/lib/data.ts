@@ -1,6 +1,7 @@
 
 import { kv } from '@/lib/kv';
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
+import { getKnowledgeBase as getKbData } from './actions';
 
 // --- GENERIC DATA ACCESS ---
 
@@ -112,4 +113,8 @@ export async function getAllUsers(): Promise<User[]> {
     const users = await readData<User>('users');
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return users.map(u => { const { password, ...userWithoutPassword } = u; return userWithoutPassword as User; });
+}
+
+export async function getKnowledgeBase() {
+    return await getKbData();
 }

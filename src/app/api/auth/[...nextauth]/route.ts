@@ -28,6 +28,8 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // A inicialização do Firebase Auth deve ocorrer aqui dentro
+        // para garantir que as variáveis de ambiente estejam carregadas.
         const auth = getAuth(firebaseApp);
 
         try {
@@ -44,11 +46,9 @@ export const authOptions: NextAuthOptions = {
           const appUser = users.find(u => u.id === firebaseUser.uid);
 
           if (!appUser) {
-            // Se o usuário existe no Firebase mas não em nosso DB, pode ser um caso de borda
-            // ou um usuário do Google que logou pela primeira vez.
+            // Se o usuário existe no Firebase mas não em nosso DB, pode ser um caso de borda.
+            // Por segurança, negamos o acesso se for login por credenciais.
             console.log('Usuário autenticado no Firebase, mas não encontrado no banco de dados do app:', firebaseUser.email);
-            // Poderíamos criar um registro para ele aqui ou negar o acesso.
-            // Por segurança, vamos negar por enquanto se for login por credenciais.
             return null;
           }
 
@@ -65,7 +65,6 @@ export const authOptions: NextAuthOptions = {
 
         } catch (error) {
           console.error("Firebase sign-in error:", error);
-          // O erro pode ser 'auth/user-not-found', 'auth/wrong-password', etc.
           // Retornar null em qualquer caso de erro é suficiente para o NextAuth.
           return null;
         }
@@ -84,18 +83,29 @@ export const authOptions: NextAuthOptions = {
         if (account.provider === 'google' && !appUser && user.email) {
           const isFirstUser = users.length === 0;
           const newUser: User = {
-            id: user.id,
+            id: user.id, // O ID vem do objeto 'user' do provedor Google
             email: user.email,
             password: '', // Senha não aplicável para OAuth
             role: 'Coordenador', // Cargo padrão para novos usuários do Google
             accessLevel: isFirstUser ? 'Admin' : 'User',
           };
-          await writeData('users', [...users, newUser]);
-          appUser = newUser;
+          
+          try {
+            await writeData('users', [...users, newUser]);
+            appUser = newUser;
+            console.log("Novo usuário do Google registrado no DB:", newUser.email);
+          } catch (e) {
+             console.error("Falha ao registrar novo usuário do Google no KV:", e);
+             // Retornar o token sem as informações de role pode causar problemas,
+             // mas lançar um erro aqui resultaria em uma falha de login para o usuário.
+             // O ideal é logar o erro e permitir que o login continue sem a role.
+             return token;
+          }
         }
         
         // Adiciona as propriedades do nosso DB (appUser) ao token.
         if (appUser) {
+            token.id = appUser.id;
             token.role = appUser.role;
             token.accessLevel = appUser.accessLevel;
         }
@@ -104,9 +114,9 @@ export const authOptions: NextAuthOptions = {
     },
     // Chamado para criar o objeto de sessão que é exposto ao cliente.
     async session({ session, token }) {
-      // Adiciona as propriedades do token (que buscamos no callback `jwt`)
-      // ao objeto `session.user` para que fiquem acessíveis no lado do cliente.
+      // Adiciona as propriedades do token ao objeto `session.user`
       if (token && session.user) {
+        session.user.id = token.id as string;
         session.user.role = token.role;
         session.user.accessLevel = token.accessLevel;
       }
@@ -115,6 +125,7 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/login',
+    error: '/login', // Redireciona para /login em caso de erro, com uma query string ?error=
   },
 };
 

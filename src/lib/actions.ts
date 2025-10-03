@@ -1,14 +1,12 @@
 
 'use server';
 
-// As principais ações de autenticação agora são tratadas via 'next-auth'.
-// As ações aqui são para registro de usuário (interagindo com Firebase) e outras lógicas de negócio.
-
 import { revalidatePath } from 'next/cache';
-import { readData, writeData, getProducts, getKnowledgeBase as getKbData } from './data';
-import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole } from './types';
+import { readData, writeData, getProducts } from './data';
+import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, KnowledgeBaseItem } from './types';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseApp } from './firebase/client';
+import kb from '../data/knowledge-base.json';
 
 // --- UTILITIES ---
 const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -218,16 +216,21 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
 }
 
 // --- KNOWLEDGE BASE ---
-export async function getKnowledgeBase() {
-    return await getKbData();
+export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
+    // For server components/actions, we can import the JSON directly.
+    return kb;
 }
 
 // --- REGISTER (agora integrado com Firebase Auth) ---
 export async function register({ email, password, role, subRole }: { email: string; password: string; role: Role; subRole?: SubRole; }) {
+    
+    // A inicialização do Firebase deve ser feita aqui dentro para garantir
+    // que as variáveis de ambiente estejam disponíveis no momento da execução.
     const auth = getAuth(firebaseApp);
-    const users = await readData<User>('users'); // Ainda lemos para definir o nível de acesso
     
     try {
+        const users = await readData<User>('users'); // Ainda lemos para definir o nível de acesso
+
         // 1. Cria o usuário no Firebase Authentication
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const firebaseUser = userCredential.user;
