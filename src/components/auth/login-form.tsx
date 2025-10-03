@@ -47,7 +47,6 @@ export function LoginForm() {
           type="email"
           placeholder="seu@email.com"
           required
-          defaultValue="teste@nexus.com"
         />
       </div>
       <div className="grid gap-2">
@@ -60,7 +59,6 @@ export function LoginForm() {
           type="password" 
           required 
           placeholder="••••••••"
-          defaultValue="nexus123"
         />
       </div>
       

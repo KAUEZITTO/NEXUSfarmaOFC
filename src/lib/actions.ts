@@ -16,8 +16,6 @@ const uploadPath = path.join(process.cwd(), 'public', 'uploads');
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
 const saltRounds = 10;
 
-const TEST_USER_EMAIL = 'teste@nexus.com';
-const TEST_USER_PASSWORD = 'nexus123';
 
 /**
  * Retrieves the current user from the session cookie.
@@ -31,17 +29,6 @@ export async function getCurrentUser(): Promise<User | null> {
         const { payload } = await jose.jwtVerify(sessionCookie, secret);
         const userId = payload.sub;
         if (!userId) return null;
-        
-        if (userId === 'user-test') {
-             return {
-                id: 'user-test',
-                email: TEST_USER_EMAIL,
-                password: '', // Password hash not needed here
-                role: 'Farmacêutico',
-                subRole: 'CAF',
-                accessLevel: 'Admin'
-            };
-        }
 
         const allUsers = await readData<User>('users');
         const user = allUsers.find(u => u.id === userId);
@@ -72,46 +59,28 @@ export async function login(prevState: { error: string } | undefined, formData: 
       return { error: 'Email e senha são obrigatórios.' };
     }
 
-    let user: Omit<User, 'password'> & { password?: string } | null = null;
-    let passwordMatch = false;
+    const users = await readData<User>('users');
+    const foundUser = users.find(u => u.email === email);
 
-    if (email === TEST_USER_EMAIL) {
-      if (password === TEST_USER_PASSWORD) {
-        user = {
-          id: 'user-test',
-          email: TEST_USER_EMAIL,
-          role: 'Farmacêutico',
-          subRole: 'CAF',
-          accessLevel: 'Admin'
-        };
-        passwordMatch = true;
-      }
-    } else {
-      const users = await readData<User>('users');
-      const foundUser = users.find(u => u.email === email);
-
-      if (foundUser?.password) {
-        const isMatch = await bcrypt.compare(password, foundUser.password);
-        if (isMatch) {
-          user = foundUser;
-          passwordMatch = true;
-        }
-      }
-    }
-    
-    if (!user || !passwordMatch) {
+    if (!foundUser?.password) {
         return { error: 'Email ou senha inválidos.' };
     }
+    
+    const isMatch = await bcrypt.compare(password, foundUser.password);
 
-    if (!user.accessLevel) {
-       console.error(`[LOGIN ACTION ERROR] User ${user.email} has no accessLevel defined.`);
+    if (!isMatch) {
+        return { error: 'Email ou senha inválidos.' };
+    }
+    
+    if (!foundUser.accessLevel) {
+       console.error(`[LOGIN ACTION ERROR] User ${foundUser.email} has no accessLevel defined.`);
        return { error: 'Erro de configuração de conta. Contate o suporte.' };
     }
 
-    const token = await new jose.SignJWT({ id: user.id, accessLevel: user.accessLevel })
+    const token = await new jose.SignJWT({ id: foundUser.id, accessLevel: foundUser.accessLevel })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
-      .setSubject(user.id)
+      .setSubject(foundUser.id)
       .setIssuer('urn:nexusfarma')
       .setAudience('urn:nexusfarma:users')
       .setExpirationTime('7d')
@@ -119,7 +88,7 @@ export async function login(prevState: { error: string } | undefined, formData: 
       
     cookies().set('session', token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 7 });
     
-    await logActivity('Login', `Usuário ${user.email} efetuou login.`, user.email);
+    await logActivity('Login', `Usuário ${foundUser.email} efetuou login.`, foundUser.email);
     
   } catch (error) {
     if ((error as any).digest?.startsWith('NEXT_REDIRECT')) {
@@ -145,10 +114,12 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
         const isFirstUser = users.length === 0;
         
         if (isFirstUser) {
+            console.log("Primeiro usuário se registrando. Limpando todos os dados da aplicação...");
             const dataKeys = ['products', 'units', 'patients', 'orders', 'dispensations', 'stockMovements', 'logs', 'users'];
             for (const key of dataKeys) {
                 await writeData(key, []);
             }
+            console.log("Dados limpos com sucesso.");
         }
         
         const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
@@ -164,6 +135,7 @@ export async function register(userData: Omit<User, 'id' | 'password' | 'accessL
             accessLevel,
         };
         
+        // Re-read users data after potential cleanup
         const currentUsers = await readData<User>('users');
         currentUsers.push(newUser);
         await writeData('users', currentUsers);
@@ -196,15 +168,19 @@ type ActivityLog = {
 }
 
 async function logActivity(action: string, details: string, userEmail: string) {
-    const logs = await readData<ActivityLog>('logs');
-    const logEntry: ActivityLog = {
-        user: userEmail,
-        action,
-        details,
-        timestamp: new Date().toISOString(),
-    };
-    logs.unshift(logEntry); 
-    await writeData('logs', logs.slice(0, 1000)); 
+    try {
+        const logs = await readData<ActivityLog>('logs');
+        const logEntry: ActivityLog = {
+            user: userEmail,
+            action,
+            details,
+            timestamp: new Date().toISOString(),
+        };
+        logs.unshift(logEntry); 
+        await writeData('logs', logs.slice(0, 1000)); 
+    } catch (error) {
+        console.error("Failed to log activity:", error);
+    }
 }
 
 // --- STOCK MOVEMENT LOGGING ---
@@ -498,37 +474,4 @@ export async function addDispensation(dispensationData: Omit<Dispensation, 'id' 
     revalidatePath('/dashboard');
 
     return newDispensation;
-}
-
-// --- DATA RESET ---
-export async function resetAllData() {
-    const currentUser = await getCurrentUser();
-    if (!currentUser || currentUser.accessLevel !== 'Admin') {
-        throw new Error("Acesso não autorizado para limpar dados.");
-    }
-    
-    const dataKeys = ['products', 'units', 'patients', 'orders', 'dispensations', 'stockMovements', 'logs', 'users'];
-
-    for (const key of dataKeys) {
-        await writeData(key, []);
-    }
-    
-    const newPassword = 'nexus-admin-reset';
-    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-
-    const newAdminUser: User = {
-        id: currentUser.id,
-        email: currentUser.email,
-        password: hashedNewPassword,
-        role: currentUser.role,
-        subRole: currentUser.subRole,
-        accessLevel: 'Admin'
-    };
-
-    const newUsers = [newAdminUser];
-    await writeData('users', newUsers);
-
-    await logActivity('Reset de Dados', `Todos os dados da aplicação foram limpos pelo administrador ${currentUser.email}. O usuário admin foi recriado com uma nova senha padrão.`, currentUser.email);
-    
-    revalidatePath('/dashboard', 'layout');
 }
