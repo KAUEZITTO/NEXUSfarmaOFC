@@ -16,43 +16,32 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { logout } from '@/lib/actions';
 import { LogOut, HelpCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTour } from './tour-guide';
-import { useCurrentUser } from '@/hooks/use-current-user';
 import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
+import { useSession, signOut } from 'next-auth/react';
 
 export function UserNav() {
   const { startTour } = useTour();
   const { toast } = useToast();
-  const user = useCurrentUser();
+  const { data: session, status } = useSession();
 
   const handleLogout = async () => {
-    try {
-        await logout();
-        toast({
-          title: "Logout realizado",
-          description: "Você saiu com segurança. Até a próxima!",
-        });
-        // The redirect is handled by the server action
-    } catch (error) {
-        // This catch block will handle the special error thrown by `redirect()`
-        if (!(error as any).digest?.startsWith('NEXT_REDIRECT')) {
-            console.error("Logout error:", error);
-            toast({
-                variant: 'destructive',
-                title: "Erro ao Sair",
-                description: "Não foi possível fazer logout. Tente novamente.",
-            });
-        }
-    }
+    await signOut({ callbackUrl: '/login' });
+    toast({
+      title: "Logout realizado",
+      description: "Você saiu com segurança. Até a próxima!",
+    });
   };
 
-  if (!user) {
+  if (status === 'loading') {
     return <Skeleton className="h-8 w-8 rounded-full" />;
   }
+
+  const user = session?.user;
+  if (!user) return null;
 
   return (
     <div data-tour-id="step-user-nav">
@@ -60,7 +49,7 @@ export function UserNav() {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
-              <AvatarImage src="/avatars/01.png" alt="@user" />
+              <AvatarImage src={user.image || ''} alt={user.email || 'Avatar'} />
               <AvatarFallback>{user?.email?.[0].toUpperCase()}</AvatarFallback>
             </Avatar>
           </Button>
@@ -68,9 +57,9 @@ export function UserNav() {
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{user.email}</p>
+              <p className="text-sm font-medium leading-none">{user.name || user.email}</p>
               <div className="flex items-center gap-1">
-                <Badge variant="secondary" className="text-xs">{user.role}</Badge>
+                {user.role && <Badge variant="secondary" className="text-xs">{user.role}</Badge>}
                 {user.accessLevel === 'Admin' && <Badge variant="destructive" className="text-xs">Admin</Badge>}
               </div>
             </div>

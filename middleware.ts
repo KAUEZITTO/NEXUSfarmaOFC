@@ -1,50 +1,15 @@
 
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import * as jose from 'jose';
+// A maneira mais simples e recomendada de proteger rotas com NextAuth.js
+// é usar o middleware "withAuth". Ele cuidará automaticamente da verificação
+// do token JWT no cookie e redirecionará usuários não autenticados.
+// Documentação: https://next-auth.js.org/configuration/nextjs#middleware
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-development');
+export { default } from "next-auth/middleware";
 
-async function verifyToken(token: string): Promise<boolean> {
-  try {
-    await jose.jwtVerify(token, secret);
-    return true;
-  } catch (e) {
-    console.error("Token verification failed in middleware:", e);
-    return false;
-  }
-}
-
-export async function middleware(request: NextRequest) {
-  const sessionCookie = request.cookies.get('session')?.value;
-  const { pathname } = request.nextUrl;
-
-  const isAuthenticated = sessionCookie && await verifyToken(sessionCookie);
-
-  const isAuthPage = pathname === '/login' || pathname === '/register';
-  const isPublicPage = pathname === '/';
-
-  // If the user is authenticated
-  if (isAuthenticated) {
-    // If they try to access a login/register page, redirect to dashboard.
-    if (isAuthPage) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
-    // Otherwise, allow access to any other page (e.g., /dashboard, /inventory).
-    return NextResponse.next();
-  }
-
-  // If the user is NOT authenticated
-  // If they are trying to access a public page or an auth page, allow it.
-  if (isPublicPage || isAuthPage) {
-    return NextResponse.next();
-  }
-
-  // If they are trying to access any other protected page, redirect to login.
-  return NextResponse.redirect(new URL('/login', request.url));
-}
-
-export const config = {
-  // This matcher excludes API routes, static files, and image optimization files.
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$).*)'],
+// O objeto `config` especifica quais rotas devem ser protegidas pelo middleware.
+// O matcher abaixo protege todas as rotas aninhadas sob /dashboard.
+export const config = { 
+  matcher: [
+    "/dashboard/:path*",
+  ] 
 };

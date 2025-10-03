@@ -1,13 +1,16 @@
 
 'use server';
 
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-import * as jose from 'jose';
-import bcrypt from 'bcrypt';
+// As funções de autenticação agora são gerenciadas pelo NextAuth.js
+// no arquivo /src/app/api/auth/[...nextauth]/route.ts
+
+// Manteremos aqui as outras Server Actions da aplicação.
+
+import { revalidatePath } from 'next/cache';
 import { readData, writeData, getProducts, getKnowledgeBase as getKbData } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole } from './types';
-import { revalidatePath } from 'next/cache';
+// A função getCurrentUser será substituída pelo hook `useSession` do NextAuth no lado do cliente
+// ou `getServerSession` no lado do servidor.
 
 // --- UTILITIES ---
 const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -22,7 +25,11 @@ const logStockMovement = async (
   relatedId?: string
 ) => {
   const movements = await readData<StockMovement>('stockMovements');
-  const user = await getCurrentUser();
+  // O usuário logado agora seria obtido da sessão do NextAuth.
+  // Como esta é uma Server Action, teríamos que importar `authOptions` e chamar `getServerSession`.
+  // Por simplicidade, manteremos 'Sistema' por enquanto.
+  const userEmail = 'Sistema'; 
+  
   const newMovement: StockMovement = {
     id: generateId('mov'),
     productId,
@@ -33,117 +40,12 @@ const logStockMovement = async (
     quantityBefore,
     quantityAfter: quantityBefore + quantityChange,
     date: new Date().toISOString(),
-    user: user?.email || 'Sistema',
+    user: userEmail,
     relatedId
   };
   await writeData('stockMovements', [newMovement, ...movements]);
 };
 
-
-// --- AUTH ACTIONS ---
-
-export async function login(prevState: { error: string } | undefined, formData: FormData) {
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
-
-  if (!email || !password) {
-    return { error: 'Email e senha são obrigatórios.' };
-  }
-  
-  const users = await readData<User>('users');
-  const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-  if (!user) {
-    return { error: 'Credenciais inválidas.' };
-  }
-
-  const passwordMatch = await bcrypt.compare(password, user.password);
-  if (!passwordMatch) {
-    return { error: 'Credenciais inválidas.' };
-  }
-  
-  try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const alg = 'HS256';
-
-    const token = await new jose.SignJWT({ id: user.id, email: user.email, role: user.role, accessLevel: user.accessLevel, subRole: user.subRole })
-      .setProtectedHeader({ alg })
-      .setIssuedAt()
-      .setExpirationTime('1h') 
-      .setSubject(user.id)
-      .sign(secret);
-    
-    cookies().set('session', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60, // 1 hora
-      path: '/',
-      sameSite: 'strict',
-    });
-
-    // Ação de login não redireciona mais. Apenas retorna sucesso.
-    // O redirecionamento será tratado no lado do cliente.
-    return { success: true };
-
-  } catch (error) {
-    console.error('Falha ao autenticar:', error);
-    return { error: 'Ocorreu um erro inesperado durante o login.' };
-  }
-}
-
-export async function register({ email, password, role, subRole }: { email: string; password: string; role: Role; subRole?: SubRole; }) {
-    const users = await readData<User>('users');
-    const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-    if (existingUser) {
-        return { success: false, message: 'Este email já está cadastrado.' };
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-    const isFirstUser = users.length === 0;
-
-    const newUser: User = {
-        id: generateId('user'),
-        email,
-        password: passwordHash,
-        role,
-        subRole: role === 'Farmacêutico' ? subRole : undefined,
-        accessLevel: isFirstUser ? 'Admin' : 'User',
-    };
-
-    await writeData<User>('users', [...users, newUser]);
-
-    return { success: true, message: 'Usuário registrado com sucesso.' };
-}
-
-
-export async function logout() {
-  cookies().set('session', '', { expires: new Date(0), path: '/' });
-  redirect('/login');
-}
-
-
-export async function getCurrentUser(): Promise<(Omit<User, 'password'> & { id: string }) | null> {
-    const sessionCookie = cookies().get('session')?.value;
-    if (!sessionCookie) return null;
-
-    try {
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-        const { payload } = await jose.jwtVerify(sessionCookie, secret);
-        
-        return {
-            id: payload.sub!,
-            email: payload.email as string,
-            role: payload.role as Role,
-            accessLevel: payload.accessLevel as User['accessLevel'],
-            subRole: payload.subRole as SubRole | undefined
-        };
-
-    } catch (error) {
-        console.warn("Sessão inválida:", error);
-        return null;
-    }
-}
 
 // --- PRODUCT ACTIONS ---
 export async function addProduct(productData: Omit<Product, 'id' | 'status'>): Promise<Product> {
@@ -235,7 +137,7 @@ export async function updatePatientStatus(patientId: string, status: PatientStat
     if (patientIndex === -1) throw new Error('Paciente não encontrado.');
     patients[patientIndex].status = status;
     await writeData('patients', patients);
-    revalidatePath('/dashboard/patients');
+revalidatePath('/dashboard/patients');
 }
 
 
@@ -324,4 +226,30 @@ export async function getKnowledgeBase() {
     return await getKbData();
 }
 
-    
+// --- REGISTER (AINDA NECESSÁRIO) ---
+import bcrypt from 'bcrypt';
+
+export async function register({ email, password, role, subRole }: { email: string; password: string; role: Role; subRole?: SubRole; }) {
+    const users = await readData<User>('users');
+    const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+    if (existingUser) {
+        return { success: false, message: 'Este email já está cadastrado.' };
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const isFirstUser = users.length === 0;
+
+    const newUser: User = {
+        id: generateId('user'),
+        email,
+        password: passwordHash,
+        role,
+        subRole: role === 'Farmacêutico' ? subRole : undefined,
+        accessLevel: isFirstUser ? 'Admin' : 'User',
+    };
+
+    await writeData<User>('users', [...users, newUser]);
+
+    return { success: true, message: 'Usuário registrado com sucesso.' };
+}

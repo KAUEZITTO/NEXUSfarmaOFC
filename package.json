@@ -1,7 +1,7 @@
 
 {
   "name": "nextn",
-  "version": "2.0.0",
+  "version": "2.0.2",
   "private": true,
   "scripts": {
     "dev": "dotenv -e .env.local -- next dev -p 9002",
@@ -50,6 +50,7 @@
     "jspdf-autotable": "^3.8.2",
     "lucide-react": "^0.417.0",
     "next": "14.2.5",
+    "next-auth": "^4.24.7",
     "patch-package": "^8.0.0",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",

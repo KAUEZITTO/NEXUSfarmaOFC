@@ -7,9 +7,6 @@ import { DashboardNav } from '@/components/dashboard/dashboard-nav';
 import { Logo } from '@/components/logo';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guide';
-import { CurrentUserProvider } from '@/hooks/use-current-user-provider';
-import { getCurrentUser } from '@/lib/actions';
-
 
 const CURRENT_VERSION = '2.0.2';
 
@@ -39,10 +36,11 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUser();
+  // Com NextAuth, a verificação de sessão é feita no middleware
+  // e os dados do usuário são acessados via `useSession` nos componentes cliente.
+  // Não precisamos mais do `getCurrentUser` aqui.
 
   return (
-    <CurrentUserProvider user={user}>
         <SidebarProvider>
           <TourGuideWrapper>
             <div className="grid min-h-screen w-full md:grid-cols-[var(--sidebar-width)_1fr] peer-data-[state=collapsed]:md:grid-cols-[var(--sidebar-width-icon)_1fr] transition-[grid-template-columns] duration-300 ease-in-out">
@@ -74,6 +72,5 @@ export default async function DashboardLayout({
 
           </TourGuideWrapper>
         </SidebarProvider>
-    </CurrentUserProvider>
   );
 }

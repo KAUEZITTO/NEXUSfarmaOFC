@@ -1,46 +1,45 @@
 
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
-import { login } from '@/lib/actions';
+import { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
-
-function LoginButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    <Button type="submit" className="w-full" disabled={pending}>
-      {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Entrar'}
-    </Button>
-  );
-}
+import { signIn } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export function LoginForm() {
-  const [state, formAction] = useFormState(login, undefined);
   const router = useRouter();
-  const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(searchParams.get('error'));
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (state?.success) {
-      toast({
-        title: 'Login bem-sucedido!',
-        description: 'Redirecionando para o dashboard...',
-      });
-      // Redirecionamento é feito no lado do cliente após a Server Action
-      // definir o cookie com sucesso. Isso resolve a condição de corrida.
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    const result = await signIn('credentials', {
+      redirect: false, // Não redireciona automaticamente, para podermos tratar o erro
+      email,
+      password,
+    });
+
+    if (result?.error) {
+      setError('Credenciais inválidas. Verifique seu email e senha.');
+      setIsLoading(false);
+    } else {
+      // O redirecionamento é tratado pelo middleware após o login bem-sucedido
       router.push('/dashboard');
     }
-  }, [state, router, toast]);
+  };
 
   return (
-    <form action={formAction} className="grid gap-4">
+    <form onSubmit={handleSubmit} className="grid gap-4">
       <div className="grid gap-2">
         <Label htmlFor="email">Email</Label>
         <Input
@@ -49,6 +48,9 @@ export function LoginForm() {
           type="email"
           placeholder="admin@exemplo.com"
           required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={isLoading}
         />
       </div>
       <div className="grid gap-2">
@@ -61,20 +63,23 @@ export function LoginForm() {
           type="password" 
           required 
           placeholder="••••••••"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={isLoading}
         />
       </div>
       
-      {state?.error && (
+      {error && (
         <Alert variant="destructive" className="mt-2">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Erro de Login</AlertTitle>
-          <AlertDescription>{state.error}</AlertDescription>
+          <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
-      <LoginButton />
+      <Button type="submit" className="w-full" disabled={isLoading}>
+        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Entrar'}
+      </Button>
     </form>
   );
 }
-
-    

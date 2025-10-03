@@ -1,4 +1,20 @@
 
+// Adicionando tipos do NextAuth para extender o objeto de sessão
+import type { DefaultUser } from 'next-auth';
+
+declare module 'next-auth' {
+  interface Session {
+    user?: DefaultUser & {
+      role?: Role;
+      accessLevel?: AccessLevel;
+    };
+  }
+  interface User extends DefaultUser {
+      role?: Role;
+      accessLevel?: AccessLevel;
+  }
+}
+
 
 export type Role =
   | 'Farmacêutico'
