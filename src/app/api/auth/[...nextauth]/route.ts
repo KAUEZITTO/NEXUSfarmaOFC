@@ -2,10 +2,9 @@
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from "next-auth/providers/google";
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { firebaseApp } from '@/lib/firebase/client';
 import { readData, writeData } from '@/lib/data';
 import { User } from '@/lib/types';
+import bcrypt from 'bcrypt';
 
 // Função auxiliar para buscar um usuário no nosso banco de dados (Vercel KV)
 async function getUserFromDb(email: string | null | undefined): Promise<User | null> {
@@ -13,7 +12,6 @@ async function getUserFromDb(email: string | null | undefined): Promise<User | n
     const users = await readData<User>('users');
     return users.find(u => u.email === email) || null;
 }
-
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -31,34 +29,41 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        // Este é o local correto para a lógica de autorização de credenciais.
-        const auth = getAuth(firebaseApp);
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
 
-        try {
-          // 1. Autentica com o Firebase
-          const userCredential = await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
-          if (userCredential.user) {
-            // 2. Busca os dados do nosso banco de dados
-            const appUser = await getUserFromDb(credentials.email);
+        // 1. Busca o usuário no nosso banco de dados Vercel KV
+        const appUser = await getUserFromDb(credentials.email);
 
-            if (appUser) {
-              // 3. Retorna o objeto de usuário completo para o NextAuth
-              return {
+        // 2. Se o usuário não existe no nosso BD, a autorização falha.
+        if (!appUser) {
+            console.log("User not found in our DB");
+            return null;
+        }
+        
+        // 3. Se o usuário não tem uma senha hash (ex: foi criado via Google), não pode logar com senha.
+        if (!appUser.password) {
+            console.log("User exists but has no password hash (likely Google user)");
+            return null;
+        }
+        
+        // 4. Compara a senha fornecida com o hash armazenado usando bcrypt.
+        const passwordsMatch = await bcrypt.compare(credentials.password, appUser.password);
+
+        if (passwordsMatch) {
+            // 5. Se as senhas correspondem, retorna o objeto de usuário para o NextAuth.
+            return {
                 id: appUser.id,
                 email: appUser.email,
                 role: appUser.role,
                 accessLevel: appUser.accessLevel,
-              };
-            }
-          }
-          return null; // Falha na autenticação do Firebase ou usuário não encontrado no nosso BD.
-        } catch (error) {
-          console.error("Firebase credentials sign-in error:", error);
-          return null; // A autenticação do Firebase falhou.
+            };
         }
+        
+        // Se as senhas não correspondem, retorna nulo.
+        console.log("Password mismatch");
+        return null;
       }
     })
   ],
@@ -76,6 +81,7 @@ export const authOptions: NextAuthOptions = {
                 const newUser: User = {
                     id: user.id, // Usa o ID do Google
                     email: user.email,
+                    password: '', // Sem senha para usuários do Google
                     role: 'Coordenador', // Cargo padrão para novos usuários do Google
                     accessLevel: isFirstUser ? 'Admin' : 'User', // O primeiro usuário é Admin
                 };
@@ -106,12 +112,11 @@ export const authOptions: NextAuthOptions = {
     },
 
     // O callback session usa os dados do token para construir o objeto de sessão do cliente.
-    // Este callback é rápido e não faz chamadas de rede.
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string;
-        session.user.role = token.role;
-        session.user.accessLevel = token.accessLevel;
+        session.user.role = token.role as any;
+        session.user.accessLevel = token.accessLevel as any;
       }
       return session;
     },

@@ -7,6 +7,7 @@ import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, Disp
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseApp } from './firebase/client';
 import kb from '../data/knowledge-base.json';
+import bcrypt from 'bcrypt';
 
 // --- UTILITIES ---
 const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -221,26 +222,33 @@ export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
     return kb;
 }
 
-// --- REGISTER (agora integrado com Firebase Auth) ---
+// --- REGISTER (agora integrado com Firebase Auth e bcrypt) ---
 export async function register({ email, password, role, subRole }: { email: string; password: string; role: Role; subRole?: SubRole; }) {
     
-    // A inicialização do Firebase deve ser feita aqui dentro para garantir
-    // que as variáveis de ambiente estejam disponíveis no momento da execução.
     const auth = getAuth(firebaseApp);
     
     try {
-        const users = await readData<User>('users'); // Ainda lemos para definir o nível de acesso
+        const users = await readData<User>('users');
+
+        // Check if user already exists in our KV database
+        if (users.some(u => u.email === email)) {
+            return { success: false, message: 'Este email já está em uso.' };
+        }
 
         // 1. Cria o usuário no Firebase Authentication
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const firebaseUser = userCredential.user;
 
-        // 2. Salva os metadados (cargo, nível de acesso) em nossa base de dados (Vercel KV)
+        // 2. Hash da senha com bcrypt
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        // 3. Salva os metadados e a senha com hash no Vercel KV
         const isFirstUser = users.length === 0;
         const newUser: User = {
             id: firebaseUser.uid, // Usa o UID do Firebase como nosso ID
             email,
-            password: '', // Não armazenamos mais a senha
+            password: hashedPassword, // Armazena o hash
             role,
             subRole: role === 'Farmacêutico' ? subRole : undefined,
             accessLevel: isFirstUser ? 'Admin' : 'User',
@@ -251,7 +259,7 @@ export async function register({ email, password, role, subRole }: { email: stri
         return { success: true, message: 'Usuário registrado com sucesso.' };
 
     } catch (error: any) {
-        console.error("Firebase registration error:", error);
+        console.error("Registration error:", error);
         if (error.code === 'auth/email-already-in-use') {
             return { success: false, message: 'Este email já está em uso.' };
         }

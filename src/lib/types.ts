@@ -5,11 +5,13 @@ import type { DefaultUser } from 'next-auth';
 declare module 'next-auth' {
   interface Session {
     user?: DefaultUser & {
+      id: string;
       role?: Role;
       accessLevel?: AccessLevel;
     };
   }
   interface User extends DefaultUser {
+      id: string;
       role?: Role;
       accessLevel?: AccessLevel;
   }
@@ -33,7 +35,7 @@ export type AccessLevel = 'Admin' | 'User';
 export type User = {
     id: string;
     email: string;
-    password?: string; // Senha é opcional, especialmente para usuários OAuth ou para não expor o hash
+    password?: string; // Armazena o HASH da senha, não a senha em texto plano. Opcional para usuários OAuth.
     role: Role;
     subRole?: SubRole;
     accessLevel: AccessLevel;
