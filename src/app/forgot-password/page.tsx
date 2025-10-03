@@ -15,8 +15,6 @@ import { Logo } from '@/components/logo';
 
 export const dynamic = 'force-dynamic';
 
-const auth = getAuth(firebaseApp);
-
 export default function ForgotPasswordPage() {
   const { toast } = useToast();
   const [email, setEmail] = useState('');
@@ -26,6 +24,9 @@ export default function ForgotPasswordPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
+    
+    // Moved auth initialization inside the handler
+    const auth = getAuth(firebaseApp);
 
     try {
       await sendPasswordResetEmail(auth, email);

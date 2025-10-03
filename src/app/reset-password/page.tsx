@@ -16,8 +16,6 @@ import { Logo } from '@/components/logo';
 
 export const dynamic = 'force-dynamic';
 
-const auth = getAuth(firebaseApp);
-
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -42,6 +40,7 @@ function ResetPasswordForm() {
     
     setOobCode(code);
     
+    const auth = getAuth(firebaseApp);
     // Verify the code to make sure it's valid before showing the form
     verifyPasswordResetCode(auth, code)
       .then(() => {
@@ -67,6 +66,7 @@ function ResetPasswordForm() {
     if (!oobCode) return;
 
     setIsSubmitting(true);
+    const auth = getAuth(firebaseApp);
     try {
       await confirmPasswordReset(auth, oobCode, newPassword);
       setSuccess(true);
