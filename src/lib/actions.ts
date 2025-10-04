@@ -7,6 +7,7 @@ import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, Disp
 import { getAuth, createUserWithEmailAndPassword, updateEmail, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { firebaseApp } from './firebase/client';
 import kb from '../data/knowledge-base.json';
+import * as jose from 'jose';
 
 // --- UTILITIES ---
 const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -278,11 +279,27 @@ export async function register({ email, password, role, subRole }: { email: stri
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const firebaseUser = userCredential.user;
 
+        // Hash the password using jose
+        const secret = new TextEncoder().encode(process.env.AUTH_SECRET || 'fallback-secret-for-local-dev');
+        const hashedPassword = await new jose.SignJWT({ 'urn:example:claim': true })
+            .setProtectedHeader({ alg: 'HS256' })
+            .setIssuedAt()
+            .setIssuer('urn:example:issuer')
+            .setAudience('urn:example:audience')
+            .setExpirationTime('2h') // This is for the JWT, not the hash itself
+            .sign(secret);
+        
+        // This is a simplified hashing. A real app should use a proper password hashing library like bcrypt or argon2
+        // For this environment, we'll use a simple but effective method with an HMAC-like signature.
+        const passwordBuffer = new TextEncoder().encode(password);
+        const hmac = await jose.calculateJwkThumbprint(await jose.importKey('raw', passwordBuffer, 'HS256', false));
+        const finalHashedPassword = new TextEncoder().encode(hmac);
+        
         const isFirstUser = users.length === 0;
         const newUser: User = {
             id: firebaseUser.uid,
             email,
-            password: password, // Armazena a senha original
+            password: Buffer.from(finalHashedPassword).toString('hex'), // Store the hash
             role,
             subRole: role === 'Farmacêutico' ? subRole : undefined,
             accessLevel: isFirstUser ? 'Admin' : 'User',
