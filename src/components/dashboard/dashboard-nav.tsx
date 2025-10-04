@@ -42,6 +42,9 @@ export function DashboardNav({ isMobile = false }: { isMobile?: boolean }) {
             if (adminOnly && session?.user?.accessLevel !== 'Admin') {
                 return null;
             }
+            // Temporarily hide dashboard link from nav to avoid tour confusion
+            if (label === 'Dashboard') return null;
+
             return (
                 <SidebarMenuItem key={label} data-tour-id={tourId}>
                     <SidebarMenuButton 

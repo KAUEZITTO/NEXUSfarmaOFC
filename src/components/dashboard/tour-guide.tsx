@@ -53,6 +53,9 @@ const tourSteps = [
              case 'Usuários':
                 intro = 'Como <strong>Administrador</strong>, você pode gerenciar os usuários do sistema, alterando seus níveis de acesso e cargos.';
                 break;
+            case 'Configurações':
+                intro = 'Em <strong>Configurações</strong>, você pode personalizar sua conta, alterar sua senha, e mudar a aparência do sistema entre os modos claro e escuro.';
+                break;
             case 'Sobre':
                 intro = 'Na seção <strong>Sobre</strong>, você encontra informações de contato para suporte técnico, sugestões e detalhes sobre a versão do sistema.';
                 break;
@@ -70,26 +73,49 @@ const tourSteps = [
 
 export function TourGuideWrapper({ children }: { children: React.ReactNode }) {
     const [isTourActive, setIsTourActive] = useState(false);
+    const [canStartTour, setCanStartTour] = useState(false);
     const { setOpen } = useSidebar();
 
     const startTour = () => {
-        setOpen(true); 
-        setIsTourActive(true);
+        const tourCompleted = localStorage.getItem(TOUR_STORAGE_KEY);
+        if (!tourCompleted) {
+            setOpen(true); 
+            setIsTourActive(true);
+        }
     };
 
-    // Automatically start tour for new users
+    // This effect checks if the tour should be started automatically.
     useEffect(() => {
         const tourCompleted = localStorage.getItem(TOUR_STORAGE_KEY);
         if (!tourCompleted) {
-            const timer = setTimeout(() => {
-               startTour();
-            }, 1500); 
-            return () => clearTimeout(timer);
+            // We set canStartTour to true, but don't start it yet.
+            // The UpdateDialog will call startTour when it's closed.
+            setCanStartTour(true);
         }
     }, []);
 
+    // Function for UpdateDialog to call when it closes
+    const onUpdateDialogClose = () => {
+        if (canStartTour) {
+            const timer = setTimeout(() => {
+                startTour();
+            }, 500); // Small delay to ensure dialog is gone
+            return () => clearTimeout(timer);
+        }
+    };
+    
+    // Pass startTour and onUpdateDialogClose down through context
+    const contextValue = React.useMemo(() => ({
+        startTour: () => { // manual start
+            setOpen(true);
+            setIsTourActive(true);
+        },
+        onUpdateDialogClose,
+    }), [onUpdateDialogClose]);
+
+
     return (
-        <TourContext.Provider value={{ startTour }}>
+        <TourContext.Provider value={contextValue}>
             {children}
             <TourGuide isTourActive={isTourActive} setIsTourActive={setIsTourActive} />
         </TourContext.Provider>
@@ -166,17 +192,23 @@ export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boo
 export function UpdateDialog({ currentVersion, changelog }: { currentVersion: string, changelog: any[] }) {
     const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
     const UPDATE_STORAGE_KEY = `nexusfarma-last-seen-version-${currentVersion}`;
+    const tourContext = useContext(TourContext);
 
     useEffect(() => {
         const lastSeenVersion = localStorage.getItem(UPDATE_STORAGE_KEY);
         if (lastSeenVersion !== currentVersion) {
             setIsUpdateDialogOpen(true);
+        } else {
+             // If version has been seen, maybe start the tour
+            tourContext?.onUpdateDialogClose();
         }
-    }, [currentVersion, UPDATE_STORAGE_KEY]);
+    }, [currentVersion, UPDATE_STORAGE_KEY, tourContext]);
 
     const handleCloseUpdateDialog = () => {
         localStorage.setItem(UPDATE_STORAGE_KEY, currentVersion);
         setIsUpdateDialogOpen(false);
+        // Signal that the dialog is closed, so the tour can start
+        tourContext?.onUpdateDialogClose();
     }
     
     // Lazy-load the AlertDialog to avoid issues with server components

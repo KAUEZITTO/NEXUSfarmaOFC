@@ -1,13 +1,72 @@
 
 'use client';
 
-import { useSession, signOut } from "next-auth/react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2, AlertTriangle, Package, CalendarDays, Clock, BarChart2 } from "lucide-react";
+import { getProducts, getAllDispensations } from "@/lib/data";
+import type { Product, Dispensation } from "@/lib/types";
+import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
+  const [currentDate, setCurrentDate] = useState('');
+  const [currentTime, setCurrentTime] = useState('');
+  const [stats, setStats] = useState({ lowStock: 0, expiringSoon: 0 });
+  const [dispensations, setDispensations] = useState<Dispensation[]>([]);
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  useEffect(() => {
+    // Atualiza data e hora a cada segundo
+    const intervalId = setInterval(() => {
+      const now = new Date();
+      setCurrentDate(now.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+      setCurrentTime(now.toLocaleTimeString('pt-BR'));
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    async function fetchStats() {
+      setLoadingStats(true);
+      try {
+        const [products, dispensationsData] = await Promise.all([
+          getProducts(),
+          getAllDispensations(),
+        ]);
+        
+        const now = new Date();
+        const thirtyDaysFromNow = new Date();
+        thirtyDaysFromNow.setDate(now.getDate() + 30);
+
+        const lowStockItems = products.filter(p => p.status === 'Baixo Estoque').length;
+        const expiringSoonItems = products.filter(p => {
+          if (!p.expiryDate) return false;
+          const expiry = new Date(p.expiryDate);
+          return expiry > now && expiry <= thirtyDaysFromNow;
+        }).length;
+
+        setStats({
+          lowStock: lowStockItems,
+          expiringSoon: expiringSoonItems,
+        });
+        setDispensations(dispensationsData);
+
+      } catch (error) {
+        console.error("Failed to fetch dashboard stats:", error);
+      } finally {
+        setLoadingStats(false);
+      }
+    }
+
+    if (status === 'authenticated') {
+      fetchStats();
+    }
+  }, [status]);
+
 
   if (status === "loading") {
     return (
@@ -17,33 +76,68 @@ export default function DashboardPage() {
     );
   }
 
-  if (status === "unauthenticated") {
-    // O middleware já deve ter redirecionado, mas como segurança extra.
-    return <p>Acesso negado. Redirecionando para login...</p>;
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Bom dia";
+    if (hour < 18) return "Boa tarde";
+    return "Boa noite";
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40">
-        <Card className="w-full max-w-md">
-            <CardHeader>
-                <CardTitle className="text-2xl">Bem-vindo ao Dashboard!</CardTitle>
-                <CardDescription>
-                    Sua sessão está ativa com NextAuth.js.
-                </CardDescription>
+    <div className="space-y-6">
+       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{getGreeting()}, {session?.user?.name?.split(' ')[0] || 'Usuário'}!</h1>
+          <p className="text-muted-foreground">Bem-vindo(a) de volta ao painel NexusFarma.</p>
+        </div>
+        <div className="flex items-center gap-6 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="h-4 w-4" />
+            <span>{currentDate}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            <span>{currentTime}</span>
+          </div>
+        </div>
+      </div>
+
+       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Baixo Estoque</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <p>
-                    Seu email é: <span className="font-semibold text-primary">{session?.user?.email}</span>
-                </p>
-                <p className="text-sm text-muted-foreground mt-2">
-                    Este conteúdo só pode ser visto por usuários autenticados.
-                </p>
+              {loadingStats ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold">{stats.lowStock}</div>}
+              <p className="text-xs text-muted-foreground">Itens que precisam de reposição.</p>
             </CardContent>
-            <CardFooter>
-                 <Button onClick={() => signOut()} variant="outline" className="w-full">
-                    Sair
-                </Button>
-            </CardFooter>
+          </Card>
+           <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Próximos do Vencimento</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+            </CardHeader>
+            <CardContent>
+              {loadingStats ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold">{stats.expiringSoon}</div>}
+              <p className="text-xs text-muted-foreground">Itens vencendo nos próximos 30 dias.</p>
+            </CardContent>
+          </Card>
+      </div>
+
+       <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart2 className="h-5 w-5" />
+              Consumo Mensal de Itens
+            </CardTitle>
+            <CardDescription>
+              Visualize a quantidade total de itens dispensados nos últimos 6 meses.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pl-2">
+             {loadingStats ? <Skeleton className="h-[350px] w-full" /> : <MonthlyConsumptionChart dispensations={dispensations} />}
+          </CardContent>
         </Card>
     </div>
   );

@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -126,7 +127,8 @@ body {
     color: hsl(var(--card-foreground));
     border-radius: var(--radius);
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    max-width: 350px !important;
+    max-width: 400px !important;
+    min-width: 300px;
 }
 
 .introjs-button {
@@ -161,7 +163,8 @@ body {
 }
 
 .introjs-tooltiptext {
-    line-height: 1.6;
+    line-height: 1.7;
+    padding: 0.5rem;
 }
 
 .introjs-arrow.top {
