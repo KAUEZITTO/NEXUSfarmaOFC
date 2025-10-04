@@ -5,18 +5,11 @@ import { RegisterForm } from '@/components/auth/register-form';
 import { Logo } from '@/components/logo';
 import { readData } from '@/lib/data';
 import type { User } from '@/lib/types';
-import { resetAllData } from '@/lib/seed';
 
 
 export default async function RegisterPage() {
   const users = await readData<User>('users');
   const isFirstUser = users.length === 0;
-
-  // Se for o primeiro usuário, podemos resetar o banco para garantir que está limpo.
-  // CUIDADO: Isso é destrutivo. Em um app real, isso seria controlado de outra forma.
-  if (isFirstUser) {
-      await resetAllData();
-  }
 
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
