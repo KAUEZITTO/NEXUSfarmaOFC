@@ -138,7 +138,7 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
     async function loadData() {
         if (isOpen) {
             setLoading(true);
-            const [patients, products] = await Promise.all([getPatients(), getProducts()]);
+            const [patients, products] = await Promise.all([getPatients('all'), getProducts()]);
             setAllPatients(patients);
             setAllProducts(products);
             setLoading(false);
@@ -434,7 +434,7 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
               </div>
               <ScrollArea className="h-[calc(80vh-150px)]">
                 <div className="space-y-2">
-                  {loading ? <p>Carregando pacientes...</p> : filteredPatients.map((patient) => (
+                  {loading ? <div className="flex justify-center items-center h-40"><Loader2 className="h-8 w-8 animate-spin" /></div> : filteredPatients.map((patient) => (
                     <div
                       key={patient.id}
                       className="flex items-center justify-between p-3 rounded-md border hover:bg-muted cursor-pointer"

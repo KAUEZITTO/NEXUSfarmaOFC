@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useTransition, useEffect } from "react";
 import { DataTable } from "@/components/ui/data-table";
 import {
   Card,
@@ -15,7 +15,7 @@ import { AttendPatientDialog } from "@/components/dashboard/attend-patient-dialo
 import { AddPatientDialog } from "@/components/dashboard/add-patient-dialog";
 import { Button } from "@/components/ui/button";
 import type { Patient, PatientFilter, PatientStatus } from "@/lib/types";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getColumns } from "./columns";
 import { useToast } from "@/hooks/use-toast";
@@ -62,7 +62,7 @@ export function PatientsClient({ initialPatients, initialFilter }: PatientsClien
           title: "Status Atualizado!",
           description: `O status do paciente foi alterado para ${status}.`,
         });
-        router.refresh();
+        router.refresh(); // Pede ao servidor para revalidar os dados
       } catch (error) {
         toast({
           variant: "destructive",
@@ -87,6 +87,7 @@ export function PatientsClient({ initialPatients, initialFilter }: PatientsClien
             </CardDescription>
           </div>
           <div className="flex gap-2">
+            {/* O componente de atendimento agora busca seus próprios dados */}
             <AttendPatientDialog onDispensationSaved={handlePatientSaved} />
             <AddPatientDialog onPatientSaved={handlePatientSaved} trigger={
               <Button>
@@ -105,7 +106,7 @@ export function PatientsClient({ initialPatients, initialFilter }: PatientsClien
                     className="rounded-full flex-shrink-0"
                     disabled={isPending}
                 >
-                    {filter.label}
+                    {isPending && initialFilter === filter.value ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : filter.label}
                 </Button>
             ))}
         </div>
