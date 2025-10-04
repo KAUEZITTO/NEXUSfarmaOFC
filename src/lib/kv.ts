@@ -1,3 +1,4 @@
+
 import { createClient } from '@vercel/kv';
 
 // As variáveis de ambiente para a Vercel são definidas diretamente nas configurações do projeto na Vercel.

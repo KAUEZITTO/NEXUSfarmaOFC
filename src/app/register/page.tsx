@@ -3,14 +3,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { RegisterForm } from '@/components/auth/register-form';
 import { Logo } from '@/components/logo';
-import { resetAllData } from '@/lib/seed';
+import { readData } from '@/lib/data';
+import type { User } from '@/lib/types';
+
 
 export default async function RegisterPage() {
-  // Reset all data to ensure a clean slate. 
-  // This is a destructive operation requested by the user.
-  await resetAllData();
-  console.log("Application data has been reset for a clean start.");
-  const isFirstUser = true; // After reset, it's always the first user.
+  const users = await readData<User>('users');
+  const isFirstUser = users.length === 0;
 
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
