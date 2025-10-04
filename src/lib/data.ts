@@ -122,3 +122,4 @@ export async function getAllUsers(): Promise<User[]> {
 export async function getKnowledgeBase() {
     return await getKbData();
 }
+
