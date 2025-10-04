@@ -1,18 +1,19 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import type { User } from "@/lib/types" 
+import type { User, AccessLevel } from "@/lib/types" 
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, MoreHorizontal, ShieldCheck } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, ShieldCheck, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 
-// Note: The 'Alterar Nível de Acesso' functionality is currently disabled in the UI
-// because the corresponding server action has not been implemented yet.
-// To enable it, you would need to create an action to update the user's accessLevel
-// and then re-enable the DropdownMenuSub component below and pass the handler function.
+interface ColumnActions {
+    onAccessLevelChange: (userId: string, accessLevel: AccessLevel) => void;
+    onDeleteUser: (userId: string) => void;
+}
 
-export const getColumns = (): ColumnDef<User>[] => [
+export const getColumns = ({ onAccessLevelChange, onDeleteUser }: ColumnActions): ColumnDef<User>[] => [
   {
     accessorKey: "email",
     header: ({ column }) => {
@@ -53,40 +54,57 @@ export const getColumns = (): ColumnDef<User>[] => [
       const user = row.original
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Abrir menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Ações</DropdownMenuLabel>
-            {/* 
-              This functionality is disabled until the server action is implemented.
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger disabled>
-                    <ShieldCheck className="mr-2 h-4 w-4" />
-                    <span>Alterar Nível de Acesso</span>
-                </DropdownMenuSubTrigger>
-                <DropdownMenuPortal>
-                    <DropdownMenuSubContent>
-                         <DropdownMenuItem>
-                            <span>Admin</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                            <span>User</span>
-                        </DropdownMenuItem>
-                    </DropdownMenuSubContent>
-                </DropdownMenuPortal>
-              </DropdownMenuSub>
-            */}
-             <DropdownMenuItem disabled>
-                <ShieldCheck className="mr-2 h-4 w-4" />
-                <span>Alterar Acesso (Em breve)</span>
-             </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <AlertDialog>
+            <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Abrir menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                        <ShieldCheck className="mr-2 h-4 w-4" />
+                        <span>Alterar Nível de Acesso</span>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                        <DropdownMenuSubContent>
+                            <DropdownMenuItem onClick={() => onAccessLevelChange(user.id, 'Admin')}>
+                                <span>Admin</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onAccessLevelChange(user.id, 'User')}>
+                                <span>User</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                </DropdownMenuSub>
+                <DropdownMenuSeparator />
+                <AlertDialogTrigger asChild>
+                    <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Excluir Usuário</span>
+                    </DropdownMenuItem>
+                </AlertDialogTrigger>
+            </DropdownMenuContent>
+            </DropdownMenu>
+
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Esta ação não pode ser desfeita. Isso irá excluir permanentemente a conta de <strong>{user.email}</strong> e remover seus dados de nossos servidores.
+                </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => onDeleteUser(user.id)}>
+                    Sim, excluir usuário
+                </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+       </AlertDialog>
       )
     },
   },

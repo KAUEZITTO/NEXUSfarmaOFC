@@ -8,6 +8,7 @@ declare module 'next-auth' {
       name?: string | null;
       birthdate?: string | null;
       role?: Role;
+      subRole?: SubRole;
       accessLevel?: AccessLevel;
     };
   }
@@ -16,6 +17,7 @@ declare module 'next-auth' {
       name?: string | null;
       birthdate?: string | null;
       role?: Role;
+      subRole?: SubRole;
       accessLevel?: AccessLevel;
   }
 }

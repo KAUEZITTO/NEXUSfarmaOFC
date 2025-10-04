@@ -3,7 +3,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { readData, writeData, getProducts } from './data';
-import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, KnowledgeBaseItem } from './types';
+import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, KnowledgeBaseItem, AccessLevel } from './types';
 import { getAuth, createUserWithEmailAndPassword, updateEmail, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { firebaseApp } from './firebase/client';
 import kb from '../data/knowledge-base.json';
@@ -216,6 +216,29 @@ export async function updateUserProfile(userId: string, data: { name?: string; b
     
     return { success: true, user: updatedUser };
 }
+
+// --- USER MANAGEMENT ACTIONS ---
+export async function updateUserAccessLevel(userId: string, accessLevel: AccessLevel) {
+    const users = await readData<User>('users');
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex === -1) {
+        throw new Error('Usuário não encontrado.');
+    }
+    users[userIndex].accessLevel = accessLevel;
+    await writeData('users', users);
+    revalidatePath('/dashboard/user-management');
+}
+
+export async function deleteUser(userId: string) {
+    const users = await readData<User>('users');
+    const updatedUsers = users.filter(u => u.id !== userId);
+    if (users.length === updatedUsers.length) {
+        throw new Error('Usuário não encontrado para exclusão.');
+    }
+    await writeData('users', updatedUsers);
+    revalidatePath('/dashboard/user-management');
+}
+
 
 // --- FILE UPLOAD ---
 export async function uploadImage(formData: FormData): Promise<{ success: boolean; filePath?: string; error?: string; }> {
