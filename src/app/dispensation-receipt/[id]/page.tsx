@@ -15,7 +15,7 @@ import { Printer, ArrowLeft, Loader2 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import type { Dispensation, DispensationItem } from "@/lib/types";
+import type { Dispensation, DispensationItem, Product } from "@/lib/types";
 import { getDispensation } from "@/lib/data";
 
 
@@ -27,7 +27,7 @@ const renderItemRows = (items: DispensationItem[]) => {
             <TableCell className="text-center">{item.presentation || "--"}</TableCell>
             <TableCell className="text-center">{item.batch || "--"}</TableCell>
             <TableCell className="text-center">{item.expiryDate || "--"}</TableCell>
-            <TableCell className="text-right">{item.quantity}</TableCell>
+            <TableCell className="text-right">{item.quantity.toLocaleString('pt-BR')}</TableCell>
         </TableRow>
     ));
 }
@@ -35,7 +35,7 @@ const renderItemRows = (items: DispensationItem[]) => {
 const getReturnDate = (dispensationDate: string) => {
     const date = new Date(dispensationDate);
     date.setDate(date.getDate() + 30);
-    return date.toLocaleDateString('pt-BR');
+    return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 };
 
 
@@ -47,7 +47,8 @@ const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensatio
     }, {} as Record<string, DispensationItem[]>);
     
     const returnDate = getReturnDate(dispensation.date);
-    const formattedDispensationDate = new Date(dispensation.date).toLocaleDateString('pt-BR');
+    const formattedDispensationDate = new Date(dispensation.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+    const categoryOrder: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Outro'];
 
   return (
     <div className={`max-w-4xl mx-auto bg-white text-black my-8 print:my-0 flex flex-col justify-between min-h-screen ${isFirstCopy ? 'shadow-lg print:shadow-none page-break-after' : 'shadow-lg print:shadow-none'}`}>
@@ -84,8 +85,8 @@ const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensatio
         </div>
 
         <div className="space-y-6">
-          {Object.entries(groupedItems).map(([category, items]) => {
-              if (items.length === 0) return null;
+          {categoryOrder.map(category => {
+              if (!groupedItems[category] || groupedItems[category].length === 0) return null;
               return (
                 <div key={category}>
                   <h3 className="font-bold text-md text-slate-600 tracking-wide uppercase mb-2">{category}</h3>
@@ -100,7 +101,7 @@ const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensatio
                       </TableRow>
                     </TableHeader>
                     <TableBody className="border border-gray-300">
-                      {renderItemRows(items)}
+                      {renderItemRows(groupedItems[category])}
                     </TableBody>
                   </Table>
                 </div>
@@ -157,7 +158,7 @@ export default function DispensationReceiptPage({ params }: { params: { id: stri
         setLoading(false);
     }
     fetchDispensation();
-  }, [params.id, router]);
+  }, [params.id]);
 
   useEffect(() => {
       if (dispensationData && isNew) {
@@ -206,3 +207,4 @@ export default function DispensationReceiptPage({ params }: { params: { id: stri
 }
 
     
+

@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -27,7 +26,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { X, Save, Trash2, Loader2, Barcode, Warehouse, PackagePlus } from 'lucide-react';
+import { X, Save, Trash2, Loader2, Barcode, Warehouse, PackagePlus, ListPlus } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { addOrder } from '@/lib/actions';
 import { getUnits, getProducts } from '@/lib/data';
@@ -35,6 +34,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { Unit, Product } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AddItemsManuallyDialog } from '@/components/dashboard/add-items-manually-dialog';
 
 type RemessaItem = {
   internalId: string;
@@ -56,7 +56,7 @@ export default function NewOrderPage() {
   const [destinationUnitId, setDestinationUnitId] = useState('');
   const [notes, setNotes] = useState('');
   const [units, setUnits] = useState<Unit[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   
@@ -72,7 +72,7 @@ export default function NewOrderPage() {
         getProducts()
       ]);
       setUnits(fetchedUnits);
-      setProducts(fetchedProducts);
+      setAllProducts(fetchedProducts);
       setLoading(false);
     }
     loadData();
@@ -90,9 +90,9 @@ export default function NewOrderPage() {
         toast({
             variant: 'destructive',
             title: 'Estoque Insuficiente',
-            description: `Apenas ${product.quantity} unidades de ${product.name} disponíveis.`
+            description: `Apenas ${product.quantity.toLocaleString('pt-BR')} unidades de ${product.name} (Lote: ${product.batch}) disponíveis.`
         });
-        return;
+        return false;
     }
 
     const existingItemIndex = items.findIndex(item => item.productId === product.id);
@@ -100,12 +100,23 @@ export default function NewOrderPage() {
     if (existingItemIndex > -1) {
         // Update quantity if item already in list
         const newItems = [...items];
-        newItems[existingItemIndex].quantity += quantity;
+        const newQuantity = newItems[existingItemIndex].quantity + quantity;
+
+         if (product.quantity < newQuantity) {
+            toast({
+                variant: 'destructive',
+                title: 'Estoque Insuficiente',
+                description: `A quantidade total (${newQuantity}) excede o estoque disponível (${product.quantity}) para ${product.name} (Lote: ${product.batch}).`
+            });
+            return false;
+        }
+
+        newItems[existingItemIndex].quantity = newQuantity;
         setItems(newItems);
     } else {
         // Add new item to list
         const newItem: RemessaItem = {
-            internalId: `item-${Date.now()}`,
+            internalId: `item-${Date.now()}-${Math.random()}`,
             productId: product.id,
             name: product.name,
             quantity: quantity,
@@ -116,6 +127,7 @@ export default function NewOrderPage() {
         };
         setItems(prevItems => [newItem, ...prevItems]);
     }
+    return true;
   };
 
   const handleScannerKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -124,7 +136,6 @@ export default function NewOrderPage() {
     e.preventDefault();
     const value = scannerInput.trim();
 
-    // Check for quantity multiplier command (e.g., "4*")
     if (value.endsWith('*')) {
         const qty = parseInt(value.slice(0, -1), 10);
         if (!isNaN(qty) && qty > 0) {
@@ -138,8 +149,7 @@ export default function NewOrderPage() {
         return;
     }
 
-    // Process as barcode (product ID)
-    const product = products.find(p => p.id === value);
+    const product = allProducts.find(p => p.id === value);
 
     if (product) {
         addProductToRemessa(product, quantityMultiplier);
@@ -151,7 +161,6 @@ export default function NewOrderPage() {
         });
     }
 
-    // Reset for next scan
     setScannerInput('');
     setQuantityMultiplier(1);
   };
@@ -162,12 +171,15 @@ export default function NewOrderPage() {
   };
     
   const handleItemQuantityChange = (id: string, newQuantity: number) => {
-    const product = products.find(p => p.id === items.find(i => i.internalId === id)?.productId);
+    const itemToUpdate = items.find(i => i.internalId === id);
+    if (!itemToUpdate) return;
+    
+    const product = allProducts.find(p => p.id === itemToUpdate.productId);
     if(product && newQuantity > product.quantity) {
         toast({
             variant: 'destructive',
             title: 'Estoque Insuficiente',
-            description: `Apenas ${product.quantity} unidades de ${product.name} disponíveis.`
+            description: `Apenas ${product.quantity} unidades de ${product.name} (Lote: ${itemToUpdate.batch}) disponíveis.`
         })
         return;
     }
@@ -228,6 +240,14 @@ export default function NewOrderPage() {
     router.back();
   };
 
+  // Group items by category for rendering
+  const groupedItems = items.reduce((acc, item) => {
+    (acc[item.category] = acc[item.category] || []).push(item);
+    return acc;
+  }, {} as Record<string, RemessaItem[]>);
+
+  const categoryOrder: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Outro'];
+
   if (loading) {
     return (
         <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
@@ -268,8 +288,7 @@ export default function NewOrderPage() {
         </div>
         
         <div className="grid gap-6">
-            <div className="grid md:grid-cols-2 gap-6">
-                 {/* Step 1: Destination */}
+            <div className="grid md:grid-cols-3 gap-6">
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Warehouse className="h-5 w-5" /> Passo 1: Destino</CardTitle>
@@ -287,10 +306,9 @@ export default function NewOrderPage() {
                     </CardContent>
                 </Card>
 
-                {/* Step 2: Barcode Scanner */}
                 <Card className={!destinationUnitId ? 'opacity-50 pointer-events-none' : ''}>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Barcode className="h-5 w-5" /> Passo 2: Escanear Itens</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><Barcode className="h-5 w-5" /> Passo 2: Escanear</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <Label htmlFor="scanner">Leitor de Código de Barras</Label>
@@ -304,65 +322,94 @@ export default function NewOrderPage() {
                             disabled={!destinationUnitId || isSaving}
                         />
                          <p className="text-xs text-muted-foreground mt-2">
-                           Dica: Para adicionar múltiplos itens, digite a quantidade e um asterisco (ex: <strong>4*</strong>) e pressione Enter antes de escanear.
+                           Dica: Para múltiplos itens, digite a quantidade e um asterisco (ex: <strong>4*</strong>) antes de escanear.
+                        </p>
+                    </CardContent>
+                </Card>
+
+                 <Card className={!destinationUnitId ? 'opacity-50 pointer-events-none' : ''}>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><ListPlus className="h-5 w-5" /> Passo 3: Adicionar Manual</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col justify-center h-full">
+                         <AddItemsManuallyDialog 
+                            allProducts={allProducts} 
+                            onAddProduct={addProductToRemessa} 
+                            trigger={
+                                <Button variant="outline" className="w-full">
+                                    <ListPlus className="mr-2 h-4 w-4" />
+                                    Selecionar Produtos
+                                </Button>
+                            }
+                        />
+                        <p className="text-xs text-muted-foreground mt-2 text-center">
+                            Use para adicionar itens sem leitor.
                         </p>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Step 3: Remessa Itens */}
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><PackagePlus className="h-5 w-5" /> Itens na Remessa</CardTitle>
                     <CardDescription>
-                        Lista de produtos adicionados à remessa. A quantidade pode ser ajustada manualmente.
+                        Lista de produtos adicionados à remessa, agrupados por categoria.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="border rounded-md">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[40%]">Produto</TableHead>
-                                    <TableHead>Lote</TableHead>
-                                    <TableHead>Validade</TableHead>
-                                    <TableHead className="w-[120px]">Qtd.</TableHead>
-                                    <TableHead className="w-[50px]"></TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {items.length > 0 ? items.map((item, index) => (
-                                    <TableRow key={item.internalId}>
-                                        <TableCell className="font-medium">{item.name}</TableCell>
-                                        <TableCell>{item.batch || '—'}</TableCell>
-                                        <TableCell>{item.expiryDate || '—'}</TableCell>
-                                        <TableCell>
-                                            <Input 
-                                                type="number" 
-                                                min="1" 
-                                                value={item.quantity} 
-                                                onChange={(e) => handleItemQuantityChange(item.internalId, parseInt(e.target.value, 10) || 0)}
-                                                className="w-24"
-                                            />
-                                        </TableCell>
-                                         <TableCell>
-                                            <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.internalId)}><X className="h-4 w-4 text-destructive" /></Button>
-                                        </TableCell>
-                                    </TableRow>
-                                )) : (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
-                                            Aguardando leitura do código de barras...
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
+                    {items.length > 0 ? (
+                        <div className="space-y-6">
+                            {categoryOrder.map(category => {
+                                const categoryItems = groupedItems[category];
+                                if (!categoryItems || categoryItems.length === 0) return null;
+
+                                return (
+                                    <div key={category}>
+                                        <h3 className="text-md font-semibold text-muted-foreground border-b pb-2 mb-2">{category}</h3>
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead className="w-[40%]">Produto</TableHead>
+                                                    <TableHead>Lote</TableHead>
+                                                    <TableHead>Validade</TableHead>
+                                                    <TableHead className="w-[120px]">Qtd.</TableHead>
+                                                    <TableHead className="w-[50px]"></TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {categoryItems.map((item) => (
+                                                    <TableRow key={item.internalId}>
+                                                        <TableCell className="font-medium">{item.name}</TableCell>
+                                                        <TableCell>{item.batch || '—'}</TableCell>
+                                                        <TableCell>{item.expiryDate || '—'}</TableCell>
+                                                        <TableCell>
+                                                            <Input 
+                                                                type="number" 
+                                                                min="1" 
+                                                                value={item.quantity} 
+                                                                onChange={(e) => handleItemQuantityChange(item.internalId, parseInt(e.target.value, 10) || 0)}
+                                                                className="w-24"
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.internalId)}><X className="h-4 w-4 text-destructive" /></Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="text-center h-24 text-muted-foreground flex items-center justify-center border rounded-md">
+                            Aguardando adição de itens...
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
-            {/* Step 4: Notes */}
             <Card>
                 <CardHeader>
                     <CardTitle>Observações (Opcional)</CardTitle>

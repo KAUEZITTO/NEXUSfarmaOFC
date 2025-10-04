@@ -15,18 +15,18 @@ import { Printer, ArrowLeft, Loader2 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import Image from "next/image";
 import { useRouter } from 'next/navigation';
-import type { Order, OrderItem } from "@/lib/types";
+import type { Order, OrderItem, Product } from "@/lib/types";
 import { getOrder } from "@/lib/data";
 
 const renderItemRows = (items: OrderItem[]) => {
     if (!items || items.length === 0) return null;
     return items.map((item, index) => (
-        <TableRow key={item.productId} className={`border-b print:even:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-muted/20'}`}>
+        <TableRow key={item.productId + item.batch} className={`border-b print:even:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-muted/20'}`}>
             <TableCell className="font-medium">{item.name}</TableCell>
             <TableCell className="text-center">{item.presentation || "--"}</TableCell>
             <TableCell className="text-center">{item.batch || "--"}</TableCell>
             <TableCell className="text-center">{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : "--"}</TableCell>
-            <TableCell className="text-right">{item.quantity}</TableCell>
+            <TableCell className="text-right">{item.quantity.toLocaleString('pt-BR')}</TableCell>
         </TableRow>
     ));
 }
@@ -37,6 +37,8 @@ const ReceiptCopy = ({ order, showSignature, isFirstCopy }: { order: Order, show
         (acc[category] = acc[category] || []).push(item);
         return acc;
     }, {} as Record<string, OrderItem[]>);
+
+    const categoryOrder: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Outro'];
 
   return (
     <div className={`max-w-4xl mx-auto bg-white text-black my-8 print:my-0 flex flex-col justify-between min-h-screen ${isFirstCopy ? 'shadow-lg print:shadow-none page-break-after' : 'shadow-lg print:shadow-none'}`}>
@@ -67,7 +69,7 @@ const ReceiptCopy = ({ order, showSignature, isFirstCopy }: { order: Order, show
           </div>
           <div>
             <p className="font-bold">Data do Pedido:</p>
-            <p>{new Date(order.sentDate).toLocaleDateString('pt-BR')}</p>
+            <p>{new Date(order.sentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</p>
           </div>
           <div>
             <p className="font-bold">ID do Pedido:</p>
@@ -76,8 +78,9 @@ const ReceiptCopy = ({ order, showSignature, isFirstCopy }: { order: Order, show
         </div>
 
         <div className="space-y-6">
-          {Object.entries(groupedItems).map(([category, items]) => {
-            if (items.length === 0) return null;
+          {categoryOrder.map(category => {
+            const items = groupedItems[category];
+            if (!items || items.length === 0) return null;
             return (
               <div key={category}>
                  <h3 className="font-bold text-md text-slate-600 tracking-wide uppercase mb-2">{category}</h3>
@@ -182,3 +185,4 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
 }
 
     
+
