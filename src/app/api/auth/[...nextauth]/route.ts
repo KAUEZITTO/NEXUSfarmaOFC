@@ -4,6 +4,8 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { readData, writeData } from '@/lib/data';
 import { User } from '@/lib/types';
 import * as jose from 'jose';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { firebaseApp } from '@/lib/firebase/client';
 
 // Função auxiliar para buscar um usuário no nosso banco de dados (Vercel KV)
 async function getUserFromDb(email: string | null | undefined): Promise<User | null> {
@@ -27,32 +29,39 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
+        
+        const auth = getAuth(firebaseApp);
 
-        const appUser = await getUserFromDb(credentials.email);
+        try {
+            // 1. Authenticate with Firebase Auth
+            const userCredential = await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
+            const firebaseUser = userCredential.user;
 
-        if (!appUser || !appUser.password) {
-            console.error("User found but has no password hash.");
+            if (firebaseUser) {
+                // 2. Fetch additional user data from our Vercel KV database
+                const appUser = await getUserFromDb(firebaseUser.email);
+                
+                if (appUser) {
+                     // 3. Return the combined user object for the session
+                     return {
+                        id: appUser.id,
+                        email: appUser.email,
+                        name: appUser.name,
+                        image: appUser.image,
+                        birthdate: appUser.birthdate,
+                        role: appUser.role,
+                        accessLevel: appUser.accessLevel,
+                    };
+                }
+            }
+            // If user is not found in either Firebase or our DB, return null
+            return null;
+
+        } catch (error) {
+            console.error("Firebase authentication error:", error);
+            // This will catch errors like wrong password, user not found, etc.
             return null;
         }
-        
-        // Securely compare the provided password with the stored hash
-        const currentPasswordHash = await jose.calculateJwkThumbprint({ kty: 'oct', k: Buffer.from(credentials.password).toString('base64url') });
-        
-        const passwordsMatch = currentPasswordHash === appUser.password;
-
-        if (passwordsMatch) {
-            return {
-                id: appUser.id,
-                email: appUser.email,
-                name: appUser.name,
-                image: appUser.image,
-                birthdate: appUser.birthdate,
-                role: appUser.role,
-                accessLevel: appUser.accessLevel,
-            };
-        }
-        
-        return null;
       }
     })
   ],
