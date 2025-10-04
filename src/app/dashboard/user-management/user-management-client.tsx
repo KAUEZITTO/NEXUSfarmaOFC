@@ -56,7 +56,10 @@ export function UserManagementClient({ initialUsers }: UserManagementClientProps
         });
     }
 
-    const columns = getColumns({ onAccessLevelChange, onDeleteUser });
+    const columns = getColumns({ 
+        onAccessLevelChange: handleAccessLevelChange, 
+        onDeleteUser: handleDeleteUser 
+    });
     
     return (
         <DataTable columns={columns} data={initialUsers} filterColumn="email" />
