@@ -64,7 +64,7 @@ export function ReportsClient({
     batch: false,
   });
 
-  const openPdfPrintDialog = (pdfDataUri: string) => {
+  const openPdfInNewTab = (pdfDataUri: string) => {
     const byteCharacters = atob(pdfDataUri.split(',')[1]);
     const byteNumbers = new Array(byteCharacters.length);
     for (let i = 0; i < byteCharacters.length; i++) {
@@ -73,28 +73,14 @@ export function ReportsClient({
     const byteArray = new Uint8Array(byteNumbers);
     const blob = new Blob([byteArray], { type: 'application/pdf' });
     const blobUrl = URL.createObjectURL(blob);
-
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = blobUrl;
-    document.body.appendChild(iframe);
-    iframe.onload = () => {
-        setTimeout(() => {
-            if (iframe.contentWindow) {
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-            }
-            document.body.removeChild(iframe);
-            URL.revokeObjectURL(blobUrl);
-        }, 1);
-    };
+    window.open(blobUrl, '_blank');
   }
 
   const generatePdf = async (type: keyof GeneratingState, generatorFn: () => Promise<string>) => {
     setIsGenerating(prev => ({ ...prev, [type]: true }));
     try {
         const pdfDataUri = await generatorFn();
-        openPdfPrintDialog(pdfDataUri);
+        openPdfInNewTab(pdfDataUri);
     } catch (e) {
         console.error(`Failed to generate ${type} PDF`, e);
         toast({ variant: 'destructive', title: 'Erro ao Gerar Relatório', description: 'Não foi possível gerar o PDF.' });
