@@ -1,3 +1,4 @@
+
 // Adicionando tipos do NextAuth para extender o objeto de sessão
 import type { DefaultUser } from 'next-auth';
 
@@ -10,6 +11,7 @@ declare module 'next-auth' {
       role?: Role;
       subRole?: SubRole;
       accessLevel?: AccessLevel;
+      lastSeen?: string;
     };
   }
   interface User extends DefaultUser {
@@ -19,6 +21,7 @@ declare module 'next-auth' {
       role?: Role;
       subRole?: SubRole;
       accessLevel?: AccessLevel;
+      lastSeen?: string;
   }
 }
 
@@ -47,6 +50,7 @@ export type User = {
     role: Role;
     subRole?: SubRole;
     accessLevel: AccessLevel;
+    lastSeen?: string; // ISO 8601 date string
 }
 
 export type Product = {

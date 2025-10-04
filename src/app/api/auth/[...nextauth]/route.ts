@@ -1,7 +1,7 @@
 
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { readData } from '@/lib/data';
+import { readData, writeData } from '@/lib/data';
 import { User } from '@/lib/types';
 import * as jose from 'jose';
 
@@ -68,6 +68,7 @@ export const authOptions: NextAuthOptions = {
             token.birthdate = appUser.birthdate;
             token.role = appUser.role;
             token.accessLevel = appUser.accessLevel;
+            token.lastSeen = new Date().toISOString();
         }
       }
       return token;
@@ -81,6 +82,15 @@ export const authOptions: NextAuthOptions = {
         session.user.birthdate = token.birthdate as string;
         session.user.role = token.role as any;
         session.user.accessLevel = token.accessLevel as any;
+        
+        // Update lastSeen in KV store
+        const users = await readData<User>('users');
+        const userIndex = users.findIndex(u => u.id === token.id);
+        if (userIndex !== -1) {
+            users[userIndex].lastSeen = new Date().toISOString();
+            await writeData('users', users);
+            session.user.lastSeen = users[userIndex].lastSeen;
+        }
       }
       return session;
     },

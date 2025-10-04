@@ -4,9 +4,9 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, AlertTriangle, Package, CalendarDays, Clock, BarChart2 } from "lucide-react";
-import { getProducts, getAllDispensations } from "@/lib/data";
-import type { Product, Dispensation } from "@/lib/types";
+import { Loader2, AlertTriangle, Package, CalendarDays, Clock, BarChart2, Users } from "lucide-react";
+import { getProducts, getAllDispensations, getAllUsers } from "@/lib/data";
+import type { Product, Dispensation, User } from "@/lib/types";
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -14,7 +14,7 @@ export default function DashboardPage() {
   const { data: session, status } = useSession();
   const [currentDate, setCurrentDate] = useState('');
   const [currentTime, setCurrentTime] = useState('');
-  const [stats, setStats] = useState({ lowStock: 0, expiringSoon: 0 });
+  const [stats, setStats] = useState({ lowStock: 0, expiringSoon: 0, onlineUsers: 0 });
   const [dispensations, setDispensations] = useState<Dispensation[]>([]);
   const [loadingStats, setLoadingStats] = useState(true);
 
@@ -33,17 +33,16 @@ export default function DashboardPage() {
     async function fetchStats() {
       setLoadingStats(true);
       try {
-        const [products, dispensationsData] = await Promise.all([
+        const [products, dispensationsData, users] = await Promise.all([
           getProducts(),
           getAllDispensations(),
+          getAllUsers(),
         ]);
         
         const now = new Date();
         const thirtyDaysFromNow = new Date();
         thirtyDaysFromNow.setDate(now.getDate() + 30);
 
-        // This logic was flawed because it didn't account for batches of the same product.
-        // It's better to group products and then check their status.
         const groupedProducts = new Map<string, { quantity: number; batches: Product[] }>();
         products.forEach(p => {
             const key = `${p.name}|${p.presentation}`;
@@ -65,13 +64,16 @@ export default function DashboardPage() {
         const expiringSoonItems = products.filter(p => {
           if (!p.expiryDate) return false;
           const expiry = new Date(p.expiryDate);
-          // Only count items that are not yet expired
           return expiry > now && expiry <= thirtyDaysFromNow;
         }).length;
+        
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        const onlineUsersCount = users.filter(u => u.lastSeen && new Date(u.lastSeen) > fiveMinutesAgo).length;
 
         setStats({
           lowStock: lowStockCount,
           expiringSoon: expiringSoonItems,
+          onlineUsers: onlineUsersCount,
         });
         setDispensations(dispensationsData);
 
@@ -84,6 +86,8 @@ export default function DashboardPage() {
 
     if (status === 'authenticated') {
       fetchStats();
+      const statsInterval = setInterval(fetchStats, 30000); // Refresh stats every 30 seconds
+      return () => clearInterval(statsInterval);
     }
   }, [status]);
 
@@ -141,6 +145,16 @@ export default function DashboardPage() {
             <CardContent>
               {loadingStats ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold">{stats.expiringSoon}</div>}
               <p className="text-xs text-muted-foreground">Lotes vencendo nos próximos 30 dias.</p>
+            </CardContent>
+          </Card>
+           <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Usuários Online</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {loadingStats ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold">{stats.onlineUsers}</div>}
+              <p className="text-xs text-muted-foreground">Usuários ativos nos últimos 5 minutos.</p>
             </CardContent>
           </Card>
       </div>

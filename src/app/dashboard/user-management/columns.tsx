@@ -1,3 +1,4 @@
+
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
@@ -7,11 +8,20 @@ import { ArrowUpDown, MoreHorizontal, ShieldCheck, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { cn } from "@/lib/utils"
 
 interface ColumnActions {
     onAccessLevelChange: (userId: string, accessLevel: AccessLevel) => void;
     onDeleteUser: (userId: string) => void;
 }
+
+const isUserOnline = (lastSeen?: string) => {
+    if (!lastSeen) return false;
+    const lastSeenDate = new Date(lastSeen);
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    return lastSeenDate > fiveMinutesAgo;
+}
+
 
 export const getColumns = ({ onAccessLevelChange, onDeleteUser }: ColumnActions): ColumnDef<User>[] => [
   {
@@ -27,7 +37,16 @@ export const getColumns = ({ onAccessLevelChange, onDeleteUser }: ColumnActions)
         </Button>
       )
     },
-    cell: ({ row }) => <div className="font-medium">{row.getValue("email")}</div>,
+    cell: ({ row }) => {
+        const user = row.original;
+        const online = isUserOnline(user.lastSeen);
+        return (
+            <div className="flex items-center gap-2">
+                <span className={cn("h-2 w-2 rounded-full", online ? "bg-green-500" : "bg-gray-400")} title={online ? 'Online' : 'Offline'}></span>
+                <span className="font-medium">{user.email}</span>
+            </div>
+        )
+    },
   },
   {
     accessorKey: "role",
