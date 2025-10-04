@@ -1,3 +1,4 @@
+
 'use client';
 
 import { DataTable } from "@/components/ui/data-table";
@@ -55,7 +56,7 @@ export function UserManagementClient({ initialUsers }: UserManagementClientProps
         });
     }
 
-    const columns = getColumns({ onAccessLevelChange: handleAccessLevelChange, onDeleteUser: handleDeleteUser });
+    const columns = getColumns({ onAccessLevelChange, onDeleteUser });
     
     return (
         <DataTable columns={columns} data={initialUsers} filterColumn="email" />

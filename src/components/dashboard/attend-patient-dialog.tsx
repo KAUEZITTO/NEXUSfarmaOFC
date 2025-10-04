@@ -150,7 +150,7 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
   const filteredPatients = allPatients.filter(
     (patient) =>
       patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.cpf.includes(searchTerm)
+      patient.cpf.replace(/[^\d]/g, '').includes(searchTerm.replace(/[^\d]/g, ''))
   );
   
   const setupInitialItems = (patient: Patient) => {

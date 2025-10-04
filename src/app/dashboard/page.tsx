@@ -42,15 +42,35 @@ export default function DashboardPage() {
         const thirtyDaysFromNow = new Date();
         thirtyDaysFromNow.setDate(now.getDate() + 30);
 
-        const lowStockItems = products.filter(p => p.status === 'Baixo Estoque').length;
+        // This logic was flawed because it didn't account for batches of the same product.
+        // It's better to group products and then check their status.
+        const groupedProducts = new Map<string, { quantity: number; batches: Product[] }>();
+        products.forEach(p => {
+            const key = `${p.name}|${p.presentation}`;
+            if (!groupedProducts.has(key)) {
+                groupedProducts.set(key, { quantity: 0, batches: [] });
+            }
+            const group = groupedProducts.get(key)!;
+            group.quantity += p.quantity;
+            group.batches.push(p);
+        });
+
+        let lowStockCount = 0;
+        groupedProducts.forEach(group => {
+            if (group.quantity > 0 && group.quantity < 20) {
+                lowStockCount++;
+            }
+        });
+
         const expiringSoonItems = products.filter(p => {
           if (!p.expiryDate) return false;
           const expiry = new Date(p.expiryDate);
+          // Only count items that are not yet expired
           return expiry > now && expiry <= thirtyDaysFromNow;
         }).length;
 
         setStats({
-          lowStock: lowStockItems,
+          lowStock: lowStockCount,
           expiringSoon: expiringSoonItems,
         });
         setDispensations(dispensationsData);
@@ -110,7 +130,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               {loadingStats ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold">{stats.lowStock}</div>}
-              <p className="text-xs text-muted-foreground">Itens que precisam de reposição.</p>
+              <p className="text-xs text-muted-foreground">Grupos de itens que precisam de reposição.</p>
             </CardContent>
           </Card>
            <Card>
@@ -120,7 +140,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               {loadingStats ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold">{stats.expiringSoon}</div>}
-              <p className="text-xs text-muted-foreground">Itens vencendo nos próximos 30 dias.</p>
+              <p className="text-xs text-muted-foreground">Lotes vencendo nos próximos 30 dias.</p>
             </CardContent>
           </Card>
       </div>
