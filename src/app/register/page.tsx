@@ -4,16 +4,13 @@ import Link from 'next/link';
 import { RegisterForm } from '@/components/auth/register-form';
 import { Logo } from '@/components/logo';
 import { resetAllData } from '@/lib/seed';
-import { readData } from '@/lib/data';
-import type { User } from '@/lib/types';
 
 export default async function RegisterPage() {
-  // Reset all data if no users exist. This ensures a clean slate on first run.
-  const users = await readData<User>('users');
-  if (users.length === 0) {
-    await resetAllData();
-    console.log("Application data has been reset.");
-  }
+  // Reset all data to ensure a clean slate. 
+  // This is a destructive operation requested by the user.
+  await resetAllData();
+  console.log("Application data has been reset for a clean start.");
+  const isFirstUser = true; // After reset, it's always the first user.
 
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
@@ -35,7 +32,7 @@ export default async function RegisterPage() {
             </Link>
             <h1 className="text-3xl font-bold mt-4">Criar Conta</h1>
             <p className="text-balance text-muted-foreground">
-              {users.length === 0 ? "Crie a primeira conta de Administrador." : "Preencha o formulário para criar sua conta."}
+              {isFirstUser ? "Crie a primeira conta de Administrador." : "Preencha o formulário para criar sua conta."}
             </p>
           </div>
           <RegisterForm />
