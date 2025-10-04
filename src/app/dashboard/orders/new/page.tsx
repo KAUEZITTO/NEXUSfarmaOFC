@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -246,7 +247,7 @@ export default function NewOrderPage() {
     return acc;
   }, {} as Record<string, RemessaItem[]>);
 
-  const categoryOrder: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Outro'];
+  const categoryOrder: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Não Padronizado (Compra)'];
 
   if (loading) {
     return (

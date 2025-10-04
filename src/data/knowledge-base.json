@@ -429,6 +429,140 @@
         "name": "permanganato de potássio",
         "therapeuticClass": "Antisséptico e Adstringente",
         "mainFunction": "Limpeza e tratamento de dermatites e feridas exsudativas."
+    },
+    {
+        "name": "amoxicilina + clavulanato",
+        "therapeuticClass": "Antibiótico (Penicilina com Inibidor de Beta-lactamase)",
+        "mainFunction": "Tratamento de infecções bacterianas resistentes."
+    },
+    {
+        "name": "doxiciclina",
+        "therapeuticClass": "Antibiótico (Tetraciclina)",
+        "mainFunction": "Tratamento de infecções bacterianas, incluindo acne e doenças sexualmente transmissíveis."
+    },
+    {
+        "name": "tramadol",
+        "therapeuticClass": "Analgésico Opioide",
+        "mainFunction": "Alívio de dor moderada a severa."
+    },
+    {
+        "name": "codeína",
+        "therapeuticClass": "Analgésico Opioide / Antitussígeno",
+        "mainFunction": "Alívio da dor e supressão da tosse."
+    },
+    {
+        "name": "morfina",
+        "therapeuticClass": "Analgésico Opioide",
+        "mainFunction": "Alívio da dor aguda e crônica intensa."
+    },
+    {
+        "name": "metilfenidato",
+        "therapeuticClass": "Estimulante do SNC",
+        "mainFunction": "Tratamento do Transtorno de Déficit de Atenção e Hiperatividade (TDAH) e narcolepsia (Ritalina)."
+    },
+    {
+        "name": "olanzapina",
+        "therapeuticClass": "Antipsicótico Atípico",
+        "mainFunction": "Tratamento da esquizofrenia e transtorno bipolar."
+    },
+    {
+        "name": "quetiapina",
+        "therapeuticClass": "Antipsicótico Atípico",
+        "mainFunction": "Tratamento da esquizofrenia, transtorno bipolar e depressão."
+    },
+    {
+        "name": "venlafaxina",
+        "therapeuticClass": "Antidepressivo (ISRSN)",
+        "mainFunction": "Tratamento da depressão, ansiedade e transtorno do pânico."
+    },
+    {
+        "name": "duloxetina",
+        "therapeuticClass": "Antidepressivo (ISRSN)",
+        "mainFunction": "Tratamento da depressão, dor neuropática e fibromialgia."
+    },
+    {
+        "name": "pregabalina",
+        "therapeuticClass": "Anticonvulsivante / Dor Neuropática",
+        "mainFunction": "Tratamento da dor neuropática, fibromialgia e ansiedade."
+    },
+    {
+        "name": "gabapentina",
+        "therapeuticClass": "Anticonvulsivante / Dor Neuropática",
+        "mainFunction": "Tratamento de convulsões e dor neuropática."
+    },
+    {
+        "name": "isoniazida",
+        "therapeuticClass": "Tuberculostático",
+        "mainFunction": "Tratamento e prevenção da tuberculose."
+    },
+    {
+        "name": "rifampicina",
+        "therapeuticClass": "Tuberculostático / Antibiótico",
+        "mainFunction": "Tratamento da tuberculose e outras infecções."
+    },
+    {
+        "name": "sildenafila",
+        "therapeuticClass": "Tratamento da Disfunção Erétil / Hipertensão Pulmonar",
+        "mainFunction": "Tratamento da disfunção erétil e hipertensão arterial pulmonar."
+    },
+    {
+        "name": "finasterida",
+        "therapeuticClass": "Inibidor da 5-alfa-redutase",
+        "mainFunction": "Tratamento da hiperplasia prostática benigna e alopecia androgenética."
+    },
+    {
+        "name": "alginato de cálcio",
+        "therapeuticClass": "Curativo Absorvente",
+        "mainFunction": "Curativo para feridas com exsudato moderado a alto."
+    },
+    {
+        "name": "hidrogel",
+        "therapeuticClass": "Curativo (Hidratante)",
+        "mainFunction": "Hidratação de feridas secas e promoção do desbridamento autolítico."
+    },
+    {
+        "name": "placa de hidrocoloide",
+        "therapeuticClass": "Curativo (Oclusivo)",
+        "mainFunction": "Curativo para feridas com pouco ou nenhum exsudato, promovendo a cicatrização."
+    },
+    {
+        "name": "carvão ativado",
+        "therapeuticClass": "Curativo (Odor / Adsorção)",
+        "mainFunction": "Curativo para feridas com odor fétido e infecção."
+    },
+    {
+        "name": "eletrodo",
+        "therapeuticClass": "Diagnóstico",
+        "mainFunction": "Utilizado em eletrocardiogramas (ECG) para monitoramento cardíaco."
+    },
+    {
+        "name": "fio de sutura",
+        "therapeuticClass": "Material Cirúrgico",
+        "mainFunction": "Sutura de tecidos em procedimentos cirúrgicos."
+    },
+    {
+        "name": "lâmina de bisturi",
+        "therapeuticClass": "Material Cirúrgico",
+        "mainFunction": "Incisões em procedimentos cirúrgicos."
+    },
+    {
+        "name": "sonda nasogástrica",
+        "therapeuticClass": "Sondagem",
+        "mainFunction": "Administração de alimentos e medicamentos ou drenagem gástrica."
+    },
+    {
+        "name": "xilocaína",
+        "therapeuticClass": "Anestésico Local",
+        "mainFunction": "Anestesia local ou regional para procedimentos."
+    },
+    {
+        "name": "mebendazol",
+        "therapeuticClass": "Anti-helmíntico",
+        "mainFunction": "Tratamento de infecções por vermes."
+    },
+    {
+        "name": "nistatina",
+        "therapeuticClass": "Antifúngico",
+        "mainFunction": "Tratamento de candidíase oral ou vaginal."
     }
 ]
-
