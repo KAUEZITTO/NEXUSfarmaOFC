@@ -211,7 +211,7 @@
         "mainFunction": "Coleta de sangue para testes de coagulação (TP, TTPA)."
     },
     {
-        "name" "lanceta",
+        "name": "lanceta",
         "therapeuticClass": "Coleta Capilar",
         "mainFunction": "Pulsão para coleta de sangue capilar (teste de glicemia)."
     },
