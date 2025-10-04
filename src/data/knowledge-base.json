@@ -94,5 +94,140 @@
         "name": "insulina glulisina",
         "therapeuticClass": "Insulina de Ação Ultrarrápida (Análogo)",
         "mainFunction": "Controle rápido da glicemia pós-prandial (Apidra)."
+    },
+    {
+        "name": "clorexidina degermante",
+        "therapeuticClass": "Antisséptico",
+        "mainFunction": "Assepsia da pele e mucosas."
+    },
+    {
+        "name": "gaze",
+        "therapeuticClass": "Material de Curativo",
+        "mainFunction": "Cobertura de feridas, absorção de fluidos e limpeza."
+    },
+    {
+        "name": "atadura",
+        "therapeuticClass": "Material de Curativo",
+        "mainFunction": "Fixação de curativos, imobilização e compressão."
+    },
+    {
+        "name": "esparadrapo",
+        "therapeuticClass": "Material de Fixação",
+        "mainFunction": "Fixação de curativos e dispositivos médicos na pele."
+    },
+    {
+        "name": "micropore",
+        "therapeuticClass": "Material de Fixação",
+        "mainFunction": "Fixação de curativos em peles sensíveis."
+    },
+    {
+        "name": "luva de procedimento",
+        "therapeuticClass": "EPI",
+        "mainFunction": "Proteção do profissional e do paciente em procedimentos não cirúrgicos."
+    },
+    {
+        "name": "luva cirúrgica estéril",
+        "therapeuticClass": "EPI",
+        "mainFunction": "Proteção e manutenção da esterilidade em procedimentos cirúrgicos."
+    },
+    {
+        "name": "seringa",
+        "therapeuticClass": "Material de Injeção",
+        "mainFunction": "Administração de medicamentos ou coleta de fluidos."
+    },
+    {
+        "name": "agulha",
+        "therapeuticClass": "Material de Injeção",
+        "mainFunction": "Aplicação de injeções (intramuscular, subcutânea, etc.)."
+    },
+    {
+        "name": "scalp",
+        "therapeuticClass": "Acesso Venoso",
+        "mainFunction": "Acesso venoso periférico de curta duração."
+    },
+    {
+        "name": "abocath",
+        "therapeuticClass": "Acesso Venoso",
+        "mainFunction": "Acesso venoso periférico para terapia intravenosa."
+    },
+    {
+        "name": "equipo macrogotas",
+        "therapeuticClass": "Infusão",
+        "mainFunction": "Administração de grandes volumes de soluções parenterais."
+    },
+    {
+        "name": "equipo microgotas",
+        "therapeuticClass": "Infusão",
+        "mainFunction": "Administração de pequenos volumes ou medicamentos precisos."
+    },
+    {
+        "name": "coletor de urina",
+        "therapeuticClass": "Coleta",
+        "mainFunction": "Coleta de amostra de urina para análise."
+    },
+    {
+        "name": "sonda vesical",
+        "therapeuticClass": "Sondagem",
+        "mainFunction": "Drenagem da bexiga ou administração de medicamentos."
+    },
+    {
+        "name": "algodão",
+        "therapeuticClass": "Material de Limpeza",
+        "mainFunction": "Assepsia, limpeza de pele e absorção."
+    },
+    {
+        "name": "álcool 70%",
+        "therapeuticClass": "Antisséptico",
+        "mainFunction": "Desinfecção de superfícies e assepsia da pele."
+    },
+    {
+        "name": "fralda geriátrica",
+        "therapeuticClass": "Higiene Pessoal",
+        "mainFunction": "Manejo da incontinência em adultos."
+    },
+    {
+        "name": "papel toalha",
+        "therapeuticClass": "Higiene e Limpeza",
+        "mainFunction": "Secagem das mãos e limpeza de superfícies."
+    },
+    {
+        "name": "tubo de coleta tampa roxa (edta)",
+        "therapeuticClass": "Coleta de Sangue",
+        "mainFunction": "Coleta de sangue para exames hematológicos (hemograma)."
+    },
+    {
+        "name": "tubo de coleta tampa vermelha (ativador de coágulo)",
+        "therapeuticClass": "Coleta de Sangue",
+        "mainFunction": "Coleta de sangue para exames bioquímicos e sorológicos."
+    },
+    {
+        "name": "tubo de coleta tampa cinza (fluoreto)",
+        "therapeuticClass": "Coleta de Sangue",
+        "mainFunction": "Coleta de sangue para dosagem de glicose e lactato."
+    },
+    {
+        "name": "tubo de coleta tampa azul (citrato)",
+        "therapeuticClass": "Coleta de Sangue",
+        "mainFunction": "Coleta de sangue para testes de coagulação (TP, TTPA)."
+    },
+    {
+        "name" "lanceta",
+        "therapeuticClass": "Coleta Capilar",
+        "mainFunction": "Pulsão para coleta de sangue capilar (teste de glicemia)."
+    },
+    {
+        "name": "sugador endodôntico",
+        "therapeuticClass": "Material Odontológico",
+        "mainFunction": "Aspiração de fluidos durante tratamentos de canal."
+    },
+    {
+        "name": "resina composta",
+        "therapeuticClass": "Material Restaurador",
+        "mainFunction": "Restauração de dentes anteriores e posteriores."
+    },
+    {
+        "name": "anestésico local (lidocaína)",
+        "therapeuticClass": "Anestésico Odontológico",
+        "mainFunction": "Bloqueio de dor em procedimentos odontológicos."
     }
 ]
