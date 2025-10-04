@@ -120,7 +120,6 @@ body {
   }
 }
 
-
 /* Custom styles for Intro.js */
 .custom-tooltip-class {
     background-color: hsl(var(--card));
@@ -163,7 +162,8 @@ body {
 }
 
 .introjs-tooltiptext {
-    line-height: 1.6;
+    line-height: 1.7;
+    padding: 0.5rem;
 }
 
 .introjs-arrow.top {

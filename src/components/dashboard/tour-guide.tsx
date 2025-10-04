@@ -1,4 +1,3 @@
-
 'use client';
 
 import 'intro.js/introjs.css';
@@ -178,7 +177,7 @@ export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boo
                 nextLabel: 'Próximo',
                 prevLabel: 'Anterior',
                 doneLabel: 'Finalizar',
-                skipLabel: 'Pular Tour',
+                skipLabel: 'Pular',
                 tooltipClass: 'custom-tooltip-class',
                 highlightClass: 'custom-highlight-class',
                 exitOnOverlayClick: false,
