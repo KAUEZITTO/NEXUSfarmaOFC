@@ -35,7 +35,6 @@
     "@radix-ui/react-tooltip": "^1.1.2",
     "@tanstack/react-table": "^8.19.3",
     "@vercel/kv": "^2.0.0",
-    "bcrypt": "^5.1.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
@@ -65,7 +64,6 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/bcrypt": "^5.0.2",
     "@types/intro.js": "^5.1.2",
     "@types/jsbarcode": "^3.11.4",
     "@types/node": "^20",

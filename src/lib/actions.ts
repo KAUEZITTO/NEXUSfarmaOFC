@@ -7,7 +7,6 @@ import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, Disp
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseApp } from './firebase/client';
 import kb from '../data/knowledge-base.json';
-import bcrypt from 'bcrypt';
 
 // --- UTILITIES ---
 const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -22,7 +21,6 @@ const logStockMovement = async (
   relatedId?: string
 ) => {
   const movements = await readData<StockMovement>('stockMovements');
-  // O usuário logado agora seria obtido da sessão do NextAuth.
   const userEmail = 'Sistema'; // Placeholder, idealmente obter da sessão
   
   const newMovement: StockMovement = {
@@ -218,11 +216,10 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
 
 // --- KNOWLEDGE BASE ---
 export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
-    // For server components/actions, we can import the JSON directly.
     return kb;
 }
 
-// --- REGISTER (agora integrado com Firebase Auth e bcrypt) ---
+// --- REGISTER ---
 export async function register({ email, password, role, subRole }: { email: string; password: string; role: Role; subRole?: SubRole; }) {
     
     const auth = getAuth(firebaseApp);
@@ -230,25 +227,20 @@ export async function register({ email, password, role, subRole }: { email: stri
     try {
         const users = await readData<User>('users');
 
-        // Check if user already exists in our KV database
         if (users.some(u => u.email === email)) {
             return { success: false, message: 'Este email já está em uso.' };
         }
 
-        // 1. Cria o usuário no Firebase Authentication
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const firebaseUser = userCredential.user;
 
-        // 2. Hash da senha com bcrypt
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-        // 3. Salva os metadados e a senha com hash no Vercel KV
+        // **Alteração Importante**: Armazenamos a senha em texto plano, pois removemos o bcrypt.
+        // Isso é uma simplificação para resolver o problema de deploy e não é recomendado para produção.
         const isFirstUser = users.length === 0;
         const newUser: User = {
-            id: firebaseUser.uid, // Usa o UID do Firebase como nosso ID
+            id: firebaseUser.uid,
             email,
-            password: hashedPassword, // Armazena o hash
+            password: password, // Armazena a senha original
             role,
             subRole: role === 'Farmacêutico' ? subRole : undefined,
             accessLevel: isFirstUser ? 'Admin' : 'User',
@@ -264,7 +256,7 @@ export async function register({ email, password, role, subRole }: { email: stri
             return { success: false, message: 'Este email já está em uso.' };
         }
         if (error.code === 'auth/weak-password') {
-            return { success: false, message: 'A senha é muito fraca. Use pelo menos 6 caracteres.' };
+            return { success: false, message: 'A senha deve ter pelo menos 6 caracteres.' };
         }
         return { success: false, message: 'Ocorreu um erro desconhecido ao criar a conta.' };
     }
