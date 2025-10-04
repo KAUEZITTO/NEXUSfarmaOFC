@@ -4,7 +4,7 @@
 import { revalidatePath } from 'next/cache';
 import { readData, writeData, getProducts } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, KnowledgeBaseItem } from './types';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, updateEmail, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { firebaseApp } from './firebase/client';
 import kb from '../data/knowledge-base.json';
 
@@ -199,6 +199,24 @@ export async function addDispensation(dispensationData: { patientId: string; pat
     return newDispensation;
 }
 
+// --- USER PROFILE ACTIONS ---
+
+export async function updateUserProfile(userId: string, data: { name?: string; birthdate?: string; image?: string }) {
+    const users = await readData<User>('users');
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex === -1) {
+        throw new Error('Usuário não encontrado.');
+    }
+
+    const updatedUser = { ...users[userIndex], ...data };
+    users[userIndex] = updatedUser;
+    
+    await writeData('users', users);
+    revalidatePath('/dashboard/settings');
+    
+    return { success: true, user: updatedUser };
+}
+
 // --- FILE UPLOAD ---
 export async function uploadImage(formData: FormData): Promise<{ success: boolean; filePath?: string; error?: string; }> {
     const file = formData.get('image') as File;
@@ -206,9 +224,12 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
         return { success: false, error: 'Nenhum arquivo enviado.' };
     }
     
+    // Simulating upload and returning a placeholder image URL
+    // In a real app, this would upload to a service like Cloudinary, S3, or Firebase Storage
     const randomId = Math.floor(Math.random() * 1000);
     const filePath = `https://picsum.photos/seed/${randomId}/400/400`;
     
+    // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     return { success: true, filePath };
@@ -234,8 +255,6 @@ export async function register({ email, password, role, subRole }: { email: stri
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const firebaseUser = userCredential.user;
 
-        // **Alteração Importante**: Armazenamos a senha em texto plano, pois removemos o bcrypt.
-        // Isso é uma simplificação para resolver o problema de deploy e não é recomendado para produção.
         const isFirstUser = users.length === 0;
         const newUser: User = {
             id: firebaseUser.uid,

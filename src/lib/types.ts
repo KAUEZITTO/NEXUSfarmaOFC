@@ -1,4 +1,3 @@
-
 // Adicionando tipos do NextAuth para extender o objeto de sessão
 import type { DefaultUser } from 'next-auth';
 
@@ -6,12 +5,16 @@ declare module 'next-auth' {
   interface Session {
     user?: DefaultUser & {
       id: string;
+      name?: string | null;
+      birthdate?: string | null;
       role?: Role;
       accessLevel?: AccessLevel;
     };
   }
   interface User extends DefaultUser {
       id: string;
+      name?: string | null;
+      birthdate?: string | null;
       role?: Role;
       accessLevel?: AccessLevel;
   }
@@ -35,6 +38,9 @@ export type AccessLevel = 'Admin' | 'User';
 export type User = {
     id: string;
     email: string;
+    name?: string;
+    birthdate?: string;
+    image?: string;
     password?: string; // Armazena o HASH da senha, não a senha em texto plano. Opcional para usuários OAuth.
     role: Role;
     subRole?: SubRole;

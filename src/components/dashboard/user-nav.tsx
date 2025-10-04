@@ -16,12 +16,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, HelpCircle } from 'lucide-react';
+import { LogOut, HelpCircle, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTour } from './tour-guide';
 import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
 import { useSession, signOut } from 'next-auth/react';
+import Link from 'next/link';
 
 export function UserNav() {
   const { startTour } = useTour();
@@ -49,8 +50,8 @@ export function UserNav() {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={user.image || ''} alt={user.email || 'Avatar'} />
-              <AvatarFallback>{user?.email?.[0].toUpperCase()}</AvatarFallback>
+              <AvatarImage src={user.image || ''} alt={user.name || user.email || 'Avatar'} />
+              <AvatarFallback>{user?.name?.[0].toUpperCase() || user?.email?.[0].toUpperCase()}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
@@ -66,6 +67,12 @@ export function UserNav() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
+             <DropdownMenuItem asChild>
+              <Link href="/dashboard/settings">
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Configurações</span>
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={startTour}>
                 <HelpCircle className="mr-2 h-4 w-4" />
                 <span>Fazer Tour</span>

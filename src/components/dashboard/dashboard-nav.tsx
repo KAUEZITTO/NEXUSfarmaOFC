@@ -12,6 +12,7 @@ import {
   BarChart2,
   Info,
   Shield,
+  Settings,
 } from 'lucide-react';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '../ui/sidebar';
 import { useSidebar } from '../ui/sidebar';
@@ -25,6 +26,7 @@ export const navItems = [
   { href: '/dashboard/patients', icon: Users, label: 'Pacientes', tourId: 'step-patients' },
   { href: '/dashboard/units', icon: Building2, label: 'Unidades', tourId: 'step-units' },
   { href: '/dashboard/reports', icon: BarChart2, label: 'Relatórios', tourId: 'step-reports' },
+  { href: '/dashboard/settings', icon: Settings, label: 'Configurações', tourId: 'step-settings' },
   { href: '/dashboard/user-management', icon: Shield, label: 'Usuários', adminOnly: true, tourId: 'step-users' },
   { href: '/dashboard/about', icon: Info, label: 'Sobre', tourId: 'step-about' },
 ];
