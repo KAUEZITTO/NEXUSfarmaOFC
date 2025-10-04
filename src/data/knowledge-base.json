@@ -195,8 +195,18 @@
         "therapeuticClass": "Coleta de Sangue",
         "mainFunction": "Coleta de sangue para exames hematológicos (hemograma)."
     },
+     {
+        "name": "tubo edta",
+        "therapeuticClass": "Coleta de Sangue",
+        "mainFunction": "Coleta de sangue para exames hematológicos (hemograma)."
+    },
     {
         "name": "tubo de coleta tampa vermelha (ativador de coágulo)",
+        "therapeuticClass": "Coleta de Sangue",
+        "mainFunction": "Coleta de sangue para exames bioquímicos e sorológicos."
+    },
+    {
+        "name": "tubo tampa vermelha",
         "therapeuticClass": "Coleta de Sangue",
         "mainFunction": "Coleta de sangue para exames bioquímicos e sorológicos."
     },
@@ -206,7 +216,17 @@
         "mainFunction": "Coleta de sangue para dosagem de glicose e lactato."
     },
     {
+        "name": "tubo tampa cinza",
+        "therapeuticClass": "Coleta de Sangue",
+        "mainFunction": "Coleta de sangue para dosagem de glicose e lactato."
+    },
+    {
         "name": "tubo de coleta tampa azul (citrato)",
+        "therapeuticClass": "Coleta de Sangue",
+        "mainFunction": "Coleta de sangue para testes de coagulação (TP, TTPA)."
+    },
+     {
+        "name": "tubo citrato",
         "therapeuticClass": "Coleta de Sangue",
         "mainFunction": "Coleta de sangue para testes de coagulação (TP, TTPA)."
     },
@@ -229,5 +249,186 @@
         "name": "anestésico local (lidocaína)",
         "therapeuticClass": "Anestésico Odontológico",
         "mainFunction": "Bloqueio de dor em procedimentos odontológicos."
+    },
+    {
+        "name": "oxímetro",
+        "therapeuticClass": "Equipamento de Monitoramento",
+        "mainFunction": "Medição da saturação de oxigênio no sangue e frequência cardíaca."
+    },
+    {
+        "name": "pasta profilática",
+        "therapeuticClass": "Material Odontológico",
+        "mainFunction": "Limpeza e polimento da superfície dentária."
+    },
+    {
+        "name": "diazepan",
+        "therapeuticClass": "Ansiolítico (Benzodiazepínico)",
+        "mainFunction": "Tratamento de ansiedade, sedação e relaxamento muscular."
+    },
+    {
+        "name": "captopril",
+        "therapeuticClass": "Anti-hipertensivo (iECA)",
+        "mainFunction": "Controle da pressão arterial elevada e insuficiência cardíaca."
+    },
+    {
+        "name" : "clonazepam",
+        "therapeuticClass": "Ansiolítico (Benzodiazepínico)",
+        "mainFunction": "Tratamento de transtornos de ansiedade e convulsões."
+    },
+    {
+        "name": "fluoxetina",
+        "therapeuticClass": "Antidepressivo (ISRS)",
+        "mainFunction": "Tratamento de depressão, transtorno obsessivo-compulsivo e bulimia."
+    },
+    {
+        "name": "sertralina",
+        "therapeuticClass": "Antidepressivo (ISRS)",
+        "mainFunction": "Tratamento de depressão, transtorno do pânico e ansiedade social."
+    },
+    {
+        "name": "haloperidol",
+        "therapeuticClass": "Antipsicótico",
+        "mainFunction": "Tratamento de esquizofrenia e transtornos psicóticos."
+    },
+    {
+        "name": "risperidona",
+        "therapeuticClass": "Antipsicótico Atípico",
+        "mainFunction": "Tratamento de esquizofrenia, transtorno bipolar e irritabilidade associada ao autismo."
+    },
+    {
+        "name": "carbonato de lítio",
+        "therapeuticClass": "Estabilizador de Humor",
+        "mainFunction": "Tratamento do transtorno bipolar."
+    },
+    {
+        "name": "ácido valproico",
+        "therapeuticClass": "Anticonvulsivante e Estabilizador de Humor",
+        "mainFunction": "Tratamento de epilepsia, enxaqueca e transtorno bipolar."
+    },
+    {
+        "name": "fenobarbital",
+        "therapeuticClass": "Anticonvulsivante (Barbitúrico)",
+        "mainFunction": "Controle de convulsões."
+    },
+    {
+        "name": "carbamazepina",
+        "therapeuticClass": "Anticonvulsivante",
+        "mainFunction": "Tratamento de epilepsia, dor neuropática e transtorno bipolar."
+    },
+    {
+        "name": "biperideno",
+        "therapeuticClass": "Antiparkinsoniano (Anticolinérgico)",
+        "mainFunction": "Controle de sintomas do parkinsonismo induzido por medicamentos."
+    },
+    {
+        "name": "clorpromazina",
+        "therapeuticClass": "Antipsicótico",
+        "mainFunction": "Tratamento de transtornos psicóticos e controle de náuseas e vômitos."
+    },
+    {
+        "name": "levomepromazina",
+        "therapeuticClass": "Antipsicótico",
+        "mainFunction": "Sedação e tratamento de dor e agitação em cuidados paliativos."
+    },
+    {
+        "name": "amiodarona",
+        "therapeuticClass": "Antiarrítmico",
+        "mainFunction": "Tratamento e prevenção de arritmias cardíacas."
+    },
+    {
+        "name": "atenolol",
+        "therapeuticClass": "Anti-hipertensivo (Betabloqueador)",
+        "mainFunction": "Controle da pressão arterial, angina e arritmias."
+    },
+    {
+        "name": "enalapril",
+        "therapeuticClass": "Anti-hipertensivo (iECA)",
+        "mainFunction": "Controle da pressão arterial e insuficiência cardíaca."
+    },
+    {
+        "name": "furosemida",
+        "therapeuticClass": "Diurético de Alça",
+        "mainFunction": "Tratamento de edemas e hipertensão."
+    },
+    {
+        "name": "espironolactona",
+        "therapeuticClass": "Diurético Poupador de Potássio",
+        "mainFunction": "Tratamento da insuficiência cardíaca, hipertensão e ascite."
+    },
+    {
+        "name": "digoxina",
+        "therapeuticClass": "Glicosídeo Cardíaco",
+        "mainFunction": "Tratamento da insuficiência cardíaca e fibrilação atrial."
+    },
+    {
+        "name": "varfarina",
+        "therapeuticClass": "Anticoagulante",
+        "mainFunction": "Prevenção de trombose venosa e embolia pulmonar."
+    },
+    {
+        "name": "clopidogrel",
+        "therapeuticClass": "Antiagregante Plaquetário",
+        "mainFunction": "Prevenção de eventos aterotrombóticos (infarto, AVC)."
+    },
+    {
+        "name": "sulfato ferroso",
+        "therapeuticClass": "Antianêmico",
+        "mainFunction": "Tratamento e prevenção da anemia por deficiência de ferro."
+    },
+    {
+        "name": "ácido fólico",
+        "therapeuticClass": "Vitamina do Complexo B",
+        "mainFunction": "Prevenção de defeitos do tubo neural e tratamento de anemia megaloblástica."
+    },
+    {
+        "name": "cefalexina",
+        "therapeuticClass": "Antibiótico (Cefalosporina)",
+        "mainFunction": "Tratamento de infecções bacterianas."
+    },
+    {
+        "name": "ciprofloxacino",
+        "therapeuticClass": "Antibiótico (Quinolona)",
+        "mainFunction": "Tratamento de infecções bacterianas, especialmente urinárias."
+    },
+    {
+        "name": "nitrofurantoína",
+        "therapeuticClass": "Antibiótico",
+        "mainFunction": "Tratamento de infecções do trato urinário."
+    },
+    {
+        "name": "metronidazol",
+        "therapeuticClass": "Antibiótico e Antiprotozoário",
+        "mainFunction": "Tratamento de infecções por bactérias anaeróbias e protozoários."
+    },
+    {
+        "name": "albendazol",
+        "therapeuticClass": "Anti-helmíntico",
+        "mainFunction": "Tratamento de infecções por vermes e parasitas."
+    },
+    {
+        "name": "ivermectina",
+        "therapeuticClass": "Antiparasitário",
+        "mainFunction": "Tratamento de infestações parasitárias como piolho e sarna."
+    },
+    {
+        "name": "miconazol",
+        "therapeuticClass": "Antifúngico",
+        "mainFunction": "Tratamento de infecções fúngicas na pele ou mucosas."
+    },
+    {
+        "name": "cetoconazol",
+        "therapeuticClass": "Antifúngico",
+        "mainFunction": "Tratamento de infecções fúngicas sistêmicas e tópicas."
+    },
+    {
+        "name": "hidrocortisona",
+        "therapeuticClass": "Corticosteroide Tópico",
+        "mainFunction": "Alívio de inflamações e coceiras na pele."
+    },
+    {
+        "name": "permanganato de potássio",
+        "therapeuticClass": "Antisséptico e Adstringente",
+        "mainFunction": "Limpeza e tratamento de dermatites e feridas exsudativas."
     }
 ]
+

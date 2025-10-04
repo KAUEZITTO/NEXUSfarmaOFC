@@ -79,17 +79,22 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
   }, [isOpen]);
 
   useEffect(() => {
-      if(debouncedName && knowledgeBase.length > 0 && !isEditing) {
-          const searchTerm = debouncedName.toLowerCase();
-          const match = knowledgeBase.find(item => searchTerm.includes(item.name.toLowerCase()));
-          if(match) {
-              setTherapeuticClass(match.therapeuticClass);
-              setMainFunction(match.mainFunction);
-          } else {
-              setTherapeuticClass('');
-              setMainFunction('');
-          }
+    if (debouncedName && knowledgeBase.length > 0 && !isEditing) {
+      const searchTerm = debouncedName.toLowerCase();
+      // Improved search: check if searchTerm includes kb.name OR kb.name includes searchTerm
+      const match = knowledgeBase.find(item => {
+        const kbName = item.name.toLowerCase();
+        return searchTerm.includes(kbName) || kbName.includes(searchTerm);
+      });
+      
+      if (match) {
+        setTherapeuticClass(match.therapeuticClass);
+        setMainFunction(match.mainFunction);
+      } else {
+        setTherapeuticClass('');
+        setMainFunction('');
       }
+    }
   }, [debouncedName, knowledgeBase, isEditing]);
 
 
@@ -355,3 +360,4 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
     
 
     
+

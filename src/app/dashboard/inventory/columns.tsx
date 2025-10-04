@@ -7,6 +7,12 @@ import { ArrowUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { GroupedProduct } from "./page";
 
+const capitalizeFirstLetter = (string: string) => {
+    if (!string) return 'N/A';
+    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+}
+
+
 // The columns definition is now a pure function, with no client-side hooks or state.
 // The interactive part (clicking to open a dialog) will be handled by the parent DataTable/ClientComponent.
 export const columns: ColumnDef<GroupedProduct>[] = [
@@ -42,7 +48,7 @@ export const columns: ColumnDef<GroupedProduct>[] = [
     {
       accessorKey: "mainFunction",
       header: "Função",
-      cell: ({ row }) => <div className="capitalize">{row.getValue("mainFunction") || "N/A"}</div>
+      cell: ({ row }) => <div>{capitalizeFirstLetter(row.getValue("mainFunction"))}</div>
     },
     {
       accessorKey: "quantity",
@@ -72,3 +78,4 @@ export const columns: ColumnDef<GroupedProduct>[] = [
       },
     },
   ]
+
