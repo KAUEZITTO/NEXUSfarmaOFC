@@ -36,9 +36,7 @@ export const authOptions: NextAuthOptions = {
         }
         
         // Securely compare the provided password with the stored hash
-        const passwordBuffer = new TextEncoder().encode(credentials.password);
-        const hmac = await jose.calculateJwkThumbprint(await jose.importKey('raw', passwordBuffer, 'HS256', false));
-        const currentPasswordHash = Buffer.from(new TextEncoder().encode(hmac)).toString('hex');
+        const currentPasswordHash = await jose.calculateJwkThumbprint({ kty: 'oct', k: Buffer.from(credentials.password).toString('base64url') });
         
         const passwordsMatch = currentPasswordHash === appUser.password;
 

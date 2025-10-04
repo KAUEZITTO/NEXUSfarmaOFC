@@ -4,7 +4,7 @@
 import { revalidatePath } from 'next/cache';
 import { readData, writeData, getProducts } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, KnowledgeBaseItem, AccessLevel } from './types';
-import { getAuth, createUserWithEmailAndPassword, updateEmail, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseApp } from './firebase/client';
 import kb from '../data/knowledge-base.json';
 import * as jose from 'jose';
@@ -279,27 +279,14 @@ export async function register({ email, password, role, subRole }: { email: stri
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const firebaseUser = userCredential.user;
 
-        // Hash the password using jose
-        const secret = new TextEncoder().encode(process.env.AUTH_SECRET || 'fallback-secret-for-local-dev');
-        const hashedPassword = await new jose.SignJWT({ 'urn:example:claim': true })
-            .setProtectedHeader({ alg: 'HS256' })
-            .setIssuedAt()
-            .setIssuer('urn:example:issuer')
-            .setAudience('urn:example:audience')
-            .setExpirationTime('2h') // This is for the JWT, not the hash itself
-            .sign(secret);
-        
-        // This is a simplified hashing. A real app should use a proper password hashing library like bcrypt or argon2
-        // For this environment, we'll use a simple but effective method with an HMAC-like signature.
-        const passwordBuffer = new TextEncoder().encode(password);
-        const hmac = await jose.calculateJwkThumbprint(await jose.importKey('raw', passwordBuffer, 'HS256', false));
-        const finalHashedPassword = new TextEncoder().encode(hmac);
+        // Create a secure hash of the password using jose's JWK thumbprint function
+        const passwordHash = await jose.calculateJwkThumbprint({ kty: 'oct', k: Buffer.from(password).toString('base64url') });
         
         const isFirstUser = users.length === 0;
         const newUser: User = {
             id: firebaseUser.uid,
             email,
-            password: Buffer.from(finalHashedPassword).toString('hex'), // Store the hash
+            password: passwordHash, // Store the hash
             role,
             subRole: role === 'Farmacêutico' ? subRole : undefined,
             accessLevel: isFirstUser ? 'Admin' : 'User',
