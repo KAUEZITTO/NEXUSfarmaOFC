@@ -1,3 +1,4 @@
+
 'use client';
 
 import 'intro.js/introjs.css';
@@ -70,7 +71,106 @@ const tourSteps = [
     }
 ].filter(Boolean); // Filter out any undefined steps (like admin route for non-admin)
 
-export function TourGuideWrapper({ children }: { children: React.ReactNode }) {
+interface TourGuideWrapperProps {
+  children: React.ReactNode;
+}
+
+interface UpdateDialogProps {
+  currentVersion: string;
+  changelog: any[];
+}
+
+// Separate component for the update dialog
+const UpdateDialogContent: React.FC<UpdateDialogProps & {onClose: () => void}> = ({ currentVersion, changelog, onClose }) => {
+    // Lazy-load the AlertDialog to avoid issues with server components
+    const [AlertDialog, setAlertDialog] = useState<any>(null);
+    useEffect(() => {
+        import('../ui/alert-dialog').then(mod => {
+            setAlertDialog(() => mod.AlertDialog);
+        });
+    }, []);
+
+    if (!AlertDialog) return null;
+
+    const {
+        AlertDialogAction,
+        AlertDialogContent,
+        AlertDialogDescription,
+        AlertDialogFooter,
+        AlertDialogHeader,
+        AlertDialogTitle,
+    } = require('../ui/alert-dialog');
+    const { Badge } = require('../ui/badge');
+
+    return (
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>
+                    Novidades da Versão <Badge>{currentVersion}</Badge>
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                    Confira o que mudou na última atualização do sistema:
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="text-sm text-muted-foreground space-y-3 max-h-60 overflow-y-auto pr-4">
+                {changelog.map(log => (
+                    <div key={log.version}>
+                        <h4 className="font-semibold text-foreground">Versão {log.version}</h4>
+                        <ul className="list-disc pl-5 space-y-1 mt-1">
+                            {log.changes.map((change: string, index: number) => (
+                                <li key={index}>{change}</li>
+                            ))}
+                        </ul>
+                    </div>
+                ))}
+            </div>
+            <AlertDialogFooter>
+                <AlertDialogAction onClick={onClose}>Entendido</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    );
+}
+
+
+export const UpdateDialog: React.FC<UpdateDialogProps> = ({ currentVersion, changelog }) => {
+    const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+    const UPDATE_STORAGE_KEY = `nexusfarma-last-seen-version-${currentVersion}`;
+    const tourContext = useContext(TourContext);
+
+    useEffect(() => {
+        const lastSeenVersion = localStorage.getItem(UPDATE_STORAGE_KEY);
+        if (lastSeenVersion !== currentVersion) {
+            setIsUpdateDialogOpen(true);
+        } else {
+             // If version has been seen, maybe start the tour
+            (tourContext as any)?.onUpdateDialogClose();
+        }
+    }, [currentVersion, UPDATE_STORAGE_KEY, tourContext]);
+
+    const handleCloseUpdateDialog = () => {
+        localStorage.setItem(UPDATE_STORAGE_KEY, currentVersion);
+        setIsUpdateDialogOpen(false);
+        // Signal that the dialog is closed, so the tour can start
+        (tourContext as any)?.onUpdateDialogClose();
+    }
+    
+    const [AlertDialog, setAlertDialog] = useState<any>(null);
+    useEffect(() => {
+        import('../ui/alert-dialog').then(mod => {
+            setAlertDialog(() => mod.AlertDialog);
+        });
+    }, []);
+
+    if (!AlertDialog) return null;
+
+    return (
+        <AlertDialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
+            <UpdateDialogContent currentVersion={currentVersion} changelog={changelog} onClose={handleCloseUpdateDialog} />
+        </AlertDialog>
+    );
+}
+
+export const TourGuideWrapper: React.FC<TourGuideWrapperProps> = ({ children }) => {
     const [isTourActive, setIsTourActive] = useState(false);
     const [canStartTour, setCanStartTour] = useState(false);
     const { setOpen } = useSidebar();
@@ -83,29 +183,24 @@ export function TourGuideWrapper({ children }: { children: React.ReactNode }) {
         }
     };
 
-    // This effect checks if the tour should be started automatically.
     useEffect(() => {
         const tourCompleted = localStorage.getItem(TOUR_STORAGE_KEY);
         if (!tourCompleted) {
-            // We set canStartTour to true, but don't start it yet.
-            // The UpdateDialog will call startTour when it's closed.
             setCanStartTour(true);
         }
     }, []);
 
-    // Function for UpdateDialog to call when it closes
     const onUpdateDialogClose = () => {
         if (canStartTour) {
             const timer = setTimeout(() => {
                 startTour();
-            }, 500); // Small delay to ensure dialog is gone
+            }, 500);
             return () => clearTimeout(timer);
         }
     };
     
-    // Pass startTour and onUpdateDialogClose down through context
     const contextValue = React.useMemo(() => ({
-        startTour: () => { // manual start
+        startTour: () => {
             setOpen(true);
             setIsTourActive(true);
         },
@@ -132,7 +227,6 @@ export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boo
     };
 
     const onBeforeChange = (nextStepIndex: number) => {
-        // Ensure we don't go out of bounds
         if (nextStepIndex < 0 || nextStepIndex >= tourSteps.length) {
             onExit();
             return false;
@@ -145,16 +239,12 @@ export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boo
 
         const targetElement = document.querySelector(step.element);
          if (!targetElement) {
-            // Find the nav item associated with the step
             const tourId = step.element.replace(/\[data-tour-id="|"\]/g, '');
             const navItem = navItems.find(item => item.tourId === tourId);
 
-            // If it's a nav item and we're not on its page, navigate
             if (navItem && navItem.href !== pathname) {
                 router.push(navItem.href);
             }
-            // If the element still doesn't exist, it's probably better to just skip
-            // or end the tour to avoid getting stuck.
             return false;
         }
 
@@ -187,76 +277,3 @@ export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boo
     );
 }
 
-// Separate component for the update dialog
-export function UpdateDialog({ currentVersion, changelog }: { currentVersion: string, changelog: any[] }) {
-    const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
-    const UPDATE_STORAGE_KEY = `nexusfarma-last-seen-version-${currentVersion}`;
-    const tourContext = useContext(TourContext);
-
-    useEffect(() => {
-        const lastSeenVersion = localStorage.getItem(UPDATE_STORAGE_KEY);
-        if (lastSeenVersion !== currentVersion) {
-            setIsUpdateDialogOpen(true);
-        } else {
-             // If version has been seen, maybe start the tour
-            tourContext?.onUpdateDialogClose();
-        }
-    }, [currentVersion, UPDATE_STORAGE_KEY, tourContext]);
-
-    const handleCloseUpdateDialog = () => {
-        localStorage.setItem(UPDATE_STORAGE_KEY, currentVersion);
-        setIsUpdateDialogOpen(false);
-        // Signal that the dialog is closed, so the tour can start
-        tourContext?.onUpdateDialogClose();
-    }
-    
-    // Lazy-load the AlertDialog to avoid issues with server components
-    const [AlertDialog, setAlertDialog] = useState<any>(null);
-    useEffect(() => {
-        import('../ui/alert-dialog').then(mod => {
-            setAlertDialog(() => mod.AlertDialog);
-        });
-    }, []);
-
-    if (!AlertDialog) return null;
-
-    const {
-        AlertDialogAction,
-        AlertDialogContent,
-        AlertDialogDescription,
-        AlertDialogFooter,
-        AlertDialogHeader,
-        AlertDialogTitle,
-    } = require('../ui/alert-dialog');
-    const { Badge } = require('../ui/badge');
-
-    return (
-        <AlertDialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>
-                        Novidades da Versão <Badge>{currentVersion}</Badge>
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Confira o que mudou na última atualização do sistema:
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <div className="text-sm text-muted-foreground space-y-3 max-h-60 overflow-y-auto pr-4">
-                    {changelog.map(log => (
-                        <div key={log.version}>
-                            <h4 className="font-semibold text-foreground">Versão {log.version}</h4>
-                            <ul className="list-disc pl-5 space-y-1 mt-1">
-                                {log.changes.map((change, index) => (
-                                    <li key={index}>{change}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
-                </div>
-                <AlertDialogFooter>
-                    <AlertDialogAction onClick={handleCloseUpdateDialog}>Entendido</AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
-    );
-}
