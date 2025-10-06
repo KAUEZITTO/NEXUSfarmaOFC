@@ -29,13 +29,7 @@ declare module 'next-auth' {
 declare module 'next-auth/jwt' {
     interface JWT {
         id: string;
-        name?: string | null;
-        birthdate?: string | null;
-        image?: string | null; // Image is not always in the JWT, but can be
-        role?: Role;
-        subRole?: SubRole;
-        accessLevel?: AccessLevel;
-        lastSeen?: string;
+        // name, image, etc. should NOT be here to keep the token small.
     }
 }
 

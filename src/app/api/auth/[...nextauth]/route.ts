@@ -69,21 +69,17 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         // The email is already included by default.
       }
-
-      // No matter what happens (initial login, session update), we ensure
-      // the token only contains the bare minimum. This is the definitive fix
-      // for REQUEST_HEADER_TOO_LARGE.
-      const minimalToken: JWT = {
+      
+      // Ensure the token only contains the bare minimum, always.
+      // This is the definitive fix for REQUEST_HEADER_TOO_LARGE.
+      return {
         id: token.id,
         email: token.email,
-        // The following are standard JWT claims that NextAuth uses.
         sub: token.sub,
         iat: token.iat,
         exp: token.exp,
         jti: token.jti
       };
-      
-      return minimalToken;
     },
 
     async session({ session, token }: { session: any, token: JWT }) {
