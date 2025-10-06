@@ -1,4 +1,5 @@
 
+
 // Adicionando tipos do NextAuth para extender o objeto de sessão
 import type { DefaultUser } from 'next-auth';
 
@@ -63,6 +64,7 @@ export type User = {
     subRole?: SubRole;
     accessLevel: AccessLevel;
     lastSeen?: string; // ISO 8601 date string
+    password?: string; // Only used for creation, should not be stored or returned in most cases
 }
 
 export type Product = {
@@ -100,6 +102,9 @@ export type Dosage = {
     quantity: number;
 }
 
+export type PatientDemandItem = 'Fraldas' | 'Insulinas Análogas' | 'Tiras de Glicemia' | 'Itens Judiciais' | 'Imunoglobulina';
+
+
 export type Patient = {
     id: string;
     name: string;
@@ -108,16 +113,14 @@ export type Patient = {
     rg?: string;
     address?: string;
     phone?: string;
-    isAnalogInsulinUser?: boolean;
+    isAnalogInsulinUser?: boolean; // Kept for backwards compatibility if needed, but logic moves to demandItems
     analogInsulinType?: 'Lantus (Glargina)' | 'Apidra (Glulisina)';
     hasInsulinReport?: boolean;
     insulinDosages?: Dosage[];
     insulinPresentation?: 'Caneta' | 'Frasco';
-    usesStrips?: boolean;
+    usesStrips?: boolean; // Kept for backwards compatibility if needed, logic moves to demandItems
     stripDosages?: Dosage[];
-    mandateType: 'Legal' | 'Municipal' | 'N/A';
-    judicialItems?: ('Medicamentos' | 'Material Técnico')[];
-    municipalItems?: ('Fraldas' | 'Material Técnico' | 'Medicamentos')[];
+    demandItems?: PatientDemandItem[];
     unitName?: string;
     unitId?: string;
     status: PatientStatus;

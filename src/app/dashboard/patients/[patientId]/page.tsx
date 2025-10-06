@@ -1,4 +1,5 @@
 
+
 import { getPatient, getDispensationsForPatient } from "@/lib/data";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
@@ -39,7 +40,7 @@ export default async function PatientHistoryPage({ params }: { params: { patient
                 <div><span className="font-semibold">CPF:</span> {patient.cpf}</div>
                 <div><span className="font-semibold">CNS:</span> {patient.cns}</div>
                 {patient.unitName && <div><span className="font-semibold">Unidade:</span> {patient.unitName}</div>}
-                <div><span className="font-semibold">Tipo de Mandado:</span> {patient.mandateType}</div>
+                <div><span className="font-semibold">Demandas:</span> {patient.demandItems?.join(', ') || 'N/A'}</div>
             </CardContent>
         </Card>
         <Card>

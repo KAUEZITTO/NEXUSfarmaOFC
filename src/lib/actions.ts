@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -115,6 +116,8 @@ export async function addPatient(patientData: Omit<Patient, 'id' | 'status'>) {
     const patients = await readData<Patient>('patients');
     const newPatient: Patient = {
         ...patientData,
+        isAnalogInsulinUser: patientData.demandItems?.includes('Insulinas Análogas'),
+        usesStrips: patientData.demandItems?.includes('Tiras de Glicemia'),
         id: generateId('pat'),
         status: 'Ativo',
     };
@@ -126,7 +129,12 @@ export async function updatePatient(patientId: string, patientData: Partial<Omit
     const patients = await readData<Patient>('patients');
     const patientIndex = patients.findIndex(p => p.id === patientId);
     if (patientIndex === -1) throw new Error('Paciente não encontrado.');
-    patients[patientIndex] = { ...patients[patientIndex], ...patientData };
+    patients[patientIndex] = { 
+        ...patients[patientIndex], 
+        ...patientData,
+        isAnalogInsulinUser: patientData.demandItems?.includes('Insulinas Análogas'),
+        usesStrips: patientData.demandItems?.includes('Tiras de Glicemia'),
+    };
     await writeData('patients', patients);
     revalidatePath('/dashboard/patients');
     revalidatePath(`/dashboard/patients/${patientId}`);
@@ -321,5 +329,3 @@ export async function register({ email, password, role, subRole }: { email: stri
         return { success: false, message: 'Ocorreu um erro desconhecido ao criar a conta.' };
     }
 }
-
-    

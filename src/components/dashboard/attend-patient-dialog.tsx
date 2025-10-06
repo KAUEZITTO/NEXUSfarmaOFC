@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
@@ -25,10 +26,12 @@ import {
   Package,
   ClipboardList,
   Loader2,
+  FileText,
+  ShieldHalf,
 } from 'lucide-react';
 import { addDispensation } from '@/lib/actions';
 import { getPatients, getProducts } from '@/lib/data';
-import type { Patient, Product, DispensationItem as DispensationItemType } from '@/lib/types';
+import type { Patient, Product, DispensationItem as DispensationItemType, PatientDemandItem } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -65,17 +68,22 @@ type Category =
   | 'Medicamentos'
   | 'Material Técnico'
   | 'Fraldas'
+  | 'Itens Judiciais'
+  | 'Imunoglobulina'
   | 'Outros';
 
 const categories: {
   name: Category;
   icon: React.ElementType;
+  demandItem?: PatientDemandItem;
 }[] = [
-  { name: 'Insulinas', icon: Syringe },
-  { name: 'Tiras/Lancetas', icon: ClipboardList },
+  { name: 'Insulinas', icon: Syringe, demandItem: 'Insulinas Análogas' },
+  { name: 'Tiras/Lancetas', icon: ClipboardList, demandItem: 'Tiras de Glicemia' },
+  { name: 'Fraldas', icon: Baby, demandItem: 'Fraldas' },
+  { name: 'Itens Judiciais', icon: FileText, demandItem: 'Itens Judiciais' },
+  { name: 'Imunoglobulina', icon: ShieldHalf, demandItem: 'Imunoglobulina' },
   { name: 'Medicamentos', icon: Pill },
   { name: 'Material Técnico', icon: Stethoscope },
-  { name: 'Fraldas', icon: Baby },
   { name: 'Outros', icon: Package },
 ];
 
@@ -98,7 +106,7 @@ const getProductsForCategory = (allProducts: Product[], category: Category): Par
         return allProducts.filter(p => stripKeywords.some(keyword => p.name.toLowerCase().includes(keyword)));
     }
 
-    if(category === 'Medicamentos') {
+    if(category === 'Medicamentos' || category === 'Itens Judiciais' || category === 'Imunoglobulina') {
         return allProducts.filter(p => p.category === 'Medicamento' && !insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)));
     }
 
@@ -155,45 +163,21 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
   
   const setupInitialItems = (patient: Patient) => {
     const initialItems: DispensationItem[] = [];
-
-    if (patient.isAnalogInsulinUser && patient.insulinDosages && patient.insulinDosages.length > 0) {
-        const insulinProduct = allProducts.find(p => 
-            p.name.toLowerCase().includes(patient.analogInsulinType!.toLowerCase().split(' ')[0]) &&
-            p.presentation?.toLowerCase().includes(patient.insulinPresentation!.toLowerCase())
-        );
-
-        if(insulinProduct) {
-             initialItems.push({
-                internalId: `item-insulin-${Date.now()}`,
-                productId: insulinProduct.id,
-                name: insulinProduct.name,
-                category: 'Insulinas',
-                quantity: 1, 
-                presentation: insulinProduct.presentation,
-                batch: insulinProduct.batch,
-                expiryDate: insulinProduct.expiryDate ? new Date(insulinProduct.expiryDate).toLocaleDateString('pt-BR') : 'N/A',
+    
+    patient.demandItems?.forEach(demand => {
+        const categoryInfo = categories.find(c => c.demandItem === demand);
+        if (categoryInfo) {
+            // Add an empty item to pre-populate the category section
+            initialItems.push({
+                internalId: `item-${categoryInfo.name}-${Date.now()}`,
+                productId: '',
+                name: '',
+                quantity: 1,
+                category: categoryInfo.name,
+                presentation: '',
             });
         }
-    }
-
-    if (patient.usesStrips && patient.stripDosages && patient.stripDosages.length > 0) {
-        const stripProduct = allProducts.find(p => p.name.toLowerCase().includes('tiras de glicemia'));
-        if (stripProduct) {
-            const totalStripsPerDay = patient.stripDosages.reduce((sum, d) => sum + d.quantity, 0);
-            const boxesNeeded = Math.ceil((totalStripsPerDay * 30) / 50); // Assuming box of 50
-             initialItems.push({
-                internalId: `item-strips-${Date.now()}`,
-                productId: stripProduct.id,
-                name: stripProduct.name,
-                category: 'Tiras/Lancetas',
-                quantity: boxesNeeded,
-                presentation: stripProduct.presentation,
-                batch: stripProduct.batch,
-                expiryDate: stripProduct.expiryDate ? new Date(stripProduct.expiryDate).toLocaleDateString('pt-BR') : 'N/A',
-            });
-        }
-    }
-
+    });
 
     setItems(initialItems);
   };
@@ -262,11 +246,13 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
   const handleSaveDispensation = async () => {
     if (!selectedPatient) return;
 
-    if (items.some(item => !item.productId || item.quantity <= 0)) {
+    const validItems = items.filter(item => item.productId && item.quantity > 0);
+
+    if (validItems.length === 0) {
         toast({
             variant: 'destructive',
-            title: 'Itens Inválidos',
-            description: 'Por favor, preencha todos os itens corretamente antes de salvar.'
+            title: 'Nenhum Item Válido',
+            description: 'Adicione pelo menos um produto e quantidade antes de salvar.'
         });
         return;
     }
@@ -274,7 +260,7 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
     setIsSaving(true);
     const patientForDispensation = { ...selectedPatient };
 
-    const dispensationItems = items.map(({ internalId, ...rest }) => ({...rest}));
+    const dispensationItems = validItems.map(({ internalId, ...rest }) => ({...rest}));
 
     try {
         const newDispensation = await addDispensation({
@@ -327,9 +313,9 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
     
     return (
         <Input 
-            placeholder="Nome do item"
+            placeholder="Nenhum produto encontrado nesta categoria"
             value={item.name}
-            onChange={(e) => handleItemChange(item.internalId, 'name', e.target.value)}
+            disabled
         />
     )
   }
@@ -375,8 +361,8 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
                                             <Input
                                                 type="number"
                                                 value={item.quantity}
-                                                onChange={(e) => handleItemChange(item.internalId, 'quantity', parseInt(e.target.value))}
-                                                min="1"
+                                                onChange={(e) => handleItemChange(item.internalId, 'quantity', parseInt(e.target.value, 10) || 0)}
+                                                min="0"
                                                 className="w-full"
                                             />
                                         </TableCell>
@@ -467,14 +453,14 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
                     <div><span className="font-semibold">Nome:</span> {selectedPatient.name}</div>
                     <div><span className="font-semibold">CPF:</span> {selectedPatient.cpf}</div>
                     <div><span className="font-semibold">CNS:</span> {selectedPatient.cns}</div>
-                    <div><span className="font-semibold">Mandado:</span> {selectedPatient.mandateType}</div>
-                    {selectedPatient.isAnalogInsulinUser && (
+                    <div><span className="font-semibold">Demandas:</span> {selectedPatient.demandItems?.join(', ') || 'Nenhuma'}</div>
+                    {selectedPatient.demandItems?.includes('Insulinas Análogas') && (
                         <>
                            <div><span className="font-semibold">Tipo de Insulina:</span> {selectedPatient.analogInsulinType} ({selectedPatient.insulinPresentation})</div>
                             <div className="col-span-1 sm:col-span-2"><span className="font-semibold">Posologia Insulina:</span> {selectedPatient.insulinDosages?.map(d => `${d.quantity} UI ${d.period}`).join(', ') || 'N/A'}</div>
                         </>
                     )}
-                     {selectedPatient.usesStrips && (
+                     {selectedPatient.demandItems?.includes('Tiras de Glicemia') && (
                         <>
                            <div className="col-span-1 sm:col-span-2"><span className="font-semibold">Posologia Tiras:</span> {selectedPatient.stripDosages?.map(d => `${d.quantity}x ${d.period}`).join(', ') || 'N/A'}</div>
                         </>
@@ -484,7 +470,7 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
 
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Adicionar itens para dispensar:</h3>
-                  <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-8 gap-2">
                     {categories.map(({ name, icon: Icon }) => (
                       <Button
                         key={name}
@@ -504,7 +490,7 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
                     renderDispensationTables()
                 ) : (
                     <div className="text-center text-muted-foreground py-10">
-                        Nenhum item adicionado à dispensação.
+                        Nenhum item adicionado à dispensação. Use os botões acima.
                     </div>
                 )}
               </div>
@@ -515,7 +501,7 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
         {step === 'dispenseForm' && (
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isSaving}>Cancelar</Button>
-            <Button onClick={handleSaveDispensation} disabled={items.length === 0 || isSaving}>
+            <Button onClick={handleSaveDispensation} disabled={items.filter(i => i.productId).length === 0 || isSaving}>
               {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               {isSaving ? 'Salvando...' : 'Salvar e Gerar Recibo'}
             </Button>

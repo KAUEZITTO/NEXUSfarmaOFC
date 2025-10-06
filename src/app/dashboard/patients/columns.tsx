@@ -1,3 +1,4 @@
+
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
@@ -55,9 +56,15 @@ export const getColumns = (onPatientSaved: () => void, onUpdateStatus: (patientI
     header: "CPF",
   },
   {
-    accessorKey: "mandateType",
-    header: "Tipo de Mandado",
-    cell: ({ row }) => <div className="capitalize">{row.getValue("mandateType")}</div>,
+    accessorKey: "demandItems",
+    header: "Demandas",
+    cell: ({ row }) => {
+        const demands = row.getValue("demandItems") as string[] | undefined;
+        if (!demands || demands.length === 0) return 'N/A';
+        return <div className="flex flex-wrap gap-1">
+            {demands.map(d => <Badge key={d} variant="secondary" className="font-normal">{d}</Badge>)}
+        </div>
+    },
   },
   {
     accessorKey: "status",

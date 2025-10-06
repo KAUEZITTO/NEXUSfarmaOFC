@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -25,14 +26,16 @@ import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { PlusCircle, Save, Trash2, Loader2 } from 'lucide-react';
+import { Save, Trash2, Loader2 } from 'lucide-react';
 import { addPatient, updatePatient } from '@/lib/actions';
 import { getUnits } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import type { Patient, Dosage, Unit } from '@/lib/types';
+import type { Patient, Dosage, Unit, PatientDemandItem } from '@/lib/types';
 import { Separator } from '../ui/separator';
 
 const dosagePeriods: Dosage['period'][] = ['Manhã', 'Tarde', 'Noite', 'Ao deitar', 'Após Café', 'Jejum'];
+
+const allDemandItems: PatientDemandItem[] = ['Fraldas', 'Insulinas Análogas', 'Tiras de Glicemia', 'Itens Judiciais', 'Imunoglobulina'];
 
 const DosageInput = ({ dosages, setDosages, unitLabel }: { dosages: Dosage[], setDosages: (dosages: Dosage[]) => void, unitLabel: string }) => {
     
@@ -62,7 +65,7 @@ const DosageInput = ({ dosages, setDosages, unitLabel }: { dosages: Dosage[], se
                         type="number"
                         min="1"
                         value={dosage.quantity}
-                        onChange={(e) => updateDosage(dosage.id, 'quantity', parseInt(e.target.value))}
+                        onChange={(e) => updateDosage(dosage.id, 'quantity', parseInt(e.target.value, 10) || 1)}
                         className="w-24"
                     />
                     <Label>{unitLabel}</Label>
@@ -72,7 +75,7 @@ const DosageInput = ({ dosages, setDosages, unitLabel }: { dosages: Dosage[], se
                 </div>
             ))}
             <Button type="button" variant="outline" size="sm" onClick={addDosage}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Período
+                Adicionar Período
             </Button>
         </div>
     )
@@ -98,16 +101,11 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [unitId, setUnitId] = useState('');
+  const [isBedridden, setIsBedridden] = useState(false);
   
-  const [isAnalogInsulinUser, setIsAnalogInsulinUser] = useState(false);
-  const [usesStrips, setUsesStrips] = useState(false);
+  const [demandItems, setDemandItems] = useState<PatientDemandItem[]>([]);
   const [insulinDosages, setInsulinDosages] = useState<Dosage[]>([]);
   const [stripDosages, setStripDosages] = useState<Dosage[]>([]);
-  const [isBedridden, setIsBedridden] = useState(false);
-
-  const [demandType, setDemandType] = useState<'judicial' | 'municipal' | 'none'>('none');
-  const [judicialItems, setJudicialItems] = useState<string[]>([]);
-  const [municipalItems, setMunicipalItems] = useState<string[]>([]);
   const [hasInsulinReport, setHasInsulinReport] = useState(false);
   const [insulinType, setInsulinType] = useState<'Lantus (Glargina)' | 'Apidra (Glulisina)'>('Lantus (Glargina)');
   const [insulinPresentation, setInsulinPresentation] = useState<'Caneta' | 'Frasco'>('Caneta');
@@ -133,16 +131,25 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
     setAddress('');
     setPhone('');
     setUnitId('');
-    setIsAnalogInsulinUser(false);
-    setUsesStrips(false);
+    setIsBedridden(false);
+    setDemandItems([]);
     setInsulinDosages([]);
     setStripDosages([]);
-    setIsBedridden(false);
-    setDemandType('none');
-    setJudicialItems([]);
-    setMunicipalItems([]);
     setHasInsulinReport(false);
   }
+  
+  const handleDemandItemChange = (item: PatientDemandItem, checked: boolean) => {
+    setDemandItems(prev => {
+        const newItems = checked ? [...prev, item] : prev.filter(i => i !== item);
+        // Clear related data if item is unchecked
+        if (!checked) {
+            if (item === 'Insulinas Análogas') setInsulinDosages([]);
+            if (item === 'Tiras de Glicemia') setStripDosages([]);
+        }
+        return newItems;
+    });
+  };
+
 
   useEffect(() => {
     if (patientToEdit && isOpen) {
@@ -153,17 +160,13 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
         setAddress(patientToEdit.address || '');
         setPhone(patientToEdit.phone || '');
         setUnitId(patientToEdit.unitId || '');
-        setIsAnalogInsulinUser(patientToEdit.isAnalogInsulinUser || false);
+        setIsBedridden(patientToEdit.isBedridden || false);
+        setDemandItems(patientToEdit.demandItems || []);
         setHasInsulinReport(patientToEdit.hasInsulinReport || false);
         setInsulinType(patientToEdit.analogInsulinType || 'Lantus (Glargina)');
         setInsulinPresentation(patientToEdit.insulinPresentation || 'Caneta');
         setInsulinDosages(patientToEdit.insulinDosages || []);
-        setUsesStrips(patientToEdit.usesStrips || false);
         setStripDosages(patientToEdit.stripDosages || []);
-        setIsBedridden(patientToEdit.isBedridden || false);
-        setDemandType(patientToEdit.mandateType === 'Legal' ? 'judicial' : patientToEdit.mandateType === 'Municipal' ? 'municipal' : 'none');
-        setJudicialItems(patientToEdit.judicialItems || []);
-        setMunicipalItems(patientToEdit.municipalItems || []);
     } else if (!isEditing && isOpen) {
         resetForm();
     }
@@ -193,17 +196,13 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
             phone,
             unitId,
             unitName: units.find(u => u.id === unitId)?.name,
-            isAnalogInsulinUser,
-            analogInsulinType: isAnalogInsulinUser ? insulinType : undefined,
-            hasInsulinReport: isAnalogInsulinUser ? hasInsulinReport : undefined,
-            insulinDosages: isAnalogInsulinUser ? insulinDosages : [],
-            insulinPresentation: isAnalogInsulinUser ? insulinPresentation : undefined,
-            usesStrips,
-            stripDosages: usesStrips ? stripDosages : [],
             isBedridden,
-            mandateType: demandType === 'judicial' ? 'Legal' : demandType === 'municipal' ? 'Municipal' : 'N/A',
-            judicialItems: demandType === 'judicial' ? judicialItems : [],
-            municipalItems: demandType === 'municipal' ? municipalItems : [],
+            demandItems,
+            analogInsulinType: demandItems.includes('Insulinas Análogas') ? insulinType : undefined,
+            hasInsulinReport: demandItems.includes('Insulinas Análogas') ? hasInsulinReport : undefined,
+            insulinDosages: demandItems.includes('Insulinas Análogas') ? insulinDosages : [],
+            insulinPresentation: demandItems.includes('Insulinas Análogas') ? insulinPresentation : undefined,
+            stripDosages: demandItems.includes('Tiras de Glicemia') ? stripDosages : [],
         }
 
         if (isEditing && patientToEdit) {
@@ -235,6 +234,9 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
         setIsSaving(false);
     }
   };
+  
+  const isInsulinUser = demandItems.includes('Insulinas Análogas');
+  const usesStrips = demandItems.includes('Tiras de Glicemia');
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -294,15 +296,26 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
                     <Label htmlFor="is-bedridden">Paciente Acamado?</Label>
                   </div>
               </div>
-
+              
               <div className="space-y-4 pt-4 border-t">
-                 <div className="flex items-center space-x-2">
-                    <Switch id="analog-insulin-user" checked={isAnalogInsulinUser} onCheckedChange={setIsAnalogInsulinUser} />
-                    <Label htmlFor="analog-insulin-user">Usuário de Insulina Análoga?</Label>
-                </div>
+                 <Label>Itens de Demanda Contínua</Label>
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-md border p-4">
+                    {allDemandItems.map(item => (
+                        <div key={item} className="flex items-center space-x-2">
+                            <Checkbox 
+                                id={`demand-${item}`} 
+                                checked={demandItems.includes(item)}
+                                onCheckedChange={(checked) => handleDemandItemChange(item, !!checked)}
+                            />
+                            <Label htmlFor={`demand-${item}`}>{item}</Label>
+                        </div>
+                    ))}
+                 </div>
+              </div>
 
-                {isAnalogInsulinUser && (
-                    <div className="ml-6 p-4 border-l space-y-4">
+                {isInsulinUser && (
+                    <div className="ml-0 p-4 border rounded-md space-y-4 bg-muted/20">
+                        <h4 className="font-semibold text-md">Detalhes da Insulina Análoga</h4>
                         <div className="flex items-center space-x-2">
                             <Switch id="has-insulin-report" checked={hasInsulinReport} onCheckedChange={setHasInsulinReport} />
                             <Label htmlFor="has-insulin-report">Apresentou Laudo?</Label>
@@ -342,70 +355,16 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
                         </div>
                     </div>
                 )}
-              </div>
+              
 
-               <div className="space-y-4 pt-4 border-t">
-                 <div className="flex items-center space-x-2">
-                    <Switch id="uses-strips" checked={usesStrips} onCheckedChange={setUsesStrips} />
-                    <Label htmlFor="uses-strips">Faz uso de Tiras de Glicemia?</Label>
-                </div>
                 {usesStrips && (
-                    <div className="ml-6 p-4 border-l space-y-4">
+                    <div className="ml-0 p-4 border rounded-md space-y-4 bg-muted/20">
+                        <h4 className="font-semibold text-md">Detalhes das Tiras de Glicemia</h4>
                         <Label>Orientações de Medição</Label>
                         <DosageInput dosages={stripDosages} setDosages={setStripDosages} unitLabel="vez(es)" />
                     </div>
                 )}
-               </div>
-              
-              <div className="space-y-4 pt-4 border-t">
-                <Label>Tipo de Demanda (Mandado)</Label>
-                 <RadioGroup value={demandType} onValueChange={(v) => setDemandType(v as any)} className="flex gap-4">
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="none" id="demand-none" />
-                        <Label htmlFor="demand-none">Nenhuma</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="judicial" id="demand-judicial" />
-                        <Label htmlFor="demand-judicial">Demanda Judicial</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="municipal" id="demand-municipal" />
-                        <Label htmlFor="demand-municipal">Demanda Municipal</Label>
-                    </div>
-                </RadioGroup>
-
-                {demandType === 'judicial' && (
-                    <div className="ml-6 p-4 border-l space-y-2">
-                        <Label>Especificar Itens Judiciais:</Label>
-                        <div className="flex items-center space-x-2">
-                            <Checkbox id="judicial-meds" checked={judicialItems.includes('Medicamentos')} onCheckedChange={(checked) => setJudicialItems(p => checked ? [...p, 'Medicamentos'] : p.filter(i => i !== 'Medicamentos'))} />
-                            <Label htmlFor="judicial-meds">Medicamentos</Label>
-                        </div>
-                         <div className="flex items-center space-x-2">
-                            <Checkbox id="judicial-tech" checked={judicialItems.includes('Material Técnico')} onCheckedChange={(checked) => setJudicialItems(p => checked ? [...p, 'Material Técnico'] : p.filter(i => i !== 'Material Técnico'))}/>
-                            <Label htmlFor="judicial-tech">Material Técnico</Label>
-                        </div>
-                    </div>
-                )}
-
-                 {demandType === 'municipal' && (
-                    <div className="ml-6 p-4 border-l space-y-2">
-                        <Label>Especificar Itens Municipais:</Label>
-                         <div className="flex items-center space-x-2">
-                            <Checkbox id="municipal-diapers" checked={municipalItems.includes('Fraldas')} onCheckedChange={(checked) => setMunicipalItems(p => checked ? [...p, 'Fraldas'] : p.filter(i => i !== 'Fraldas'))} />
-                            <Label htmlFor="municipal-diapers">Fraldas</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Checkbox id="municipal-meds" checked={municipalItems.includes('Medicamentos')} onCheckedChange={(checked) => setMunicipalItems(p => checked ? [...p, 'Medicamentos'] : p.filter(i => i !== 'Medicamentos'))} />
-                            <Label htmlFor="municipal-meds">Medicamentos</Label>
-                        </div>
-                         <div className="flex items-center space-x-2">
-                            <Checkbox id="municipal-tech" checked={municipalItems.includes('Material Técnico')} onCheckedChange={(checked) => setMunicipalItems(p => checked ? [...p, 'Material Técnico'] : p.filter(i => i !== 'Material Técnico'))} />
-                            <Label htmlFor="municipal-tech">Material Técnico</Label>
-                        </div>
-                    </div>
-                )}
-              </div>
+               
               <Separator />
             </div>
           </ScrollArea>
