@@ -9,12 +9,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, FileText, Loader2, BarChart2, Package, Users, AlertTriangle, Sparkles } from "lucide-react";
+import { Download, FileText, Loader2, BarChart2, Package, Users, AlertTriangle, Sparkles, Calendar, Filter } from "lucide-react";
 import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF, generatePatientReportPDF, generateUnitDispensationReportPDF, generateBatchReportPDF, generateEntriesAndExitsReportPDF } from "@/lib/pdf-generator";
 import { useState } from "react";
 import type { Product, Patient, Dispensation, Unit, Order, StockMovement } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DateRange } from "react-day-picker";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { addDays, format } from "date-fns";
 
 type GeneratingState = {
     complete: boolean;
@@ -64,6 +71,47 @@ export function ReportsClient({
     batch: false,
   });
 
+  const [filterType, setFilterType] = useState('month');
+  const [date, setDate] = useState<DateRange | undefined>({ from: new Date(), to: addDays(new Date(), 0) });
+  const [month, setMonth] = useState((new Date().getMonth() + 1).toString());
+  const [year, setYear] = useState(new Date().getFullYear().toString());
+
+  const getFilteredData = () => {
+    let startDate: Date;
+    let endDate: Date;
+
+    if (filterType === 'year') {
+        startDate = new Date(parseInt(year), 0, 1);
+        endDate = new Date(parseInt(year), 11, 31, 23, 59, 59);
+    } else if (filterType === 'range' && date?.from && date?.to) {
+        startDate = date.from;
+        endDate = date.to;
+        endDate.setHours(23, 59, 59, 999);
+    } else { // month
+        const y = parseInt(year);
+        const m = parseInt(month) - 1;
+        startDate = new Date(y, m, 1);
+        endDate = new Date(y, m + 1, 0, 23, 59, 59);
+    }
+
+    const filteredMovements = stockMovements.filter(m => {
+        const mDate = new Date(m.date);
+        return mDate >= startDate && mDate <= endDate;
+    });
+
+    const filteredDispensations = dispensations.filter(d => {
+        const dDate = new Date(d.date);
+        return dDate >= startDate && dDate <= endDate;
+    });
+
+    const filteredOrders = orders.filter(o => {
+        const oDate = new Date(o.sentDate);
+        return oDate >= startDate && oDate <= endDate;
+    });
+
+    return { filteredMovements, filteredDispensations, filteredOrders };
+  }
+
   const openPdfInNewTab = (pdfDataUri: string) => {
     const byteCharacters = atob(pdfDataUri.split(',')[1]);
     const byteNumbers = new Array(byteCharacters.length);
@@ -88,14 +136,17 @@ export function ReportsClient({
         setIsGenerating(prev => ({ ...prev, [type]: false }));
     }
   };
+  
+  const { filteredMovements, filteredDispensations, filteredOrders } = getFilteredData();
+
 
   const handleExportComplete = () => generatePdf('complete', () => generateCompleteReportPDF(products, patients, dispensations));
   const handleExportStock = () => generatePdf('stock', () => generateStockReportPDF(products));
   const handleExportExpiry = () => generatePdf('expiry', () => generateExpiryReportPDF(products));
-  const handleExportPatient = () => generatePdf('patient', () => generatePatientReportPDF(dispensations));
-  const handleExportUnitDispensation = () => generatePdf('unitDispensation', () => generateUnitDispensationReportPDF(orders, units));
+  const handleExportPatient = () => generatePdf('patient', () => generatePatientReportPDF(filteredDispensations));
+  const handleExportUnitDispensation = () => generatePdf('unitDispensation', () => generateUnitDispensationReportPDF(filteredOrders, units));
   const handleExportBatch = () => generatePdf('batch', () => generateBatchReportPDF(products));
-  const handleExportEntriesAndExits = () => generatePdf('entriesAndExits', () => generateEntriesAndExitsReportPDF(stockMovements));
+  const handleExportEntriesAndExits = () => generatePdf('entriesAndExits', () => generateEntriesAndExitsReportPDF(filteredMovements));
   
   const reportHandlers: Record<string, () => void> = {
     "Dispensação por Unidade": handleExportUnitDispensation,
@@ -119,17 +170,62 @@ export function ReportsClient({
      <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-wrap gap-4 justify-between items-center">
                     <div>
                     <h1 className="text-2xl font-bold tracking-tight">Relatórios Gerenciais</h1>
                     <p className="text-muted-foreground">
                         Gere e visualize relatórios de dispensação, estoque e mais.
                     </p>
                     </div>
-                    <Button onClick={handleExportComplete} disabled={isGenerating.complete}>
-                        {isGenerating.complete ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                        {isGenerating.complete ? 'Gerando...' : 'Relatório Completo'}
-                    </Button>
+                     <div className="flex gap-2">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline">
+                                    <Filter className="mr-2 h-4 w-4" />
+                                    Filtrar por Data
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80">
+                                <div className="grid gap-4">
+                                    <div className="space-y-2">
+                                        <h4 className="font-medium leading-none">Filtro de Data</h4>
+                                        <p className="text-sm text-muted-foreground">
+                                            Selecione o período para os relatórios.
+                                        </p>
+                                    </div>
+                                    <Select value={filterType} onValueChange={setFilterType}>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="month">Mês/Ano</SelectItem>
+                                            <SelectItem value="year">Ano Completo</SelectItem>
+                                            <SelectItem value="range">Intervalo</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    {filterType === 'month' && (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <Input type="number" placeholder="Mês" value={month} onChange={e => setMonth(e.target.value)} min="1" max="12" />
+                                            <Input type="number" placeholder="Ano" value={year} onChange={e => setYear(e.target.value)} />
+                                        </div>
+                                    )}
+                                    {filterType === 'year' && (
+                                        <Input type="number" placeholder="Ano" value={year} onChange={e => setYear(e.target.value)} />
+                                    )}
+                                    {filterType === 'range' && (
+                                        <CalendarPicker
+                                            mode="range"
+                                            selected={date}
+                                            onSelect={setDate}
+                                            numberOfMonths={1}
+                                        />
+                                    )}
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                        <Button onClick={handleExportComplete} disabled={isGenerating.complete}>
+                            {isGenerating.complete ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                            {isGenerating.complete ? 'Gerando...' : 'Relatório Completo'}
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-3">
@@ -171,7 +267,7 @@ export function ReportsClient({
                     <CardHeader>
                     <CardTitle>Gerar Relatórios Específicos</CardTitle>
                     <CardDescription>
-                        Selecione um tipo de relatório para gerar um documento PDF.
+                        Selecione um tipo de relatório para gerar um documento PDF. Relatórios de movimentação serão baseados no filtro de data selecionado.
                     </CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
@@ -231,3 +327,5 @@ export function ReportsClient({
     </div>
   )
 }
+
+    

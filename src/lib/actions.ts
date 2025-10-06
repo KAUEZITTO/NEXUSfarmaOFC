@@ -11,6 +11,12 @@ import * as jose from 'jose';
 
 // --- UTILITIES ---
 const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
+const generateNumericId = (): string => {
+    const timestamp = Date.now().toString(); // e.g., "1678886400000"
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return (timestamp.slice(-3) + random).padStart(6, '0').slice(0, 6);
+};
+
 
 const logStockMovement = async (
   productId: string, 
@@ -19,6 +25,7 @@ const logStockMovement = async (
   reason: StockMovement['reason'], 
   quantityChange: number, 
   quantityBefore: number,
+  movementDate: string,
   relatedId?: string
 ) => {
   const movements = await readData<StockMovement>('stockMovements');
@@ -33,7 +40,7 @@ const logStockMovement = async (
     quantityChange,
     quantityBefore,
     quantityAfter: quantityBefore + quantityChange,
-    date: new Date().toISOString(),
+    date: movementDate,
     user: userEmail,
     relatedId
   };
@@ -50,7 +57,7 @@ export async function addProduct(productData: Omit<Product, 'id' | 'status'>): P
         status: productData.quantity === 0 ? 'Sem Estoque' : productData.quantity < 20 ? 'Baixo Estoque' : 'Em Estoque',
     };
     await writeData('products', [newProduct, ...products]);
-    await logStockMovement(newProduct.id, newProduct.name, 'Entrada', 'Entrada Inicial', newProduct.quantity, 0);
+    await logStockMovement(newProduct.id, newProduct.name, 'Entrada', 'Entrada Inicial', newProduct.quantity, 0, new Date().toISOString());
     revalidatePath('/dashboard/inventory');
     return newProduct;
 }
@@ -70,7 +77,7 @@ export async function updateProduct(productId: string, productData: Partial<Omit
     if (productData.quantity !== undefined && productData.quantity !== originalProduct.quantity) {
         const quantityChange = productData.quantity - originalProduct.quantity;
         const type = quantityChange > 0 ? 'Entrada' : 'Saída';
-        await logStockMovement(productId, updatedProduct.name, type, 'Ajuste de Inventário', quantityChange, originalProduct.quantity);
+        await logStockMovement(productId, updatedProduct.name, type, 'Ajuste de Inventário', quantityChange, originalProduct.quantity, new Date().toISOString());
     }
 
     products[productIndex] = updatedProduct;
@@ -136,14 +143,20 @@ revalidatePath('/dashboard/patients');
 
 
 // --- ORDER ACTIONS ---
-export async function addOrder(orderData: { unitId: string; unitName: string; orderType: OrderType, items: OrderItem[]; notes?: string; }) {
+export async function addOrder(orderData: { unitId: string; unitName: string; orderType: OrderType, items: OrderItem[]; notes?: string; sentDate?: string; }) {
     const orders = await readData<Order>('orders');
     const products = await getProducts();
 
+    const sentDate = orderData.sentDate ? new Date(orderData.sentDate).toISOString() : new Date().toISOString();
+
     const newOrder: Order = {
-        ...orderData,
-        id: generateId('ord'),
-        sentDate: new Date().toISOString(),
+        id: generateNumericId(),
+        unitId: orderData.unitId,
+        unitName: orderData.unitName,
+        items: orderData.items,
+        orderType: orderData.orderType,
+        notes: orderData.notes,
+        sentDate: sentDate,
         status: 'Em Trânsito',
         itemCount: orderData.items.reduce((sum, item) => sum + item.quantity, 0),
     };
@@ -155,12 +168,12 @@ export async function addOrder(orderData: { unitId: string; unitName: string; or
             const originalQuantity = products[productIndex].quantity;
             products[productIndex].quantity -= item.quantity;
             products[productIndex].status = products[productIndex].quantity === 0 ? 'Sem Estoque' : products[productIndex].quantity < 20 ? 'Baixo Estoque' : 'Em Estoque';
-            await logStockMovement(item.productId, item.name, 'Saída', 'Saída por Remessa', -item.quantity, originalQuantity, newOrder.id);
+            await logStockMovement(item.productId, item.name, 'Saída', 'Saída por Remessa', -item.quantity, originalQuantity, sentDate, newOrder.id);
         }
     }
 
     await writeData('products', products);
-    await writeData('orders', [newOrder, ...orders]);
+    await writeData('orders', [newOrder, ...orders].sort((a, b) => new Date(b.sentDate).getTime() - new Date(a.sentDate).getTime()));
 
     revalidatePath('/dashboard/orders');
     revalidatePath('/dashboard/inventory');
@@ -171,11 +184,14 @@ export async function addOrder(orderData: { unitId: string; unitName: string; or
 export async function addDispensation(dispensationData: { patientId: string; patient: Omit<Patient, 'files'>; items: DispensationItem[] }): Promise<Dispensation> {
     const dispensations = await readData<Dispensation>('dispensations');
     const products = await getProducts();
+    const dispensationDate = new Date().toISOString();
     
     const newDispensation: Dispensation = {
-      ...dispensationData,
-      id: generateId('disp'),
-      date: new Date().toISOString(),
+      id: generateNumericId(),
+      patientId: dispensationData.patientId,
+      patient: dispensationData.patient,
+      items: dispensationData.items,
+      date: dispensationDate,
     };
 
     // Update stock for each item
@@ -185,7 +201,7 @@ export async function addDispensation(dispensationData: { patientId: string; pat
             const originalQuantity = products[productIndex].quantity;
             products[productIndex].quantity -= item.quantity;
             products[productIndex].status = products[productIndex].quantity === 0 ? 'Sem Estoque' : products[productIndex].quantity < 20 ? 'Baixo Estoque' : 'Em Estoque';
-            await logStockMovement(item.productId, item.name, 'Saída', 'Saída por Dispensação', -item.quantity, originalQuantity, newDispensation.id);
+            await logStockMovement(item.productId, item.name, 'Saída', 'Saída por Dispensação', -item.quantity, originalQuantity, dispensationDate, newDispensation.id);
         }
     }
 
@@ -239,7 +255,7 @@ export async function deleteUser(userId: string) {
         throw new Error('Usuário não encontrado para exclusão.');
     }
     await writeData('users', updatedUsers);
-    revalidatePath('/dashboard/user-management');
+revalidatePath('/dashboard/user-management');
 }
 
 
@@ -305,3 +321,5 @@ export async function register({ email, password, role, subRole }: { email: stri
         return { success: false, message: 'Ocorreu um erro desconhecido ao criar a conta.' };
     }
 }
+
+    

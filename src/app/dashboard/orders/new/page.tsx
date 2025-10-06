@@ -27,7 +27,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { X, Save, Trash2, Loader2, Barcode, Warehouse, PackagePlus, ListPlus, CalendarClock } from 'lucide-react';
+import { X, Save, Trash2, Loader2, Barcode, Warehouse, PackagePlus, ListPlus, CalendarClock, History } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { addOrder } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
@@ -65,6 +65,7 @@ export default function NewOrderPageContent({ units, allProducts }: NewOrderPage
   const [items, setItems] = useState<RemessaItem[]>([]);
   const [scannerInput, setScannerInput] = useState('');
   const [quantityMultiplier, setQuantityMultiplier] = useState(1);
+  const [sentDate, setSentDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
     // Focus the scanner input when the page loads or the destination is set
@@ -206,6 +207,7 @@ export default function NewOrderPageContent({ units, allProducts }: NewOrderPage
             items: orderItems,
             orderType: orderType,
             notes,
+            sentDate: sentDate,
         });
 
         toast({
@@ -258,7 +260,7 @@ export default function NewOrderPageContent({ units, allProducts }: NewOrderPage
         </div>
         
         <div className="grid gap-6">
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Warehouse className="h-5 w-5" /> Passo 1: Destino</CardTitle>
@@ -278,20 +280,34 @@ export default function NewOrderPageContent({ units, allProducts }: NewOrderPage
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><CalendarClock className="h-5 w-5" /> Passo 2: Tipo de Pedido</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><CalendarClock className="h-5 w-5" /> Passo 2: Tipo e Data</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                         <Label htmlFor="order-type" className="mb-2 block">Classifique o Pedido</Label>
-                         <Select onValueChange={(v) => setOrderType(v as OrderType)} value={orderType}>
-                            <SelectTrigger id="order-type" aria-label="Selecione o tipo de pedido">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Pedido Mensal">Pedido Mensal</SelectItem>
-                                <SelectItem value="Pedido Extra">Pedido Extra</SelectItem>
-                                <SelectItem value="Pedido Urgente">Pedido Urgente</SelectItem>
-                            </SelectContent>
-                        </Select>
+                    <CardContent className="space-y-4">
+                         <div>
+                            <Label htmlFor="order-type" className="mb-2 block">Classifique o Pedido</Label>
+                            <Select onValueChange={(v) => setOrderType(v as OrderType)} value={orderType}>
+                                <SelectTrigger id="order-type" aria-label="Selecione o tipo de pedido">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Pedido Mensal">Pedido Mensal</SelectItem>
+                                    <SelectItem value="Pedido Extra">Pedido Extra</SelectItem>
+                                    <SelectItem value="Pedido Urgente">Pedido Urgente</SelectItem>
+                                </SelectContent>
+                            </Select>
+                         </div>
+                         <div>
+                             <Label htmlFor="sentDate" className="mb-2 block flex items-center gap-2">
+                                <History className="h-4 w-4" /> 
+                                Data de Envio (para registros antigos)
+                            </Label>
+                            <Input
+                                id="sentDate"
+                                type="date"
+                                value={sentDate}
+                                onChange={(e) => setSentDate(e.target.value)}
+                            />
+                         </div>
                     </CardContent>
                 </Card>
 
@@ -418,3 +434,5 @@ export default function NewOrderPageContent({ units, allProducts }: NewOrderPage
     </div>
   );
 }
+
+    
