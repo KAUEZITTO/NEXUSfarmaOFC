@@ -34,7 +34,7 @@ export function OrdersClient({ units, orders }: OrdersClientProps) {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
         <Input
           placeholder="Filtrar por nome da unidade..."
           value={searchTerm}

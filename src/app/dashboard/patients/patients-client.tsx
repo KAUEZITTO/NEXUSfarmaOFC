@@ -79,7 +79,7 @@ export function PatientsClient({ initialPatients, initialFilter }: PatientsClien
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-start">
+        <div className="flex justify-between items-start flex-wrap gap-4">
           <div>
             <CardTitle>Registro de Pacientes</CardTitle>
             <CardDescription>

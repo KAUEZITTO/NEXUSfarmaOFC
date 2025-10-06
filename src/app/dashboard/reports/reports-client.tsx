@@ -81,8 +81,9 @@ export function ReportsClient({
     let endDate: Date;
 
     if (filterType === 'year') {
-        startDate = new Date(parseInt(year), 0, 1);
-        endDate = new Date(parseInt(year), 11, 31, 23, 59, 59);
+        const y = parseInt(year);
+        startDate = new Date(y, 0, 1);
+        endDate = new Date(y, 11, 31, 23, 59, 59);
     } else if (filterType === 'range' && date?.from && date?.to) {
         startDate = date.from;
         endDate = date.to;
@@ -177,7 +178,7 @@ export function ReportsClient({
                         Gere e visualize relatórios de dispensação, estoque e mais.
                     </p>
                     </div>
-                     <div className="flex gap-2">
+                     <div className="flex gap-2 flex-wrap">
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button variant="outline">
@@ -327,5 +328,3 @@ export function ReportsClient({
     </div>
   )
 }
-
-    
