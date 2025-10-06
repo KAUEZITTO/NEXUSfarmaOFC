@@ -12,19 +12,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
-  const [currentDate, setCurrentDate] = useState('');
-  const [currentTime, setCurrentTime] = useState('');
+  const [currentDate, setCurrentDate] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState<string | null>(null);
   const [stats, setStats] = useState({ lowStock: 0, expiringSoon: 0, onlineUsers: 0 });
   const [dispensations, setDispensations] = useState<Dispensation[]>([]);
   const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
-    // Atualiza data e hora a cada segundo
-    const intervalId = setInterval(() => {
+    // Efeito para data e hora, garantindo execução apenas no cliente
+    const updateDateTime = () => {
       const now = new Date();
       setCurrentDate(now.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
       setCurrentTime(now.toLocaleTimeString('pt-BR'));
-    }, 1000);
+    };
+
+    updateDateTime(); // Executa imediatamente no cliente
+    const intervalId = setInterval(updateDateTime, 1000);
 
     return () => clearInterval(intervalId);
   }, []);
@@ -117,11 +120,11 @@ export default function DashboardPage() {
         <div className="flex items-center gap-6 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <CalendarDays className="h-4 w-4" />
-            <span>{currentDate}</span>
+            <span>{currentDate || <Skeleton className="h-4 w-48" />}</span>
           </div>
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
-            <span>{currentTime}</span>
+            <span>{currentTime || <Skeleton className="h-4 w-20" />}</span>
           </div>
         </div>
       </div>
