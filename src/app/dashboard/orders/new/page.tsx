@@ -30,11 +30,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { X, Save, Trash2, Loader2, Barcode, Warehouse, PackagePlus, ListPlus } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { addOrder } from '@/lib/actions';
-import { getUnits, getProducts } from '@/lib/data';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { Unit, Product } from '@/lib/types';
-import { Skeleton } from '@/components/ui/skeleton';
 import { AddItemsManuallyDialog } from '@/components/dashboard/add-items-manually-dialog';
 
 type RemessaItem = {
@@ -48,17 +46,19 @@ type RemessaItem = {
   category: string;
 };
 
+interface NewOrderPageContentProps {
+  units: Unit[];
+  allProducts: Product[];
+}
 
-export default function NewOrderPage() {
+
+export default function NewOrderPageContent({ units, allProducts }: NewOrderPageContentProps) {
   const router = useRouter();
   const { toast } = useToast();
   const scannerInputRef = useRef<HTMLInputElement>(null);
   
   const [destinationUnitId, setDestinationUnitId] = useState('');
   const [notes, setNotes] = useState('');
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   
   const [items, setItems] = useState<RemessaItem[]>([]);
@@ -66,25 +66,11 @@ export default function NewOrderPage() {
   const [quantityMultiplier, setQuantityMultiplier] = useState(1);
 
   useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      const [fetchedUnits, fetchedProducts] = await Promise.all([
-        getUnits(),
-        getProducts()
-      ]);
-      setUnits(fetchedUnits);
-      setAllProducts(fetchedProducts);
-      setLoading(false);
-    }
-    loadData();
-  }, []);
-
-  useEffect(() => {
     // Focus the scanner input when the page loads or the destination is set
-    if (!loading && destinationUnitId) {
+    if (destinationUnitId) {
         scannerInputRef.current?.focus();
     }
-  }, [loading, destinationUnitId]);
+  }, [destinationUnitId]);
 
   const addProductToRemessa = (product: Product, quantity: number) => {
     if (product.quantity < quantity) {
@@ -101,7 +87,7 @@ export default function NewOrderPage() {
     if (existingItemIndex > -1) {
         // Update quantity if item already in list
         const newItems = [...items];
-        const newQuantity = newItems[existingItemIndex].quantity + quantity;
+        const newQuantity = newItems[existingItem-index].quantity + quantity;
 
          if (product.quantity < newQuantity) {
             toast({
@@ -249,25 +235,6 @@ export default function NewOrderPage() {
 
   const categoryOrder: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Não Padronizado (Compra)'];
 
-  if (loading) {
-    return (
-        <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-            <div className="mx-auto grid w-full max-w-5xl flex-1 auto-rows-max gap-4">
-                 <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
-                    Criar Nova Remessa
-                 </h1>
-                 <Card>
-                    <CardHeader><CardTitle>Detalhes da Remessa</CardTitle></CardHeader>
-                    <CardContent><Skeleton className="h-10 w-full" /></CardContent>
-                 </Card>
-                 <Card>
-                    <CardHeader><CardTitle>Itens da Remessa</CardTitle></CardHeader>
-                    <CardContent><Skeleton className="h-24 w-full" /></CardContent>
-                 </Card>
-            </div>
-        </div>
-    )
-  }
 
   return (
     <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
