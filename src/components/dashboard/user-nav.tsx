@@ -23,6 +23,8 @@ import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
+import { User as UserIcon } from 'lucide-react';
+
 
 export function UserNav() {
   const { startTour } = useTour();
@@ -44,6 +46,8 @@ export function UserNav() {
   const user = session?.user;
   if (!user) return null;
 
+  const fallbackInitial = user.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? '?';
+
   return (
     <div data-tour-id="step-user-nav">
       <DropdownMenu>
@@ -51,7 +55,9 @@ export function UserNav() {
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
               <AvatarImage src={user.image || ''} alt={user.name || user.email || 'Avatar'} />
-              <AvatarFallback>{user?.name?.[0].toUpperCase() || user?.email?.[0].toUpperCase()}</AvatarFallback>
+              <AvatarFallback>
+                {fallbackInitial}
+              </AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
