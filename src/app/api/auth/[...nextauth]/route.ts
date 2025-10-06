@@ -8,21 +8,22 @@ import { firebaseApp } from '@/lib/firebase/client';
 import { kv } from "@/lib/kv";
 import { UpstashRedisAdapter } from "@next-auth/upstash-redis-adapter";
 
-// Função auxiliar para buscar um usuário no nosso banco de dados (Vercel KV)
 async function getUserFromDb(email: string | null | undefined): Promise<User | null> {
-    if (!email) return null;
-    const users = await readData<User>('users');
-    return users.find(u => u.email === email) || null;
+  if (!email) return null;
+  const users = await readData<User>('users');
+  return users.find(u => u.email === email) || null;
 }
 
 export const authOptions: NextAuthOptions = {
-  // Use Vercel KV (via Upstash Redis adapter) para armazenar os dados da sessão.
-  // Isso mantém o cookie pequeno, contendo apenas um ID de sessão.
+  // Use o UpstashRedisAdapter, que é compatível com a API do Vercel KV.
   adapter: UpstashRedisAdapter(kv),
+
+  // A estratégia 'database' armazena a sessão no Vercel KV e mantém o cookie do cliente pequeno.
   session: {
-    // Use a estratégia "database" para armazenar as sessões no Vercel KV.
     strategy: 'database',
+    maxAge: 60 * 60 * 24 * 7, // 7 dias
   },
+
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -34,75 +35,79 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
-        
+
         const auth = getAuth(firebaseApp);
 
         try {
-            // 1. Autenticar com o Firebase Auth
-            const userCredential = await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
-            const firebaseUser = userCredential.user;
+          // 1. Autentica o usuário no Firebase
+          const userCredential = await signInWithEmailAndPassword(
+            auth,
+            credentials.email,
+            credentials.password
+          );
+          const firebaseUser = userCredential.user;
 
-            if (firebaseUser) {
-                // 2. Buscar dados adicionais do usuário do nosso banco de dados Vercel KV
-                const appUser = await getUserFromDb(firebaseUser.email);
-                
-                if (appUser) {
-                     // 3. Retornar o objeto de usuário completo. O adaptador NextAuth cuidará da criação da sessão.
-                     return {
-                        id: appUser.id,
-                        email: appUser.email,
-                        name: appUser.name,
-                        image: appUser.image,
-                        birthdate: appUser.birthdate,
-                        role: appUser.role,
-                        subRole: appUser.subRole,
-                        accessLevel: appUser.accessLevel,
-                    };
-                }
-            }
-            // Se o usuário não for encontrado no Firebase ou no nosso DB, retorna nulo
+          if (!firebaseUser) {
             return null;
+          }
 
+          // 2. Busca os dados do usuário do nosso banco de dados (Vercel KV)
+          const appUser = await getUserFromDb(firebaseUser.email);
+          if (!appUser) {
+            return null; // O usuário existe no Firebase, mas não no nosso sistema.
+          }
+          
+          // 3. Retorna o objeto do usuário que o NextAuth usará para criar a sessão no banco de dados.
+          // Este objeto completo será salvo na tabela 'users' do Vercel KV pelo adapter.
+          return {
+            id: appUser.id,
+            email: appUser.email,
+            name: appUser.name,
+            image: appUser.image,
+            role: appUser.role,
+            subRole: appUser.subRole,
+            accessLevel: appUser.accessLevel,
+            birthdate: appUser.birthdate
+          };
         } catch (error) {
-            console.error("Firebase authentication error:", error);
-            // Isso irá capturar erros como senha incorreta, usuário não encontrado, etc.
-            return null;
+          console.error("Firebase authentication error:", error);
+          return null;
+        }
+      },
+    }),
+  ],
+
+  callbacks: {
+    // Este callback é chamado sempre que uma sessão é verificada.
+    // O objeto `user` já vem do banco de dados (Vercel KV) graças ao adapter.
+    async session({ session, user }) {
+      if (session.user) {
+        // 4. Anexa os dados do usuário do banco de dados ao objeto de sessão.
+        // Isso NÃO aumenta o cookie. Os dados são buscados no servidor e retornados ao cliente
+        // na chamada de useSession() ou getServerSession().
+        session.user.id = user.id;
+        session.user.role = user.role;
+        session.user.subRole = user.subRole;
+        session.user.accessLevel = user.accessLevel;
+        session.user.image = user.image;
+        session.user.birthdate = user.birthdate;
+        
+        // Operação secundária: Atualiza o "lastSeen" no KV sem afetar a sessão.
+        const users = await readData<User>('users');
+        const userIndex = users.findIndex(u => u.id === user.id);
+        if (userIndex !== -1) {
+          users[userIndex].lastSeen = new Date().toISOString();
+          // Esta operação é "fire-and-forget", não precisa bloquear o retorno.
+          writeData('users', users).catch(console.error);
         }
       }
-    })
-  ],
-  callbacks: {
-    // Com a estratégia 'database', o objeto `user` neste callback é o que foi retornado
-    // pelo `authorize` e armazenado no banco de dados pela primeira vez.
-    // Em requisições subsequentes, é o usuário lido do banco de dados.
-    async session({ session, user }) {
-        if (user && session.user) {
-            // O objeto `user` já contém os dados do nosso banco de dados.
-            // Apenas precisamos passá-los para o objeto `session.user`.
-            session.user.id = user.id;
-            session.user.name = user.name;
-            session.user.image = user.image;
-            session.user.birthdate = user.birthdate;
-            session.user.role = user.role;
-            session.user.subRole = user.subRole;
-            session.user.accessLevel = user.accessLevel;
-            
-            // A lógica de `lastSeen` pode permanecer, pois é uma operação de escrita no DB
-            // e não afeta o tamanho do cookie da sessão.
-            const users = await readData<User>('users');
-            const userIndex = users.findIndex(u => u.id === user.id);
-            if (userIndex !== -1) {
-                users[userIndex].lastSeen = new Date().toISOString();
-                await writeData('users', users);
-                session.user.lastSeen = users[userIndex].lastSeen;
-            }
-        }
-        return session;
+      return session; // Retorna a sessão enriquecida.
     },
   },
+
   pages: {
     signIn: '/login',
-    error: '/login',
+    error: '/login', // Em caso de erro, redireciona para o login.
   },
 };
 
