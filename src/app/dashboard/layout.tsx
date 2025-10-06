@@ -9,9 +9,10 @@ import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger
 import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guide';
 import BirthdayBalloons from '@/components/dashboard/birthday-balloons';
 
-const CURRENT_VERSION = '2.4.3';
+const CURRENT_VERSION = '2.4.4';
 
 const changelog = [
+    { version: '2.4.4', changes: ['Restauração segura dos dados do perfil do usuário (avatar, nome, etc.) na sessão, mantendo o cookie pequeno e eliminando o erro de cabeçalho.'] },
     { version: '2.4.3', changes: ['Simplificado o callback de sessão para resolver definitivamente o erro `REQUEST_HEADER_TOO_LARGE` sem introduzir novos bugs. O sistema agora está estável.'] },
     { version: '2.4.2', changes: ['Removido callback `jwt` desnecessário que causava o erro `REQUEST_HEADER_TOO_LARGE` mesmo com a estratégia de sessão `database`.'] },
     { version: '2.4.1', changes: ['Implementada correção definitiva do erro "REQUEST_HEADER_TOO_LARGE" utilizando a estratégia de sessão no banco de dados, o que minimiza o tamanho do cookie de autenticação e garante a estabilidade do sistema.'] },
