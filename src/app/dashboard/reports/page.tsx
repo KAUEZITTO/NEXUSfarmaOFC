@@ -48,7 +48,7 @@ export default async function ReportsPage() {
     monthlyChangePercentage = 100;
   }
   
-  const judicialPatients = patients.filter(p => p.mandateType === 'Legal' || p.mandateType === 'Municipal').length;
+  const judicialPatients = patients.filter(p => p.demandItems?.includes('Itens Judiciais')).length;
 
 
   return (

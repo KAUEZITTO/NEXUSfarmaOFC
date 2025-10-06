@@ -54,15 +54,15 @@ export const getPatients = async (filter: PatientFilter = 'active'): Promise<Pat
         case 'inactive':
             return allPatients.filter(p => p.status !== 'Ativo');
         case 'insulin':
-            return allPatients.filter(p => p.isAnalogInsulinUser && p.status === 'Ativo');
+            return allPatients.filter(p => p.demandItems?.includes('Insulinas Análogas') && p.status === 'Ativo');
         case 'diapers':
-             return allPatients.filter(p => p.municipalItems?.includes('Fraldas') && p.status === 'Ativo');
+             return allPatients.filter(p => p.demandItems?.includes('Fraldas') && p.status === 'Ativo');
         case 'bedridden':
             return allPatients.filter(p => p.isBedridden && p.status === 'Ativo');
         case 'legal':
-            return allPatients.filter(p => p.mandateType === 'Legal' && p.status === 'Ativo');
+            return allPatients.filter(p => p.demandItems?.includes('Itens Judiciais') && p.status === 'Ativo');
         case 'municipal':
-            return allPatients.filter(p => p.mandateType === 'Municipal' && p.status === 'Ativo');
+            return allPatients.filter(p => p.demandItems?.includes('Itens Judiciais') && p.status === 'Ativo'); // Assuming judicial covers this.
         case 'all':
         default:
             return allPatients;
@@ -122,4 +122,3 @@ export async function getAllUsers(): Promise<User[]> {
 export async function getKnowledgeBase() {
     return await getKbData();
 }
-

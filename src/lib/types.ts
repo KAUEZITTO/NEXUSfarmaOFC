@@ -31,7 +31,7 @@ declare module 'next-auth/jwt' {
         id: string;
         name?: string | null;
         birthdate?: string | null;
-        image?: string | null;
+        image?: string | null; // Image is not always in the JWT, but can be
         role?: Role;
         subRole?: SubRole;
         accessLevel?: AccessLevel;
@@ -125,6 +125,7 @@ export type Patient = {
     unitId?: string;
     status: PatientStatus;
     isBedridden?: boolean;
+    mandateType?: string; // Added from patient report
 };
 
 export type PatientFilter = 'active' | 'inactive' | 'insulin' | 'diapers' | 'bedridden' | 'legal' | 'municipal' | 'all';

@@ -32,7 +32,7 @@ const addHeader = (doc: jsPDFWithAutoTable, title: string) => {
 };
 
 const addFooter = (doc: jsPDFWithAutoTable) => {
-    const pageCount = (doc as any).internal.getNumberOfPages();
+    const pageCount = (doc.internal as any).getNumberOfPages();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     doc.setFontSize(8);
@@ -99,7 +99,7 @@ export const generateCompleteReportPDF = async (
     theme: 'grid',
     headStyles: { fillColor: [37, 99, 235] },
     didDrawPage: (data) => {
-      if (data.pageNumber === 1) addHeader(doc, 'Relatório de Inventário');
+       addHeader(doc, 'Relatório de Inventário');
     }
   });
 
@@ -114,17 +114,17 @@ export const generateCompleteReportPDF = async (
         p.cpf,
         p.cns,
         p.unitName || 'N/A',
-        p.mandateType
+        p.demandItems?.join(', ') || 'N/A'
   ]);
   
   doc.autoTable({
     startY: 50,
-    head: [['Nome', 'CPF', 'CNS', 'Unidade', 'Mandado']],
+    head: [['Nome', 'CPF', 'CNS', 'Unidade', 'Demandas']],
     body: patientsBody,
     theme: 'grid',
     headStyles: { fillColor: [37, 99, 235] },
     didDrawPage: (data) => {
-       if (data.pageNumber === 1) addHeader(doc, 'Relatório de Pacientes Ativos');
+       addHeader(doc, 'Relatório de Pacientes Ativos');
     }
   });
 
@@ -155,7 +155,9 @@ export const generateStockReportPDF = async (products: Product[]): Promise<strin
         theme: 'grid',
         headStyles: { fillColor: [37, 99, 235] },
         didDrawPage: (data) => {
-            if (data.pageNumber > 1) addHeader(doc, 'Relatório de Estoque Atual');
+            if (data.pageNumber > 1) {
+                addHeader(doc, 'Relatório de Estoque Atual');
+            }
         }
     });
 
@@ -186,7 +188,9 @@ export const generateExpiryReportPDF = async (products: Product[]): Promise<stri
         theme: 'grid',
         headStyles: { fillColor: [217, 119, 6] }, // Orange color for warning
         didDrawPage: (data) => {
-            if (data.pageNumber > 1) addHeader(doc, 'Relatório de Produtos a Vencer');
+            if (data.pageNumber > 1) {
+                addHeader(doc, 'Relatório de Produtos a Vencer');
+            }
         }
     });
 
@@ -216,7 +220,9 @@ export const generatePatientReportPDF = async (dispensations: Dispensation[]): P
         theme: 'grid',
         headStyles: { fillColor: [107, 33, 168] }, // Purple color for patients
         didDrawPage: (data) => {
-            if (data.pageNumber > 1) addHeader(doc, 'Relatório de Atendimento de Pacientes');
+            if (data.pageNumber > 1) {
+                addHeader(doc, 'Relatório de Atendimento de Pacientes');
+            }
         }
     });
 
@@ -256,7 +262,9 @@ export const generateUnitDispensationReportPDF = async (orders: Order[], units: 
         theme: 'grid',
         headStyles: { fillColor: [13, 148, 136] }, // Teal color for units
         didDrawPage: (data) => {
-            if (data.pageNumber > 1) addHeader(doc, 'Relatório de Dispensação por Unidade');
+            if (data.pageNumber > 1) {
+                addHeader(doc, 'Relatório de Dispensação por Unidade');
+            }
         }
     });
     
@@ -282,7 +290,9 @@ export const generateBatchReportPDF = async (products: Product[]): Promise<strin
         theme: 'grid',
         headStyles: { fillColor: [19, 78, 74] }, // Dark Teal
         didDrawPage: (data) => {
-            if (data.pageNumber > 1) addHeader(doc, 'Relatório de Lotes');
+            if (data.pageNumber > 1) {
+                addHeader(doc, 'Relatório de Lotes');
+            }
         }
     });
 
@@ -312,7 +322,9 @@ export const generateEntriesAndExitsReportPDF = async (movements: StockMovement[
         theme: 'grid',
         headStyles: { fillColor: [107, 114, 128] }, // Gray
         didDrawPage: (data) => {
-            if (data.pageNumber > 1) addHeader(doc, 'Relatório de Entradas e Saídas');
+            if (data.pageNumber > 1) {
+                addHeader(doc, 'Relatório de Entradas e Saídas');
+            }
         }
     });
 
