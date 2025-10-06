@@ -73,31 +73,29 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
-    // O callback da sessão ainda é útil para adicionar dados personalizados ao objeto de sessão
-    // que está disponível no cliente.
+    // Com a estratégia 'database', o objeto `user` neste callback é o que foi retornado
+    // pelo `authorize` e armazenado no banco de dados pela primeira vez.
+    // Em requisições subsequentes, é o usuário lido do banco de dados.
     async session({ session, user }) {
         if (user && session.user) {
-            // Com a estratégia de banco de dados, o objeto `user` é o usuário completo do DB.
-            const appUser = await getUserFromDb(user.email);
+            // O objeto `user` já contém os dados do nosso banco de dados.
+            // Apenas precisamos passá-los para o objeto `session.user`.
+            session.user.id = user.id;
+            session.user.name = user.name;
+            session.user.image = user.image;
+            session.user.birthdate = user.birthdate;
+            session.user.role = user.role;
+            session.user.subRole = user.subRole;
+            session.user.accessLevel = user.accessLevel;
             
-            if (appUser) {
-                // Preenche o objeto 'session.user' com todos os campos necessários.
-                session.user.id = appUser.id;
-                session.user.name = appUser.name;
-                session.user.image = appUser.image;
-                session.user.birthdate = appUser.birthdate;
-                session.user.role = appUser.role;
-                session.user.subRole = appUser.subRole;
-                session.user.accessLevel = appUser.accessLevel;
-                
-                // Atualiza 'lastSeen' no KV store sem colocá-lo no objeto de sessão.
-                const users = await readData<User>('users');
-                const userIndex = users.findIndex(u => u.id === appUser.id);
-                if (userIndex !== -1) {
-                    users[userIndex].lastSeen = new Date().toISOString();
-                    await writeData('users', users);
-                    session.user.lastSeen = users[userIndex].lastSeen;
-                }
+            // A lógica de `lastSeen` pode permanecer, pois é uma operação de escrita no DB
+            // e não afeta o tamanho do cookie da sessão.
+            const users = await readData<User>('users');
+            const userIndex = users.findIndex(u => u.id === user.id);
+            if (userIndex !== -1) {
+                users[userIndex].lastSeen = new Date().toISOString();
+                await writeData('users', users);
+                session.user.lastSeen = users[userIndex].lastSeen;
             }
         }
         return session;
