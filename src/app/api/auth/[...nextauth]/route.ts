@@ -68,22 +68,22 @@ export const authOptions: NextAuthOptions = {
           if (!firebaseUser) return null;
 
           const appUser = await getUserFromDb(firebaseUser.email);
-          if (!appUser) return null;
           
-          // CORREÇÃO: Retornar o objeto de usuário completo do seu banco de dados.
-          // O NextAuth usará isso para criar a sessão no KV e passar para o callback 'session'.
-          return {
-            id: appUser.id,
-            email: appUser.email,
-            name: appUser.name,
-            image: appUser.image,
-            role: appUser.role,
-            subRole: appUser.subRole,
-            accessLevel: appUser.accessLevel,
-            birthdate: appUser.birthdate,
-          };
+          if (!appUser) {
+            // O usuário existe no Firebase Auth, mas não no nosso banco de dados.
+            // Poderíamos criar um registro aqui, mas por segurança, é melhor negar o acesso.
+            console.error(`User ${firebaseUser.email} authenticated with Firebase but not found in app DB.`);
+            return null;
+          }
+          
+          // CORREÇÃO: Retornar o objeto de usuário completo do nosso banco de dados.
+          // O NextAuth (com o adaptador) usará isso para criar/atualizar o registro no KV.
+          return appUser;
+
         } catch (error) {
           console.error("Firebase authentication error:", error);
+          // Retorna null para qualquer erro de autenticação (senha errada, usuário não encontrado no Firebase)
+          // A UI tratará isso como "credenciais inválidas".
           return null;
         }
       },
@@ -103,6 +103,8 @@ export const authOptions: NextAuthOptions = {
         session.user.accessLevel = user.accessLevel;
         session.user.image = user.image;
         session.user.birthdate = user.birthdate;
+        session.user.name = user.name;
+        session.user.email = user.email;
         
         // Operação secundária: Atualiza o "lastSeen" no KV sem afetar a sessão.
         // É uma operação "fire-and-forget" que não precisa bloquear o retorno.
@@ -120,7 +122,7 @@ export const authOptions: NextAuthOptions = {
 
   pages: {
     signIn: '/login',
-    error: '/login',
+    error: '/login', // Redireciona para a página de login em caso de erros
   },
 };
 
