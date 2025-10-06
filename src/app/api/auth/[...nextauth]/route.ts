@@ -64,26 +64,40 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user, trigger, session }) {
-        // On initial sign-in, just add the user's ID to the token.
-        // The user object here comes from the `authorize` function.
-        if (user) {
-            token.id = user.id;
-        }
+      // No login inicial, o 'user' vem da função 'authorize'.
+      if (user) {
+        token.id = user.id;
+        // O email já é adicionado por padrão.
+      }
 
-        // If the session is updated (e.g., profile change), we don't need to do anything
-        // to the JWT itself, as the session callback will re-fetch the data.
-        if (trigger === "update" && session) {
-            // No need to add bulky data to the token.
-        }
-
-        return token;
+      // Se a sessão for atualizada (ex: mudança de perfil), o 'session' é passado.
+      // O NextAuth tenta mesclar a sessão no token, o que pode incluir a imagem grande.
+      // Aqui, garantimos que o token permaneça limpo.
+      if (trigger === "update" && session) {
+        // NÃO mesclar a sessão completa. Apenas atualize o que for necessário,
+        // mas como já buscamos os dados no callback 'session', não precisamos fazer nada aqui.
+      }
+      
+      // Limpeza final: garante que apenas os dados essenciais permaneçam no token.
+      const minimalToken: JWT = {
+        id: token.id,
+        email: token.email,
+        sub: token.sub,
+        iat: token.iat,
+        exp: token.exp,
+        jti: token.jti
+      };
+      
+      return minimalToken;
     },
 
     async session({ session, token }: { session: any, token: JWT }) {
         if (token && session.user) {
+            // Com o token limpo (apenas com ID/email), buscamos os dados completos do DB.
             const appUser = await getUserFromDb(token.email);
             
             if (appUser) {
+                // Populamos o objeto 'session.user' que será usado no cliente.
                 session.user.id = appUser.id;
                 session.user.name = appUser.name;
                 session.user.image = appUser.image;
@@ -92,12 +106,13 @@ export const authOptions: NextAuthOptions = {
                 session.user.subRole = appUser.subRole;
                 session.user.accessLevel = appUser.accessLevel;
                 
-                // Update lastSeen in KV store without putting it in the session cookie
+                // Atualiza 'lastSeen' no KV store sem colocar no cookie da sessão.
                 const users = await readData<User>('users');
                 const userIndex = users.findIndex(u => u.id === appUser.id);
                 if (userIndex !== -1) {
                     users[userIndex].lastSeen = new Date().toISOString();
                     await writeData('users', users);
+                    // Opcional: adicionar ao objeto de sessão se precisar no cliente
                     session.user.lastSeen = users[userIndex].lastSeen;
                 }
             }
