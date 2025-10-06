@@ -8,7 +8,7 @@ import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase/client';
 import type { JWT } from 'next-auth/jwt';
 import { kv } from "@/lib/kv";
-import { VercelKVAdapter } from "@auth/vercel-kv-adapter";
+import { UpstashRedisAdapter } from "@next-auth/upstash-redis-adapter";
 
 // Função auxiliar para buscar um usuário no nosso banco de dados (Vercel KV)
 async function getUserFromDb(email: string | null | undefined): Promise<User | null> {
@@ -18,9 +18,9 @@ async function getUserFromDb(email: string | null | undefined): Promise<User | n
 }
 
 export const authOptions: NextAuthOptions = {
-  // Use Vercel KV to store session data.
+  // Use Vercel KV (via Upstash Redis adapter) to store session data.
   // This keeps the cookie small, containing only a session ID.
-  adapter: VercelKVAdapter(kv),
+  adapter: UpstashRedisAdapter(kv),
   session: {
     // Use "database" strategy to store sessions in Vercel KV.
     strategy: 'database',
