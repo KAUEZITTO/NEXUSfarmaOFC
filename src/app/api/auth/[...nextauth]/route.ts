@@ -3,7 +3,6 @@ import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { readData, writeData } from '@/lib/data';
 import { User } from '@/lib/types';
-import * as jose from 'jose';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase/client';
 import { kv } from "@/lib/kv";
