@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
 import { columns } from './columns';
-import type { Product } from '@/lib/types';
+import type { Product, PatientDemandItem } from '@/lib/types';
 import type { GroupedProduct } from './page';
 import { BatchDetailsDialog } from './batch-details-dialog';
 
@@ -97,8 +97,8 @@ export function InventoryClient({ rawProducts }: InventoryClientProps) {
 
   return (
     <>
-        <div className="flex justify-between items-start mb-4">
-            <div className="flex items-center space-x-2 pt-4 overflow-x-auto pb-2">
+        <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+            <div className="flex items-center space-x-2 pt-2 overflow-x-auto pb-2">
                 {filterCategories.map(filter => (
                     <Button 
                         key={filter}
