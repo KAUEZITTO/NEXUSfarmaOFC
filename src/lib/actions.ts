@@ -64,7 +64,7 @@ export async function updateProduct(productId: string, productData: Partial<Omit
     const updatedProduct = { 
         ...originalProduct, 
         ...productData, 
-        status: productData.quantity === 0 ? 'Sem Estoque' : productData.quantity < 20 ? 'Baixo Estoque' : 'Em Estoque' 
+        status: productData.quantity === 0 ? 'Sem Estoque' : (productData.quantity ?? originalProduct.quantity) < 20 ? 'Baixo Estoque' : 'Em Estoque' 
     } as Product;
     
     if (productData.quantity !== undefined && productData.quantity !== originalProduct.quantity) {

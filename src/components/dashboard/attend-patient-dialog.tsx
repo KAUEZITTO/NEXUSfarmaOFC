@@ -463,7 +463,7 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
                   <CardHeader>
                     <CardTitle>Dados do Paciente</CardTitle>
                   </CardHeader>
-                  <CardContent className="grid grid-cols-2 gap-4 text-sm">
+                  <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                     <div><span className="font-semibold">Nome:</span> {selectedPatient.name}</div>
                     <div><span className="font-semibold">CPF:</span> {selectedPatient.cpf}</div>
                     <div><span className="font-semibold">CNS:</span> {selectedPatient.cns}</div>
@@ -471,12 +471,12 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
                     {selectedPatient.isAnalogInsulinUser && (
                         <>
                            <div><span className="font-semibold">Tipo de Insulina:</span> {selectedPatient.analogInsulinType} ({selectedPatient.insulinPresentation})</div>
-                            <div className="col-span-2"><span className="font-semibold">Posologia Insulina:</span> {selectedPatient.insulinDosages?.map(d => `${d.quantity} UI ${d.period}`).join(', ') || 'N/A'}</div>
+                            <div className="col-span-1 sm:col-span-2"><span className="font-semibold">Posologia Insulina:</span> {selectedPatient.insulinDosages?.map(d => `${d.quantity} UI ${d.period}`).join(', ') || 'N/A'}</div>
                         </>
                     )}
                      {selectedPatient.usesStrips && (
                         <>
-                           <div className="col-span-2"><span className="font-semibold">Posologia Tiras:</span> {selectedPatient.stripDosages?.map(d => `${d.quantity}x ${d.period}`).join(', ') || 'N/A'}</div>
+                           <div className="col-span-1 sm:col-span-2"><span className="font-semibold">Posologia Tiras:</span> {selectedPatient.stripDosages?.map(d => `${d.quantity}x ${d.period}`).join(', ') || 'N/A'}</div>
                         </>
                     )}
                   </CardContent>
@@ -484,15 +484,15 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
 
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Adicionar itens para dispensar:</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                  <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-2">
                     {categories.map(({ name, icon: Icon }) => (
                       <Button
                         key={name}
                         variant="outline"
                         onClick={() => handleAddItem(name)}
-                        className="flex flex-col h-24"
+                        className="flex flex-col h-20 sm:h-24 justify-center"
                       >
-                        <Icon className="h-8 w-8 mb-2" />
+                        <Icon className="h-6 w-6 sm:h-8 sm:w-8 mb-1" />
                         <span className="text-xs text-center">{name}</span>
                       </Button>
                     ))}

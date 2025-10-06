@@ -87,7 +87,7 @@ export default function NewOrderPageContent({ units, allProducts }: NewOrderPage
     if (existingItemIndex > -1) {
         // Update quantity if item already in list
         const newItems = [...items];
-        const newQuantity = newItems[existingItem-index].quantity + quantity;
+        const newQuantity = newItems[existingItemIndex].quantity + quantity;
 
          if (product.quantity < newQuantity) {
             toast({
@@ -237,7 +237,7 @@ export default function NewOrderPageContent({ units, allProducts }: NewOrderPage
 
 
   return (
-    <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+    <div className="grid flex-1 items-start gap-4 md:gap-8">
       <div className="mx-auto grid w-full max-w-6xl flex-1 auto-rows-max gap-6">
         <div className="flex items-center gap-4">
           <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
@@ -388,14 +388,17 @@ export default function NewOrderPageContent({ units, allProducts }: NewOrderPage
             </Card>
         </div>
         
-        <div className="flex items-center justify-center gap-2 md:hidden">
-          <Button variant="outline" size="sm" onClick={handleDiscard} disabled={isSaving}>
-            Descartar
-          </Button>
-          <Button size="sm" onClick={handleSave} disabled={isSaving || items.length === 0}>
-            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            {isSaving ? 'Salvando...' : 'Salvar Remessa'}
-          </Button>
+        {/* Mobile-only action buttons */}
+        <div className="md:hidden sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 border-t -mx-4">
+            <div className="flex items-center justify-end gap-2">
+                <Button variant="outline" onClick={handleDiscard} disabled={isSaving} className="flex-1">
+                    Descartar
+                </Button>
+                <Button onClick={handleSave} disabled={isSaving || items.length === 0} className="flex-1">
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    {isSaving ? 'Salvando...' : 'Salvar'}
+                </Button>
+            </div>
         </div>
       </div>
     </div>

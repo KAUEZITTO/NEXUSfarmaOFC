@@ -107,7 +107,7 @@ export function AccountForm() {
       const result = await updateUserProfile(user.id, { name, birthdate, image });
       
       // The `update` function from `useSession` triggers a session update on the client.
-      await updateSession(result.user);
+      await updateSession({ ...session, user: { ...session?.user, ...result.user } });
 
       toast({
         title: 'Perfil Atualizado!',
@@ -130,27 +130,27 @@ export function AccountForm() {
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="flex items-center gap-6">
+        <div className="flex flex-col sm:flex-row items-center gap-6">
           <Avatar className="h-20 w-20">
             <AvatarImage src={image} alt={name} />
             <AvatarFallback>
               <User className="h-10 w-10" />
             </AvatarFallback>
           </Avatar>
-          <div className="flex flex-col gap-2">
-             <div className="flex gap-2">
-                <Button type="button" onClick={() => document.getElementById('file-upload')?.click()} disabled={isUploading}>
+          <div className="flex flex-col gap-2 w-full sm:w-auto">
+             <div className="flex flex-col sm:flex-row gap-2">
+                <Button type="button" className="w-full" onClick={() => document.getElementById('file-upload')?.click()} disabled={isUploading}>
                     {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
                     {isUploading ? 'Enviando...' : 'Enviar Foto'}
                 </Button>
                 <Input id="file-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
-                <Button type="button" variant="outline" onClick={openCamera}>
+                <Button type="button" variant="outline" className="w-full" onClick={openCamera}>
                     <Camera className="mr-2 h-4 w-4" />
                     Tirar Foto
                 </Button>
              </div>
-             <p className="text-xs text-muted-foreground">PNG, JPG, GIF.</p>
+             <p className="text-xs text-muted-foreground text-center sm:text-left">PNG, JPG, GIF.</p>
           </div>
         </div>
 
