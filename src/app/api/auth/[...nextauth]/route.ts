@@ -2,7 +2,7 @@
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { readData, writeData } from '@/lib/data';
-import { User } from '@/lib/types';
+import type { User } from '@/lib/types';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase/client';
 import { kv } from "@/lib/kv";
@@ -15,14 +15,33 @@ async function getUserFromDb(email: string | null | undefined): Promise<User | n
 }
 
 export const authOptions: NextAuthOptions = {
-  // Use o UpstashRedisAdapter, que é compatível com a API do Vercel KV.
+  // 1. O adaptador garante que usuários e sessões sejam salvos no Vercel KV.
   adapter: UpstashRedisAdapter(kv),
 
-  // A estratégia 'database' armazena a sessão no Vercel KV e mantém o cookie do cliente pequeno.
+  // 2. A estratégia 'database' é a chave. Ela instrui o NextAuth a não usar JWTs
+  // para a sessão do cliente, armazenando apenas um ID de sessão no cookie.
   session: {
     strategy: 'database',
     maxAge: 60 * 60 * 24 * 7, // 7 dias
   },
+
+  // 3. Configuração explícita e segura para os cookies.
+  cookies: {
+    sessionToken: {
+      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        // O domínio deve ser configurado para produção para funcionar em subdomínios
+        // domain: process.env.NODE_ENV === 'production' ? '.nexusfarma.online' : 'localhost'
+      },
+    },
+  },
+
+  // 4. Secret é obrigatório para assinar os cookies de sessão.
+  secret: process.env.NEXTAUTH_SECRET,
 
   providers: [
     CredentialsProvider({
@@ -39,7 +58,6 @@ export const authOptions: NextAuthOptions = {
         const auth = getAuth(firebaseApp);
 
         try {
-          // 1. Autentica o usuário no Firebase
           const userCredential = await signInWithEmailAndPassword(
             auth,
             credentials.email,
@@ -47,18 +65,12 @@ export const authOptions: NextAuthOptions = {
           );
           const firebaseUser = userCredential.user;
 
-          if (!firebaseUser) {
-            return null;
-          }
+          if (!firebaseUser) return null;
 
-          // 2. Busca os dados do usuário do nosso banco de dados (Vercel KV)
           const appUser = await getUserFromDb(firebaseUser.email);
-          if (!appUser) {
-            return null; // O usuário existe no Firebase, mas não no nosso sistema.
-          }
+          if (!appUser) return null;
           
-          // 3. Retorna o objeto do usuário que o NextAuth usará para criar a sessão no banco de dados.
-          // Este objeto completo será salvo na tabela 'users' do Vercel KV pelo adapter.
+          // O objeto retornado aqui é o que o adaptador salvará na tabela 'users' do KV.
           return {
             id: appUser.id,
             email: appUser.email,
@@ -67,7 +79,7 @@ export const authOptions: NextAuthOptions = {
             role: appUser.role,
             subRole: appUser.subRole,
             accessLevel: appUser.accessLevel,
-            birthdate: appUser.birthdate
+            birthdate: appUser.birthdate,
           };
         } catch (error) {
           console.error("Firebase authentication error:", error);
@@ -78,13 +90,12 @@ export const authOptions: NextAuthOptions = {
   ],
 
   callbacks: {
-    // Este callback é chamado sempre que uma sessão é verificada.
-    // O objeto `user` já vem do banco de dados (Vercel KV) graças ao adapter.
+    // 5. O callback 'session' é chamado para CADA request que usa useSession() ou getServerSession().
+    // O objeto 'user' aqui já vem do Vercel KV, graças ao adaptador.
     async session({ session, user }) {
+      // O trabalho deste callback é apenas mapear os dados do usuário do banco (objeto `user`)
+      // para o objeto `session` que será exposto ao cliente. ISSO NÃO AUMENTA O COOKIE.
       if (session.user) {
-        // 4. Anexa os dados do usuário do banco de dados ao objeto de sessão.
-        // Isso NÃO aumenta o cookie. Os dados são buscados no servidor e retornados ao cliente
-        // na chamada de useSession() ou getServerSession().
         session.user.id = user.id;
         session.user.role = user.role;
         session.user.subRole = user.subRole;
@@ -93,21 +104,22 @@ export const authOptions: NextAuthOptions = {
         session.user.birthdate = user.birthdate;
         
         // Operação secundária: Atualiza o "lastSeen" no KV sem afetar a sessão.
+        // É uma operação "fire-and-forget" que não precisa bloquear o retorno.
         const users = await readData<User>('users');
         const userIndex = users.findIndex(u => u.id === user.id);
         if (userIndex !== -1) {
           users[userIndex].lastSeen = new Date().toISOString();
-          // Esta operação é "fire-and-forget", não precisa bloquear o retorno.
           writeData('users', users).catch(console.error);
         }
       }
-      return session; // Retorna a sessão enriquecida.
+      return session; // Retorna a sessão enriquecida, que o NextAuth disponibilizará ao cliente.
     },
+    // O callback 'jwt' NÃO é chamado quando a estratégia de sessão é 'database'.
   },
 
   pages: {
     signIn: '/login',
-    error: '/login', // Em caso de erro, redireciona para o login.
+    error: '/login',
   },
 };
 
