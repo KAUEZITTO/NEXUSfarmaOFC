@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 const changelog = [
+    { version: '2.4.5', changes: ['Correção final do fluxo de login para garantir consistência dos dados da sessão.', 'Adicionado Suspense para uma melhor experiência de carregamento na página de login.', 'Revisão geral de estabilidade e qualidade do código.'] },
     { version: '2.4.4', changes: ['Restauração segura dos dados do perfil do usuário (avatar, nome, etc.) na sessão, mantendo o cookie pequeno e eliminando o erro de cabeçalho.'] },
     { version: '2.4.3', changes: ['Simplificado o callback de sessão para resolver definitivamente o erro `REQUEST_HEADER_TOO_LARGE` sem introduzir novos bugs. O sistema agora está estável.'] },
     { version: '2.4.2', changes: ['Removido callback `jwt` desnecessário que causava o erro `REQUEST_HEADER_TOO_LARGE` mesmo com a estratégia de sessão `database`.'] },
@@ -75,7 +76,7 @@ export default function AboutPage() {
                     Versão do Sistema
                 </h3>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  NexusFarma v2.4.4
+                  NexusFarma v2.4.5
                 </p>
               </div>
           </CardContent>
