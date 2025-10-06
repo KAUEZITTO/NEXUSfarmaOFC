@@ -6,6 +6,7 @@ import { User } from '@/lib/types';
 import * as jose from 'jose';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase/client';
+import type { JWT } from 'next-auth/jwt';
 
 // Função auxiliar para buscar um usuário no nosso banco de dados (Vercel KV)
 async function getUserFromDb(email: string | null | undefined): Promise<User | null> {
@@ -66,31 +67,36 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        // Ao logar, buscamos os dados do nosso banco e os colocamos no token
-        const appUser = await getUserFromDb(user.email);
-        if (appUser) {
-            token.id = appUser.id;
-            token.name = appUser.name;
-            token.image = appUser.image;
-            token.birthdate = appUser.birthdate;
-            token.role = appUser.role;
-            token.accessLevel = appUser.accessLevel;
-            token.lastSeen = new Date().toISOString();
+    async jwt({ token, user, trigger, session }) {
+        // Handle session updates (e.g., from profile changes)
+        if (trigger === "update" && session) {
+            return { ...token, ...session };
         }
-      }
-      return token;
+
+        // On initial sign-in, populate the token with data from our DB
+        if (user) {
+            const appUser = await getUserFromDb(user.email);
+            if (appUser) {
+                token.id = appUser.id;
+                token.name = appUser.name;
+                token.image = appUser.image;
+                token.birthdate = appUser.birthdate;
+                token.role = appUser.role;
+                token.accessLevel = appUser.accessLevel;
+                token.lastSeen = new Date().toISOString();
+            }
+        }
+        return token;
     },
 
-    async session({ session, token }) {
+    async session({ session, token }: { session: any, token: JWT }) {
       if (token && session.user) {
-        session.user.id = token.id as string;
-        session.user.name = token.name as string;
-        session.user.image = token.image as string;
-        session.user.birthdate = token.birthdate as string;
-        session.user.role = token.role as any;
-        session.user.accessLevel = token.accessLevel as any;
+        session.user.id = token.id;
+        session.user.name = token.name;
+        session.user.image = token.image;
+        session.user.birthdate = token.birthdate;
+        session.user.role = token.role;
+        session.user.accessLevel = token.accessLevel;
         
         // Update lastSeen in KV store
         const users = await readData<User>('users');

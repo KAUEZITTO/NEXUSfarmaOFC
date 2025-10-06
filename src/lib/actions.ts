@@ -209,13 +209,15 @@ export async function updateUserProfile(userId: string, data: { name?: string; b
         throw new Error('Usuário não encontrado.');
     }
 
-    const updatedUser = { ...users[userIndex], ...data };
-    users[userIndex] = updatedUser;
-    
+    // Update the user data in our database (Vercel KV)
+    users[userIndex] = { ...users[userIndex], ...data };
     await writeData('users', users);
+
+    // Revalidate the path to ensure the UI updates on navigation
     revalidatePath('/dashboard/settings');
     
-    return { success: true, user: updatedUser };
+    // Return the updated user data so the client can update the session
+    return { success: true, user: users[userIndex] };
 }
 
 // --- USER MANAGEMENT ACTIONS ---
@@ -242,21 +244,21 @@ export async function deleteUser(userId: string) {
 
 
 // --- FILE UPLOAD ---
+// This is a placeholder. In a real app, you'd upload to a blob storage service.
 export async function uploadImage(formData: FormData): Promise<{ success: boolean; filePath?: string; error?: string; }> {
-    const file = formData.get('image') as File;
+    const file = formData.get('image') as File | null;
     if (!file) {
         return { success: false, error: 'Nenhum arquivo enviado.' };
     }
     
-    // Simulating upload and returning a placeholder image URL
-    // In a real app, this would upload to a service like Cloudinary, S3, or Firebase Storage
-    const randomId = Math.floor(Math.random() * 1000);
-    const filePath = `https://picsum.photos/seed/${randomId}/400/400`;
-    
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // For demonstration, convert the file to a Base64 data URL.
+    // This is NOT suitable for large files or production use.
+    const arrayBuffer = await file.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
+    const mimeType = file.type;
+    const dataUrl = `data:${mimeType};base64,${base64}`;
 
-    return { success: true, filePath };
+    return { success: true, filePath: dataUrl };
 }
 
 // --- KNOWLEDGE BASE ---
@@ -278,15 +280,11 @@ export async function register({ email, password, role, subRole }: { email: stri
 
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const firebaseUser = userCredential.user;
-
-        // Create a secure hash of the password using jose's JWK thumbprint function
-        const passwordHash = await jose.calculateJwkThumbprint({ kty: 'oct', k: Buffer.from(password).toString('base64url') });
         
         const isFirstUser = users.length === 0;
         const newUser: User = {
             id: firebaseUser.uid,
             email,
-            password: passwordHash, // Store the hash
             role,
             subRole: role === 'Farmacêutico' ? subRole : undefined,
             accessLevel: isFirstUser ? 'Admin' : 'User',

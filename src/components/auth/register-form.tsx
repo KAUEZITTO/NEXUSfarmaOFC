@@ -129,5 +129,3 @@ export function RegisterForm() {
     </form>
   )
 }
-
-    

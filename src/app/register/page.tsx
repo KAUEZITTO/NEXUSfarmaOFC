@@ -3,14 +3,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { RegisterForm } from '@/components/auth/register-form';
 import { Logo } from '@/components/logo';
-import { readData } from '@/lib/data';
-import type { User } from '@/lib/types';
-
 
 export default async function RegisterPage() {
-  const users = await readData<User>('users');
-  const isFirstUser = users.length === 0;
-
+  
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
        <div className="hidden bg-muted lg:block">
@@ -31,7 +26,7 @@ export default async function RegisterPage() {
             </Link>
             <h1 className="text-3xl font-bold mt-4">Criar Conta</h1>
             <p className="text-balance text-muted-foreground">
-              {isFirstUser ? "Crie a primeira conta de Administrador." : "Preencha o formulário para criar sua conta."}
+              Preencha o formulário para criar sua conta. A primeira conta criada será a do Administrador.
             </p>
           </div>
           <RegisterForm />

@@ -25,6 +25,19 @@ declare module 'next-auth' {
   }
 }
 
+declare module 'next-auth/jwt' {
+    interface JWT {
+        id: string;
+        name?: string | null;
+        birthdate?: string | null;
+        image?: string | null;
+        role?: Role;
+        subRole?: SubRole;
+        accessLevel?: AccessLevel;
+        lastSeen?: string;
+    }
+}
+
 
 export type Role =
   | 'Farmacêutico'
@@ -46,7 +59,6 @@ export type User = {
     name?: string;
     birthdate?: string;
     image?: string;
-    password?: string; // Armazena o HASH da senha, não a senha em texto plano. Opcional para usuários OAuth.
     role: Role;
     subRole?: SubRole;
     accessLevel: AccessLevel;

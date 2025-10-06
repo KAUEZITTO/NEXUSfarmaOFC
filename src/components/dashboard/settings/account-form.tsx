@@ -2,14 +2,14 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Camera, Loader2, Upload, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { updateUserProfile, uploadImage } from '@/lib/actions';
+import { updateUserProfile } from '@/lib/actions';
 import {
   Dialog,
   DialogContent,
@@ -18,15 +18,17 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { useRouter } from 'next/navigation';
 
 export function AccountForm() {
   const { data: session, update: updateSession } = useSession();
   const user = session?.user;
   const { toast } = useToast();
+  const router = useRouter();
 
-  const [name, setName] = useState(user?.name || '');
-  const [birthdate, setBirthdate] = useState(user?.birthdate ? user.birthdate.split('T')[0] : '');
-  const [image, setImage] = useState(user?.image || '');
+  const [name, setName] = useState('');
+  const [birthdate, setBirthdate] = useState('');
+  const [image, setImage] = useState('');
   
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -37,9 +39,11 @@ export function AccountForm() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    setName(user?.name || '');
-    setBirthdate(user?.birthdate ? user.birthdate.split('T')[0] : '');
-    setImage(user?.image || '');
+    if(user) {
+        setName(user.name || '');
+        setBirthdate(user.birthdate ? user.birthdate.split('T')[0] : '');
+        setImage(user.image || '');
+    }
   }, [user]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,22 +51,17 @@ export function AccountForm() {
     if (!file) return;
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append('image', file);
-
-    try {
-      const result = await uploadImage(formData);
-      if (result.success && result.filePath) {
-        setImage(result.filePath);
-        toast({ title: 'Upload Concluído', description: 'Imagem pronta para ser salva.' });
-      } else {
-        throw new Error(result.error || 'Falha no upload da imagem.');
-      }
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro de Upload', description: (error as Error).message });
-    } finally {
+    
+    // Simulate upload by creating a data URL.
+    // In a real app, this would call an upload action.
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const dataUrl = reader.result as string;
+      setImage(dataUrl);
       setIsUploading(false);
-    }
+      toast({ title: 'Imagem Carregada', description: 'A nova imagem está pronta para ser salva.' });
+    };
+    reader.readAsDataURL(file);
   };
 
   const openCamera = async () => {
@@ -95,15 +94,8 @@ export function AccountForm() {
       stream.getTracks().forEach(track => track.stop());
 
       setIsCameraOpen(false);
-      
-      // Convert data URL to blob to upload
-      fetch(dataUrl)
-        .then(res => res.blob())
-        .then(blob => {
-          const file = new File([blob], "webcam-photo.png", { type: "image/png" });
-          const event = { target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>;
-          handleFileChange(event);
-        });
+      setImage(dataUrl);
+      toast({ title: 'Foto Capturada', description: 'A nova imagem está pronta para ser salva.' });
     }
   };
 
@@ -112,12 +104,18 @@ export function AccountForm() {
     if (!user) return;
     setIsSaving(true);
     try {
-      await updateUserProfile(user.id, { name, birthdate, image });
-      await updateSession({ user: { ...user, name, birthdate, image }});
+      const result = await updateUserProfile(user.id, { name, birthdate, image });
+      
+      // The `update` function from `useSession` triggers a session update on the client.
+      await updateSession(result.user);
+
       toast({
         title: 'Perfil Atualizado!',
         description: 'Suas informações foram salvas com sucesso.',
       });
+      // Refresh the page to ensure all components have the latest user data
+      router.refresh();
+
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -152,7 +150,7 @@ export function AccountForm() {
                     Tirar Foto
                 </Button>
              </div>
-             <p className="text-xs text-muted-foreground">PNG, JPG, GIF até 10MB.</p>
+             <p className="text-xs text-muted-foreground">PNG, JPG, GIF.</p>
           </div>
         </div>
 
