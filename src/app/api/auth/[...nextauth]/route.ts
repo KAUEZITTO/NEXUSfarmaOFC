@@ -8,7 +8,7 @@ import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase/client';
 import type { JWT } from 'next-auth/jwt';
 import { kv } from "@/lib/kv";
-import { VercelKVAdapter } from "@next-auth/vercel-kv-adapter";
+import { VercelKVAdapter } from "@auth/vercel-kv-adapter";
 
 // Função auxiliar para buscar um usuário no nosso banco de dados (Vercel KV)
 async function getUserFromDb(email: string | null | undefined): Promise<User | null> {
