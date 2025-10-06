@@ -12,13 +12,13 @@ import BirthdayBalloons from '@/components/dashboard/birthday-balloons';
 const CURRENT_VERSION = '2.4.0';
 
 const changelog = [
-    { version: '2.4.0', changes: ['Correção definitiva do erro "REQUEST_HEADER_TOO_LARGE" que impedia o acesso ao sistema, otimizando o cookie de sessão.', 'Melhorias de responsividade para dispositivos móveis, eliminando barras de rolagem horizontais.'] },
+    { version: '2.4.0', changes: ['Implementada correção final e definitiva do erro "REQUEST_HEADER_TOO_LARGE" que impedia o acesso ao sistema, otimizando o cookie de sessão para ser o menor possível.', 'Melhorias de responsividade para dispositivos móveis, eliminando barras de rolagem horizontais.'] },
     { version: '2.3.0', changes: ['Melhorias significativas na responsividade para dispositivos móveis.', 'Aprimoramento da busca de conhecimento para preenchimento automático de produtos.', 'Correções de bugs gerais de estabilidade e gerenciamento de sessão.'] },
     { version: '2.2.0', changes: ['Refatorada a arquitetura de acesso a dados para resolver definitivamente o erro `OAuthSignin` e estabilizar o fluxo de login com Google e Credenciais.'] },
     { version: '2.1.1', changes: ['Corrigida a integração do provedor de credenciais para usar o Firebase Auth, unificando completamente o sistema de login.', 'Resolvido erro de "Suspense Boundary" na página de login.'] },
     { version: '2.1.0', changes: ['Implementado o fluxo completo de recuperação de senha via email, utilizando a funcionalidade nativa do Firebase Auth.'] },
     { version: '2.0.2', changes: ['Otimizado o fluxo de login para garantir o redirecionamento imediato e correto para o dashboard após a autenticação, eliminando a necessidade de recarregar a página.'] },
-    { version: '2.0.1', changes: ['Correção de erros críticos de importação nas Server Actions que impediam o funcionamento de cadastros.', 'Resolvido erro que impedia o registro de novos usuários.'] },
+    { version: '2.0.1', changes: ['Correção de erros críticos de importação nas Server Actions que impediam o funcionamento de cadastros.', 'Resolvido erro que impediam o registro de novos usuários.'] },
     { version: '2.0.0', changes: ['Lançamento da versão estável "Definitivo 2". Refatoração completa da arquitetura de acesso a dados e autenticação para garantir estabilidade e corrigir múltiplos erros de build.'] },
     { version: '1.3.0', changes: ['Refatoração completa do sistema de autenticação e acesso a dados para resolver definitivamente o erro de build `Failed to collect page data`, garantindo a estabilidade da aplicação.'] },
     { version: '1.2.1', changes: ['Corrigido o redirecionamento após o login.', 'Substituída a animação de carregamento por um indicador mais claro e com melhor contraste.'] },
