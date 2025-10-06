@@ -12,8 +12,8 @@ import BirthdayBalloons from '@/components/dashboard/birthday-balloons';
 const CURRENT_VERSION = '2.4.1';
 
 const changelog = [
-    { version: '2.4.1', changes: ['Implementada correção final e definitiva do erro "REQUEST_HEADER_TOO_LARGE" que impedia o acesso ao sistema, otimizando o cookie de sessão para ser o menor possível.'] },
-    { version: '2.4.0', changes: ['Melhorias de responsividade para dispositivos móveis, eliminando barras de rolagem horizontais.', 'Tentativa de correção do erro "REQUEST_HEADER_TOO_LARGE".'] },
+    { version: '2.4.1', changes: ['Implementada correção definitiva do erro "REQUEST_HEADER_TOO_LARGE" utilizando a estratégia de sessão no banco de dados, o que minimiza o tamanho do cookie de autenticação e garante a estabilidade do sistema.'] },
+    { version: '2.4.0', changes: ['Melhorias de responsividade para dispositivos móveis.', 'Tentativas iniciais de correção do erro "REQUEST_HEADER_TOO_LARGE".'] },
     { version: '2.3.0', changes: ['Melhorias significativas na responsividade para dispositivos móveis.', 'Aprimoramento da busca de conhecimento para preenchimento automático de produtos.', 'Correções de bugs gerais de estabilidade e gerenciamento de sessão.'] },
     { version: '2.2.0', changes: ['Refatorada a arquitetura de acesso a dados para resolver definitivamente o erro `OAuthSignin` e estabilizar o fluxo de login com Google e Credenciais.'] },
     { version: '2.1.1', changes: ['Corrigida a integração do provedor de credenciais para usar o Firebase Auth, unificando completamente o sistema de login.', 'Resolvido erro de "Suspense Boundary" na página de login.'] },
@@ -72,7 +72,7 @@ export default async function DashboardLayout({
               </div>
             </div>
             
-            <UpdateDialog currentVersion={CURRENT_VERSION} changelog={changelog} />
+            <UpdateDialog currentVersion={CURRENT_VERSION} changelog={[changelog[0]]} />
 
           </TourGuideWrapper>
         </SidebarProvider>

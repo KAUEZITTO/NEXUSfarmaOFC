@@ -8,6 +8,7 @@ declare module 'next-auth' {
     user?: DefaultUser & {
       id: string;
       name?: string | null;
+      email?: string | null; // Ensure email is part of the session user
       birthdate?: string | null;
       role?: Role;
       subRole?: SubRole;
@@ -18,6 +19,7 @@ declare module 'next-auth' {
   interface User extends DefaultUser {
       id: string;
       name?: string | null;
+      email?: string | null; // Ensure email is part of the user object
       birthdate?: string | null;
       role?: Role;
       subRole?: SubRole;
@@ -26,10 +28,11 @@ declare module 'next-auth' {
   }
 }
 
+// The JWT is no longer used with the database strategy,
+// but we keep the type for completeness. It won't contain custom fields.
 declare module 'next-auth/jwt' {
     interface JWT {
         id: string;
-        // name, image, etc. should NOT be here to keep the token small.
     }
 }
 

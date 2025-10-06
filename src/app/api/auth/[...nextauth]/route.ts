@@ -7,6 +7,8 @@ import * as jose from 'jose';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase/client';
 import type { JWT } from 'next-auth/jwt';
+import { kv } from "@/lib/kv";
+import { VercelKVAdapter } from "@next-auth/vercel-kv-adapter";
 
 // Função auxiliar para buscar um usuário no nosso banco de dados (Vercel KV)
 async function getUserFromDb(email: string | null | undefined): Promise<User | null> {
@@ -16,8 +18,12 @@ async function getUserFromDb(email: string | null | undefined): Promise<User | n
 }
 
 export const authOptions: NextAuthOptions = {
+  // Use Vercel KV to store session data.
+  // This keeps the cookie small, containing only a session ID.
+  adapter: VercelKVAdapter(kv),
   session: {
-    strategy: 'jwt',
+    // Use "database" strategy to store sessions in Vercel KV.
+    strategy: 'database',
   },
   providers: [
     CredentialsProvider({
@@ -43,11 +49,16 @@ export const authOptions: NextAuthOptions = {
                 const appUser = await getUserFromDb(firebaseUser.email);
                 
                 if (appUser) {
-                     // 3. Return a minimal user object for the JWT.
-                     // The session callback will populate the rest.
+                     // 3. Return the full user object. NextAuth adapter will handle creating the session.
                      return {
                         id: appUser.id,
                         email: appUser.email,
+                        name: appUser.name,
+                        image: appUser.image,
+                        birthdate: appUser.birthdate,
+                        role: appUser.role,
+                        subRole: appUser.subRole,
+                        accessLevel: appUser.accessLevel,
                     };
                 }
             }
@@ -63,32 +74,15 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
-      // The `user` object is only passed on the initial sign-in.
-      if (user) {
-        token.id = user.id;
-        // The email is already included by default.
-      }
-      
-      // Ensure the token only contains the bare minimum, always.
-      // This is the definitive fix for REQUEST_HEADER_TOO_LARGE.
-      return {
-        id: token.id,
-        email: token.email,
-        sub: token.sub,
-        iat: token.iat,
-        exp: token.exp,
-        jti: token.jti
-      };
-    },
-
-    async session({ session, token }: { session: any, token: JWT }) {
-        if (token && session.user) {
-            // With the clean token (only ID/email), we always fetch the full data from the DB.
-            const appUser = await getUserFromDb(token.email);
+    // The session callback is still useful for adding custom data to the session object
+    // that is available on the client.
+    async session({ session, user }) {
+        if (user && session.user) {
+            // With the database strategy, the `user` object is the full user from the DB.
+            const appUser = await getUserFromDb(user.email);
             
             if (appUser) {
-                // Populate the 'session.user' object that will be used on the client.
+                // Populate the 'session.user' object with all necessary fields.
                 session.user.id = appUser.id;
                 session.user.name = appUser.name;
                 session.user.image = appUser.image;
@@ -97,14 +91,12 @@ export const authOptions: NextAuthOptions = {
                 session.user.subRole = appUser.subRole;
                 session.user.accessLevel = appUser.accessLevel;
                 
-                // Update 'lastSeen' in the KV store without putting it in the session cookie.
+                // Update 'lastSeen' in the KV store without putting it in the session object.
                 const users = await readData<User>('users');
                 const userIndex = users.findIndex(u => u.id === appUser.id);
                 if (userIndex !== -1) {
                     users[userIndex].lastSeen = new Date().toISOString();
                     await writeData('users', users);
-                    // Optional: add to the session object if needed on the client,
-                    // but it won't be in the cookie.
                     session.user.lastSeen = users[userIndex].lastSeen;
                 }
             }

@@ -6,12 +6,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Building, Info, LifeBuoy, Lightbulb, Coffee, GitBranch, Heart, Users } from "lucide-react";
+import { Building, Info, LifeBuoy, Lightbulb, GitBranch, Heart, Users } from "lucide-react";
 import Image from "next/image";
 
 export default function AboutPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 container mx-auto py-12 px-4">
       <div className="flex flex-col items-center justify-center text-center mb-8">
         <h1 className="text-3xl font-bold">Sobre o NexusFarma</h1>
         <p className="text-muted-foreground mt-2">Informações sobre o sistema, parcerias e suporte.</p>
