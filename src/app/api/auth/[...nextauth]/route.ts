@@ -70,7 +70,8 @@ export const authOptions: NextAuthOptions = {
           const appUser = await getUserFromDb(firebaseUser.email);
           if (!appUser) return null;
           
-          // O objeto retornado aqui é o que o adaptador salvará na tabela 'users' do KV.
+          // CORREÇÃO: Retornar o objeto de usuário completo do seu banco de dados.
+          // O NextAuth usará isso para criar a sessão no KV e passar para o callback 'session'.
           return {
             id: appUser.id,
             email: appUser.email,
