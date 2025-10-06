@@ -1,5 +1,5 @@
 
-import { getUnits } from "@/lib/data";
+import { getUnits, getOrders } from "@/lib/data";
 import {
   Card,
   CardContent,
@@ -10,7 +10,10 @@ import {
 import { OrdersClient } from "./orders-client";
 
 export default async function OrdersPage() {
-  const units = await getUnits();
+  const [units, orders] = await Promise.all([
+      getUnits(),
+      getOrders()
+  ]);
 
   return (
     <Card>
@@ -21,7 +24,7 @@ export default async function OrdersPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-          <OrdersClient units={units} />
+          <OrdersClient units={units} orders={orders} />
       </CardContent>
     </Card>
   );

@@ -1,7 +1,6 @@
 
 import { getOrdersForUnit, getUnit } from "@/lib/data";
-import { columns } from "./columns";
-import { DataTable } from "@/components/ui/data-table";
+import { OrderHistoryClient } from "./history-client";
 import {
   Card,
   CardContent,
@@ -29,7 +28,7 @@ export default async function OrderHistoryPage({ params }: { params: { unitId: s
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <DataTable columns={columns} data={orders} filterColumn="id" />
+        <OrderHistoryClient orders={orders} />
       </CardContent>
     </Card>
   );

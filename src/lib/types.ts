@@ -136,6 +136,8 @@ export type OrderItem = {
     category: string;
 };
 
+export type OrderType = 'Pedido Mensal' | 'Pedido Extra' | 'Pedido Urgente';
+
 export type Order = {
   id: string;
   unitId: string;
@@ -143,6 +145,7 @@ export type Order = {
   sentDate: string;
   deliveryDate?: string;
   status: 'Entregue' | 'Pendente' | 'Cancelado' | 'Em Trânsito';
+  orderType: OrderType;
   itemCount: number;
   items: OrderItem[];
   notes?: string;

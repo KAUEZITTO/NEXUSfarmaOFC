@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import jsPDF from 'jspdf';
@@ -33,7 +32,7 @@ const addHeader = (doc: jsPDFWithAutoTable, title: string) => {
 };
 
 const addFooter = (doc: jsPDFWithAutoTable) => {
-    const pageCount = doc.internal.pages.length; 
+    const pageCount = (doc as any).internal.getNumberOfPages();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     doc.setFontSize(8);
@@ -74,6 +73,9 @@ export const generateCompleteReportPDF = async (
     body: summaryData,
     theme: 'striped',
     headStyles: { fillColor: [22, 163, 74] },
+    didDrawPage: (data) => {
+      // Don't add footer on the first pass
+    }
   });
 
 
@@ -96,6 +98,9 @@ export const generateCompleteReportPDF = async (
     body: inventoryBody,
     theme: 'grid',
     headStyles: { fillColor: [37, 99, 235] },
+    didDrawPage: (data) => {
+      if (data.pageNumber === 1) addHeader(doc, 'Relatório de Inventário');
+    }
   });
 
   // --- Patients Section ---
@@ -118,6 +123,9 @@ export const generateCompleteReportPDF = async (
     body: patientsBody,
     theme: 'grid',
     headStyles: { fillColor: [37, 99, 235] },
+    didDrawPage: (data) => {
+       if (data.pageNumber === 1) addHeader(doc, 'Relatório de Pacientes Ativos');
+    }
   });
 
   addFooter(doc);
@@ -146,6 +154,9 @@ export const generateStockReportPDF = async (products: Product[]): Promise<strin
         body: inventoryBody,
         theme: 'grid',
         headStyles: { fillColor: [37, 99, 235] },
+        didDrawPage: (data) => {
+            if (data.pageNumber > 1) addHeader(doc, 'Relatório de Estoque Atual');
+        }
     });
 
     addFooter(doc);
@@ -174,6 +185,9 @@ export const generateExpiryReportPDF = async (products: Product[]): Promise<stri
         body: body,
         theme: 'grid',
         headStyles: { fillColor: [217, 119, 6] }, // Orange color for warning
+        didDrawPage: (data) => {
+            if (data.pageNumber > 1) addHeader(doc, 'Relatório de Produtos a Vencer');
+        }
     });
 
     addFooter(doc);
@@ -201,6 +215,9 @@ export const generatePatientReportPDF = async (dispensations: Dispensation[]): P
         body: body,
         theme: 'grid',
         headStyles: { fillColor: [107, 33, 168] }, // Purple color for patients
+        didDrawPage: (data) => {
+            if (data.pageNumber > 1) addHeader(doc, 'Relatório de Atendimento de Pacientes');
+        }
     });
 
     addFooter(doc);
@@ -238,6 +255,9 @@ export const generateUnitDispensationReportPDF = async (orders: Order[], units: 
         body: body,
         theme: 'grid',
         headStyles: { fillColor: [13, 148, 136] }, // Teal color for units
+        didDrawPage: (data) => {
+            if (data.pageNumber > 1) addHeader(doc, 'Relatório de Dispensação por Unidade');
+        }
     });
     
     addFooter(doc);
@@ -261,6 +281,9 @@ export const generateBatchReportPDF = async (products: Product[]): Promise<strin
         body: body,
         theme: 'grid',
         headStyles: { fillColor: [19, 78, 74] }, // Dark Teal
+        didDrawPage: (data) => {
+            if (data.pageNumber > 1) addHeader(doc, 'Relatório de Lotes');
+        }
     });
 
     addFooter(doc);
@@ -288,6 +311,9 @@ export const generateEntriesAndExitsReportPDF = async (movements: StockMovement[
         body: body,
         theme: 'grid',
         headStyles: { fillColor: [107, 114, 128] }, // Gray
+        didDrawPage: (data) => {
+            if (data.pageNumber > 1) addHeader(doc, 'Relatório de Entradas e Saídas');
+        }
     });
 
     addFooter(doc);

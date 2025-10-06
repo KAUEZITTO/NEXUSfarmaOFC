@@ -27,12 +27,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { X, Save, Trash2, Loader2, Barcode, Warehouse, PackagePlus, ListPlus } from 'lucide-react';
+import { X, Save, Trash2, Loader2, Barcode, Warehouse, PackagePlus, ListPlus, CalendarClock } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { addOrder } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import type { Unit, Product } from '@/lib/types';
+import type { Unit, Product, OrderType } from '@/lib/types';
 import { AddItemsManuallyDialog } from '@/components/dashboard/add-items-manually-dialog';
 
 type RemessaItem = {
@@ -58,6 +58,7 @@ export default function NewOrderPageContent({ units, allProducts }: NewOrderPage
   const scannerInputRef = useRef<HTMLInputElement>(null);
   
   const [destinationUnitId, setDestinationUnitId] = useState('');
+  const [orderType, setOrderType] = useState<OrderType>('Pedido Mensal');
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   
@@ -203,6 +204,7 @@ export default function NewOrderPageContent({ units, allProducts }: NewOrderPage
             unitId: destinationUnitId,
             unitName: unitName,
             items: orderItems,
+            orderType: orderType,
             notes,
         });
 
@@ -262,7 +264,7 @@ export default function NewOrderPageContent({ units, allProducts }: NewOrderPage
                         <CardTitle className="flex items-center gap-2"><Warehouse className="h-5 w-5" /> Passo 1: Destino</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <Label htmlFor="unit" className="mb-2 block">Selecione a Unidade de Destino</Label>
+                        <Label htmlFor="unit" className="mb-2 block">Selecione a Unidade</Label>
                         <Select onValueChange={setDestinationUnitId} value={destinationUnitId}>
                             <SelectTrigger id="unit" aria-label="Selecione a unidade"><SelectValue placeholder="Selecione a unidade..." /></SelectTrigger>
                             <SelectContent>
@@ -274,45 +276,57 @@ export default function NewOrderPageContent({ units, allProducts }: NewOrderPage
                     </CardContent>
                 </Card>
 
-                <Card className={!destinationUnitId ? 'opacity-50 pointer-events-none' : ''}>
+                <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Barcode className="h-5 w-5" /> Passo 2: Escanear</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><CalendarClock className="h-5 w-5" /> Passo 2: Tipo de Pedido</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <Label htmlFor="scanner">Leitor de Código de Barras</Label>
-                        <Input
-                            ref={scannerInputRef}
-                            id="scanner"
-                            placeholder="Use o leitor ou digite o código/ID aqui..."
-                            value={scannerInput}
-                            onChange={(e) => setScannerInput(e.target.value)}
-                            onKeyDown={handleScannerKeyDown}
-                            disabled={!destinationUnitId || isSaving}
-                        />
-                         <p className="text-xs text-muted-foreground mt-2">
-                           Dica: Para múltiplos itens, digite a quantidade e um asterisco (ex: <strong>4*</strong>) antes de escanear.
-                        </p>
+                         <Label htmlFor="order-type" className="mb-2 block">Classifique o Pedido</Label>
+                         <Select onValueChange={(v) => setOrderType(v as OrderType)} value={orderType}>
+                            <SelectTrigger id="order-type" aria-label="Selecione o tipo de pedido">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Pedido Mensal">Pedido Mensal</SelectItem>
+                                <SelectItem value="Pedido Extra">Pedido Extra</SelectItem>
+                                <SelectItem value="Pedido Urgente">Pedido Urgente</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </CardContent>
                 </Card>
 
-                 <Card className={!destinationUnitId ? 'opacity-50 pointer-events-none' : ''}>
+                <Card className={!destinationUnitId ? 'opacity-50 pointer-events-none' : ''}>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><ListPlus className="h-5 w-5" /> Passo 3: Adicionar Manual</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><Barcode className="h-5 w-5" /> Passo 3: Escanear ou Adicionar</CardTitle>
                     </CardHeader>
-                    <CardContent className="flex flex-col justify-center h-full">
-                         <AddItemsManuallyDialog 
-                            allProducts={allProducts} 
-                            onAddProduct={addProductToRemessa} 
-                            trigger={
-                                <Button variant="outline" className="w-full">
-                                    <ListPlus className="mr-2 h-4 w-4" />
-                                    Selecionar Produtos
-                                </Button>
-                            }
-                        />
-                        <p className="text-xs text-muted-foreground mt-2 text-center">
-                            Use para adicionar itens sem leitor.
-                        </p>
+                    <CardContent>
+                         <div className="space-y-4">
+                            <div>
+                                <Label htmlFor="scanner">Leitor de Código de Barras</Label>
+                                <Input
+                                    ref={scannerInputRef}
+                                    id="scanner"
+                                    placeholder="Use o leitor ou digite o código..."
+                                    value={scannerInput}
+                                    onChange={(e) => setScannerInput(e.target.value)}
+                                    onKeyDown={handleScannerKeyDown}
+                                    disabled={!destinationUnitId || isSaving}
+                                />
+                                <p className="text-xs text-muted-foreground mt-2">
+                                Dica: Para múltiplos itens, digite a quantidade e um asterisco (ex: <strong>4*</strong>) antes de escanear.
+                                </p>
+                            </div>
+                            <AddItemsManuallyDialog 
+                                allProducts={allProducts} 
+                                onAddProduct={addProductToRemessa} 
+                                trigger={
+                                    <Button variant="outline" className="w-full">
+                                        <ListPlus className="mr-2 h-4 w-4" />
+                                        Adicionar Manualmente
+                                    </Button>
+                                }
+                            />
+                        </div>
                     </CardContent>
                 </Card>
             </div>

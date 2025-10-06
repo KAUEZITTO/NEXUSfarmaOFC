@@ -3,7 +3,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { readData, writeData, getProducts } from './data';
-import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, KnowledgeBaseItem, AccessLevel } from './types';
+import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, KnowledgeBaseItem, AccessLevel, OrderType } from './types';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseApp } from './firebase/client';
 import kb from '../data/knowledge-base.json';
@@ -136,7 +136,7 @@ revalidatePath('/dashboard/patients');
 
 
 // --- ORDER ACTIONS ---
-export async function addOrder(orderData: { unitId: string; unitName: string; items: OrderItem[]; notes?: string; }) {
+export async function addOrder(orderData: { unitId: string; unitName: string; orderType: OrderType, items: OrderItem[]; notes?: string; }) {
     const orders = await readData<Order>('orders');
     const products = await getProducts();
 

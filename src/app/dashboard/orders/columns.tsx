@@ -1,13 +1,16 @@
+
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { Unit } from "@/lib/types" 
+import { Unit, Order } from "@/lib/types" 
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, MoreHorizontal, Eye } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, Eye, CalendarClock } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 
-export const columns: ColumnDef<Unit>[] = [
+export const columns = (lastOrderMap: Map<string, Order>): ColumnDef<Unit>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -31,6 +34,34 @@ export const columns: ColumnDef<Unit>[] = [
   {
     accessorKey: "address",
     header: "Endereço",
+  },
+  {
+    id: "lastOrder",
+    header: "Último Pedido",
+    cell: ({ row }) => {
+        const unit = row.original;
+        const lastOrder = lastOrderMap.get(unit.id);
+        if (!lastOrder) return <div className="text-muted-foreground text-center">—</div>;
+
+        const orderType = lastOrder.orderType || "N/A";
+        const orderDate = new Date(lastOrder.sentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+        return (
+            <div className="flex items-center gap-2">
+                <CalendarClock className="h-4 w-4 text-muted-foreground" />
+                <div>
+                    <Badge 
+                        variant="outline"
+                        className={cn({
+                            'border-blue-400 text-blue-700': orderType === 'Pedido Mensal',
+                            'border-yellow-400 text-yellow-700': orderType === 'Pedido Extra',
+                            'border-red-400 text-red-700': orderType === 'Pedido Urgente',
+                        })}
+                    >{orderType}</Badge>
+                    <div className="text-xs text-muted-foreground">{orderDate}</div>
+                </div>
+            </div>
+        )
+    }
   },
   {
     id: "actions",

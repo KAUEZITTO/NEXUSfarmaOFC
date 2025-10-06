@@ -5,21 +5,32 @@ import Link from "next/link";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
-import type { Unit } from "@/lib/types";
+import type { Unit, Order } from "@/lib/types";
 import { columns } from "./columns";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { ColumnDef } from "@tanstack/react-table";
 
 interface OrdersClientProps {
     units: Unit[];
+    orders: Order[];
 }
 
-export function OrdersClient({ units }: OrdersClientProps) {
+export function OrdersClient({ units, orders }: OrdersClientProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredUnits = units.filter(unit => 
     unit.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  
+  const unitLastOrderMap = new Map<string, Order>();
+  orders.forEach(order => {
+    if (!unitLastOrderMap.has(order.unitId) || new Date(order.sentDate) > new Date(unitLastOrderMap.get(order.unitId)!.sentDate)) {
+        unitLastOrderMap.set(order.unitId, order);
+    }
+  });
+
+  const tableColumns = columns(unitLastOrderMap);
 
   return (
     <div>
@@ -37,7 +48,7 @@ export function OrdersClient({ units }: OrdersClientProps) {
           </Link>
         </Button>
       </div>
-      <DataTable columns={columns} data={filteredUnits} filterColumn="name" />
+      <DataTable columns={tableColumns} data={filteredUnits} filterColumn="name" />
     </div>
   );
 }

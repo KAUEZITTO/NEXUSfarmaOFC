@@ -1,15 +1,16 @@
+
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Order } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal, Eye } from "lucide-react"
+import { MoreHorizontal, Eye, Printer } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
-export const columns: ColumnDef<Order>[] = [
+export const columns = (onViewOrder: (order: Order) => void): ColumnDef<Order>[] => [
   {
     accessorKey: "id",
     header: "ID do Pedido",
@@ -22,14 +23,19 @@ export const columns: ColumnDef<Order>[] = [
       return <div>{date.toLocaleDateString('pt-BR', { timeZone: 'UTC'})}</div>
     }
   },
-  {
-    accessorKey: "deliveryDate",
-    header: "Data de Entrega",
+   {
+    accessorKey: "orderType",
+    header: "Tipo",
     cell: ({ row }) => {
-      const dateValue = row.getValue("deliveryDate") as string | undefined;
-      if (!dateValue) return <div className="text-muted-foreground">Pendente</div>
-      const date = new Date(dateValue)
-      return <div>{date.toLocaleDateString('pt-BR', { timeZone: 'UTC'})}</div>
+        const type = row.getValue("orderType") as string;
+        if (!type) return <Badge variant="outline">N/A</Badge>;
+        return <Badge 
+            className={cn({
+                'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200': type === 'Pedido Mensal',
+                'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200': type === 'Pedido Extra',
+                'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200': type === 'Pedido Urgente',
+            })}
+        >{type}</Badge>
     }
   },
   {
@@ -78,10 +84,14 @@ export const columns: ColumnDef<Order>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => onViewOrder(order)} className="cursor-pointer">
+              <Eye className="mr-2 h-4 w-4" />
+              Visualizar Itens
+            </DropdownMenuItem>
             <DropdownMenuItem asChild>
                 <Link href={`/receipt/${order.id}`} target="_blank" className="w-full h-full flex items-center cursor-pointer">
-                    <Eye className="mr-2 h-4 w-4" />
-                    Visualizar Recibo
+                    <Printer className="mr-2 h-4 w-4" />
+                    Imprimir Recibo
                 </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
