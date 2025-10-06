@@ -6,7 +6,6 @@ import { User } from '@/lib/types';
 import * as jose from 'jose';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase/client';
-import type { JWT } from 'next-auth/jwt';
 import { kv } from "@/lib/kv";
 import { UpstashRedisAdapter } from "@next-auth/upstash-redis-adapter";
 
@@ -18,11 +17,11 @@ async function getUserFromDb(email: string | null | undefined): Promise<User | n
 }
 
 export const authOptions: NextAuthOptions = {
-  // Use Vercel KV (via Upstash Redis adapter) to store session data.
-  // This keeps the cookie small, containing only a session ID.
+  // Use Vercel KV (via Upstash Redis adapter) para armazenar os dados da sessão.
+  // Isso mantém o cookie pequeno, contendo apenas um ID de sessão.
   adapter: UpstashRedisAdapter(kv),
   session: {
-    // Use "database" strategy to store sessions in Vercel KV.
+    // Use a estratégia "database" para armazenar as sessões no Vercel KV.
     strategy: 'database',
   },
   providers: [
@@ -40,16 +39,16 @@ export const authOptions: NextAuthOptions = {
         const auth = getAuth(firebaseApp);
 
         try {
-            // 1. Authenticate with Firebase Auth
+            // 1. Autenticar com o Firebase Auth
             const userCredential = await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
             const firebaseUser = userCredential.user;
 
             if (firebaseUser) {
-                // 2. Fetch additional user data from our Vercel KV database
+                // 2. Buscar dados adicionais do usuário do nosso banco de dados Vercel KV
                 const appUser = await getUserFromDb(firebaseUser.email);
                 
                 if (appUser) {
-                     // 3. Return the full user object. NextAuth adapter will handle creating the session.
+                     // 3. Retornar o objeto de usuário completo. O adaptador NextAuth cuidará da criação da sessão.
                      return {
                         id: appUser.id,
                         email: appUser.email,
@@ -62,27 +61,27 @@ export const authOptions: NextAuthOptions = {
                     };
                 }
             }
-            // If user is not found in either Firebase or our DB, return null
+            // Se o usuário não for encontrado no Firebase ou no nosso DB, retorna nulo
             return null;
 
         } catch (error) {
             console.error("Firebase authentication error:", error);
-            // This will catch errors like wrong password, user not found, etc.
+            // Isso irá capturar erros como senha incorreta, usuário não encontrado, etc.
             return null;
         }
       }
     })
   ],
   callbacks: {
-    // The session callback is still useful for adding custom data to the session object
-    // that is available on the client.
+    // O callback da sessão ainda é útil para adicionar dados personalizados ao objeto de sessão
+    // que está disponível no cliente.
     async session({ session, user }) {
         if (user && session.user) {
-            // With the database strategy, the `user` object is the full user from the DB.
+            // Com a estratégia de banco de dados, o objeto `user` é o usuário completo do DB.
             const appUser = await getUserFromDb(user.email);
             
             if (appUser) {
-                // Populate the 'session.user' object with all necessary fields.
+                // Preenche o objeto 'session.user' com todos os campos necessários.
                 session.user.id = appUser.id;
                 session.user.name = appUser.name;
                 session.user.image = appUser.image;
@@ -91,7 +90,7 @@ export const authOptions: NextAuthOptions = {
                 session.user.subRole = appUser.subRole;
                 session.user.accessLevel = appUser.accessLevel;
                 
-                // Update 'lastSeen' in the KV store without putting it in the session object.
+                // Atualiza 'lastSeen' no KV store sem colocá-lo no objeto de sessão.
                 const users = await readData<User>('users');
                 const userIndex = users.findIndex(u => u.id === appUser.id);
                 if (userIndex !== -1) {
