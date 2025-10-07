@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 const changelog = [
+    { version: '2.5.0', changes: ['Atualizada a dependência do adaptador de sessão para o oficial `@auth/vercel-kv-adapter`, resolvendo de forma definitiva o erro intermitente de "Credenciais Inválidas".'] },
     { version: '2.4.6', changes: ['Corrigido erro de "Credenciais Inválidas" para usuários criados via Google, garantindo que o perfil do usuário seja sempre encontrado no banco de dados.'] },
     { version: '2.4.5', changes: ['Estabilizada a autenticação garantindo que todos os dados do usuário sejam salvos na sessão, corrigindo erros de login intermitentes.'] },
     { version: '2.4.4', changes: ['Restauração segura dos dados do perfil do usuário (avatar, nome, etc.) na sessão, mantendo o cookie pequeno e eliminando o erro de cabeçalho.'] },
@@ -22,7 +23,7 @@ const changelog = [
     { version: '2.3.0', changes: ['Melhorias significativas na responsividade para dispositivos móveis.', 'Aprimoramento da busca de conhecimento para preenchimento automático de produtos.', 'Correções de bugs gerais de estabilidade e gerenciamento de sessão.'] },
     { version: '2.2.0', changes: ['Refatorada a arquitetura de acesso a dados para resolver definitivamente o erro `OAuthSignin` e estabilizar o fluxo de login com Google e Credenciais.'] },
     { version: '2.1.1', changes: ['Corrigida a integração do provedor de credenciais para usar o Firebase Auth, unificando completamente o sistema de login.', 'Resolvido erro de "Suspense Boundary" na página de login.'] },
-    { version: '2_1_0', changes: ['Implementado o fluxo completo de recuperação de senha via email, utilizando a funcionalidade nativa do Firebase Auth.'] },
+    { version: '2.1.0', changes: ['Implementado o fluxo completo de recuperação de senha via email, utilizando a funcionalidade nativa do Firebase Auth.'] },
     { version: '2.0.2', changes: ['Otimizado o fluxo de login para garantir o redirecionamento imediato e correto para o dashboard após a autenticação, eliminando a necessidade de recarregar a página.'] },
     { version: '2.0.1', changes: ['Correção de erros críticos de importação nas Server Actions que impediam o funcionamento de cadastros.', 'Resolvido erro que impediam o registro de novos usuários.'] },
     { version: '2.0.0', changes: ['Lançamento da versão estável "Definitivo 2". Refatoração completa da arquitetura de acesso a dados e autenticação para garantir estabilidade e corrigir múltiplos erros de build.'] },
@@ -77,7 +78,7 @@ export default function AboutPage() {
                     Versão do Sistema
                 </h3>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  NexusFarma v2.4.6
+                  NexusFarma v2.5.0
                 </p>
               </div>
           </CardContent>

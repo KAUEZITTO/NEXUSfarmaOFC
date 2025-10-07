@@ -2,7 +2,7 @@
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { UpstashRedisAdapter } from "@next-auth/upstash-redis-adapter";
+import { VercelKVAdapter } from "@auth/vercel-kv-adapter";
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 
 import { kv } from "@/lib/kv";
@@ -29,7 +29,7 @@ async function getUserFromDb(email: string): Promise<User | null> {
 }
 
 export const authOptions: NextAuthOptions = {
-  adapter: UpstashRedisAdapter(kv),
+  adapter: VercelKVAdapter(kv),
   session: {
     // Usar 'database' é crucial para que o cookie seja pequeno e evite o erro 'REQUEST_HEADER_TOO_LARGE'.
     strategy: 'database',
@@ -136,7 +136,7 @@ export const authOptions: NextAuthOptions = {
         token.image = user.image;
         token.birthdate = user.birthdate;
       }
-      // O UpstashRedisAdapter usará este token enriquecido para criar a entrada da sessão no Vercel KV.
+      // O VercelKVAdapter usará este token enriquecido para criar a entrada da sessão no Vercel KV.
       return token;
     },
 
