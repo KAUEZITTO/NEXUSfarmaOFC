@@ -259,12 +259,27 @@ export async function updateUserAccessLevel(userId: string, accessLevel: AccessL
 
 export async function deleteUser(userId: string) {
     const users = await readData<User>('users');
-    const updatedUsers = users.filter(u => u.id !== userId);
-    if (users.length === updatedUsers.length) {
-        throw new Error('Usuário não encontrado para exclusão.');
+    const userToDelete = users.find(u => u.id === userId);
+    if (!userToDelete) {
+         throw new Error('Usuário não encontrado para exclusão.');
     }
+
+    // Excluir do Firebase Auth
+    try {
+        await adminAuth.deleteUser(userId);
+    } catch (error: any) {
+        // Se o usuário não for encontrado no Firebase, podemos continuar para removê-lo do nosso DB
+        if (error.code !== 'auth/user-not-found') {
+            console.error("Erro ao excluir usuário do Firebase Auth:", error);
+            throw new Error('Erro ao excluir usuário do sistema de autenticação.');
+        }
+    }
+
+    // Excluir do Vercel KV
+    const updatedUsers = users.filter(u => u.id !== userId);
     await writeData('users', updatedUsers);
-revalidatePath('/dashboard/user-management');
+
+    revalidatePath('/dashboard/user-management');
 }
 
 
@@ -358,8 +373,6 @@ export async function getOrCreateFirebaseUser(email: string, name?: string | nul
 // --- REGISTER ---
 export async function register({ email, password, role, subRole }: { email: string; password: string; role: Role; subRole?: SubRole; }) {
     
-    const auth = getAuth(firebaseApp);
-    
     try {
         const users = await readData<User>('users');
 
@@ -367,12 +380,16 @@ export async function register({ email, password, role, subRole }: { email: stri
             return { success: false, message: 'Este email já está em uso.' };
         }
 
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const firebaseUser = userCredential.user;
+        // Usar o Firebase Admin SDK para criar o usuário
+        const userRecord = await adminAuth.createUser({
+            email: email,
+            password: password,
+            displayName: email.split('@')[0], // Nome padrão
+        });
         
         const isFirstUser = users.length === 0;
         const newUser: User = {
-            id: firebaseUser.uid,
+            id: userRecord.uid,
             email,
             role,
             subRole: role === 'Farmacêutico' ? subRole : undefined,
@@ -385,7 +402,7 @@ export async function register({ email, password, role, subRole }: { email: stri
 
     } catch (error: any) {
         console.error("Registration error:", error);
-        if (error.code === 'auth/email-already-in-use') {
+        if (error.code === 'auth/email-already-exists') {
             return { success: false, message: 'Este email já está em uso.' };
         }
         if (error.code === 'auth/weak-password') {

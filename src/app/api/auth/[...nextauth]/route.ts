@@ -1,10 +1,9 @@
 
 
 import NextAuth, { type NextAuthOptions } from 'next-auth';
-import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { firebaseServerApp } from '@/lib/firebase/server';
+import { firebaseServerApp } from '@/lib/firebase/server'; // Corrigido para usar a instância do servidor
 import { getOrCreateFirebaseUser } from '@/lib/actions';
 import { getUserByEmailFromDb } from '@/lib/data';
 import type { User } from '@/lib/types';
@@ -17,10 +16,6 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
@@ -79,22 +74,6 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account }) {
-      if (account?.provider === "google" && user.email) {
-        try {
-            // Garante que o usuário existe no Firebase Auth e no nosso DB, e obtém o usuário completo
-            const appUser = await getOrCreateFirebaseUser(user.email, user.name, user.image);
-            
-            // **CORREÇÃO DE CONSISTÊNCIA**
-            // Garante que o ID do usuário na sessão é SEMPRE o UID do Firebase.
-            user.id = appUser.id; 
-            
-            return true;
-        } catch (error) {
-            console.error("Erro crítico no signIn com Google:", error);
-            return false; // Impede o login se houver erro no nosso lado
-        }
-      }
-      
       // Para o fluxo de credenciais, a função `authorize` já fez todo o trabalho.
       return true;
     },

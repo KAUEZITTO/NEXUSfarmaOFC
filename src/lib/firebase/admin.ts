@@ -4,7 +4,7 @@ import * as admin from 'firebase-admin';
 // Variáveis de ambiente para o Admin SDK, lidas do Vercel Environment Variables
 const serviceAccount = {
   type: process.env.FIREBASE_ADMIN_TYPE,
-  project_id: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   private_key_id: process.env.FIREBASE_ADMIN_PRIVATE_KEY_ID,
   // O `private_key` vem com caracteres de nova linha literais (\n) do Vercel.
   // Precisamos substituí-los pelo caractere de nova linha real.
