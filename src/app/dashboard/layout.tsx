@@ -9,9 +9,10 @@ import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger
 import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guide';
 import BirthdayBalloons from '@/components/dashboard/birthday-balloons';
 
-const CURRENT_VERSION = '2.8.0';
+const CURRENT_VERSION = '2.8.1';
 
 const changelog = [
+    { version: '2.8.1', changes: ['Correção arquitetural definitiva para o erro de build `Failed to collect page data` na página de Inventário.'] },
     { version: '2.8.0', changes: ['Corrigido erro de build `use client directive must be placed before other expressions` na página do Dashboard.'] },
     { version: '2.7.0', changes: ['Correção definitiva do erro de build `Failed to collect page data` através da refatoração da arquitetura de importação de componentes, garantindo a estabilidade da aplicação em produção.'] },
     { version: '2.6.0', changes: ['Corrigido erro de "Credenciais Inválidas" para usuários criados via Google, garantindo que o perfil do usuário seja sempre encontrado no banco de dados.'] },
