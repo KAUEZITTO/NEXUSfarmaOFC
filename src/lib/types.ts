@@ -1,15 +1,16 @@
 
 
 // Adicionando tipos do NextAuth para extender o objeto de sessão
-import type { DefaultUser } from 'next-auth';
+import type { DefaultUser, DefaultSession } from 'next-auth';
 
 declare module 'next-auth' {
   interface Session {
     user?: DefaultUser & {
       id: string;
       name?: string | null;
-      email?: string | null; // Ensure email is part of the session user
-      birthdate?: string | null;
+      email?: string | null;
+      image?: string | null; // Adicionado para imagem do perfil
+      birthdate?: string | null; // Adicionado para data de nascimento
       role?: Role;
       subRole?: SubRole;
       accessLevel?: AccessLevel;
@@ -19,8 +20,9 @@ declare module 'next-auth' {
   interface User extends DefaultUser {
       id: string;
       name?: string | null;
-      email?: string | null; // Ensure email is part of the user object
-      birthdate?: string | null;
+      email?: string | null;
+      image?: string | null; // Adicionado para imagem do perfil
+      birthdate?: string | null; // Adicionado para data de nascimento
       role?: Role;
       subRole?: SubRole;
       accessLevel?: AccessLevel;
@@ -28,11 +30,16 @@ declare module 'next-auth' {
   }
 }
 
-// The JWT is no longer used with the database strategy,
-// but we keep the type for completeness. It won't contain custom fields.
+// O JWT precisa conter os dados que queremos persistir.
 declare module 'next-auth/jwt' {
     interface JWT {
         id: string;
+        role?: Role;
+        accessLevel?: AccessLevel;
+        name?: string | null;
+        email?: string | null;
+        image?: string | null;
+        birthdate?: string | null;
     }
 }
 

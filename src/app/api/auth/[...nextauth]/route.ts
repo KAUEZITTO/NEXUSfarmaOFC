@@ -1,39 +1,30 @@
 
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { readData, writeData } from '@/lib/data';
+import { readData } from '@/lib/data';
 import type { User } from '@/lib/types';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-// Importa a instância do Firebase específica para o servidor
 import { firebaseServerApp } from '@/lib/firebase/server';
 import { kv } from "@/lib/kv";
 import { UpstashRedisAdapter } from "@next-auth/upstash-redis-adapter";
 
-// Função dedicada e robusta para buscar o usuário no banco de dados (Vercel KV).
 async function getUserFromDb(email: string): Promise<User | null> {
   try {
     const users = await readData<User>('users');
     const user = users.find(u => u.email === email);
     return user || null;
   } catch (error) {
-    // Adiciona log de erro detalhado caso a leitura do KV falhe.
     console.error("CRITICAL: Failed to read user data from Vercel KV.", error);
-    // Retorna null para interromper a autenticação se o banco de dados estiver inacessível.
     return null;
   }
 }
 
 export const authOptions: NextAuthOptions = {
-  // O adaptador é crucial para a estratégia 'database'. Ele armazena a sessão no Vercel KV.
   adapter: UpstashRedisAdapter(kv),
-  
-  // A estratégia 'database' mantém o cookie de sessão pequeno, evitando erros de cabeçalho.
   session: {
     strategy: 'database',
     maxAge: 60 * 60 * 24 * 7, // 7 dias
   },
-
-  // Configuração segura de cookies para produção.
   cookies: {
     sessionToken: {
       name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.session-token`,
@@ -45,9 +36,7 @@ export const authOptions: NextAuthOptions = {
       },
     },
   },
-
   secret: process.env.NEXTAUTH_SECRET,
-
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -62,7 +51,6 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // Etapa 1: Autenticar credenciais com o Firebase usando a configuração do servidor.
           const auth = getAuth(firebaseServerApp);
           const userCredential = await signInWithEmailAndPassword(
             auth,
@@ -76,8 +64,6 @@ export const authOptions: NextAuthOptions = {
              return null;
           }
 
-          // Etapa 2: Buscar o perfil completo do usuário no nosso banco de dados (Vercel KV).
-          // Este passo é OBRIGATÓRIO. O objeto retornado aqui é o que será salvo na sessão.
           const appUser = await getUserFromDb(firebaseUser.email);
           
           if (!appUser) {
@@ -85,41 +71,56 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
           
-          // Etapa 3: Retornar o objeto de usuário completo. O NextAuth cuidará de criar a sessão.
+          // Retorna o objeto de usuário completo. O NextAuth usará isso para criar a sessão/token.
           return appUser;
 
         } catch (error: any) {
-          // Log detalhado do erro do Firebase no servidor.
           console.error("Authorize Error: Firebase authentication failed.", {
             errorCode: error.code,
             errorMessage: error.message,
           });
-          // Retorna null em caso de falha de autenticação (ex: senha errada, API key inválida).
-          // Isso resultará no erro OAuthSignin na tela de login.
           return null;
         }
       },
     }),
   ],
   callbacks: {
-    // O callback `session` é chamado para construir o objeto de sessão do lado do cliente.
-    // O parâmetro `user` aqui vem diretamente do banco de dados da sessão (Vercel KV), graças ao adaptador.
-    async session({ session, user }) {
-      if (session.user) {
-        // Enriquece o objeto de sessão padrão com os campos personalizados do nosso banco.
-        session.user.id = user.id;
-        session.user.role = user.role;
-        session.user.name = user.name;
-        session.user.email = user.email;
-        // Adicione outros campos que você precisar no frontend aqui
-        // Ex: session.user.accessLevel = user.accessLevel;
+    // Este callback é chamado sempre que um JSON Web Token é criado ou atualizado.
+    // É crucial para persistir os dados personalizados no banco de dados da sessão.
+    jwt: async ({ token, user }) => {
+      // No primeiro login (quando o objeto 'user' está presente),
+      // transferimos os dados do usuário para o token.
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+        token.name = user.name;
+        token.email = user.email;
+        token.accessLevel = user.accessLevel;
+        token.image = user.image;
+        token.birthdate = user.birthdate;
+      }
+      // O UpstashRedisAdapter usará este token enriquecido para criar a entrada da sessão no Vercel KV.
+      return token;
+    },
+
+    // Este callback é chamado para construir o objeto de sessão do lado do cliente.
+    // Ele recebe o token (recuperado do Vercel KV pelo adaptador) e o usa para popular a sessão.
+    session: async ({ session, token }) => {
+      if (session.user && token) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as User['role'];
+        session.user.name = token.name;
+        session.user.email = token.email;
+        session.user.accessLevel = token.accessLevel as User['accessLevel'];
+        session.user.image = token.image as string | undefined;
+        session.user.birthdate = token.birthdate as string | undefined;
       }
       return session;
     },
   },
   pages: {
     signIn: '/login',
-    error: '/login', // Redireciona para /login em caso de erro, com `?error=...` na URL.
+    error: '/login',
   },
 };
 
