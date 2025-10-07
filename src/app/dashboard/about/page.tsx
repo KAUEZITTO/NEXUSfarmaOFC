@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 const changelog = [
+    { version: '2.8.0', changes: ['Corrigido erro de build `use client directive must be placed before other expressions` na página do Dashboard.'] },
     { version: '2.7.0', changes: ['Correção definitiva do erro de build `Failed to collect page data` através da refatoração da arquitetura de importação de componentes, garantindo a estabilidade da aplicação em produção.'] },
     { version: '2.6.0', changes: ['Corrigido erro de "Credenciais Inválidas" para usuários criados via Google, garantindo que o perfil do usuário seja sempre encontrado no banco de dados.'] },
     { version: '2.5.1', changes: ['Refatorada a arquitetura da página de Inventário para separar componentes de Servidor e Cliente, resolvendo o erro de build `Failed to collect page data` e melhorando a performance.'] },
@@ -81,7 +82,7 @@ export default function AboutPage() {
                     Versão do Sistema
                 </h3>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  NexusFarma v2.7.0
+                  NexusFarma v2.8.0
                 </p>
               </div>
           </CardContent>
