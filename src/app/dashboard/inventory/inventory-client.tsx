@@ -138,66 +138,6 @@ function BatchDetailsDialog({ isOpen, onOpenChange, product, onProductSaved }: B
   );
 }
 
-// --- Columns definition is now local ---
-const capitalizeFirstLetter = (string: string) => {
-    if (!string) return 'N/A';
-    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
-}
-
-const columns: ColumnDef<GroupedProduct>[] = [
-    {
-      accessorKey: "name",
-      header: ({ column }) => (
-        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-          Nome <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => <div className="capitalize font-medium text-primary hover:underline cursor-pointer">{row.getValue("name")}</div>,
-    },
-    {
-      accessorKey: "presentation",
-      header: "Apresentação",
-      cell: ({ row }) => <div className="capitalize">{row.getValue("presentation") || "N/A"}</div>
-    },
-    {
-      accessorKey: "therapeuticClass",
-      header: "Classe",
-      cell: ({ row }) => <div className="capitalize">{row.getValue("therapeuticClass") || "N/A"}</div>
-    },
-    {
-      accessorKey: "mainFunction",
-      header: "Função",
-      cell: ({ row }) => <div>{capitalizeFirstLetter(row.getValue("mainFunction"))}</div>
-    },
-    {
-      accessorKey: "quantity",
-      header: () => <div className="text-right">Quantidade Total</div>,
-      cell: ({ row }) => {
-        const amount = parseFloat(row.getValue("quantity"))
-        return <div className="text-right font-medium">{amount.toLocaleString('pt-BR')}</div>
-      },
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => {
-        const status: string = row.getValue("status");
-        const variantMap: { [key: string]: "destructive" | "secondary" | "default" } = {
-          'Sem Estoque': 'destructive',
-          'Baixo Estoque': 'secondary',
-          'Em Estoque': 'default'
-        };
-        
-        return <Badge 
-          variant={variantMap[status] ?? 'default'}
-          className={cn(status === 'Baixo Estoque' && 'bg-accent text-accent-foreground')}
-        >
-          {status}
-        </Badge>
-      },
-    },
-];
-
 // --- Main Client Component ---
 type FilterCategory = 'Todos' | Product['category'];
 
@@ -277,6 +217,66 @@ export function InventoryClient({ rawProducts }: InventoryClientProps) {
     const processedProducts = groupAndFilterProducts(rawProducts, activeFilter, searchTerm);
     setProducts(processedProducts);
   }, [rawProducts, activeFilter, searchTerm]);
+
+  // --- Columns definition is now INSIDE the component ---
+  const capitalizeFirstLetter = (string: string) => {
+      if (!string) return 'N/A';
+      return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+  }
+
+  const columns: ColumnDef<GroupedProduct>[] = [
+      {
+        accessorKey: "name",
+        header: ({ column }) => (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+            Nome <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
+        cell: ({ row }) => <div className="capitalize font-medium text-primary hover:underline cursor-pointer">{row.getValue("name")}</div>,
+      },
+      {
+        accessorKey: "presentation",
+        header: "Apresentação",
+        cell: ({ row }) => <div className="capitalize">{row.getValue("presentation") || "N/A"}</div>
+      },
+      {
+        accessorKey: "therapeuticClass",
+        header: "Classe",
+        cell: ({ row }) => <div className="capitalize">{row.getValue("therapeuticClass") || "N/A"}</div>
+      },
+      {
+        accessorKey: "mainFunction",
+        header: "Função",
+        cell: ({ row }) => <div>{capitalizeFirstLetter(row.getValue("mainFunction"))}</div>
+      },
+      {
+        accessorKey: "quantity",
+        header: () => <div className="text-right">Quantidade Total</div>,
+        cell: ({ row }) => {
+          const amount = parseFloat(row.getValue("quantity"))
+          return <div className="text-right font-medium">{amount.toLocaleString('pt-BR')}</div>
+        },
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => {
+          const status: string = row.getValue("status");
+          const variantMap: { [key: string]: "destructive" | "secondary" | "default" } = {
+            'Sem Estoque': 'destructive',
+            'Baixo Estoque': 'secondary',
+            'Em Estoque': 'default'
+          };
+          
+          return <Badge 
+            variant={variantMap[status] ?? 'default'}
+            className={cn(status === 'Baixo Estoque' && 'bg-accent text-accent-foreground')}
+          >
+            {status}
+          </Badge>
+        },
+      },
+  ];
 
   return (
     <>
