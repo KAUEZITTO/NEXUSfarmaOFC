@@ -10,8 +10,6 @@ import {
 import { InventoryClient } from "./inventory-client";
 
 // This is a Server Component. Its only responsibility is to fetch the raw data.
-// All client-side logic, including type definitions for grouped data, is now
-// handled entirely within InventoryClient.
 export default async function InventoryPage() {
   const products = await getProducts();
   
