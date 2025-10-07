@@ -9,7 +9,8 @@ import {
 } from "@/components/ui/card";
 import { InventoryClient } from "./inventory-client";
 
-// This is a Server Component. Its only responsibility is to fetch the raw data.
+// This is now a pure Server Component.
+// Its only responsibility is to fetch the raw data and pass it to the client.
 export default async function InventoryPage() {
   const products = await getProducts();
   

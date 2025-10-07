@@ -5,19 +5,211 @@ import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, Printer, Loader2 } from "lucide-react";
+import { PlusCircle, Search, Printer, Loader2, MoreHorizontal, Edit, ArrowUpDown } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
-import { columns } from './columns';
 import type { Product, GroupedProduct } from '@/lib/types';
-import { BatchDetailsDialog } from './batch-details-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose
+} from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import Image from 'next/image';
+import { ColumnDef } from "@tanstack/react-table";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
+// =====================================================================
+// DEFINIÇÃO DAS COLUNAS (MOVido PARA CÁ)
+// =====================================================================
+const capitalizeFirstLetter = (string: string) => {
+    if (!string) return 'N/A';
+    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+}
+
+export const columns: ColumnDef<GroupedProduct>[] = [
+    {
+      accessorKey: "name",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Nome
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => (
+        <div className="capitalize font-medium text-primary hover:underline cursor-pointer">
+          {row.getValue("name")}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "presentation",
+      header: "Apresentação",
+      cell: ({ row }) => <div className="capitalize">{row.getValue("presentation") || "N/A"}</div>
+    },
+    {
+      accessorKey: "therapeuticClass",
+      header: "Classe",
+      cell: ({ row }) => <div className="capitalize">{row.getValue("therapeuticClass") || "N/A"}</div>
+    },
+    {
+      accessorKey: "mainFunction",
+      header: "Função",
+      cell: ({ row }) => <div>{capitalizeFirstLetter(row.getValue("mainFunction"))}</div>
+    },
+    {
+      accessorKey: "quantity",
+      header: () => <div className="text-right">Quantidade Total</div>,
+      cell: ({ row }) => {
+        const amount = parseFloat(row.getValue("quantity"))
+        return <div className="text-right font-medium">{amount.toLocaleString('pt-BR')}</div>
+      },
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const status: string = row.getValue("status");
+        const variantMap: { [key: string]: "destructive" | "secondary" | "default" } = {
+          'Sem Estoque': 'destructive',
+          'Baixo Estoque': 'secondary',
+          'Em Estoque': 'default'
+        };
+        
+        return <Badge 
+          variant={variantMap[status] ?? 'default'}
+          className={cn(status === 'Baixo Estoque' && 'bg-accent text-accent-foreground')}
+        >
+          {status}
+        </Badge>
+      },
+    },
+];
+
+
+// =====================================================================
+// DIÁLOGO DE DETALHES (MOVido PARA CÁ)
+// =====================================================================
+interface BatchDetailsDialogProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  product: GroupedProduct | null; // Allow null
+  onProductSaved: () => void;
+}
+
+function BatchDetailsDialog({ isOpen, onOpenChange, product, onProductSaved }: BatchDetailsDialogProps) {
+  if (!product) return null;
+  
+  const { batches, name, presentation, imageUrl } = product;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>Detalhes dos Lotes: {name}</DialogTitle>
+          <DialogDescription>
+            Apresentação: {presentation}. Total em estoque: {product.quantity.toLocaleString('pt-BR')}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex gap-6 max-h-[60vh] overflow-y-auto">
+          {imageUrl && (
+              <div className="w-1/3">
+                  <Image
+                      src={imageUrl}
+                      alt={`Imagem de ${name}`}
+                      width={200}
+                      height={200}
+                      className="rounded-md object-cover w-full"
+                  />
+              </div>
+          )}
+          <div className={imageUrl ? 'w-2/3' : 'w-full'}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Lote</TableHead>
+                  <TableHead>Validade</TableHead>
+                  <TableHead>Nome Comercial</TableHead>
+                  <TableHead>Fabricante</TableHead>
+                  <TableHead className="text-right">Quantidade</TableHead>
+                  <TableHead className="text-center">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {batches.map(batch => (
+                  <TableRow key={batch.id}>
+                    <TableCell className="font-mono">{batch.batch || 'N/A'}</TableCell>
+                    <TableCell>{batch.expiryDate ? new Date(batch.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A'}</TableCell>
+                    <TableCell>{batch.commercialName || 'N/A'}</TableCell>
+                    <TableCell>{batch.manufacturer || 'N/A'}</TableCell>
+                    <TableCell className="text-right">{batch.quantity.toLocaleString('pt-BR')}</TableCell>
+                    <TableCell className="text-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Abrir menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                           <AddProductDialog productToEdit={batch} onProductSaved={onProductSaved} trigger={
+                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  <span>Editar Lote</span>
+                              </DropdownMenuItem>
+                          } />
+                          <DropdownMenuItem asChild>
+                              <Link href={`/labels/${batch.id}`} target="_blank" className="w-full h-full flex items-center cursor-pointer">
+                                  <Printer className="mr-2 h-4 w-4" />
+                                  <span>Imprimir Etiquetas</span>
+                              </Link>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+        <DialogFooter>
+            <DialogClose asChild>
+                 <Button type="button" variant="outline">Fechar</Button>
+            </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+// =====================================================================
+// COMPONENTE PRINCIPAL DO CLIENTE
+// =====================================================================
 type FilterCategory = 'Todos' | Product['category'];
 
 const filterCategories: FilterCategory[] = ['Todos', 'Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Não Padronizado (Compra)'];
 
-// This logic is now correctly placed within the Client Component.
 const groupAndFilterProducts = (products: Product[], filter: FilterCategory, searchTerm: string): GroupedProduct[] => {
     const groupedProductsMap = new Map<string, GroupedProduct>();
 
@@ -73,7 +265,6 @@ export function InventoryClient({ rawProducts }: InventoryClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  // State for the details dialog
   const [selectedProduct, setSelectedProduct] = useState<GroupedProduct | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -81,7 +272,6 @@ export function InventoryClient({ rawProducts }: InventoryClientProps) {
     startTransition(() => {
         router.refresh();
     });
-    // Also close the dialog if it's open
     setIsDialogOpen(false);
   }
 
@@ -142,7 +332,7 @@ export function InventoryClient({ rawProducts }: InventoryClientProps) {
         <BatchDetailsDialog
             isOpen={isDialogOpen}
             onOpenChange={setIsDialogOpen}
-            product={selectedProduct!}
+            product={selectedProduct}
             onProductSaved={handleProductSaved}
         />
     </>
