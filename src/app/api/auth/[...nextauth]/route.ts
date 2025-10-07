@@ -8,10 +8,16 @@ import { firebaseApp } from '@/lib/firebase/client';
 import { kv } from "@/lib/kv";
 import { UpstashRedisAdapter } from "@next-auth/upstash-redis-adapter";
 
+// Função dedicada para buscar o usuário no banco de dados
 async function getUserFromDb(email: string | null | undefined): Promise<User | null> {
   if (!email) return null;
-  const users = await readData<User>('users');
-  return users.find(u => u.email === email) || null;
+  try {
+    const users = await readData<User>('users');
+    return users.find(u => u.email === email) || null;
+  } catch (error) {
+    console.error("Error fetching user from DB:", error);
+    return null;
+  }
 }
 
 export const authOptions: NextAuthOptions = {
@@ -41,32 +47,41 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          console.error("Authorize: Missing credentials");
           return null;
         }
 
-        const auth = getAuth(firebaseApp);
-
         try {
+          // Garante que a instância de autenticação seja obtida de forma estável
+          const auth = getAuth(firebaseApp);
+          
           const userCredential = await signInWithEmailAndPassword(
             auth,
             credentials.email,
             credentials.password
           );
+          
           const firebaseUser = userCredential.user;
+          if (!firebaseUser || !firebaseUser.email) {
+             console.error("Authorize: Firebase user not found after sign-in.");
+             return null;
+          }
 
-          if (!firebaseUser) return null;
-
+          // Após o sucesso do Firebase, busca o usuário no nosso banco de dados
           const appUser = await getUserFromDb(firebaseUser.email);
           
           if (!appUser) {
-            console.error(`User ${firebaseUser.email} authenticated with Firebase but not found in app DB.`);
+            console.error(`Authorize: User ${firebaseUser.email} authenticated with Firebase but not found in app DB.`);
             return null;
           }
           
+          // Retorna o objeto completo do nosso banco de dados.
+          // O NextAuth (com o adaptador) cuidará de salvar a sessão.
           return appUser;
 
-        } catch (error) {
-          console.error("Firebase authentication error:", error);
+        } catch (error: any) {
+          // Log detalhado do erro do Firebase no servidor
+          console.error("Authorize: Firebase authentication error:", error.code, error.message);
           return null;
         }
       },
@@ -74,6 +89,7 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async session({ session, user }) {
+      // O 'user' aqui vem do banco de dados da sessão (Vercel KV), graças ao adaptador.
       if (session.user) {
         session.user.id = user.id;
         session.user.role = user.role;
@@ -84,11 +100,17 @@ export const authOptions: NextAuthOptions = {
         session.user.name = user.name;
         session.user.email = user.email;
         
-        const users = await readData<User>('users');
-        const userIndex = users.findIndex(u => u.id === user.id);
-        if (userIndex !== -1) {
-          users[userIndex].lastSeen = new Date().toISOString();
-          writeData('users', users).catch(console.error);
+        // Atualiza a 'última visualização' do usuário de forma assíncrona
+        try {
+            const users = await readData<User>('users');
+            const userIndex = users.findIndex(u => u.id === user.id);
+            if (userIndex !== -1) {
+              users[userIndex].lastSeen = new Date().toISOString();
+              // A escrita não precisa ser aguardada para não bloquear a resposta da sessão
+              writeData('users', users).catch(console.error);
+            }
+        } catch (dbError) {
+            console.error("Session Callback: Failed to update lastSeen:", dbError);
         }
       }
       return session;
@@ -96,7 +118,7 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/login',
-    error: '/login',
+    error: '/login', // Redireciona para /login em caso de erro, com ?error=... na URL
   },
 };
 
