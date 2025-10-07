@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 const changelog = [
+    { version: '2.4.7', changes: ['Refatorada a inicialização do Firebase Auth na rota de API do NextAuth para garantir estabilidade e resolver o erro "Configuration" de forma definitiva.'] },
     { version: '2.4.6', changes: ['Correção final do fluxo de autorização do NextAuth para resolver o erro "Configuration" no login, garantindo a estabilidade completa do sistema.'] },
     { version: '2.4.5', changes: ['Correção final do fluxo de login para garantir consistência dos dados da sessão.', 'Adicionado Suspense para uma melhor experiência de carregamento na página de login.', 'Revisão geral de estabilidade e qualidade do código.'] },
     { version: '2.4.4', changes: ['Restauração segura dos dados do perfil do usuário (avatar, nome, etc.) na sessão, mantendo o cookie pequeno e eliminando o erro de cabeçalho.'] },
@@ -77,7 +78,7 @@ export default function AboutPage() {
                     Versão do Sistema
                 </h3>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  NexusFarma v2.4.6
+                  NexusFarma v2.4.7
                 </p>
               </div>
           </CardContent>
