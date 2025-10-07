@@ -19,11 +19,11 @@ const changelog = [
     { version: '2.4.3', changes: ['Simplificado o callback de sessão para resolver definitivamente o erro `REQUEST_HEADER_TOO_LARGE` sem introduzir novos bugs. O sistema agora está estável.'] },
     { version: '2.4.2', changes: ['Removido callback `jwt` desnecessário que causava o erro `REQUEST_HEADER_TOO_LARGE` mesmo com a estratégia de sessão `database`.'] },
     { version: '2.4.1', changes: ['Implementada correção definitiva do erro "REQUEST_HEADER_TOO_LARGE" utilizando a estratégia de sessão no banco de dados, o que minimiza o tamanho do cookie de autenticação e garante a estabilidade do sistema.'] },
-    { version: '2.4.0', changes: ['Melhorias de responsividade para dispositivos móveis.', 'Tentativas iniciais de correção do erro "REQUEST_HEADER_TOO_LARGE".'] },
+    { version: '2_4_0', changes: ['Melhorias de responsividade para dispositivos móveis.', 'Tentativas iniciais de correção do erro "REQUEST_HEADER_TOO_LARGE".'] },
     { version: '2.3.0', changes: ['Melhorias significativas na responsividade para dispositivos móveis.', 'Aprimoramento da busca de conhecimento para preenchimento automático de produtos.', 'Correções de bugs gerais de estabilidade e gerenciamento de sessão.'] },
     { version: '2.2.0', changes: ['Refatorada a arquitetura de acesso a dados para resolver definitivamente o erro `OAuthSignin` e estabilizar o fluxo de login com Google e Credenciais.'] },
     { version: '2.1.1', changes: ['Corrigida a integração do provedor de credenciais para usar o Firebase Auth, unificando completamente o sistema de login.', 'Resolvido erro de "Suspense Boundary" na página de login.'] },
-    { version: '2.1.0', changes: ['Implementado o fluxo completo de recuperação de senha via email, utilizando a funcionalidade nativa do Firebase Auth.'] },
+    { version: '2_1_0', changes: ['Implementado o fluxo completo de recuperação de senha via email, utilizando a funcionalidade nativa do Firebase Auth.'] },
     { version: '2.0.2', changes: ['Otimizado o fluxo de login para garantir o redirecionamento imediato e correto para o dashboard após a autenticação, eliminando a necessidade de recarregar a página.'] },
     { version: '2.0.1', changes: ['Correção de erros críticos de importação nas Server Actions que impediam o funcionamento de cadastros.', 'Resolvido erro que impediam o registro de novos usuários.'] },
     { version: '2.0.0', changes: ['Lançamento da versão estável "Definitivo 2". Refatoração completa da arquitetura de acesso a dados e autenticação para garantir estabilidade e corrigir múltiplos erros de build.'] },
@@ -154,7 +154,7 @@ export default function AboutPage() {
                         {changelog.map(log => (
                             <div key={log.version}>
                                 <h4 className="font-semibold text-foreground flex items-center gap-2">
-                                   Versão <Badge>{log.version}</Badge>
+                                   Versão <Badge>{log.version.replace(/_/g, '.')}</Badge>
                                 </h4>
                                 <ul className="list-disc pl-5 space-y-1 mt-2 text-sm text-muted-foreground">
                                     {log.changes.map((change: string, index: number) => (
