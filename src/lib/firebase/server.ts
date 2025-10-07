@@ -2,22 +2,26 @@
 import { initializeApp, getApps, getApp, type FirebaseApp, type FirebaseOptions } from 'firebase/app';
 
 // Configuração do Firebase para uso EXCLUSIVO no lado do servidor.
-// Lê as variáveis de ambiente sem o prefixo NEXT_PUBLIC_.
+// Esta versão foi modificada para ler as variáveis de ambiente com o prefixo NEXT_PUBLIC_,
+// unificando a fonte de configuração e garantindo acesso no ambiente da Vercel.
 const firebaseConfig: FirebaseOptions = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.FIREBASE_APP_ID,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
 // Inicializa o Firebase App para o servidor, garantindo que não seja reinicializado.
+// Usamos um nome único 'serverApp' para evitar conflitos com a instância do cliente.
 function getFirebaseServerApp(): FirebaseApp {
-    if (getApps().length > 0) {
-        return getApp();
+    const serverAppName = 'firebase-server-app';
+    const existingApp = getApps().find(app => app.name === serverAppName);
+    if (existingApp) {
+        return existingApp;
     }
-    return initializeApp(firebaseConfig);
+    return initializeApp(firebaseConfig, serverAppName);
 }
 
 export const firebaseServerApp = getFirebaseServerApp();
