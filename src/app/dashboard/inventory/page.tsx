@@ -8,15 +8,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { InventoryClient } from "./inventory-client";
-import type { Product } from "@/lib/types";
 
-// The GroupedProduct type now lives here as it's a conceptual representation
-// of what the client component will create.
-export type GroupedProduct = Product & {
-    batches: Product[];
-}
-
-// This is a Server Component. Its only responsibility is to fetch the data.
+// This is a Server Component. Its only responsibility is to fetch the raw data.
+// All client-side logic, including type definitions for grouped data, is now
+// handled entirely within InventoryClient.
 export default async function InventoryPage() {
   const products = await getProducts();
   
@@ -39,5 +34,3 @@ export default async function InventoryPage() {
     </Card>
   );
 }
-
-    

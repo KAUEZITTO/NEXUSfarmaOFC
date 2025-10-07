@@ -10,14 +10,19 @@ import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
 import { columns } from './columns';
-import type { Product, PatientDemandItem } from '@/lib/types';
-import type { GroupedProduct } from './page';
+import type { Product } from '@/lib/types';
 import { BatchDetailsDialog } from './batch-details-dialog';
+
+// The GroupedProduct type is now defined and used exclusively within the client components.
+export type GroupedProduct = Product & {
+    batches: Product[];
+}
 
 type FilterCategory = 'Todos' | Product['category'];
 
 const filterCategories: FilterCategory[] = ['Todos', 'Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Não Padronizado (Compra)'];
 
+// This logic is now correctly placed within the Client Component.
 const groupAndFilterProducts = (products: Product[], filter: FilterCategory, searchTerm: string): GroupedProduct[] => {
     const groupedProductsMap = new Map<string, GroupedProduct>();
 

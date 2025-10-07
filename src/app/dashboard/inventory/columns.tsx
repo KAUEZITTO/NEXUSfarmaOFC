@@ -5,16 +5,13 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { GroupedProduct } from "./page";
+import type { GroupedProduct } from "./inventory-client"; // Updated import path
 
 const capitalizeFirstLetter = (string: string) => {
     if (!string) return 'N/A';
     return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
 }
 
-
-// The columns definition is now a pure function, with no client-side hooks or state.
-// The interactive part (clicking to open a dialog) will be handled by the parent DataTable/ClientComponent.
 export const columns: ColumnDef<GroupedProduct>[] = [
     {
       accessorKey: "name",
@@ -78,4 +75,3 @@ export const columns: ColumnDef<GroupedProduct>[] = [
       },
     },
   ]
-
