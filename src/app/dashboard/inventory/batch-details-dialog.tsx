@@ -21,7 +21,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Edit, MoreHorizontal, Printer } from 'lucide-react';
-import type { GroupedProduct } from './inventory-client'; // Updated import path
+import type { GroupedProduct } from './inventory-client';
 import Link from 'next/link';
 import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
 import Image from 'next/image';
