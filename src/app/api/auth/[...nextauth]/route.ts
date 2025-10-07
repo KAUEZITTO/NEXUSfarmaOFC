@@ -2,10 +2,8 @@
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { VercelKVAdapter } from "@auth/vercel-kv-adapter";
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 
-import { kv } from "@/lib/kv";
 import { readData, writeData } from '@/lib/data';
 import { firebaseServerApp } from '@/lib/firebase/server';
 import type { User } from '@/lib/types';
@@ -29,10 +27,11 @@ async function getUserFromDb(email: string): Promise<User | null> {
 }
 
 export const authOptions: NextAuthOptions = {
-  adapter: VercelKVAdapter(kv),
+  // A estratégia 'jwt' armazena a sessão em um cookie criptografado.
+  // Isso remove a necessidade de um adaptador de banco de dados para a sessão,
+  // resolvendo os problemas de instalação e de 'Credenciais Inválidas'.
   session: {
-    // Usar 'database' é crucial para que o cookie seja pequeno e evite o erro 'REQUEST_HEADER_TOO_LARGE'.
-    strategy: 'database',
+    strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 dias
   },
   secret: process.env.NEXTAUTH_SECRET,
@@ -123,7 +122,7 @@ export const authOptions: NextAuthOptions = {
     },
     
     // O callback 'jwt' é chamado sempre que um token é criado ou atualizado.
-    // É essencial para persistir os dados personalizados no banco de dados da sessão ('database' strategy).
+    // Com a estratégia 'jwt', este callback é essencial para codificar os dados no token.
     async jwt({ token, user }) {
       // No primeiro login (quando o objeto 'user' está presente),
       // transferimos os dados do usuário para o token.
@@ -136,12 +135,12 @@ export const authOptions: NextAuthOptions = {
         token.image = user.image;
         token.birthdate = user.birthdate;
       }
-      // O VercelKVAdapter usará este token enriquecido para criar a entrada da sessão no Vercel KV.
+      // O token enriquecido será criptografado e salvo no cookie de sessão.
       return token;
     },
 
     // O callback 'session' constrói o objeto de sessão do lado do cliente.
-    // Ele recebe o token (recuperado do Vercel KV pelo adaptador) e o usa para popular a sessão.
+    // Ele recebe o token JWT decodificado e o usa para popular a sessão.
     async session({ session, token }) {
       if (session.user && token) {
         session.user.id = token.id as string;
