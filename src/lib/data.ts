@@ -119,6 +119,24 @@ export async function getAllUsers(): Promise<User[]> {
     });
 }
 
+/**
+ * Busca um usuário no nosso banco de dados (Vercel KV) pelo email.
+ * Centraliza a lógica de leitura e tratamento de erros.
+ */
+export async function getUserByEmailFromDb(email: string): Promise<User | null> {
+  if (!email) return null;
+  try {
+    const users = await readData<User>('users');
+    const user = users.find(u => u.email === email);
+    return user || null;
+  } catch (error) {
+    console.error("CRITICAL: Falha ao ler dados do usuário do Vercel KV.", error);
+    // Em caso de falha de leitura do banco, o login deve ser impedido.
+    return null;
+  }
+}
+
+
 export async function getKnowledgeBase() {
     return await getKbData();
 }

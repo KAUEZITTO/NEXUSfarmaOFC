@@ -3,10 +3,11 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { readData, writeData, getProducts } from './data';
+import { readData, writeData, getProducts, getUserByEmailFromDb } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, KnowledgeBaseItem, AccessLevel, OrderType } from './types';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseApp } from './firebase/client';
+import { adminAuth } from './firebase/admin';
 import kb from '../data/knowledge-base.json';
 import * as jose from 'jose';
 
@@ -289,6 +290,70 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
 export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
     return kb;
 }
+
+// --- AUTH ACTIONS (MOVED FROM API ROUTE) ---
+
+/**
+ * Garante que um usuário exista no Firebase Auth e no banco de dados da aplicação.
+ * Se não existir, cria um novo usuário em ambos.
+ * Retorna o usuário da aplicação (do Vercel KV).
+ */
+export async function getOrCreateFirebaseUser(email: string, name?: string | null, image?: string | null): Promise<User> {
+    let firebaseUid: string;
+    try {
+        // 1. Tenta obter o usuário do Firebase Auth
+        const userRecord = await adminAuth.getUserByEmail(email);
+        firebaseUid = userRecord.uid;
+    } catch (error: any) {
+        // 2. Se não existe, cria no Firebase Auth
+        if (error.code === 'auth/user-not-found') {
+            console.log(`Usuário ${email} não encontrado no Firebase Auth. Criando um novo...`);
+            const newUserRecord = await adminAuth.createUser({
+                email: email,
+                displayName: name || email.split('@')[0],
+                photoURL: image,
+                password: Math.random().toString(36).slice(-8), // Senha aleatória para usuários OAuth
+            });
+            firebaseUid = newUserRecord.uid;
+        } else {
+            console.error("Erro desconhecido ao buscar/criar usuário no Firebase Auth:", error);
+            throw error; // Lança outros erros
+        }
+    }
+
+    // 3. Verifica se o usuário existe no nosso banco de dados (Vercel KV)
+    const existingAppUser = await getUserByEmailFromDb(email);
+    if (existingAppUser) {
+        // 3a. Se existe, verifica consistência do ID e retorna
+        if (existingAppUser.id !== firebaseUid) {
+            console.warn(`Corrigindo inconsistência de UID para ${email}.`);
+            existingAppUser.id = firebaseUid;
+            // TODO: Salvar a correção no banco de dados
+            const allUsers = await readData<User>('users');
+            const userIndex = allUsers.findIndex(u => u.email === email);
+            if (userIndex !== -1) {
+                allUsers[userIndex].id = firebaseUid;
+                await writeData('users', allUsers);
+            }
+        }
+        return existingAppUser;
+    }
+
+    // 4. Se não existe no nosso banco, cria agora
+    const users = await readData<User>('users');
+    const newUser: User = {
+        id: firebaseUid, // USA O UID DO FIREBASE
+        name: name,
+        email: email,
+        image: image,
+        role: 'Farmacêutico', // Role padrão
+        accessLevel: users.length === 0 ? 'Admin' : 'User', // Primeiro usuário é Admin
+    };
+    await writeData('users', [...users, newUser]);
+    
+    return newUser;
+}
+
 
 // --- REGISTER ---
 export async function register({ email, password, role, subRole }: { email: string; password: string; role: Role; subRole?: SubRole; }) {
