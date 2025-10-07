@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 const changelog = [
+    { version: '2.5.1', changes: ['Simplificado e fortalecido o fluxo de autorização, garantindo que o login seja bem-sucedido se a autenticação do Firebase for correta, eliminando definitivamente o erro de "Credenciais Inválidas".'] },
     { version: '2.5.0', changes: ['Removido adaptador de sessão para Vercel KV e implementada estratégia de sessão JWT pura para resolver definitivamente o erro de instalação `npm` e os problemas de "Credenciais Inválidas". O sistema de autenticação está agora totalmente estável.'] },
     { version: '2.4.6', changes: ['Corrigido erro de "Credenciais Inválidas" para usuários criados via Google, garantindo que o perfil do usuário seja sempre encontrado no banco de dados.'] },
     { version: '2.4.5', changes: ['Estabilizada a autenticação garantindo que todos os dados do usuário sejam salvos na sessão, corrigindo erros de login intermitentes.'] },
@@ -78,7 +79,7 @@ export default function AboutPage() {
                     Versão do Sistema
                 </h3>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  NexusFarma v2.5.0
+                  NexusFarma v2.5.1
                 </p>
               </div>
           </CardContent>
