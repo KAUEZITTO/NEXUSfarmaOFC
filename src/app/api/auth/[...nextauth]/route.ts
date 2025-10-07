@@ -4,7 +4,8 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { readData, writeData } from '@/lib/data';
 import type { User } from '@/lib/types';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { firebaseApp } from '@/lib/firebase/client';
+// Importa a instância do Firebase específica para o servidor
+import { firebaseServerApp } from '@/lib/firebase/server';
 import { kv } from "@/lib/kv";
 import { UpstashRedisAdapter } from "@next-auth/upstash-redis-adapter";
 
@@ -61,8 +62,8 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // Etapa 1: Autenticar credenciais com o Firebase.
-          const auth = getAuth(firebaseApp);
+          // Etapa 1: Autenticar credenciais com o Firebase usando a configuração do servidor.
+          const auth = getAuth(firebaseServerApp);
           const userCredential = await signInWithEmailAndPassword(
             auth,
             credentials.email,
@@ -76,7 +77,7 @@ export const authOptions: NextAuthOptions = {
           }
 
           // Etapa 2: Buscar o perfil completo do usuário no nosso banco de dados (Vercel KV).
-          // Este passo é OBRIGATÓRIO. O objeto retornado aqui é o que será salvo na sessão do banco de dados.
+          // Este passo é OBRIGATÓRIO. O objeto retornado aqui é o que será salvo na sessão.
           const appUser = await getUserFromDb(firebaseUser.email);
           
           if (!appUser) {
@@ -84,8 +85,7 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
           
-          // Etapa 3: Retornar o objeto de usuário completo. O NextAuth (com o adaptador)
-          // cuidará de criar a sessão no Vercel KV com estes dados.
+          // Etapa 3: Retornar o objeto de usuário completo. O NextAuth cuidará de criar a sessão.
           return appUser;
 
         } catch (error: any) {
@@ -94,7 +94,8 @@ export const authOptions: NextAuthOptions = {
             errorCode: error.code,
             errorMessage: error.message,
           });
-          // Retorna null em caso de falha de autenticação (ex: senha errada).
+          // Retorna null em caso de falha de autenticação (ex: senha errada, API key inválida).
+          // Isso resultará no erro OAuthSignin na tela de login.
           return null;
         }
       },
@@ -108,28 +109,10 @@ export const authOptions: NextAuthOptions = {
         // Enriquece o objeto de sessão padrão com os campos personalizados do nosso banco.
         session.user.id = user.id;
         session.user.role = user.role;
-        session.user.subRole = user.subRole;
-        session.user.accessLevel = user.accessLevel;
-        session.user.image = user.image;
-        session.user.birthdate = user.birthdate;
         session.user.name = user.name;
         session.user.email = user.email;
-        
-        // Atualiza a 'última visualização' do usuário de forma assíncrona.
-        // Isso não bloqueia o retorno da sessão para o cliente.
-        try {
-            const users = await readData<User>('users');
-            const userIndex = users.findIndex(u => u.id === user.id);
-            if (userIndex !== -1) {
-              users[userIndex].lastSeen = new Date().toISOString();
-              // A escrita não precisa ser aguardada, evitando lentidão na resposta.
-              writeData('users', users).catch(dbError => 
-                console.error("Session Callback: Failed to update lastSeen.", dbError)
-              );
-            }
-        } catch (dbError) {
-            console.error("Session Callback: Failed to read users for lastSeen update.", dbError);
-        }
+        // Adicione outros campos que você precisar no frontend aqui
+        // Ex: session.user.accessLevel = user.accessLevel;
       }
       return session;
     },
