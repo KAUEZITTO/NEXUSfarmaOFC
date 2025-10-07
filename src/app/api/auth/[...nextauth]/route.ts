@@ -8,24 +8,31 @@ import { firebaseApp } from '@/lib/firebase/client';
 import { kv } from "@/lib/kv";
 import { UpstashRedisAdapter } from "@next-auth/upstash-redis-adapter";
 
-// Função dedicada para buscar o usuário no banco de dados
-async function getUserFromDb(email: string | null | undefined): Promise<User | null> {
-  if (!email) return null;
+// Função dedicada e robusta para buscar o usuário no banco de dados (Vercel KV).
+async function getUserFromDb(email: string): Promise<User | null> {
   try {
     const users = await readData<User>('users');
-    return users.find(u => u.email === email) || null;
+    const user = users.find(u => u.email === email);
+    return user || null;
   } catch (error) {
-    console.error("Error fetching user from DB:", error);
+    // Adiciona log de erro detalhado caso a leitura do KV falhe.
+    console.error("CRITICAL: Failed to read user data from Vercel KV.", error);
+    // Retorna null para interromper a autenticação se o banco de dados estiver inacessível.
     return null;
   }
 }
 
 export const authOptions: NextAuthOptions = {
+  // O adaptador é crucial para a estratégia 'database'. Ele armazena a sessão no Vercel KV.
   adapter: UpstashRedisAdapter(kv),
+  
+  // A estratégia 'database' mantém o cookie de sessão pequeno, evitando erros de cabeçalho.
   session: {
     strategy: 'database',
     maxAge: 60 * 60 * 24 * 7, // 7 dias
   },
+
+  // Configuração segura de cookies para produção.
   cookies: {
     sessionToken: {
       name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.session-token`,
@@ -37,7 +44,9 @@ export const authOptions: NextAuthOptions = {
       },
     },
   },
+
   secret: process.env.NEXTAUTH_SECRET,
+
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -47,14 +56,13 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          console.error("Authorize: Missing credentials");
+          console.error("Authorize Error: Missing credentials.");
           return null;
         }
 
         try {
-          // Garante que a instância de autenticação seja obtida de forma estável
+          // Etapa 1: Autenticar credenciais com o Firebase.
           const auth = getAuth(firebaseApp);
-          
           const userCredential = await signInWithEmailAndPassword(
             auth,
             credentials.email,
@@ -62,35 +70,42 @@ export const authOptions: NextAuthOptions = {
           );
           
           const firebaseUser = userCredential.user;
-          if (!firebaseUser || !firebaseUser.email) {
-             console.error("Authorize: Firebase user not found after sign-in.");
+          if (!firebaseUser?.email) {
+             console.error("Authorize Error: Firebase user not found after successful sign-in.");
              return null;
           }
 
-          // Após o sucesso do Firebase, busca o usuário no nosso banco de dados
+          // Etapa 2: Buscar o perfil completo do usuário no nosso banco de dados (Vercel KV).
+          // Este passo é OBRIGATÓRIO. O objeto retornado aqui é o que será salvo na sessão do banco de dados.
           const appUser = await getUserFromDb(firebaseUser.email);
           
           if (!appUser) {
-            console.error(`Authorize: User ${firebaseUser.email} authenticated with Firebase but not found in app DB.`);
+            console.error(`Authorize Error: User ${firebaseUser.email} authenticated with Firebase but not found in the application database (Vercel KV).`);
             return null;
           }
           
-          // Retorna o objeto completo do nosso banco de dados.
-          // O NextAuth (com o adaptador) cuidará de salvar a sessão.
+          // Etapa 3: Retornar o objeto de usuário completo. O NextAuth (com o adaptador)
+          // cuidará de criar a sessão no Vercel KV com estes dados.
           return appUser;
 
         } catch (error: any) {
-          // Log detalhado do erro do Firebase no servidor
-          console.error("Authorize: Firebase authentication error:", error.code, error.message);
+          // Log detalhado do erro do Firebase no servidor.
+          console.error("Authorize Error: Firebase authentication failed.", {
+            errorCode: error.code,
+            errorMessage: error.message,
+          });
+          // Retorna null em caso de falha de autenticação (ex: senha errada).
           return null;
         }
       },
     }),
   ],
   callbacks: {
+    // O callback `session` é chamado para construir o objeto de sessão do lado do cliente.
+    // O parâmetro `user` aqui vem diretamente do banco de dados da sessão (Vercel KV), graças ao adaptador.
     async session({ session, user }) {
-      // O 'user' aqui vem do banco de dados da sessão (Vercel KV), graças ao adaptador.
       if (session.user) {
+        // Enriquece o objeto de sessão padrão com os campos personalizados do nosso banco.
         session.user.id = user.id;
         session.user.role = user.role;
         session.user.subRole = user.subRole;
@@ -100,17 +115,20 @@ export const authOptions: NextAuthOptions = {
         session.user.name = user.name;
         session.user.email = user.email;
         
-        // Atualiza a 'última visualização' do usuário de forma assíncrona
+        // Atualiza a 'última visualização' do usuário de forma assíncrona.
+        // Isso não bloqueia o retorno da sessão para o cliente.
         try {
             const users = await readData<User>('users');
             const userIndex = users.findIndex(u => u.id === user.id);
             if (userIndex !== -1) {
               users[userIndex].lastSeen = new Date().toISOString();
-              // A escrita não precisa ser aguardada para não bloquear a resposta da sessão
-              writeData('users', users).catch(console.error);
+              // A escrita não precisa ser aguardada, evitando lentidão na resposta.
+              writeData('users', users).catch(dbError => 
+                console.error("Session Callback: Failed to update lastSeen.", dbError)
+              );
             }
         } catch (dbError) {
-            console.error("Session Callback: Failed to update lastSeen:", dbError);
+            console.error("Session Callback: Failed to read users for lastSeen update.", dbError);
         }
       }
       return session;
@@ -118,7 +136,7 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/login',
-    error: '/login', // Redireciona para /login em caso de erro, com ?error=... na URL
+    error: '/login', // Redireciona para /login em caso de erro, com `?error=...` na URL.
   },
 };
 
