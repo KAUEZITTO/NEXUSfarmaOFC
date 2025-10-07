@@ -11,6 +11,13 @@ import Link from 'next/link';
 import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
 import type { Product } from '@/lib/types';
 import { 
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
@@ -187,11 +194,11 @@ const groupAndFilterProducts = (products: Product[], filter: FilterCategory, sea
     return groupedProducts;
 }
 
-interface InventoryClientProps {
+interface InventoryPageContentProps {
     rawProducts: Product[];
 }
 
-export function InventoryClient({ rawProducts }: InventoryClientProps) {
+export default function InventoryPageContent({ rawProducts }: InventoryPageContentProps) {
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('Todos');
   const [searchTerm, setSearchTerm] = useState('');
   const [products, setProducts] = useState<GroupedProduct[]>([]);
@@ -279,7 +286,18 @@ export function InventoryClient({ rawProducts }: InventoryClientProps) {
   ];
 
   return (
-    <>
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle>Inventário de Produtos</CardTitle>
+            <CardDescription>
+              Gerencie seus produtos, adicione novos e acompanhe o estoque. Itens agrupados por nome e apresentação.
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
         <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
             <div className="flex items-center space-x-2 pt-2 overflow-x-auto pb-2">
                 {filterCategories.map(filter => (
@@ -328,6 +346,7 @@ export function InventoryClient({ rawProducts }: InventoryClientProps) {
             product={selectedProduct}
             onProductSaved={handleProductSaved}
         />
-    </>
+      </CardContent>
+    </Card>
   );
 }

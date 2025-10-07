@@ -1,35 +1,35 @@
 
 import { getProducts } from "@/lib/data";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { InventoryClient } from "./inventory-client";
+import { Suspense } from "react";
+import InventoryPageContent from "./inventory-client";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// This is now a pure Server Component.
-// Its only responsibility is to fetch the raw data and pass it to the client.
-export default async function InventoryPage() {
+// This is now a pure Server Component Layout.
+// Its only responsibility is to fetch the raw data and pass it down.
+export default async function InventoryPageLayout() {
   const products = await getProducts();
   
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle>Inventário de Produtos</CardTitle>
-            <CardDescription>
-              Gerencie seus produtos, adicione novos e acompanhe o estoque. Itens agrupados por nome e apresentação.
-            </CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-         {/* The raw data is passed to the Client Component which handles all logic. */}
-         <InventoryClient rawProducts={products} />
-      </CardContent>
-    </Card>
+    <Suspense fallback={<InventorySkeleton />}>
+      <InventoryPageContent rawProducts={products} />
+    </Suspense>
   );
+}
+
+function InventorySkeleton() {
+    return (
+        <div className="space-y-4">
+            <div className="flex justify-between items-center">
+                <Skeleton className="h-10 w-1/4" />
+                <Skeleton className="h-10 w-48" />
+            </div>
+            <Skeleton className="h-8 w-full" />
+            <div className="border rounded-md p-4 space-y-2">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+            </div>
+        </div>
+    );
 }
