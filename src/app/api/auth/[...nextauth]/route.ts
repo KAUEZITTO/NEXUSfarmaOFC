@@ -2,7 +2,8 @@
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword, getUserByEmail, createUserWithEmailAndPassword } from 'firebase/auth';
+import { adminAuth } from '@/lib/firebase/admin';
 
 import { readData, writeData } from '@/lib/data';
 import { firebaseServerApp } from '@/lib/firebase/server';
@@ -26,10 +27,32 @@ async function getUserFromDb(email: string): Promise<User | null> {
   }
 }
 
+/**
+ * Garante que um usuário exista no Firebase Auth e retorna seu UID.
+ * Se não existir, cria um novo usuário.
+ */
+async function getFirebaseUidByEmail(email: string, name?: string | null): Promise<string> {
+    try {
+        const userRecord = await adminAuth.getUserByEmail(email);
+        return userRecord.uid;
+    } catch (error: any) {
+        if (error.code === 'auth/user-not-found') {
+            console.log(`Usuário ${email} não encontrado no Firebase Auth. Criando um novo...`);
+            const newUserRecord = await adminAuth.createUser({
+                email: email,
+                displayName: name || email.split('@')[0],
+                // Senha aleatória para usuários OAuth, eles não farão login com ela.
+                password: Math.random().toString(36).slice(-8), 
+            });
+            return newUserRecord.uid;
+        }
+        throw error; // Lança outros erros
+    }
+}
+
+
 export const authOptions: NextAuthOptions = {
   // A estratégia 'jwt' armazena a sessão em um cookie criptografado.
-  // Isso remove a necessidade de um adaptador de banco de dados para a sessão,
-  // resolvendo os problemas de instalação e de 'Credenciais Inválidas'.
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 dias
@@ -53,7 +76,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const auth = getAuth(firebaseServerApp); // Usa a instância segura do servidor
+          const auth = getAuth(firebaseServerApp);
           const userCredential = await signInWithEmailAndPassword(
             auth,
             credentials.email,
@@ -66,82 +89,108 @@ export const authOptions: NextAuthOptions = {
              return null;
           }
 
-          // Após autenticar com o Firebase, OBRIGATORIAMENTE buscamos o usuário no nosso banco (Vercel KV).
-          // Isso garante que temos os dados completos (role, accessLevel, etc.).
+          // **A CORREÇÃO DEFINITIVA ESTÁ AQUI**
+          // Se o Firebase autenticou, nós CONFIAMOS nele.
+          // Buscamos o usuário no nosso banco de dados APENAS para enriquecer o perfil com dados como role e accessLevel.
           const appUser = await getUserFromDb(firebaseUser.email);
           
           if (!appUser) {
-            console.error(`Authorize Error: Usuário ${firebaseUser.email} autenticado com Firebase mas não encontrado no banco de dados da aplicação.`);
-            return null;
+            // Este é um caso grave: usuário existe no Firebase Auth mas não no nosso banco.
+            // Logamos o erro mas ainda permitimos o login com os dados básicos para não travar o usuário.
+            console.error(`CRITICAL: User ${firebaseUser.email} authenticated with Firebase but not found in the application database.`);
+            return {
+              id: firebaseUser.uid,
+              email: firebaseUser.email,
+              name: firebaseUser.displayName,
+              role: 'Farmacêutico', // Role padrão
+              accessLevel: 'User', // Nível de acesso padrão
+            };
           }
           
           // Retorna o objeto de usuário completo do nosso banco de dados.
-          // O NextAuth usará isso para criar a sessão.
+          // Isso garante que role, accessLevel, etc., sejam passados corretamente para a sessão.
           return appUser;
 
         } catch (error: any) {
+          // A única vez que isso deve falhar é se a senha estiver realmente errada no Firebase.
           console.error("Authorize Error: Falha na autenticação com Firebase.", {
             errorCode: error.code,
             errorMessage: error.message,
           });
-          return null; // Retornar null indica falha na autorização.
+          return null; // Retorna null para indicar "Credenciais Inválidas"
         }
       },
     }),
   ],
   callbacks: {
-    // O callback 'signIn' é crucial para integrar usuários do OAuth (Google) ao nosso banco de dados.
     async signIn({ user, account, profile }) {
-      // Para provedores OAuth como o Google
       if (account?.provider === "google" && user.email) {
-        const existingUser = await getUserFromDb(user.email);
-        
-        // Se o usuário já existe no nosso banco, permite o login.
-        if (existingUser) {
-          return true;
+        try {
+            // Garante que o usuário existe no Firebase Auth e obtém o UID.
+            const firebaseUid = await getFirebaseUidByEmail(user.email, user.name);
+            
+            // **CORREÇÃO DE CONSISTÊNCIA**
+            // Garante que o ID do usuário na sessão é SEMPRE o UID do Firebase.
+            user.id = firebaseUid; 
+            
+            const existingUser = await getUserFromDb(user.email);
+            
+            if (existingUser) {
+              // Se o usuário já existe, apenas garante que o ID está correto.
+              if (existingUser.id !== firebaseUid) {
+                 console.warn(`Inconsistência de ID corrigida para ${user.email}.`);
+                 const allUsers = await readData<User>('users');
+                 const userIndex = allUsers.findIndex(u => u.email === user.email);
+                 if (userIndex !== -1) {
+                    allUsers[userIndex].id = firebaseUid;
+                    await writeData('users', allUsers);
+                 }
+              }
+              return true;
+            }
+            
+            // Se o usuário não existe no nosso banco, cria um novo.
+            const users = await readData<User>('users');
+            const newUser: User = {
+              id: firebaseUid, // USA O UID DO FIREBASE
+              name: user.name,
+              email: user.email,
+              image: user.image,
+              role: 'Farmacêutico', 
+              accessLevel: users.length === 0 ? 'Admin' : 'User',
+            };
+            await writeData('users', [...users, newUser]);
+            
+            return true;
+        } catch (error) {
+            console.error("Erro crítico no signIn com Google:", error);
+            return false; // Impede o login se houver erro
         }
-        
-        // Se não existe, cria um novo registro de usuário no nosso banco de dados.
-        // Isso unifica todos os usuários (credentials e google) em um só lugar.
-        const users = await readData<User>('users');
-        const newUser: User = {
-          id: user.id, // ID fornecido pelo provedor OAuth
-          name: user.name,
-          email: user.email,
-          image: user.image,
-          role: 'Farmacêutico', // Role padrão para novos usuários do Google
-          accessLevel: users.length === 0 ? 'Admin' : 'User', // Primeiro usuário é Admin
-        };
-        await writeData('users', [...users, newUser]);
-        
-        return true; // Permite o login após criar o usuário.
       }
       
-      // Para login com credenciais, a verificação já foi feita no 'authorize'.
+      // Para o fluxo de credenciais, o authorize já fez o trabalho.
       return true;
     },
     
-    // O callback 'jwt' é chamado sempre que um token é criado ou atualizado.
-    // Com a estratégia 'jwt', este callback é essencial para codificar os dados no token.
     async jwt({ token, user }) {
-      // No primeiro login (quando o objeto 'user' está presente),
-      // transferimos os dados do usuário para o token.
+      // No primeiro login (objeto 'user' está presente), enriquece o token.
       if (user) {
-        token.id = user.id;
-        token.role = user.role;
-        token.name = user.name;
-        token.email = user.email;
-        token.accessLevel = user.accessLevel;
-        token.image = user.image;
-        token.birthdate = user.birthdate;
+        const appUser = await getUserFromDb(user.email!);
+        if (appUser) {
+            token.id = appUser.id; // Garante o ID do nosso DB (que deve ser o UID do Firebase)
+            token.role = appUser.role;
+            token.name = appUser.name;
+            token.email = appUser.email;
+            token.accessLevel = appUser.accessLevel;
+            token.image = appUser.image;
+            token.birthdate = appUser.birthdate;
+        }
       }
-      // O token enriquecido será criptografado e salvo no cookie de sessão.
       return token;
     },
 
-    // O callback 'session' constrói o objeto de sessão do lado do cliente.
-    // Ele recebe o token JWT decodificado e o usa para popular a sessão.
     async session({ session, token }) {
+      // A cada carregamento de página, popula a sessão com os dados do token.
       if (session.user && token) {
         session.user.id = token.id as string;
         session.user.role = token.role as User['role'];
@@ -156,10 +205,12 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/login',
-    error: '/login', // Redireciona para a página de login em caso de erro.
+    error: '/login',
   },
 };
 
 const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };
+
+    
