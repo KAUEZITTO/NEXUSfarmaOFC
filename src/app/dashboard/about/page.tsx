@@ -12,7 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 const changelog = [
-    { version: '2.6.0', changes: ['Atualização de versão para novo deploy e melhorias gerais de estabilidade.'] },
+    { version: '2.6.0', changes: ['Corrigido erro de "Credenciais Inválidas" para usuários criados via Google, garantindo que o perfil do usuário seja sempre encontrado no banco de dados.'] },
     { version: '2.5.1', changes: ['Refatorada a arquitetura da página de Inventário para separar componentes de Servidor e Cliente, resolvendo o erro de build `Failed to collect page data` e melhorando a performance.'] },
     { version: '2.5.0', changes: ['Refatoração completa da arquitetura de acesso a dados e autenticação para resolver definitivamente o erro de build `Failed to collect page data`, garantindo a estabilidade da aplicação.'] },
     { version: '2.4.6', changes: ['Corrigido erro de "Credenciais Inválidas" para usuários criados via Google, garantindo que o perfil do usuário seja sempre encontrado no banco de dados.'] },
