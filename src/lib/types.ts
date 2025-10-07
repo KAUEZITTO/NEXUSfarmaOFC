@@ -88,6 +88,11 @@ export type Product = {
   imageUrl?: string;
 };
 
+// Tipo para o produto agrupado, usado na interface do cliente
+export type GroupedProduct = Product & {
+    batches: Product[];
+}
+
 export type Unit = {
   id: string;
   name: string;

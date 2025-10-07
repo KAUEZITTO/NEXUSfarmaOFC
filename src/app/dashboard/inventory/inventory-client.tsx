@@ -10,13 +10,8 @@ import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
 import { columns } from './columns';
-import type { Product } from '@/lib/types';
+import type { Product, GroupedProduct } from '@/lib/types';
 import { BatchDetailsDialog } from './batch-details-dialog';
-
-// The GroupedProduct type is now defined and used exclusively within the client components.
-export type GroupedProduct = Product & {
-    batches: Product[];
-}
 
 type FilterCategory = 'Todos' | Product['category'];
 

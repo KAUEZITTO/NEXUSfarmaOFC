@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { GroupedProduct } from "./inventory-client";
+import type { GroupedProduct } from "@/lib/types";
 
 const capitalizeFirstLetter = (string: string) => {
     if (!string) return 'N/A';
