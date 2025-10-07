@@ -139,7 +139,7 @@ export function InventoryClient({ rawProducts }: InventoryClientProps) {
         <BatchDetailsDialog
             isOpen={isDialogOpen}
             onOpenChange={setIsDialogOpen}
-            product={selectedProduct!}
+            product={selectedProduct}
             onProductSaved={handleProductSaved}
         />
     </>

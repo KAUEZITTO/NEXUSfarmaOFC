@@ -5,13 +5,15 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { GroupedProduct } from "@/lib/types";
+import type { GroupedProduct } from '@/lib/types';
 
 const capitalizeFirstLetter = (string: string) => {
     if (!string) return 'N/A';
     return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
 }
 
+// As colunas agora são apenas para exibição de dados. 
+// A lógica de clique é tratada no componente pai (InventoryClient).
 export const columns: ColumnDef<GroupedProduct>[] = [
     {
       accessorKey: "name",

@@ -29,7 +29,7 @@ import Image from 'next/image';
 interface BatchDetailsDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  product: GroupedProduct;
+  product: GroupedProduct | null; // Product can be null initially
   onProductSaved: () => void;
 }
 
