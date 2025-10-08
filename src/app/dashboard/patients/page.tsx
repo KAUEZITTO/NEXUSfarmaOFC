@@ -3,6 +3,8 @@ import { getPatients } from "@/lib/data";
 import { PatientsClient } from "./patients-client";
 import type { PatientFilter } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 export default async function PatientsPage({
   searchParams,
 }: {
