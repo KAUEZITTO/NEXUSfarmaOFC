@@ -1,4 +1,4 @@
-
+// app/dashboard/orders/history/[unitId]/page.tsx
 import { getOrdersForUnit, getUnit } from "@/lib/data";
 import { OrderHistoryClient } from "./history-client";
 import {
@@ -9,6 +9,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { notFound } from "next/navigation";
+
+// Garante que a página será renderizada apenas em runtime
+export const dynamic = "force-dynamic";
 
 export default async function OrderHistoryPage({ params }: { params: { unitId: string } }) {
   const unit = await getUnit(params.unitId);
