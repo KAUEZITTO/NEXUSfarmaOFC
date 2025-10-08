@@ -1,5 +1,4 @@
 
-
 import { getPatient, getDispensationsForPatient } from "@/lib/data";
 import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
@@ -12,6 +11,9 @@ import {
 } from "@/components/ui/card";
 import { notFound } from "next/navigation";
 import { User } from "lucide-react";
+
+// Garante que a página seja renderizada apenas em runtime
+export const dynamic = "force-dynamic";
 
 export default async function PatientHistoryPage({ params }: { params: { patientId: string } }) {
   const patient = await getPatient(params.patientId);

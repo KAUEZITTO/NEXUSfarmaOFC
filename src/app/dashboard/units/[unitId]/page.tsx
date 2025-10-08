@@ -23,6 +23,9 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { OrderItem } from "@/lib/types";
 
+// Garante que a página seja renderizada apenas em runtime
+export const dynamic = "force-dynamic";
+
 // This function now uses real order data
 const calculateItemTotals = (orders: { items: OrderItem[] }[]) => {
     let medCount = 0;
