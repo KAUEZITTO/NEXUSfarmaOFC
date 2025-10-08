@@ -1,12 +1,11 @@
-
-import { getProducts } from "@/lib/data";
+import { getProducts } from "@/lib/actions/inventory";
 import { Suspense } from "react";
 import InventoryPageContent from "./inventory-client";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// This is now a pure Server Component Layout.
+// This is now a pure Server Component.
 // Its only responsibility is to fetch the raw data and pass it down.
-export default async function InventoryPageLayout() {
+export default async function InventoryPage() {
   const products = await getProducts();
   
   return (

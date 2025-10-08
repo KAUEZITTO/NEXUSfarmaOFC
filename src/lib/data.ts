@@ -1,5 +1,3 @@
-
-
 import { kv } from '@/lib/kv';
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
 import { getKnowledgeBase as getKbData } from './actions';
@@ -27,18 +25,8 @@ export async function writeData<T>(key: string, data: T[]): Promise<void> {
 
 // --- SPECIFIC DATA ACCESSORS ---
 
-export const getProducts = async (): Promise<Product[]> => {
-    try {
-        const products = await readData<Product>('products');
-        return products;
-    } catch (error) {
-        console.error("Falha ao buscar produtos no KV:", error);
-        return []; // Retorna um array vazio em caso de erro para não quebrar o build.
-    }
-};
-
 export async function getProduct(productId: string): Promise<Product | null> {
-    const products = await getProducts();
+    const products = await readData<Product>('products');
     return products.find(p => p.id === productId) || null;
 }
 
