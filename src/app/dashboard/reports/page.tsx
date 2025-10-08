@@ -3,6 +3,8 @@ import { getProducts } from "@/lib/actions/inventory";
 import { getAllPatients, getAllDispensations, getUnits, getOrders, getStockMovements } from "@/lib/data";
 import { ReportsClient } from "./reports-client";
 
+export const dynamic = 'force-dynamic';
+
 export default async function ReportsPage() {
     const [products, patients, dispensations, units, orders, stockMovements] = await Promise.all([
         getProducts(),
