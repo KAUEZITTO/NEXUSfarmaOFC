@@ -1,4 +1,5 @@
-import { getProducts } from "@/lib/data";
+
+import { getProducts } from "@/lib/actions/inventory";
 import InventoryPageContent from './inventory-client';
 
 // Esta linha é a correção definitiva.

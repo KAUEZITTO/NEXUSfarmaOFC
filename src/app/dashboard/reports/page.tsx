@@ -1,5 +1,6 @@
 
-import { getProducts, getAllPatients, getAllDispensations, getUnits, getOrders, getStockMovements } from "@/lib/data";
+import { getProducts } from "@/lib/actions/inventory";
+import { getAllPatients, getAllDispensations, getUnits, getOrders, getStockMovements } from "@/lib/data";
 import { ReportsClient } from "./reports-client";
 
 export default async function ReportsPage() {

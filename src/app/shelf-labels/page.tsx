@@ -1,5 +1,5 @@
 
-import { getProducts } from '@/lib/data';
+import { getProducts } from '@/lib/actions/inventory';
 import { ShelfLabelsClient } from './shelf-labels-client';
 
 export const dynamic = 'force-dynamic';
@@ -30,5 +30,3 @@ export default async function ShelfLabelsPage() {
 
   return <ShelfLabelsClient products={uniqueProducts} />;
 }
-
-    

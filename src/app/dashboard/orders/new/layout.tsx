@@ -1,5 +1,6 @@
 
-import { getUnits, getProducts } from "@/lib/data";
+import { getUnits } from "@/lib/data";
+import { getProducts } from "@/lib/actions/inventory";
 import NewOrderPageContent from "./page";
 
 // This is now a Server Component that fetches data and passes it to the client component.
