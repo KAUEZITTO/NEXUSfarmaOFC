@@ -25,8 +25,23 @@ export async function writeData<T>(key: string, data: T[]): Promise<void> {
 
 // --- SPECIFIC DATA ACCESSORS ---
 
+/**
+ * Fetches all products from the data source.
+ * This is a standard data-fetching function.
+ * @returns A promise that resolves to an array of products.
+ */
+export async function getProducts(): Promise<Product[]> {
+    try {
+        const products = await readData<Product>('products');
+        return products;
+    } catch (error) {
+        console.error("Falha ao buscar produtos no KV:", error);
+        return []; // Retorna um array vazio em caso de erro.
+    }
+}
+
 export async function getProduct(productId: string): Promise<Product | null> {
-    const products = await readData<Product>('products');
+    const products = await getProducts();
     return products.find(p => p.id === productId) || null;
 }
 

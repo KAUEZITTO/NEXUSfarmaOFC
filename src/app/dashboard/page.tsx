@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, AlertTriangle, Package, CalendarDays, Clock, BarChart2, Users } from "lucide-react";
-import { getProducts } from "@/lib/actions/inventory";
+import { getProducts } from "@/lib/data";
 import { getAllDispensations, getAllUsers } from "@/lib/data";
 import type { Product, Dispensation, User } from "@/lib/types";
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";

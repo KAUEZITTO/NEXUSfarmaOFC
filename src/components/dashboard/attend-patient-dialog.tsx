@@ -30,8 +30,7 @@ import {
   ShieldHalf,
 } from 'lucide-react';
 import { addDispensation } from '@/lib/actions';
-import { getPatients } from '@/lib/data';
-import { getProducts } from '@/lib/actions/inventory';
+import { getPatients, getProducts } from '@/lib/data';
 import type { Patient, Product, DispensationItem as DispensationItemType, PatientDemandItem } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';

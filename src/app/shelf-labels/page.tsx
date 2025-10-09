@@ -1,5 +1,5 @@
 
-import { getProducts } from '@/lib/actions/inventory';
+import { getProducts } from '@/lib/data';
 import { ShelfLabelsClient } from './shelf-labels-client';
 
 export const dynamic = 'force-dynamic';

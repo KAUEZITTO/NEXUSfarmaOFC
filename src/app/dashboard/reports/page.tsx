@@ -1,5 +1,5 @@
 
-import { getProducts } from "@/lib/actions/inventory";
+import { getProducts } from "@/lib/data";
 import { getAllPatients, getAllDispensations, getUnits, getOrders, getStockMovements } from "@/lib/data";
 import { ReportsClient } from "./reports-client";
 

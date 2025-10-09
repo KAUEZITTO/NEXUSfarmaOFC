@@ -1,6 +1,6 @@
 
 import { getUnits } from "@/lib/data";
-import { getProducts } from "@/lib/actions/inventory";
+import { getProducts } from "@/lib/data";
 import NewOrderPageContent from "./new-order-client";
 
 // This line is the definitive fix.

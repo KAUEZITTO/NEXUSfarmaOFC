@@ -3,8 +3,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { readData, writeData, getUserByEmailFromDb } from './data';
-import { getProducts } from './actions/inventory';
+import { readData, writeData, getUserByEmailFromDb, getProducts } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, KnowledgeBaseItem, AccessLevel, OrderType } from './types';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseApp } from './firebase/client';
