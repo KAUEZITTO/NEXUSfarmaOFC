@@ -8,6 +8,8 @@ import { getOrCreateFirebaseUser } from '@/lib/actions';
 import { getUserByEmailFromDb } from '@/lib/data';
 import type { User } from '@/lib/types';
 
+// Garante que a rota de API nunca seja pré-renderizada estaticamente
+export const dynamic = 'force-dynamic';
 
 export const authOptions: NextAuthOptions = {
   session: {
