@@ -1,10 +1,9 @@
 
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { firebaseServerApp } from '@/lib/firebase/server'; 
 import type { User } from '@/lib/types';
-import { adminAuth } from './firebase/admin';
+import { signInWithEmailAndPassword, getAuth } from 'firebase/auth';
+import { firebaseServerApp } from '@/lib/firebase/server';
 
 /**
  * Opções de configuração para o NextAuth.js.
@@ -29,33 +28,26 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // A grande mudança: Não usamos mais signInWithEmailAndPassword aqui.
-          // Apenas verificamos se o usuário existe no Firebase e no nosso DB.
-          // O `signIn` do NextAuth no lado do cliente já valida a senha contra o Firebase.
-
-          // 1. Verificar se o usuário existe no Firebase Auth
-          await adminAuth.getUserByEmail(credentials.email);
+          // 1. Tentar autenticar com o Firebase (SDK do cliente, mas com config do servidor)
+          const auth = getAuth(firebaseServerApp);
+          await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
           
-          // 2. Se existir no Firebase, verificar se existe no nosso banco de dados.
+          // 2. Se a autenticação acima foi bem-sucedida, buscar o usuário em nosso DB
+          // IMPORTAÇÃO DINÂMICA PARA EVITAR ERRO DE BUILD
           const { getUserByEmailFromDb } = await import('@/lib/data');
           const appUser = await getUserByEmailFromDb(credentials.email);
 
           if (appUser) {
-            // Se o usuário existe em ambos, a autorização é bem-sucedida.
-            // Retornamos o perfil completo do nosso banco.
+            // Se o usuário existe, retorna o perfil completo do nosso banco.
             return appUser;
           } else {
-            // Existe no Firebase, mas não no nosso banco. Nega o login.
-            console.error(`Login Failure: User ${credentials.email} exists in Firebase but not in the app database.`);
+            // Se autenticou no Firebase mas não existe no nosso DB, nega o login.
+            console.error(`Login Failure: User ${credentials.email} authenticated with Firebase but does not exist in the app database.`);
             return null;
           }
         } catch (error: any) {
-          // Se adminAuth.getUserByEmail falhar, o usuário não existe no Firebase.
-          if (error.code === 'auth/user-not-found') {
-            console.log(`Authorize: User ${credentials.email} not found in Firebase.`);
-          } else {
-            console.error("Authorize Error:", error);
-          }
+          // signInWithEmailAndPassword falhou
+          console.error("Authorize Error (signInWithEmailAndPassword failed):", error.code);
           return null; 
         }
       },
