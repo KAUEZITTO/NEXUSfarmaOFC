@@ -4,12 +4,10 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseServerApp } from '@/lib/firebase/server'; 
 import type { User } from '@/lib/types';
-import { getUserByEmailFromDb } from '@/lib/data';
+// A importação estática de 'getUserByEmailFromDb' é removida para evitar o erro de build.
 
 /**
  * Opções de configuração para o NextAuth.js.
- * Esta configuração é mantida em um arquivo separado para evitar problemas
- * de build com o Next.js App Router.
  */
 export const authOptions: NextAuthOptions = {
   session: {
@@ -40,6 +38,8 @@ export const authOptions: NextAuthOptions = {
           const firebaseUser = userCredential.user;
           
           if (firebaseUser) {
+            // Importa dinamicamente a função de busca de dados para evitar o erro de build.
+            const { getUserByEmailFromDb } = await import('@/lib/data');
             const appUser = await getUserByEmailFromDb(firebaseUser.email!);
 
             if (!appUser) {
@@ -73,7 +73,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    // Agora o callback JWT apenas passa os dados adiante.
+    // Agora o callback JWT passa todos os dados adiante novamente.
     async jwt({ token, user }) {
       // Se 'user' existe (no primeiro login), ele já é o objeto completo do authorize.
       if (user) {
