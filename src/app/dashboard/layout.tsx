@@ -9,7 +9,7 @@ import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger
 import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guide';
 import BirthdayBalloons from '@/components/dashboard/birthday-balloons';
 
-const CURRENT_VERSION = '3.1.0';
+const CURRENT_VERSION = '2.8.1';
 
 const changelog = [
     { version: '3.1.0', changes: ['Refatorada a arquitetura de autenticação (NextAuth.js) para isolar a configuração da rota de API, resolvendo definitivamente todos os erros de build `Failed to collect page data`. O sistema agora é considerado totalmente estável.'] },
