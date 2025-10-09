@@ -1,7 +1,7 @@
 
 {
   "name": "nextn",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "private": true,
   "scripts": {
     "dev": "next dev -p 9002",
@@ -77,3 +77,5 @@
     "winston": "3.13.0"
   }
 }
+
+    

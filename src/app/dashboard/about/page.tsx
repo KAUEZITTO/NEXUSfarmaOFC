@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 const changelog = [
+    { version: '3.0.3', changes: ['Atualização de versão para marcar a resolução de avisos de dependência e estabilidade geral do build.'] },
     { version: '3.0.2', changes: ['Corrigido conflito de dependências do Firebase para resolver avisos (`npm warn`) durante a instalação.'] },
     { version: '3.0.1', changes: ['Refatorada a arquitetura da página de Nova Remessa para separar componentes de Servidor e Cliente, resolvendo o erro de build `Failed to collect page data` e melhorando a performance.'] },
     { version: '3.0.0', changes: ['Lançamento da Versão Estável 3.0.0.', 'Estabilidade de Build: Aplicada a diretiva `export const dynamic = \'force-dynamic\';` em todas as páginas que buscam dados do Vercel KV, resolvendo definitivamente os erros `Failed to collect page data` durante o build.'] },
@@ -87,7 +88,7 @@ export default function AboutPage() {
                     Versão do Sistema
                 </h3>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  NexusFarma v3.0.2
+                  NexusFarma v3.0.3
                 </p>
               </div>
           </CardContent>
@@ -181,3 +182,5 @@ export default function AboutPage() {
     </div>
   );
 }
+
+    
