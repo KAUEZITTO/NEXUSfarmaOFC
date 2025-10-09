@@ -13,6 +13,7 @@ const CURRENT_VERSION = '2.9.1';
 
 const changelog = [
     { version: '2.9.1', changes: ['Correção arquitetural definitiva para o erro de build `Failed to collect page data` na página de Inventário.'] },
+    { version: '2.9.0', changes: ['Refatoração da página de Inventário para isolar componentes Server/Client, corrigindo erro de build.'] },
     { version: '2.8.0', changes: ['Corrigido erro de build `use client directive must be placed before other expressions` na página do Dashboard.'] },
 ];
 
