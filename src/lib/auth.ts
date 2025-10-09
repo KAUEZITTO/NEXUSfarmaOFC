@@ -2,8 +2,9 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { firebaseServerApp } from '@/lib/firebase/server'; // MODIFICADO: Usa a instância do servidor
+import { firebaseServerApp } from '@/lib/firebase/server'; 
 import type { User } from '@/lib/types';
+import { getUserByEmailFromDb } from '@/lib/data';
 
 /**
  * Opções de configuração para o NextAuth.js.
@@ -29,7 +30,6 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // MODIFICADO: Usa o auth da instância do SERVIDOR
           const auth = getAuth(firebaseServerApp); 
           const userCredential = await signInWithEmailAndPassword(
             auth,
@@ -40,12 +40,23 @@ export const authOptions: NextAuthOptions = {
           const firebaseUser = userCredential.user;
           
           if (firebaseUser) {
-            // Retorna apenas os dados básicos. O callback 'jwt' enriquecerá.
+            const appUser = await getUserByEmailFromDb(firebaseUser.email!);
+
+            if (!appUser) {
+              console.error(`Authorize Error: Usuário autenticado no Firebase, mas não encontrado no banco de dados da aplicação: ${firebaseUser.email}`);
+              return null;
+            }
+
+            // Retorna o objeto de usuário COMPLETO do nosso banco.
             return {
-              id: firebaseUser.uid,
-              email: firebaseUser.email,
-              name: firebaseUser.displayName,
-              image: firebaseUser.photoURL,
+              id: appUser.id,
+              email: appUser.email,
+              name: appUser.name,
+              image: appUser.image,
+              role: appUser.role,
+              subRole: appUser.subRole,
+              accessLevel: appUser.accessLevel,
+              birthdate: appUser.birthdate,
             };
           }
 
@@ -56,38 +67,29 @@ export const authOptions: NextAuthOptions = {
             errorCode: error.code,
             errorMessage: error.message,
           });
-          // Retorna null em caso de erro para que o NextAuth possa lidar com isso
-          // e redirecionar para a página de erro com a mensagem apropriada.
-          // Lançar um erro aqui pode causar comportamento inesperado.
           return null; 
         }
       },
     }),
   ],
   callbacks: {
-    // Este callback é o lugar correto para buscar dados do seu banco de dados.
+    // Agora o callback JWT apenas passa os dados adiante.
     async jwt({ token, user }) {
-      // Na primeira vez que o usuário loga, o objeto 'user' do authorize está disponível.
-      if (user && user.email) {
-        // *** MUDANÇA CRÍTICA: IMPORTAÇÃO DINÂMICA ***
-        // Isso impede que o processo de build siga a dependência para o Vercel KV.
-        const { getUserByEmailFromDb } = await import('@/lib/data');
-        const appUser = await getUserByEmailFromDb(user.email);
-        
-        if (appUser) {
-          token.id = appUser.id;
-          token.role = appUser.role;
-          token.name = appUser.name;
-          token.email = appUser.email;
-          token.accessLevel = appUser.accessLevel;
-          token.image = appUser.image;
-          token.birthdate = appUser.birthdate;
-          token.subRole = appUser.subRole;
-        }
+      // Se 'user' existe (no primeiro login), ele já é o objeto completo do authorize.
+      if (user) {
+        token.id = user.id;
+        token.email = user.email;
+        token.name = user.name;
+        token.image = user.image;
+        token.role = user.role;
+        token.subRole = user.subRole;
+        token.accessLevel = user.accessLevel;
+        token.birthdate = user.birthdate;
       }
       return token;
     },
 
+    // A sessão recebe os dados completos do token.
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
