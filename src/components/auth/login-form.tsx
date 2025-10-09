@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -15,27 +15,37 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(searchParams.get('error'));
+  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const authError = searchParams.get('error');
+    if (authError) {
+      if (authError === 'CredentialsSignin') {
+        setError('Credenciais inválidas. Verifique seu email e senha.');
+      } else {
+        setError('Ocorreu um erro durante o login. Tente novamente.');
+      }
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
     setError(null);
 
-    const result = await signIn('credentials', {
-      redirect: false, // Não redireciona automaticamente, para podermos tratar o erro
+    // Let NextAuth handle the redirect. It will redirect to the page the user
+    // was trying to access, or the home page by default.
+    // If there's an error, NextAuth will reload the page with an error query param.
+    await signIn('credentials', {
       email,
       password,
+      callbackUrl: '/dashboard', // Explicitly define the success URL
     });
 
-    if (result?.error) {
-      setError('Credenciais inválidas. Verifique seu email e senha.');
-      setIsLoading(false);
-    } else {
-      // O redirecionamento é tratado pelo middleware após o login bem-sucedido
-      router.push('/dashboard');
-    }
+    // We don't need to set isLoading to false here because a successful login
+    // will navigate away from the page. An unsuccessful login will reload
+    // the page, resetting the state.
   };
 
   return (
