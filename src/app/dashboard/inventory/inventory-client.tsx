@@ -38,6 +38,8 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
+import { getProducts } from '@/lib/data'; // Importar a função de busca
+import { PlusCircle } from 'lucide-react';
 
 
 // --- Type definition is now local to the client component ---
@@ -188,20 +190,35 @@ const groupAndFilterProducts = (products: Product[], filter: FilterCategory, sea
     return groupedProducts;
 }
 
-interface InventoryClientProps {
-    rawProducts: Product[];
-    children: React.ReactNode; // To accept the AddProductDialog as a child
-    onProductSaved: () => void;
-}
+export default function InventoryClient() {
+  const [rawProducts, setRawProducts] = useState<Product[]>([]);
+  const [isDataLoading, setIsDataLoading] = useState(true);
+  const router = useRouter();
 
-export default function InventoryClient({ rawProducts, children, onProductSaved }: InventoryClientProps) {
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('Todos');
   const [searchTerm, setSearchTerm] = useState('');
   const [products, setProducts] = useState<GroupedProduct[]>([]);
-  const [isPending, startTransition] = useTransition();
+  const [isProcessing, startTransition] = useTransition();
 
   const [selectedProduct, setSelectedProduct] = useState<GroupedProduct | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  const fetchAndSetProducts = async () => {
+      setIsDataLoading(true);
+      const products = await getProducts();
+      setRawProducts(products);
+      setIsDataLoading(false);
+  }
+
+  useEffect(() => {
+    fetchAndSetProducts();
+  }, []);
+
+  const handleProductSaved = () => {
+    startTransition(() => {
+        fetchAndSetProducts();
+    });
+  }
 
   const handleRowClick = (product: GroupedProduct) => {
       setSelectedProduct(product);
@@ -210,7 +227,7 @@ export default function InventoryClient({ rawProducts, children, onProductSaved 
   
   const handleDialogClose = () => {
       setIsDialogOpen(false);
-      onProductSaved();
+      handleProductSaved();
   }
 
   useEffect(() => {
@@ -302,7 +319,12 @@ export default function InventoryClient({ rawProducts, children, onProductSaved 
                         Etiquetas de Prateleira
                     </Link>
                 </Button>
-                {children}
+                <AddProductDialog onProductSaved={handleProductSaved} trigger={
+                    <Button>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Adicionar Produto
+                    </Button>
+                } />
              </div>
         </div>
         
@@ -314,11 +336,18 @@ export default function InventoryClient({ rawProducts, children, onProductSaved 
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 max-w-sm"
             />
-            {isPending && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
+            {(isProcessing || isDataLoading) && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
         </div>
       
-        <DataTable columns={columns} data={products} onRowClick={handleRowClick} />
-        
+        {isDataLoading ? (
+            <div className="text-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+                <p className="mt-2 text-muted-foreground">Carregando inventário...</p>
+            </div>
+        ) : (
+             <DataTable columns={columns} data={products} onRowClick={handleRowClick} />
+        )}
+       
         <BatchDetailsDialog
             isOpen={isDialogOpen}
             onOpenChange={setIsDialogOpen}
@@ -328,3 +357,5 @@ export default function InventoryClient({ rawProducts, children, onProductSaved 
     </>
   );
 }
+
+    
