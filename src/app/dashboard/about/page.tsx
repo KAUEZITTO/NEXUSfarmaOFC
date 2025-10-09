@@ -12,12 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 const changelog = [
-    { version: '3.0.3', changes: ['Atualização de versão para marcar a resolução de avisos de dependência e estabilidade geral do build.'] },
-    { version: '3.0.2', changes: ['Corrigido conflito de dependências do Firebase para resolver avisos (`npm warn`) durante a instalação.'] },
-    { version: '3.0.1', changes: ['Refatorada a arquitetura da página de Nova Remessa para separar componentes de Servidor e Cliente, resolvendo o erro de build `Failed to collect page data` e melhorando a performance.'] },
-    { version: '3.0.0', changes: ['Lançamento da Versão Estável 3.0.0.', 'Estabilidade de Build: Aplicada a diretiva `export const dynamic = \'force-dynamic\';` em todas as páginas que buscam dados do Vercel KV, resolvendo definitivamente os erros `Failed to collect page data` durante o build.'] },
-    { version: '2.9.0', changes: ['Removido pacote de tipos `@types/firebase` conflitante para corrigir erro de build `Cannot find type definition file`.', 'Correção arquitetural da página de Nova Remessa para resolver erro de build.'] },
-    { version: '2.8.1', changes: ['Correção arquitetural definitiva para o erro de build `Failed to collect page data` na página de Inventário.'] },
+    { version: '2.9.0', changes: ['Correção arquitetural definitiva para o erro de build `Failed to collect page data` na página de Inventário.'] },
     { version: '2.8.0', changes: ['Corrigido erro de build `use client directive must be placed before other expressions` na página do Dashboard.'] },
     { version: '2.7.0', changes: ['Correção definitiva do erro de build `Failed to collect page data` através da refatoração da arquitetura de importação de componentes, garantindo a estabilidade da aplicação em produção.'] },
     { version: '2.6.0', changes: ['Corrigido erro de "Credenciais Inválidas" para usuários criados via Google, garantindo que o perfil do usuário seja sempre encontrado no banco de dados.'] },
@@ -88,7 +83,7 @@ export default function AboutPage() {
                     Versão do Sistema
                 </h3>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  NexusFarma v3.0.3
+                  NexusFarma v2.9.0
                 </p>
               </div>
           </CardContent>
@@ -182,5 +177,3 @@ export default function AboutPage() {
     </div>
   );
 }
-
-    
