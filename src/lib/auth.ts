@@ -43,8 +43,15 @@ export const authOptions: NextAuthOptions = {
             const appUser = await getUserByEmailFromDb(firebaseUser.email!);
 
             if (!appUser) {
-              console.error(`Authorize Error: Usuário autenticado no Firebase, mas não encontrado no banco de dados da aplicação: ${firebaseUser.email}`);
-              return null;
+              // Se o usuário existe no Firebase mas não no nosso DB, o login não deve falhar.
+              // O callback JWT irá lidar com a criação do usuário no nosso DB.
+              console.warn(`Login Warning: User ${firebaseUser.email} authenticated with Firebase but not found in app DB. Will create profile in JWT callback.`);
+              return {
+                id: firebaseUser.uid,
+                email: firebaseUser.email,
+                name: firebaseUser.displayName,
+                image: firebaseUser.photoURL,
+              } as User; // Retorna os dados básicos do Firebase
             }
 
             // Retorna o objeto de usuário COMPLETO do nosso banco.
@@ -74,20 +81,35 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     // Agora o callback JWT passa todos os dados adiante novamente.
-    async jwt({ token, user }) {
-      // Se 'user' existe (no primeiro login), ele já é o objeto completo do authorize.
-      if (user) {
-        token.id = user.id;
-        token.email = user.email;
-        token.name = user.name;
-        token.image = user.image;
-        token.role = user.role;
-        token.subRole = user.subRole;
-        token.accessLevel = user.accessLevel;
-        token.birthdate = user.birthdate;
-      }
-      return token;
+    async jwt({ token, user, account }) {
+        // No login inicial (objeto 'user' está presente)
+        if (user) {
+            token.id = user.id;
+            token.email = user.email;
+            token.name = user.name;
+            token.image = user.image;
+
+            // Se o usuário veio do 'authorize' e não tinha dados de role/accessLevel,
+            // significa que ele não existia no nosso banco. Vamos criá-lo agora.
+            if (!user.accessLevel) {
+                const { getOrCreateFirebaseUser } = await import('@/lib/actions');
+                console.log(`JWT Callback: Creating profile for user ${user.email}`);
+                const fullAppUser = await getOrCreateFirebaseUser(user.email!, user.name, user.image);
+                token.role = fullAppUser.role;
+                token.subRole = fullAppUser.subRole;
+                token.accessLevel = fullAppUser.accessLevel;
+                token.birthdate = fullAppUser.birthdate;
+            } else {
+                // O usuário já veio completo do 'authorize'
+                token.role = user.role;
+                token.subRole = user.subRole;
+                token.accessLevel = user.accessLevel;
+                token.birthdate = user.birthdate;
+            }
+        }
+        return token;
     },
+
 
     // A sessão recebe os dados completos do token.
     async session({ session, token }) {
