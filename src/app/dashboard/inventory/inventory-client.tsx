@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
@@ -38,16 +37,14 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
-import { getProducts } from '@/lib/data'; // Importar a função de busca
+import { getProducts } from '@/lib/data'; 
 import { PlusCircle } from 'lucide-react';
 
 
-// --- Type definition is now local to the client component ---
 type GroupedProduct = Product & {
     batches: Product[];
 };
 
-// --- BatchDetailsDialog component is now local ---
 interface BatchDetailsDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -141,9 +138,7 @@ function BatchDetailsDialog({ isOpen, onOpenChange, product, onProductSaved }: B
   );
 }
 
-// --- Main Client Component ---
 type FilterCategory = 'Todos' | Product['category'];
-
 const filterCategories: FilterCategory[] = ['Todos', 'Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Não Padronizado (Compra)'];
 
 const groupAndFilterProducts = (products: Product[], filter: FilterCategory, searchTerm: string): GroupedProduct[] => {
@@ -190,9 +185,12 @@ const groupAndFilterProducts = (products: Product[], filter: FilterCategory, sea
     return groupedProducts;
 }
 
-export default function InventoryClient() {
-  const [rawProducts, setRawProducts] = useState<Product[]>([]);
-  const [isDataLoading, setIsDataLoading] = useState(true);
+interface InventoryClientProps {
+  initialProducts: Product[];
+}
+
+export default function InventoryClient({ initialProducts }: InventoryClientProps) {
+  const [rawProducts, setRawProducts] = useState<Product[]>(initialProducts);
   const router = useRouter();
 
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('Todos');
@@ -204,20 +202,14 @@ export default function InventoryClient() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const fetchAndSetProducts = async () => {
-      setIsDataLoading(true);
+    startTransition(async () => {
       const products = await getProducts();
       setRawProducts(products);
-      setIsDataLoading(false);
+    });
   }
 
-  useEffect(() => {
-    fetchAndSetProducts();
-  }, []);
-
   const handleProductSaved = () => {
-    startTransition(() => {
-        fetchAndSetProducts();
-    });
+    fetchAndSetProducts();
   }
 
   const handleRowClick = (product: GroupedProduct) => {
@@ -237,7 +229,6 @@ export default function InventoryClient() {
     })
   }, [rawProducts, activeFilter, searchTerm]);
 
-  // --- Columns definition is now INSIDE the component ---
   const capitalizeFirstLetter = (string: string) => {
       if (!string) return 'N/A';
       return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
@@ -336,13 +327,13 @@ export default function InventoryClient() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 max-w-sm"
             />
-            {(isProcessing || isDataLoading) && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
+            {isProcessing && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
         </div>
       
-        {isDataLoading ? (
+        {isProcessing ? (
             <div className="text-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-                <p className="mt-2 text-muted-foreground">Carregando inventário...</p>
+                <p className="mt-2 text-muted-foreground">Atualizando dados...</p>
             </div>
         ) : (
              <DataTable columns={columns} data={products} onRowClick={handleRowClick} />

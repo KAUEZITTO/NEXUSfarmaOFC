@@ -1,4 +1,3 @@
-
 import InventoryClient from './inventory-client';
 import { 
   Card,
@@ -7,11 +6,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getProducts } from '@/lib/data';
 
 // Garante que os dados sejam buscados no servidor em tempo de execução
 export const dynamic = 'force-dynamic';
 
-export default function InventoryPage() {
+export default async function InventoryPage() {
+  const initialProducts = await getProducts();
+  
   return (
     <Card>
         <CardHeader>
@@ -21,7 +23,7 @@ export default function InventoryPage() {
             </CardDescription>
         </CardHeader>
         <CardContent>
-            <InventoryClient />
+            <InventoryClient initialProducts={initialProducts} />
         </CardContent>
     </Card>
   );
