@@ -1,6 +1,9 @@
 
+'use client';
+
+import { useState, useEffect } from 'react';
+import { notFound } from 'next/navigation';
 import { getPatient, getDispensationsForPatient } from "@/lib/data";
-import { columns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
 import {
   Card,
@@ -9,21 +12,129 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { notFound } from "next/navigation";
-import { User } from "lucide-react";
+import { User, MoreHorizontal, Eye } from "lucide-react";
+import { Skeleton } from '@/components/ui/skeleton';
+import { Dispensation } from "@/lib/types";
+import { ColumnDef } from "@tanstack/react-table";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import Link from "next/link";
+import type { Patient } from "@/lib/types";
 
-// Garante que a página será renderizada apenas em runtime
-export const dynamic = "force-dynamic";
+const getColumns = (): ColumnDef<Dispensation>[] => [
+  {
+    accessorKey: "id",
+    header: "ID da Dispensação",
+  },
+  {
+    accessorKey: "date",
+    header: "Data",
+    cell: ({ row }) => {
+        const date = new Date(row.getValue("date"));
+        return <div>{date.toLocaleDateString('pt-BR')}</div>
+    }
+  },
+  {
+    accessorKey: "items",
+    header: "Nº de Itens",
+    cell: ({ row }) => {
+      const items = row.getValue("items") as any[];
+      return <div className="text-center">{items.length}</div>;
+    },
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => {
+      const dispensation = row.original
 
-export default async function PatientHistoryPage({ params }: { params: { patientId: string } }) {
-  const patient = await getPatient(params.patientId);
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+            <DropdownMenuItem asChild>
+              <Link href={`/dispensation-receipt/${dispensation.id}`} target="_blank" className="w-full h-full flex items-center cursor-pointer">
+                <Eye className="mr-2 h-4 w-4" />
+                Visualizar Recibo
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
+    },
+  },
+];
 
-  if (!patient) {
-    notFound();
+
+export default function PatientHistoryPage({ params }: { params: { patientId: string } }) {
+  const [patient, setPatient] = useState<Patient | null>(null);
+  const [dispensations, setDispensations] = useState<Dispensation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+        setIsLoading(true);
+        try {
+            const patientData = await getPatient(params.patientId);
+            if (!patientData) {
+                notFound();
+                return;
+            }
+            const dispensationsData = await getDispensationsForPatient(params.patientId);
+            setPatient(patientData);
+            setDispensations(dispensationsData);
+        } catch (error) {
+            console.error("Failed to fetch patient data", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchData();
+  }, [params.patientId]);
+  
+  const columns = getColumns();
+
+  if (isLoading) {
+    return (
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-1/2" />
+                    <Skeleton className="h-4 w-1/3" />
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Skeleton className="h-6 w-full" />
+                        <Skeleton className="h-6 w-full" />
+                        <Skeleton className="h-6 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-1/3" />
+                    <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-2">
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    )
   }
 
-  const dispensations = await getDispensationsForPatient(params.patientId);
-
+  if (!patient) {
+    return null; // or a not found component
+  }
 
   return (
     <div className="space-y-6">
