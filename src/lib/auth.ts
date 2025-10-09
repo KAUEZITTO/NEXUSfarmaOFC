@@ -4,7 +4,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseServerApp } from '@/lib/firebase/server'; 
 import type { User } from '@/lib/types';
-import { getUserByEmailFromDb } from '@/lib/data';
+// A importação estática foi removida daqui para evitar o erro de build.
 
 /**
  * Opções de configuração para o NextAuth.js.
@@ -39,7 +39,9 @@ export const authOptions: NextAuthOptions = {
           const firebaseUser = userCredential.user;
           
           if (firebaseUser) {
-            // 2. Após sucesso no Firebase, buscar no nosso banco de dados.
+            // 2. Após sucesso no Firebase, buscar no nosso banco de dados dinamicamente.
+            // A importação dinâmica é a chave para resolver o erro 'Failed to collect page data'.
+            const { getUserByEmailFromDb } = await import('@/lib/data');
             const appUser = await getUserByEmailFromDb(firebaseUser.email!);
 
             // 3. Se o usuário não existir no nosso banco, o login falha.
