@@ -1,5 +1,8 @@
 
-import { notFound } from "next/navigation";
+'use client';
+
+import { useState, useEffect } from 'react';
+import { notFound } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -21,13 +24,11 @@ import { Building2, Users, Pill, Stethoscope, ArrowLeft, FileText, CheckCircle, 
 import { getUnit, getPatients, getOrdersForUnit } from "@/lib/data";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import type { OrderItem } from "@/lib/types";
+import type { Order, OrderItem, Unit as UnitType, Patient } from "@/lib/types";
+import { Skeleton } from '@/components/ui/skeleton';
 
-// Garante que a página será renderizada apenas em runtime
-export const dynamic = "force-dynamic";
 
-// This function now uses real order data
-const calculateItemTotals = (orders: { items: OrderItem[] }[]) => {
+const calculateItemTotals = (orders: Order[]) => {
     let medCount = 0;
     let materialCount = 0;
 
@@ -44,21 +45,77 @@ const calculateItemTotals = (orders: { items: OrderItem[] }[]) => {
     return { medCount, materialCount };
 };
 
-export default async function UnitDetailsPage({ params }: { params: { unitId: string } }) {
-  const unit = await getUnit(params.unitId);
+export default function UnitDetailsPage({ params }: { params: { unitId: string } }) {
+  const [unit, setUnit] = useState<UnitType | null>(null);
+  const [patientCount, setPatientCount] = useState(0);
+  const [unitOrders, setUnitOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const unitData = await getUnit(params.unitId);
+            if (!unitData) {
+                notFound();
+                return;
+            }
+            setUnit(unitData);
+
+            const [allPatientsData, unitOrdersData] = await Promise.all([
+                getPatients(),
+                getOrdersForUnit(params.unitId),
+            ]);
+
+            setPatientCount(allPatientsData.filter(p => p.unitId === params.unitId).length);
+            setUnitOrders(unitOrdersData);
+
+        } catch (error) {
+            console.error("Failed to fetch unit details:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    fetchData();
+  }, [params.unitId]);
+
+  const { medCount: totalMedicationsSent, materialCount: totalMaterialsSent } = calculateItemTotals(unitOrders);
+
+  if (isLoading) {
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center gap-4">
+                <Skeleton className="h-10 w-10 rounded-md" />
+                <div>
+                    <Skeleton className="h-7 w-48 mb-2" />
+                    <Skeleton className="h-5 w-72" />
+                </div>
+            </div>
+             <div className="grid gap-4 md:grid-cols-3">
+                <Card><CardHeader><Skeleton className="h-5 w-32 mb-2" /><Skeleton className="h-8 w-12" /></CardHeader></Card>
+                <Card><CardHeader><Skeleton className="h-5 w-32 mb-2" /><Skeleton className="h-8 w-12" /></CardHeader></Card>
+                <Card><CardHeader><Skeleton className="h-5 w-32 mb-2" /><Skeleton className="h-8 w-12" /></CardHeader></Card>
+            </div>
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-6 w-56" />
+                    <Skeleton className="h-4 w-80 mt-2" />
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-2">
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
 
   if (!unit) {
-    notFound();
+    return null; // Or a more specific not-found component
   }
-  
-  const [allPatients, unitOrders] = await Promise.all([
-    getPatients(),
-    getOrdersForUnit(unit.id)
-  ]);
-  
-  const patientCount = allPatients.filter(p => p.unitId === unit.id).length;
-  
-  const { medCount: totalMedicationsSent, materialCount: totalMaterialsSent } = calculateItemTotals(unitOrders);
 
   return (
     <div className="space-y-6">
@@ -181,3 +238,5 @@ export default async function UnitDetailsPage({ params }: { params: { unitId: st
     </div>
   );
 }
+
+    
