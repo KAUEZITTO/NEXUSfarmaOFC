@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Loader2, ShieldCheck, ShieldAlert, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '@/components/logo';
 
@@ -29,6 +29,9 @@ function ResetPasswordForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     const code = searchParams.get('oobCode');
@@ -100,7 +103,7 @@ function ResetPasswordForm() {
                 <div className="flex justify-center items-center h-40">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-            ) : error ? (
+            ) : error && !success ? (
                 <div className="text-center text-destructive">
                     <ShieldAlert className="mx-auto h-12 w-12 mb-4" />
                     <p>{error}</p>
@@ -120,25 +123,45 @@ function ResetPasswordForm() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="newPassword">Nova Senha</Label>
-                  <Input
-                    id="newPassword"
-                    type="password"
-                    required
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    disabled={isSubmitting}
-                  />
+                  <div className="relative">
+                    <Input
+                        id="newPassword"
+                        type={showNewPassword ? "text" : "password"}
+                        required
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        disabled={isSubmitting}
+                        className="pr-10"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                    >
+                        {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={isSubmitting}
-                  />
+                  <div className="relative">
+                    <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        required
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        disabled={isSubmitting}
+                        className="pr-10"
+                    />
+                     <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                    >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
                 {error && <p className="text-sm text-destructive">{error}</p>}
                 <Button type="submit" className="w-full" disabled={isSubmitting}>

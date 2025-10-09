@@ -27,20 +27,28 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Importações dinâmicas para evitar erros de build do Next.js
-        const { getAuth } = await import('firebase/auth');
-        const { firebaseServerApp } = await import('@/lib/firebase/server');
-        const { signInWithEmailAndPassword } = await import('firebase/auth');
+        // Importações dinâmicas para evitar erros de build e usar o SDK cliente que é mais estável neste ambiente
+        const { initializeApp, getApps, getApp } = await import('firebase/app');
+        const { getAuth, signInWithEmailAndPassword } = await import('firebase/auth');
         const { getUserByEmailFromDb } = await import('@/lib/data');
 
+        const firebaseConfig = {
+            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+            authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+            storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+            messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+            appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+        };
+
+        const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+        const auth = getAuth(app);
+
         try {
-          // 1. Usar a instância de app do servidor para obter o serviço de autenticação
-          const auth = getAuth(firebaseServerApp);
-          
-          // 2. Autenticar com o Firebase. Se isso falhar, uma exceção será lançada.
+          // 1. Autenticar com o Firebase. Se isso falhar, uma exceção será lançada.
           await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
           
-          // 3. Se a autenticação acima foi bem-sucedida, buscar o usuário em nosso DB
+          // 2. Se a autenticação acima foi bem-sucedida, buscar o usuário em nosso DB
           const appUser = await getUserByEmailFromDb(credentials.email);
 
           if (appUser) {

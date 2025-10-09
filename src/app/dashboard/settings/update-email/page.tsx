@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getAuth, EmailAuthProvider, reauthenticateWithCredential, updateEmail, sendEmailVerification } from 'firebase/auth';
@@ -27,6 +27,7 @@ export default function UpdateEmailPage() {
   const [newEmail, setNewEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const auth = getAuth(firebaseApp);
   const user = auth.currentUser;
@@ -44,7 +45,7 @@ export default function UpdateEmailPage() {
       await reauthenticateWithCredential(user, credential);
       setStep('newEmail');
     } catch (err: any) {
-      if (err.code === 'auth/wrong-password') {
+      if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
         setError('Senha incorreta. Tente novamente.');
       } else {
         setError('Ocorreu um erro ao reautenticar. Tente novamente mais tarde.');
@@ -117,7 +118,23 @@ export default function UpdateEmailPage() {
                     <form onSubmit={handlePasswordConfirm} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="password">Senha Atual</Label>
-                            <Input id="password" type="password" required value={password} onChange={e => setPassword(e.target.value)} />
+                            <div className="relative">
+                                <Input 
+                                    id="password" 
+                                    type={showPassword ? "text" : "password"} 
+                                    required 
+                                    value={password} 
+                                    onChange={e => setPassword(e.target.value)} 
+                                    className="pr-10"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                                >
+                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
+                            </div>
                         </div>
                         {error && <p className="text-sm text-destructive">{error}</p>}
                         <Button type="submit" className="w-full" disabled={isLoading}>
