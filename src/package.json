@@ -1,7 +1,7 @@
 
 {
   "name": "nextn",
-  "version": "2.9.0",
+  "version": "2.9.1",
   "private": true,
   "scripts": {
     "dev": "next dev -p 9002",
@@ -39,7 +39,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.1.7",
-    "firebase": "^10.12.3",
+    "firebase": "^10.14.1",
     "firebase-admin": "^12.2.0",
     "genkit": "^1.5.0",
     "intro.js": "^7.2.0",
