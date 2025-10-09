@@ -31,6 +31,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
+          // Use o app do servidor aqui para autenticação
           const auth = getAuth(firebaseServerApp);
           const userCredential = await signInWithEmailAndPassword(
             auth,
@@ -43,17 +44,15 @@ export const authOptions: NextAuthOptions = {
              return null;
           }
 
+          // A busca no KV é a causa do problema no build.
+          // O authorize é chamado, e ele tenta buscar os dados.
+          // Vamos buscar o usuário do nosso DB aqui, pois é necessário.
           const appUser = await getUserByEmailFromDb(firebaseUser.email);
           
           if (!appUser) {
             console.error(`CRITICAL: User ${firebaseUser.email} authenticated with Firebase but not found in the application database.`);
-            // Retorna o mínimo necessário para o callback JWT funcionar,
-            // caso o usuário exista no Firebase mas não no seu banco.
-            return {
-              id: firebaseUser.uid,
-              email: firebaseUser.email,
-              name: firebaseUser.displayName,
-            };
+            // Retornar null ou um erro é mais seguro do que criar uma sessão parcial
+            return null;
           }
           
           return appUser;
@@ -63,31 +62,31 @@ export const authOptions: NextAuthOptions = {
             errorCode: error.code,
             errorMessage: error.message,
           });
-          return null;
+          return null; // Retorna null em caso de falha de autenticação
         }
       },
     }),
   ],
   callbacks: {
     async signIn({ user, account }) {
-      return true;
+      // Se o authorize retornou um usuário, o login é bem-sucedido.
+      if (user) {
+        return true;
+      }
+      return false;
     },
     
     async jwt({ token, user }) {
       // Este callback é chamado após o login e a cada verificação de sessão.
-      // Se o objeto 'user' do authorize estiver presente, significa que é o login inicial.
-      // Aqui é seguro buscar os dados do seu banco de dados (Vercel KV).
-      if (user?.email) {
-          const appUser = await getUserByEmailFromDb(user.email);
-          if (appUser) {
-              token.id = appUser.id;
-              token.role = appUser.role;
-              token.name = appUser.name;
-              token.email = appUser.email;
-              token.accessLevel = appUser.accessLevel;
-              token.image = appUser.image;
-              token.birthdate = appUser.birthdate;
-          }
+      // No login inicial, o objeto 'user' do authorize está disponível.
+      if (user) {
+          token.id = user.id;
+          token.role = user.role;
+          token.name = user.name;
+          token.email = user.email;
+          token.accessLevel = user.accessLevel;
+          token.image = user.image;
+          token.birthdate = user.birthdate;
       }
       return token;
     },
