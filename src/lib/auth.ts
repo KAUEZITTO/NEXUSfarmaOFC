@@ -2,8 +2,7 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { firebaseApp } from '@/lib/firebase/client'; // MUDANÇA CRÍTICA: Usando o app do cliente aqui
-import { getUserByEmailFromDb } from '@/lib/data';
+import { firebaseApp } from '@/lib/firebase/client';
 import type { User } from '@/lib/types';
 
 /**
@@ -30,7 +29,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // Usa o SDK do CLIENTE para verificar as credenciais, pois é isso que o authorize simula.
+          // Usa o SDK do CLIENTE para verificar as credenciais.
           const auth = getAuth(firebaseApp); 
           const userCredential = await signInWithEmailAndPassword(
             auth,
@@ -40,10 +39,8 @@ export const authOptions: NextAuthOptions = {
           
           const firebaseUser = userCredential.user;
           
-          // O 'authorize' SÓ retorna os dados básicos do Firebase.
-          // O callback 'jwt' vai enriquecer com os dados do nosso banco.
-          // Isso quebra a dependência de build.
           if (firebaseUser) {
+            // Retorna apenas os dados básicos. O callback 'jwt' enriquecerá.
             return {
               id: firebaseUser.uid,
               email: firebaseUser.email,
@@ -65,18 +62,15 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user }) {
-      if (user) {
-        return true;
-      }
-      return false;
-    },
-    
     // Este callback é o lugar correto para buscar dados do seu banco de dados.
     async jwt({ token, user }) {
       // Na primeira vez que o usuário loga, o objeto 'user' do authorize está disponível.
       if (user && user.email) {
+        // *** MUDANÇA CRÍTICA: IMPORTAÇÃO DINÂMICA ***
+        // Isso impede que o processo de build siga a dependência para o Vercel KV.
+        const { getUserByEmailFromDb } = await import('@/lib/data');
         const appUser = await getUserByEmailFromDb(user.email);
+        
         if (appUser) {
           token.id = appUser.id;
           token.role = appUser.role;
@@ -85,6 +79,7 @@ export const authOptions: NextAuthOptions = {
           token.accessLevel = appUser.accessLevel;
           token.image = appUser.image;
           token.birthdate = appUser.birthdate;
+          token.subRole = appUser.subRole;
         }
       }
       return token;
@@ -99,6 +94,7 @@ export const authOptions: NextAuthOptions = {
         session.user.accessLevel = token.accessLevel as User['accessLevel'];
         session.user.image = token.image as string | undefined;
         session.user.birthdate = token.birthdate as string | undefined;
+        session.user.subRole = token.subRole as User['subRole'];
       }
       return session;
     },

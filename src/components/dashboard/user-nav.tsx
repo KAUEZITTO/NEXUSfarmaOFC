@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -77,8 +78,9 @@ export function UserNav() {
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
               <p className="text-sm font-medium leading-none">{user.name || user.email}</p>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-wrap">
                 {user.role && <Badge variant="secondary" className="text-xs">{user.role}</Badge>}
+                {user.subRole && <Badge variant="outline" className="text-xs">{user.subRole}</Badge>}
                 {user.accessLevel === 'Admin' && <Badge variant="destructive" className="text-xs">Admin</Badge>}
               </div>
             </div>

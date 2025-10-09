@@ -1,5 +1,4 @@
 
-
 // Adicionando tipos do NextAuth para extender o objeto de sessão
 import type { DefaultUser, DefaultSession } from 'next-auth';
 
@@ -35,6 +34,7 @@ declare module 'next-auth/jwt' {
     interface JWT {
         id: string;
         role?: Role;
+        subRole?: SubRole;
         accessLevel?: AccessLevel;
         name?: string | null;
         email?: string | null;
