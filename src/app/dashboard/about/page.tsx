@@ -88,7 +88,7 @@ export default function AboutPage() {
                     Versão do Sistema
                 </h3>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  NexusFarma v2.8.1
+                  NexusFarma v2.9.0
                 </p>
               </div>
           </CardContent>
