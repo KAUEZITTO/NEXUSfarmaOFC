@@ -5,18 +5,10 @@ import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, Printer, Loader2, Edit, MoreHorizontal } from "lucide-react";
+import { Search, Printer, Loader2, Edit, MoreHorizontal } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
-import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
 import type { Product } from '@/lib/types';
-import { 
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { 
   Dialog, 
   DialogContent, 
@@ -45,6 +37,8 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
 import { ArrowUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
+
 
 // --- Type definition is now local to the client component ---
 type GroupedProduct = Product & {
@@ -194,35 +188,36 @@ const groupAndFilterProducts = (products: Product[], filter: FilterCategory, sea
     return groupedProducts;
 }
 
-interface InventoryPageContentProps {
+interface InventoryClientProps {
     rawProducts: Product[];
+    children: React.ReactNode; // To accept the AddProductDialog as a child
+    onProductSaved: () => void;
 }
 
-export default function InventoryPageContent({ rawProducts }: InventoryPageContentProps) {
+export default function InventoryClient({ rawProducts, children, onProductSaved }: InventoryClientProps) {
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('Todos');
   const [searchTerm, setSearchTerm] = useState('');
   const [products, setProducts] = useState<GroupedProduct[]>([]);
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const [selectedProduct, setSelectedProduct] = useState<GroupedProduct | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const handleProductSaved = () => {
-    startTransition(() => {
-        router.refresh();
-    });
-    setIsDialogOpen(false);
-  }
 
   const handleRowClick = (product: GroupedProduct) => {
       setSelectedProduct(product);
       setIsDialogOpen(true);
   }
   
+  const handleDialogClose = () => {
+      setIsDialogOpen(false);
+      onProductSaved();
+  }
+
   useEffect(() => {
-    const processedProducts = groupAndFilterProducts(rawProducts, activeFilter, searchTerm);
-    setProducts(processedProducts);
+    startTransition(() => {
+        const processedProducts = groupAndFilterProducts(rawProducts, activeFilter, searchTerm);
+        setProducts(processedProducts);
+    })
   }, [rawProducts, activeFilter, searchTerm]);
 
   // --- Columns definition is now INSIDE the component ---
@@ -286,18 +281,7 @@ export default function InventoryPageContent({ rawProducts }: InventoryPageConte
   ];
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle>Inventário de Produtos</CardTitle>
-            <CardDescription>
-              Gerencie seus produtos, adicione novos e acompanhe o estoque. Itens agrupados por nome e apresentação.
-            </CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
+    <>
         <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
             <div className="flex items-center space-x-2 pt-2 overflow-x-auto pb-2">
                 {filterCategories.map(filter => (
@@ -318,12 +302,7 @@ export default function InventoryPageContent({ rawProducts }: InventoryPageConte
                         Etiquetas de Prateleira
                     </Link>
                 </Button>
-                 <AddProductDialog onProductSaved={handleProductSaved} trigger={
-                    <Button>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Adicionar Produto
-                    </Button>
-                } />
+                {children}
              </div>
         </div>
         
@@ -344,9 +323,8 @@ export default function InventoryPageContent({ rawProducts }: InventoryPageConte
             isOpen={isDialogOpen}
             onOpenChange={setIsDialogOpen}
             product={selectedProduct}
-            onProductSaved={handleProductSaved}
+            onProductSaved={handleDialogClose}
         />
-      </CardContent>
-    </Card>
+    </>
   );
 }
