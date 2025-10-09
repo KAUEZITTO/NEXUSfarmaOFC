@@ -12,7 +12,7 @@ import {
 import { notFound } from "next/navigation";
 import { User } from "lucide-react";
 
-// Garante que a página seja renderizada apenas em runtime
+// Garante que a página será renderizada apenas em runtime
 export const dynamic = "force-dynamic";
 
 export default async function PatientHistoryPage({ params }: { params: { patientId: string } }) {

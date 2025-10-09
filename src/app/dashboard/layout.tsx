@@ -1,9 +1,3 @@
-
-// This line forces dynamic rendering for the entire dashboard layout and all its children.
-// This is the definitive fix to prevent Vercel's build process from attempting to
-// statically collect page data for routes that access databases like Vercel KV.
-export const dynamic = 'force-dynamic';
-
 import React from 'react';
 import Link from 'next/link';
 
@@ -17,7 +11,7 @@ import BirthdayBalloons from '@/components/dashboard/birthday-balloons';
 const CURRENT_VERSION = '3.0.0';
 
 const changelog = [
-    { version: '3.0.0', changes: ['Lançamento da Versão Estável 3.0.0.', 'Estabilidade de Build: Aplicada a diretiva `export const dynamic = \'force-dynamic\';` em todas as páginas que buscam dados do Vercel KV, resolvendo definitivamente os erros `Failed to collect page data` durante o build.'].reverse() },
+    { version: '3.0.0', changes: ['Lançamento da Versão Estável 3.0.0.', 'Estabilidade de Build: Aplicada a diretiva `export const dynamic = \'force-dynamic\';` em todas as páginas que buscam dados do Vercel KV, resolvendo definitivamente os erros `Failed to collect page data` durante o build.'] },
     { version: '2.9.0', changes: ['Correção arquitetural da página de Nova Remessa para resolver erro de build.', 'Removido pacote de tipos `@types/firebase` conflitante para corrigir erro de build `Cannot find type definition file`.'].reverse() },
     { version: '2.8.1', changes: ['Correção arquitetural definitiva para o erro de build `Failed to collect page data` na página de Inventário.'] },
     { version: '2.8.0', changes: ['Corrigido erro de build `use client directive must be placed before other expressions` na página do Dashboard.'] },
