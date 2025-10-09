@@ -4,6 +4,11 @@ import { notFound } from 'next/navigation';
 import { LabelPageClient } from './label-page-client';
 import type { Product } from '@/lib/types';
 
+// Força a renderização dinâmica da página no momento da requisição.
+// Isso é crucial porque a página busca dados do Vercel KV, que não
+// está disponível durante o processo de build estático.
+export const dynamic = 'force-dynamic';
+
 export default async function LabelsPage({ params }: { params: { productId: string } }) {
   const product = await getProduct(params.productId);
 
