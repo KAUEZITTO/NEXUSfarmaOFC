@@ -4,7 +4,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseServerApp } from '@/lib/firebase/server'; 
 import type { User } from '@/lib/types';
-// A importação estática de 'getUserByEmailFromDb' é removida para evitar o erro de build.
+import { getUserByEmailFromDb } from '@/lib/data';
 
 /**
  * Opções de configuração para o NextAuth.js.
@@ -28,6 +28,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
+          // 1. Autenticar com o Firebase
           const auth = getAuth(firebaseServerApp); 
           const userCredential = await signInWithEmailAndPassword(
             auth,
@@ -38,82 +39,52 @@ export const authOptions: NextAuthOptions = {
           const firebaseUser = userCredential.user;
           
           if (firebaseUser) {
-            // Importa dinamicamente a função de busca de dados para evitar o erro de build.
-            const { getUserByEmailFromDb } = await import('@/lib/data');
+            // 2. Após sucesso no Firebase, buscar no nosso banco de dados.
             const appUser = await getUserByEmailFromDb(firebaseUser.email!);
 
+            // 3. Se o usuário não existir no nosso banco, o login falha.
+            // Isso força a consistência dos dados. O usuário deve ser criado pelo fluxo de registro.
             if (!appUser) {
-              // Se o usuário existe no Firebase mas não no nosso DB, o login não deve falhar.
-              // O callback JWT irá lidar com a criação do usuário no nosso DB.
-              console.warn(`Login Warning: User ${firebaseUser.email} authenticated with Firebase but not found in app DB. Will create profile in JWT callback.`);
-              return {
-                id: firebaseUser.uid,
-                email: firebaseUser.email,
-                name: firebaseUser.displayName,
-                image: firebaseUser.photoURL,
-              } as User; // Retorna os dados básicos do Firebase
+              console.error(`Login Failure: User ${firebaseUser.email} authenticated with Firebase but does not exist in the app database.`);
+              return null;
             }
 
-            // Retorna o objeto de usuário COMPLETO do nosso banco.
-            return {
-              id: appUser.id,
-              email: appUser.email,
-              name: appUser.name,
-              image: appUser.image,
-              role: appUser.role,
-              subRole: appUser.subRole,
-              accessLevel: appUser.accessLevel,
-              birthdate: appUser.birthdate,
-            };
+            // 4. Se tudo estiver correto, retorna o perfil completo do nosso banco.
+            return appUser;
           }
 
           return null;
 
         } catch (error: any) {
-          console.error("Authorize Error: Falha na autenticação com Firebase.", {
+          console.error("Authorize Error: Firebase sign-in failed.", {
             errorCode: error.code,
             errorMessage: error.message,
           });
+          // Se o signIn do Firebase falhar, a credencial está errada.
           return null; 
         }
       },
     }),
   ],
   callbacks: {
-    // Agora o callback JWT passa todos os dados adiante novamente.
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
         // No login inicial (objeto 'user' está presente)
         if (user) {
+            // O 'user' que vem do 'authorize' já é o perfil completo do nosso banco.
             token.id = user.id;
             token.email = user.email;
             token.name = user.name;
             token.image = user.image;
-
-            // Se o usuário veio do 'authorize' e não tinha dados de role/accessLevel,
-            // significa que ele não existia no nosso banco. Vamos criá-lo agora.
-            if (!user.accessLevel) {
-                const { getOrCreateFirebaseUser } = await import('@/lib/actions');
-                console.log(`JWT Callback: Creating profile for user ${user.email}`);
-                const fullAppUser = await getOrCreateFirebaseUser(user.email!, user.name, user.image);
-                token.role = fullAppUser.role;
-                token.subRole = fullAppUser.subRole;
-                token.accessLevel = fullAppUser.accessLevel;
-                token.birthdate = fullAppUser.birthdate;
-            } else {
-                // O usuário já veio completo do 'authorize'
-                token.role = user.role;
-                token.subRole = user.subRole;
-                token.accessLevel = user.accessLevel;
-                token.birthdate = user.birthdate;
-            }
+            token.role = user.role;
+            token.subRole = user.subRole;
+            token.accessLevel = user.accessLevel;
+            token.birthdate = user.birthdate;
         }
         return token;
     },
 
-
-    // A sessão recebe os dados completos do token.
     async session({ session, token }) {
-      if (session.user) {
+      if (session.user && token.id) {
         session.user.id = token.id as string;
         session.user.role = token.role as User['role'];
         session.user.name = token.name;
@@ -128,6 +99,6 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/login',
-    error: '/login',
+    error: '/login', // Redireciona para /login em caso de erro, mostrando a mensagem.
   },
 };
