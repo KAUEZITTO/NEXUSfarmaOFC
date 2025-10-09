@@ -2,15 +2,14 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { firebaseServerApp } from '@/lib/firebase/server';
+import { firebaseApp } from '@/lib/firebase/client'; // MUDANÇA CRÍTICA: Usando o app do cliente aqui
 import { getUserByEmailFromDb } from '@/lib/data';
 import type { User } from '@/lib/types';
 
 /**
  * Opções de configuração para o NextAuth.js.
  * Esta configuração é mantida em um arquivo separado para evitar problemas
- * de build com o Next.js App Router, garantindo que a lógica complexa
- * e as chamadas ao banco de dados não sejam analisadas durante o build estático.
+ * de build com o Next.js App Router.
  */
 export const authOptions: NextAuthOptions = {
   session: {
@@ -31,7 +30,8 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const auth = getAuth(firebaseServerApp);
+          // Usa o SDK do CLIENTE para verificar as credenciais, pois é isso que o authorize simula.
+          const auth = getAuth(firebaseApp); 
           const userCredential = await signInWithEmailAndPassword(
             auth,
             credentials.email,
@@ -39,19 +39,20 @@ export const authOptions: NextAuthOptions = {
           );
           
           const firebaseUser = userCredential.user;
-          if (!firebaseUser?.email) {
-             return null;
-          }
           
-          // CRITICAL CHANGE: DO NOT fetch from our DB here.
-          // Only return the basic user from Firebase. The JWT callback will enrich it.
-          // This prevents the build from failing.
-          return {
-            id: firebaseUser.uid,
-            email: firebaseUser.email,
-            name: firebaseUser.displayName,
-            image: firebaseUser.photoURL,
-          };
+          // O 'authorize' SÓ retorna os dados básicos do Firebase.
+          // O callback 'jwt' vai enriquecer com os dados do nosso banco.
+          // Isso quebra a dependência de build.
+          if (firebaseUser) {
+            return {
+              id: firebaseUser.uid,
+              email: firebaseUser.email,
+              name: firebaseUser.displayName,
+              image: firebaseUser.photoURL,
+            };
+          }
+
+          return null;
 
         } catch (error: any) {
           console.error("Authorize Error: Falha na autenticação com Firebase.", {
@@ -64,16 +65,16 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user }) {
       if (user) {
         return true;
       }
       return false;
     },
     
+    // Este callback é o lugar correto para buscar dados do seu banco de dados.
     async jwt({ token, user }) {
-      // On initial sign-in, the user object is available.
-      // We now fetch from our DB here to enrich the token.
+      // Na primeira vez que o usuário loga, o objeto 'user' do authorize está disponível.
       if (user && user.email) {
         const appUser = await getUserByEmailFromDb(user.email);
         if (appUser) {
@@ -84,13 +85,6 @@ export const authOptions: NextAuthOptions = {
           token.accessLevel = appUser.accessLevel;
           token.image = appUser.image;
           token.birthdate = appUser.birthdate;
-        } else {
-          // This case should ideally not happen if user registration is enforced.
-          // But as a fallback, we use the Firebase user data.
-          token.id = user.id;
-          token.email = user.email;
-          token.name = user.name;
-          token.image = user.image;
         }
       }
       return token;
