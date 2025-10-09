@@ -2,8 +2,8 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { User } from '@/lib/types';
-import { signInWithEmailAndPassword, getAuth } from 'firebase/auth';
-import { firebaseServerApp } from '@/lib/firebase/server';
+
+// NENHUMA importação estática de pacotes do servidor aqui.
 
 /**
  * Opções de configuração para o NextAuth.js.
@@ -27,6 +27,12 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // Importações dinâmicas para evitar erros de build do Next.js
+        const { getAuth } = await import('firebase/auth');
+        const { firebaseServerApp } = await import('@/lib/firebase/server');
+        const { signInWithEmailAndPassword } = await import('firebase/auth');
+        const { getUserByEmailFromDb } = await import('@/lib/data');
+
         try {
           // 1. Usar a instância de app do servidor para obter o serviço de autenticação
           const auth = getAuth(firebaseServerApp);
@@ -35,8 +41,6 @@ export const authOptions: NextAuthOptions = {
           await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
           
           // 3. Se a autenticação acima foi bem-sucedida, buscar o usuário em nosso DB
-          // A importação dinâmica é CRUCIAL para evitar erros de build do Next.js
-          const { getUserByEmailFromDb } = await import('@/lib/data');
           const appUser = await getUserByEmailFromDb(credentials.email);
 
           if (appUser) {
@@ -44,7 +48,6 @@ export const authOptions: NextAuthOptions = {
             return appUser;
           } else {
             // Se autenticou no Firebase mas não existe no nosso DB, nega o login.
-            // Isso pode acontecer se um usuário foi removido do nosso DB mas não do Firebase.
             console.error(`Login Failure: User ${credentials.email} authenticated with Firebase but does not exist in the app database.`);
             return null;
           }

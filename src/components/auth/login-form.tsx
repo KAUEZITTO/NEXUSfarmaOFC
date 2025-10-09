@@ -38,15 +38,19 @@ export function LoginForm() {
     // Let NextAuth handle the redirect. It will redirect to the page the user
     // was trying to access, or the home page by default.
     // If there's an error, NextAuth will reload the page with an error query param.
-    await signIn('credentials', {
+    const result = await signIn('credentials', {
       email,
       password,
-      callbackUrl: '/dashboard', // Explicitly define the success URL
+      redirect: false, // Set redirect to false to handle the result here
     });
 
-    // We don't need to set isLoading to false here because a successful login
-    // will navigate away from the page. An unsuccessful login will reload
-    // the page, resetting the state.
+    if (result?.error) {
+      setError('Credenciais inválidas. Verifique seu email e senha.');
+      setIsLoading(false);
+    } else if (result?.ok) {
+      // Manually redirect on success
+      router.push('/dashboard');
+    }
   };
 
   return (
