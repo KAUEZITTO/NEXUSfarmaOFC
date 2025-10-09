@@ -42,29 +42,24 @@ export const authOptions: NextAuthOptions = {
              return null;
           }
 
-          // Se a autenticação do Firebase foi bem-sucedida, nós CONFIAMOS nela.
-          // Buscamos o usuário em nosso banco de dados para obter dados adicionais (role, accessLevel).
+          // Busca o usuário no nosso banco para popular o objeto inicial
+          // A fonte da verdade para permissões será o callback JWT.
           const appUser = await getUserByEmailFromDb(firebaseUser.email);
           
-          // Se o usuário não for encontrado em nosso banco de dados, isso é um estado inconsistente,
-          // mas não devemos bloquear o login. Retornamos os dados básicos do Firebase.
           if (!appUser) {
             console.error(`CRITICAL: User ${firebaseUser.email} authenticated with Firebase but not found in the application database.`);
+            // Retorna o mínimo necessário para o callback JWT funcionar
             return {
               id: firebaseUser.uid,
               email: firebaseUser.email,
               name: firebaseUser.displayName,
-              role: 'Farmacêutico', // Role padrão de fallback
-              accessLevel: 'User',   // Nível de acesso padrão de fallback
             };
           }
           
-          // Retornamos o objeto de usuário completo do nosso banco de dados.
-          // Isso garante que a sessão seja criada com todas as informações corretas.
+          // Retorna o usuário do nosso banco para o próximo passo
           return appUser;
 
         } catch (error: any) {
-          // A única vez que isso deve falhar é se a senha estiver realmente errada no Firebase.
           console.error("Authorize Error: Falha na autenticação com Firebase.", {
             errorCode: error.code,
             errorMessage: error.message,
@@ -76,36 +71,33 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account }) {
-      // Para o fluxo de credenciais, a função `authorize` já fez todo o trabalho.
       return true;
     },
     
     async jwt({ token, user }) {
-      // No primeiro login (objeto 'user' está presente), enriquece o token.
-      if (user) {
-        // Para garantir consistência, buscamos o usuário mais recente do banco.
-        const appUser = await getUserByEmailFromDb(user.email!);
-        if (appUser) {
-            token.id = appUser.id;
-            token.role = appUser.role;
-            token.name = appUser.name;
-            token.email = appUser.email;
-            token.accessLevel = appUser.accessLevel;
-            token.image = appUser.image;
-            token.birthdate = appUser.birthdate;
-        } else {
-            // Fallback para o usuário que veio do `authorize` ou `signIn`
-            token.id = user.id;
-            token.role = (user as User).role || 'Farmacêutico';
-            token.accessLevel = (user as User).accessLevel || 'User';
-        }
+      // Este callback é a fonte da verdade para os dados da sessão.
+      // Ele é chamado após o login e a cada verificação de sessão.
+      // Aqui é seguro chamar o banco de dados.
+      
+      // Se o objeto 'user' do authorize estiver presente, significa que é o login inicial.
+      if (user?.email) {
+          const appUser = await getUserByEmailFromDb(user.email);
+          if (appUser) {
+              token.id = appUser.id;
+              token.role = appUser.role;
+              token.name = appUser.name;
+              token.email = appUser.email;
+              token.accessLevel = appUser.accessLevel;
+              token.image = appUser.image;
+              token.birthdate = appUser.birthdate;
+          }
       }
       return token;
     },
 
     async session({ session, token }) {
       // A cada carregamento de página, popula a sessão com os dados do token JWT.
-      if (session.user && token) {
+      if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as User['role'];
         session.user.name = token.name;
