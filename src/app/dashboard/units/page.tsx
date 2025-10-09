@@ -1,13 +1,183 @@
 
-import { getUnits } from "@/lib/data";
-import { UnitsClient } from './units-client';
+'use client';
 
-export const dynamic = "force-dynamic";
+import { useState, useEffect, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { getUnits } from '@/lib/data';
+import type { Unit } from '@/lib/types';
+import { DataTable } from '@/components/ui/data-table';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { AddUnitDialog } from '@/components/dashboard/add-unit-dialog';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ColumnDef } from '@tanstack/react-table';
+import { ArrowUpDown, MoreHorizontal, Check, X, Edit, Eye, PlusCircle } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import Link from 'next/link';
 
-export default async function UnitsPage() {
-  const initialUnits = await getUnits();
+export default function UnitsPage() {
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  const handleUnitSaved = () => {
+    startTransition(() => {
+      fetchData();
+    });
+  };
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    const unitsData = await getUnits();
+    setUnits(unitsData);
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const getColumns = (onUnitSaved: () => void): ColumnDef<Unit>[] => [
+    {
+      accessorKey: 'name',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Nome
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const unit = row.original;
+        return (
+          <Link
+            href={`/dashboard/units/${unit.id}`}
+            className="capitalize font-medium text-primary hover:underline cursor-pointer"
+          >
+            {row.getValue('name')}
+          </Link>
+        );
+      },
+    },
+    {
+      accessorKey: 'address',
+      header: 'Endereço',
+    },
+    {
+      accessorKey: 'coordinatorName',
+      header: 'Coordenador(a)',
+      cell: ({ row }) => <div>{row.getValue('coordinatorName') || 'N/A'}</div>,
+    },
+    {
+      accessorKey: 'hasPharmacy',
+      header: 'Farmácia',
+      cell: ({ row }) => {
+        const hasPharmacy = row.getValue('hasPharmacy');
+        return hasPharmacy ? (
+          <Check className="h-4 w-4 text-green-500" />
+        ) : (
+          <X className="h-4 w-4 text-red-500" />
+        );
+      },
+    },
+    {
+      accessorKey: 'hasDentalOffice',
+      header: 'Odonto',
+      cell: ({ row }) => {
+        const hasOffice = row.getValue('hasDentalOffice');
+        return hasOffice ? (
+          <Check className="h-4 w-4 text-green-500" />
+        ) : (
+          <X className="h-4 w-4 text-red-500" />
+        );
+      },
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => {
+        const unit = row.original;
+
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Ações</DropdownMenuLabel>
+              <DropdownMenuItem asChild>
+                <Link
+                  href={`/dashboard/units/${unit.id}`}
+                  className="w-full h-full flex items-center cursor-pointer"
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  Ver Detalhes
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <AddUnitDialog
+                unitToEdit={unit}
+                onUnitSaved={onUnitSaved}
+                trigger={
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    <span>Editar Unidade</span>
+                  </DropdownMenuItem>
+                }
+              />
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ];
+
+  const columns = getColumns(handleUnitSaved);
 
   return (
-    <UnitsClient initialUnits={initialUnits} />
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle>Unidades</CardTitle>
+            <CardDescription>
+              Cadastre e gerencie as unidades que recebem os produtos.
+            </CardDescription>
+          </div>
+          <AddUnitDialog
+            onUnitSaved={handleUnitSaved}
+            trigger={
+              <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Adicionar Unidade
+              </Button>
+            }
+          />
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading || isPending ? (
+            <div className="space-y-2">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+            </div>
+        ) : (
+            <DataTable columns={columns} data={units} filterColumn="name" />
+        )}
+      </CardContent>
+    </Card>
   );
 }
