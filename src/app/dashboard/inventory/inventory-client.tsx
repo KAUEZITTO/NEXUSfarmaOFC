@@ -4,7 +4,7 @@ import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { Search, Printer, Loader2, Edit, MoreHorizontal } from "lucide-react";
+import { Search, Printer, Loader2, Edit, MoreHorizontal, PlusCircle } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import type { Product } from '@/lib/types';
@@ -37,8 +37,6 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
-import { getProducts } from '@/lib/data'; 
-import { PlusCircle } from 'lucide-react';
 
 
 type GroupedProduct = Product & {
@@ -190,26 +188,20 @@ interface InventoryClientProps {
 }
 
 export default function InventoryClient({ initialProducts }: InventoryClientProps) {
-  const [rawProducts, setRawProducts] = useState<Product[]>(initialProducts);
   const router = useRouter();
-
+  
+  const [products, setProducts] = useState<GroupedProduct[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('Todos');
   const [searchTerm, setSearchTerm] = useState('');
-  const [products, setProducts] = useState<GroupedProduct[]>([]);
   const [isProcessing, startTransition] = useTransition();
 
   const [selectedProduct, setSelectedProduct] = useState<GroupedProduct | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
-  const fetchAndSetProducts = async () => {
-    startTransition(async () => {
-      const products = await getProducts();
-      setRawProducts(products);
-    });
-  }
-
   const handleProductSaved = () => {
-    fetchAndSetProducts();
+    startTransition(() => {
+      router.refresh();
+    });
   }
 
   const handleRowClick = (product: GroupedProduct) => {
@@ -224,10 +216,10 @@ export default function InventoryClient({ initialProducts }: InventoryClientProp
 
   useEffect(() => {
     startTransition(() => {
-        const processedProducts = groupAndFilterProducts(rawProducts, activeFilter, searchTerm);
+        const processedProducts = groupAndFilterProducts(initialProducts, activeFilter, searchTerm);
         setProducts(processedProducts);
     })
-  }, [rawProducts, activeFilter, searchTerm]);
+  }, [initialProducts, activeFilter, searchTerm]);
 
   const capitalizeFirstLetter = (string: string) => {
       if (!string) return 'N/A';
