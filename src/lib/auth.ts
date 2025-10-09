@@ -28,12 +28,14 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // 1. Tentar autenticar com o Firebase (SDK do cliente, mas com config do servidor)
+          // 1. Usar a instância de app do servidor para obter o serviço de autenticação
           const auth = getAuth(firebaseServerApp);
+          
+          // 2. Autenticar com o Firebase. Se isso falhar, uma exceção será lançada.
           await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
           
-          // 2. Se a autenticação acima foi bem-sucedida, buscar o usuário em nosso DB
-          // IMPORTAÇÃO DINÂMICA PARA EVITAR ERRO DE BUILD
+          // 3. Se a autenticação acima foi bem-sucedida, buscar o usuário em nosso DB
+          // A importação dinâmica é CRUCIAL para evitar erros de build do Next.js
           const { getUserByEmailFromDb } = await import('@/lib/data');
           const appUser = await getUserByEmailFromDb(credentials.email);
 
@@ -42,11 +44,12 @@ export const authOptions: NextAuthOptions = {
             return appUser;
           } else {
             // Se autenticou no Firebase mas não existe no nosso DB, nega o login.
+            // Isso pode acontecer se um usuário foi removido do nosso DB mas não do Firebase.
             console.error(`Login Failure: User ${credentials.email} authenticated with Firebase but does not exist in the app database.`);
             return null;
           }
         } catch (error: any) {
-          // signInWithEmailAndPassword falhou
+          // signInWithEmailAndPassword falhou (senha errada, usuário não encontrado no Firebase, etc.)
           console.error("Authorize Error (signInWithEmailAndPassword failed):", error.code);
           return null; 
         }

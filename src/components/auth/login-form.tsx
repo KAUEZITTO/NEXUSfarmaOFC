@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -17,6 +17,7 @@ export function LoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const authError = searchParams.get('error');
@@ -64,19 +65,28 @@ export function LoginForm() {
         />
       </div>
       <div className="grid gap-2">
-        <div className="flex items-center">
-          <Label htmlFor="password">Senha</Label>
+        <Label htmlFor="password">Senha</Label>
+        <div className="relative">
+            <Input 
+              id="password" 
+              name="password"
+              type={showPassword ? "text" : "password"} 
+              required 
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
+              className="pr-10"
+            />
+            <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+            >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
         </div>
-        <Input 
-          id="password" 
-          name="password"
-          type="password" 
-          required 
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          disabled={isLoading}
-        />
       </div>
       
       {error && (
