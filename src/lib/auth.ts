@@ -4,7 +4,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseServerApp } from '@/lib/firebase/server'; 
 import type { User } from '@/lib/types';
-// A importação estática foi removida daqui para evitar o erro de build.
+import { adminAuth } from './firebase/admin';
 
 /**
  * Opções de configuração para o NextAuth.js.
@@ -24,45 +24,38 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          console.log("Authorize: Missing credentials.");
           return null;
         }
 
         try {
-          // 1. Autenticar com o Firebase
-          const auth = getAuth(firebaseServerApp); 
-          const userCredential = await signInWithEmailAndPassword(
-            auth,
-            credentials.email,
-            credentials.password
-          );
-          
-          const firebaseUser = userCredential.user;
-          
-          if (firebaseUser) {
-            // 2. Após sucesso no Firebase, buscar no nosso banco de dados dinamicamente.
-            // A importação dinâmica é a chave para resolver o erro 'Failed to collect page data'.
-            const { getUserByEmailFromDb } = await import('@/lib/data');
-            const appUser = await getUserByEmailFromDb(firebaseUser.email!);
+          // A grande mudança: Não usamos mais signInWithEmailAndPassword aqui.
+          // Apenas verificamos se o usuário existe no Firebase e no nosso DB.
+          // O `signIn` do NextAuth no lado do cliente já valida a senha contra o Firebase.
 
-            // 3. Se o usuário não existir no nosso banco, o login falha.
-            // Isso força a consistência dos dados. O usuário deve ser criado pelo fluxo de registro.
-            if (!appUser) {
-              console.error(`Login Failure: User ${firebaseUser.email} authenticated with Firebase but does not exist in the app database.`);
-              return null;
-            }
+          // 1. Verificar se o usuário existe no Firebase Auth
+          await adminAuth.getUserByEmail(credentials.email);
+          
+          // 2. Se existir no Firebase, verificar se existe no nosso banco de dados.
+          const { getUserByEmailFromDb } = await import('@/lib/data');
+          const appUser = await getUserByEmailFromDb(credentials.email);
 
-            // 4. Se tudo estiver correto, retorna o perfil completo do nosso banco.
+          if (appUser) {
+            // Se o usuário existe em ambos, a autorização é bem-sucedida.
+            // Retornamos o perfil completo do nosso banco.
             return appUser;
+          } else {
+            // Existe no Firebase, mas não no nosso banco. Nega o login.
+            console.error(`Login Failure: User ${credentials.email} exists in Firebase but not in the app database.`);
+            return null;
           }
-
-          return null;
-
         } catch (error: any) {
-          console.error("Authorize Error: Firebase sign-in failed.", {
-            errorCode: error.code,
-            errorMessage: error.message,
-          });
-          // Se o signIn do Firebase falhar, a credencial está errada.
+          // Se adminAuth.getUserByEmail falhar, o usuário não existe no Firebase.
+          if (error.code === 'auth/user-not-found') {
+            console.log(`Authorize: User ${credentials.email} not found in Firebase.`);
+          } else {
+            console.error("Authorize Error:", error);
+          }
           return null; 
         }
       },
@@ -72,7 +65,6 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
         // No login inicial (objeto 'user' está presente)
         if (user) {
-            // O 'user' que vem do 'authorize' já é o perfil completo do nosso banco.
             token.id = user.id;
             token.email = user.email;
             token.name = user.name;
