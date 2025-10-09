@@ -59,12 +59,7 @@ export default function UnitsPage() {
       cell: ({ row }) => {
         const unit = row.original;
         return (
-          <Link
-            href={`/dashboard/units/${unit.id}`}
-            className="capitalize font-medium text-primary hover:underline cursor-pointer"
-          >
-            {row.getValue('name')}
-          </Link>
+          <div className="capitalize font-medium">{row.getValue('name')}</div>
         );
       },
     },
@@ -145,6 +140,10 @@ export default function UnitsPage() {
 
   const columns = getColumns(handleUnitSaved);
 
+  const handleRowClick = (unit: Unit) => {
+    router.push(`/dashboard/units/${unit.id}`);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -175,7 +174,7 @@ export default function UnitsPage() {
                 <Skeleton className="h-12 w-full" />
             </div>
         ) : (
-            <DataTable columns={columns} data={units} filterColumn="name" />
+            <DataTable columns={columns} data={units} onRowClick={handleRowClick} />
         )}
       </CardContent>
     </Card>

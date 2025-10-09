@@ -5,11 +5,8 @@
 import { revalidatePath } from 'next/cache';
 import { readData, writeData, getUserByEmailFromDb, getProducts } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, KnowledgeBaseItem, AccessLevel, OrderType } from './types';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { firebaseApp } from './firebase/client';
 import { adminAuth } from './firebase/admin';
 import kb from '../data/knowledge-base.json';
-import * as jose from 'jose';
 
 // --- UTILITIES ---
 const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;

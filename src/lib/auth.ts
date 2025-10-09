@@ -2,7 +2,7 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { firebaseApp } from '@/lib/firebase/client';
+import { firebaseServerApp } from '@/lib/firebase/server'; // MODIFICADO: Usa a instância do servidor
 import type { User } from '@/lib/types';
 
 /**
@@ -29,8 +29,8 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // Usa o SDK do CLIENTE para verificar as credenciais.
-          const auth = getAuth(firebaseApp); 
+          // MODIFICADO: Usa o auth da instância do SERVIDOR
+          const auth = getAuth(firebaseServerApp); 
           const userCredential = await signInWithEmailAndPassword(
             auth,
             credentials.email,
@@ -56,6 +56,9 @@ export const authOptions: NextAuthOptions = {
             errorCode: error.code,
             errorMessage: error.message,
           });
+          // Retorna null em caso de erro para que o NextAuth possa lidar com isso
+          // e redirecionar para a página de erro com a mensagem apropriada.
+          // Lançar um erro aqui pode causar comportamento inesperado.
           return null; 
         }
       },

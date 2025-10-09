@@ -1,3 +1,4 @@
+
 import { kv } from '@/lib/kv';
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
 import { getKnowledgeBase as getKbData } from './actions';
@@ -46,7 +47,8 @@ export async function getProduct(productId: string): Promise<Product | null> {
 }
 
 export const getUnits = async (): Promise<Unit[]> => {
-    return await readData<Unit>('units');
+    const units = await readData<Unit>('units');
+    return units.sort((a, b) => a.name.localeCompare(b.name));
 };
 
 export async function getUnit(unitId: string): Promise<Unit | null> {
