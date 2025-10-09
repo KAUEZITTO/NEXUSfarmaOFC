@@ -31,7 +31,6 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // Use o app do servidor aqui para autenticação
           const auth = getAuth(firebaseServerApp);
           const userCredential = await signInWithEmailAndPassword(
             auth,
@@ -43,33 +42,29 @@ export const authOptions: NextAuthOptions = {
           if (!firebaseUser?.email) {
              return null;
           }
-
-          // A busca no KV é a causa do problema no build.
-          // O authorize é chamado, e ele tenta buscar os dados.
-          // Vamos buscar o usuário do nosso DB aqui, pois é necessário.
-          const appUser = await getUserByEmailFromDb(firebaseUser.email);
           
-          if (!appUser) {
-            console.error(`CRITICAL: User ${firebaseUser.email} authenticated with Firebase but not found in the application database.`);
-            // Retornar null ou um erro é mais seguro do que criar uma sessão parcial
-            return null;
-          }
-          
-          return appUser;
+          // CRITICAL CHANGE: DO NOT fetch from our DB here.
+          // Only return the basic user from Firebase. The JWT callback will enrich it.
+          // This prevents the build from failing.
+          return {
+            id: firebaseUser.uid,
+            email: firebaseUser.email,
+            name: firebaseUser.displayName,
+            image: firebaseUser.photoURL,
+          };
 
         } catch (error: any) {
           console.error("Authorize Error: Falha na autenticação com Firebase.", {
             errorCode: error.code,
             errorMessage: error.message,
           });
-          return null; // Retorna null em caso de falha de autenticação
+          return null; 
         }
       },
     }),
   ],
   callbacks: {
     async signIn({ user, account }) {
-      // Se o authorize retornou um usuário, o login é bem-sucedido.
       if (user) {
         return true;
       }
@@ -77,22 +72,31 @@ export const authOptions: NextAuthOptions = {
     },
     
     async jwt({ token, user }) {
-      // Este callback é chamado após o login e a cada verificação de sessão.
-      // No login inicial, o objeto 'user' do authorize está disponível.
-      if (user) {
+      // On initial sign-in, the user object is available.
+      // We now fetch from our DB here to enrich the token.
+      if (user && user.email) {
+        const appUser = await getUserByEmailFromDb(user.email);
+        if (appUser) {
+          token.id = appUser.id;
+          token.role = appUser.role;
+          token.name = appUser.name;
+          token.email = appUser.email;
+          token.accessLevel = appUser.accessLevel;
+          token.image = appUser.image;
+          token.birthdate = appUser.birthdate;
+        } else {
+          // This case should ideally not happen if user registration is enforced.
+          // But as a fallback, we use the Firebase user data.
           token.id = user.id;
-          token.role = user.role;
-          token.name = user.name;
           token.email = user.email;
-          token.accessLevel = user.accessLevel;
+          token.name = user.name;
           token.image = user.image;
-          token.birthdate = user.birthdate;
+        }
       }
       return token;
     },
 
     async session({ session, token }) {
-      // Popula o objeto `session.user` com os dados do token JWT.
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as User['role'];
