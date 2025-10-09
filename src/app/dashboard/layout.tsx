@@ -1,5 +1,3 @@
-
-'use server';
 // This line forces dynamic rendering for the entire dashboard layout and all its children.
 // This is the definitive fix to prevent Vercel's build process from attempting to
 // statically collect page data for routes that access databases like Vercel KV.
