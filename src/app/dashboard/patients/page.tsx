@@ -1,6 +1,7 @@
 
 'use client';
 
+import { Suspense } from 'react';
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition, useEffect } from "react";
 import { DataTable } from "@/components/ui/data-table";
@@ -38,7 +39,7 @@ const filterCategories: { label: string, value: PatientFilter }[] = [
     { label: 'Todos', value: 'all' },
 ];
 
-export default function PatientsPage() {
+function PatientsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -72,7 +73,7 @@ export default function PatientsPage() {
 
   const handlePatientSaved = () => {
     startTransition(() => {
-      router.refresh();
+      handleFilterChange(activeFilter);
     });
   }
   
@@ -84,7 +85,7 @@ export default function PatientsPage() {
           title: "Status Atualizado!",
           description: `O status do paciente foi alterado para ${status}.`,
         });
-        router.refresh(); 
+        handleFilterChange(activeFilter);
       } catch (error) {
         toast({
           variant: "destructive",
@@ -286,4 +287,26 @@ export default function PatientsPage() {
       </CardContent>
     </Card>
   );
+}
+
+export default function PatientsPage() {
+    return (
+        <Suspense fallback={
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-8 w-1/3" />
+              <Skeleton className="h-4 w-2/3 mt-2" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            </CardContent>
+          </Card>
+        }>
+            <PatientsPageContent />
+        </Suspense>
+    )
 }
