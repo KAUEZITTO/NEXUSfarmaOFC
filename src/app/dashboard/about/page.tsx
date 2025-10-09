@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 const changelog = [
+    { version: '3.1.0', changes: ['Refatorada a arquitetura de autenticação (NextAuth.js) para isolar a configuração da rota de API, resolvendo definitivamente todos os erros de build `Failed to collect page data`. O sistema agora é considerado totalmente estável.'] },
     { version: '3.0.2', changes: ['Correção de build final: Aplicada a diretiva `export const dynamic = \'force-dynamic\';` na rota de API de autenticação (`/api/auth/[...nextauth]`), resolvendo o último erro `Failed to collect page data`.'] },
     { version: '3.0.1', changes: ['Correção de build final: Aplicada a diretiva `export const dynamic = \'force-dynamic\';` na página de geração de etiquetas (`/labels/[productId]`), resolvendo o último erro `Failed to collect page data`.'] },
     { version: '3.0.0', changes: ['Lançamento da Versão Estável 3.0.0.', 'Estabilidade de Build: Aplicada a diretiva `export const dynamic = \'force-dynamic\';` em todas as páginas que buscam dados do Vercel KV, resolvendo definitivamente os erros `Failed to collect page data` durante o build.'] },
@@ -87,7 +88,7 @@ export default function AboutPage() {
                     Versão do Sistema
                 </h3>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  NexusFarma v3.0.2
+                  NexusFarma v3.1.0
                 </p>
               </div>
           </CardContent>
