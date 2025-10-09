@@ -9,9 +9,10 @@ import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger
 import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guide';
 import BirthdayBalloons from '@/components/dashboard/birthday-balloons';
 
-const CURRENT_VERSION = '3.0.1';
+const CURRENT_VERSION = '3.0.2';
 
 const changelog = [
+    { version: '3.0.2', changes: ['Correção de build final: Aplicada a diretiva `export const dynamic = \'force-dynamic\';` na rota de API de autenticação (`/api/auth/[...nextauth]`), resolvendo o último erro `Failed to collect page data`.'] },
     { version: '3.0.1', changes: ['Correção de build final: Aplicada a diretiva `export const dynamic = \'force-dynamic\';` na página de geração de etiquetas (`/labels/[productId]`), resolvendo o último erro `Failed to collect page data`.'] },
     { version: '3.0.0', changes: ['Lançamento da Versão Estável 3.0.0.', 'Estabilidade de Build: Aplicada a diretiva `export const dynamic = \'force-dynamic\';` em todas as páginas que buscam dados do Vercel KV, resolvendo definitivamente os erros `Failed to collect page data` durante o build.'].reverse() },
     { version: '2.9.0', changes: ['Correção arquitetural da página de Nova Remessa para resolver erro de build.', 'Removido pacote de tipos `@types/firebase` conflitante para corrigir erro de build `Cannot find type definition file`.'].reverse() },
