@@ -212,7 +212,7 @@ export default function OrderHistoryPage({ params }: { params: { unitId: string 
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <DataTable columns={tableColumns} data={orders} filterColumn="id" />
+        <DataTable columns={tableColumns} data={orders} />
       </CardContent>
     </Card>
 

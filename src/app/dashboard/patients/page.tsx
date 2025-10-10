@@ -15,7 +15,8 @@ import {
 import { AttendPatientDialog } from "@/components/dashboard/attend-patient-dialog";
 import { AddPatientDialog } from "@/components/dashboard/add-patient-dialog";
 import { Button } from "@/components/ui/button";
-import type { Patient, PatientFilter, PatientStatus, ColumnDef } from "@/lib/types";
+import type { Patient, PatientFilter, PatientStatus } from "@/lib/types";
+import { ColumnDef } from "@tanstack/react-table";
 import { PlusCircle, Loader2, Eye, Edit, UserCheck, UserX, CheckCircle, XCircle, HeartPulse, MoreHorizontal, ArrowUpDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -282,7 +283,7 @@ function PatientsPageContent() {
             <Skeleton className="h-12 w-full" />
           </div>
         ) : (
-          <DataTable columns={columns} data={patients} filterColumn="name" />
+          <DataTable columns={columns} data={patients} />
         )}
       </CardContent>
     </Card>

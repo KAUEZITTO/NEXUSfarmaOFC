@@ -164,7 +164,7 @@ export default function PatientHistoryPage({ params }: { params: { patientId: st
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <DataTable columns={columns} data={dispensations} filterColumn="id" />
+                <DataTable columns={columns} data={dispensations} />
             </CardContent>
         </Card>
     </div>
