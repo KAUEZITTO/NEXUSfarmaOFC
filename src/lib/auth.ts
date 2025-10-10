@@ -1,7 +1,7 @@
 
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { getOrCreateUser } from './data';
+import { getOrCreateUser, getUserByEmailFromDb } from './data';
 import { Adapter } from 'next-auth/adapters';
 import { kv } from './kv';
 import type { User as AppUser } from '@/lib/types';
@@ -118,6 +118,8 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials: any) {
         if (!credentials?.uid || !credentials?.email) {
           console.error("Authorize Error: UID ou email ausente no objeto de credenciais.", { credentials });
+          // Returning null triggers the error flow.
+          // This should lead to a 'CredentialsSignin' error on the client, not 'Configuration'.
           return null;
         }
 
@@ -132,15 +134,16 @@ export const authOptions: NextAuthOptions = {
           });
           
           if (appUser) {
-            return appUser;
+            return appUser; // Success
           }
 
+          // If getOrCreateUser returns null for any reason.
           console.error("Authorize Error: A função getOrCreateUser retornou null.", { credentials });
-          return null;
+          return null; // Explicitly return null on failure
           
         } catch (error) {
           console.error("Authorize Critical Error: Exceção durante a chamada getOrCreateUser.", error);
-          return null;
+          return null; // Explicitly return null on critical failure
         }
       },
     }),
