@@ -54,7 +54,7 @@ export default async function DashboardLayout({
               </div>
             </div>
             
-            <UpdateDialog currentVersion={CURRENT_VERSION} changelog={changelog} />
+            <UpdateDialog currentVersion={CURRENT_VERSION} changelog={changelog.slice(0,1)} />
 
           </TourGuideWrapper>
         </SidebarProvider>
