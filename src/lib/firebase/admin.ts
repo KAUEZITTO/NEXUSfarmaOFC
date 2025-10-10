@@ -1,3 +1,4 @@
+
 // src/lib/firebase/admin.ts
 import * as admin from 'firebase-admin';
 
@@ -17,17 +18,34 @@ const serviceAccount = {
   client_x509_cert_url: process.env.FIREBASE_ADMIN_CLIENT_X509_CERT_URL,
 } as admin.ServiceAccount;
 
-// Inicializa o Admin SDK apenas se ainda não foi inicializado.
-if (!admin.apps.length) {
-  try {
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-    console.log('Firebase Admin SDK inicializado com sucesso.');
-  } catch (error) {
-    console.error('Erro ao inicializar Firebase Admin SDK:', error);
-  }
+
+/**
+ * Garante que o Firebase Admin SDK seja inicializado de forma segura,
+ * evitando inicializações duplicadas em ambientes serverless.
+ * @returns A instância do aplicativo Firebase Admin.
+ */
+function initializeAdminApp() {
+    if (admin.apps.length > 0) {
+        return admin.app();
+    }
+
+    try {
+        const app = admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+        });
+        console.log('Firebase Admin SDK inicializado com sucesso.');
+        return app;
+    } catch (error) {
+        console.error('Erro crítico ao inicializar Firebase Admin SDK:', error);
+        // Lançar o erro pode ajudar a diagnosticar problemas de configuração.
+        // Em produção, você pode querer lidar com isso de forma diferente.
+        throw new Error('Falha na inicialização do Firebase Admin. Verifique as credenciais.');
+    }
 }
 
-export const adminAuth = admin.auth();
-export const adminDb = admin.firestore();
+// Inicializa a aplicação
+const adminApp = initializeAdminApp();
+
+// Exporta a instância de autenticação do app inicializado
+export const adminAuth = adminApp.auth();
+export const adminDb = adminApp.firestore();
