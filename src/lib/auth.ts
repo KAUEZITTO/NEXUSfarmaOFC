@@ -18,59 +18,41 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        // Agora esperamos o objeto do usuário do Firebase, não mais email/senha.
+        // O NextAuth usará isso para passar os dados para 'authorize'.
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          console.log("Authorize: Missing credentials.");
+        // As 'credentials' aqui são na verdade o objeto do usuário do Firebase
+        // que passamos do formulário de login após um login bem-sucedido.
+        if (!credentials?.uid || !credentials?.email) {
+          console.error("Authorize: Faltando UID ou email do Firebase.");
           return null;
         }
 
-        // Importações dinâmicas para evitar erros de build e usar o SDK cliente
-        const { initializeApp, getApps, getApp } = await import('firebase/app');
-        const { getAuth, signInWithEmailAndPassword } = await import('firebase/auth');
-        const { getUserByEmailFromDb } = await import('@/lib/data');
-
-        const firebaseConfig = {
-            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-            authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-            storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-            messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-            appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-        };
-
-        const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-        const auth = getAuth(app);
-
         try {
-          // 1. Autenticar com o Firebase.
-          const userCredential = await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
-          
-          if (userCredential.user) {
-              // 2. Buscar o usuário em nosso DB.
-              const appUser = await getUserByEmailFromDb(credentials.email);
+          // Importa a função de dados dinamicamente para evitar erro de build
+          const { getOrCreateUser } = await import('@/lib/data');
 
-              if (appUser) {
-                // Usuário existe em ambos os lugares, retorna o perfil completo.
-                return appUser;
-              } else {
-                // *** CORREÇÃO CRÍTICA ***
-                // Usuário autenticou no Firebase mas não existe no nosso DB.
-                // Não falhe. Retorne os dados básicos para o callback JWT criar o perfil.
-                console.warn(`User ${credentials.email} authenticated with Firebase but not found in app DB. Profile will be created.`);
-                return {
-                  id: userCredential.user.uid,
-                  email: userCredential.user.email,
-                  name: userCredential.user.displayName
-                };
-              }
+          // Busca ou cria o usuário em nosso banco de dados (Vercel KV)
+          // usando os dados já validados do Firebase.
+          const appUser = await getOrCreateUser(
+            credentials.uid,
+            credentials.email,
+            credentials.displayName,
+            credentials.photoURL
+          );
+
+          if (appUser) {
+            // Se o usuário foi encontrado ou criado com sucesso, retorne-o.
+            return appUser;
           }
+
+          console.error("Authorize: Falha ao obter ou criar o usuário do aplicativo.");
           return null;
-        } catch (error: any) {
-          console.error("Authorize Error (signInWithEmailAndPassword failed):", error.code);
-          return null; 
+          
+        } catch (error) {
+          console.error("Authorize: Erro crítico durante getOrCreateUser.", error);
+          return null;
         }
       },
     }),
@@ -81,37 +63,18 @@ export const authOptions: NextAuthOptions = {
         if (user) {
             token.id = user.id;
             token.email = user.email;
-
-            // Se o usuário veio completo do 'authorize' (já existia no DB)
-            if ('accessLevel' in user) {
-                token.name = user.name;
-                token.image = user.image;
-                token.role = user.role;
-                token.subRole = user.subRole;
-                token.accessLevel = user.accessLevel;
-                token.birthdate = user.birthdate;
-            }
-        }
-        
-        // Se o token ainda não tem 'accessLevel', significa que o perfil precisa ser criado/buscado.
-        if (token.id && !token.accessLevel) {
-            const { getOrCreateUser } = await import('@/lib/data');
-            const appUser = await getOrCreateUser(token.id, token.email!, token.name);
-            if (appUser) {
-                token.name = appUser.name;
-                token.image = appUser.image;
-                token.role = appUser.role;
-                token.subRole = appUser.subRole;
-                token.accessLevel = appUser.accessLevel;
-                token.birthdate = appUser.birthdate;
-            }
+            token.name = user.name;
+            token.image = user.image;
+            token.role = user.role;
+            token.subRole = user.subRole;
+            token.accessLevel = user.accessLevel;
+            token.birthdate = user.birthdate;
         }
         
          // Se o gatilho da atualização for 'update' e houver uma sessão, atualize o token
         if (trigger === "update" && session) {
             return { ...token, ...session.user };
         }
-
 
         return token;
     },
