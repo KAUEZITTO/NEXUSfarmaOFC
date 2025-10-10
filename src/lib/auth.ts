@@ -2,7 +2,7 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { User } from '@/lib/types';
-import { validateUserCredentials } from './server-auth';
+import { getOrCreateUser } from './data';
 
 
 /**
@@ -30,20 +30,25 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // A lógica de validação foi movida para uma função separada
-          // para isolar o código do lado do servidor do processo de build do Next.js.
-          const appUser = await validateUserCredentials(credentials);
+          // A lógica agora é simples: confiar nos dados já validados pelo cliente
+          // e garantir que o perfil do usuário exista no nosso banco de dados.
+          const appUser = await getOrCreateUser({
+              id: credentials.uid,
+              email: credentials.email,
+              name: credentials.displayName,
+              image: credentials.photoURL,
+          });
           
           if (appUser) {
             console.log("Authorize Success: Usuário validado com sucesso.", { email: appUser.email });
             return appUser;
           }
 
-          console.error("Authorize Error: A função validateUserCredentials retornou null.", { credentials });
+          console.error("Authorize Error: A função getOrCreateUser retornou null.", { credentials });
           return null;
           
         } catch (error) {
-          console.error("Authorize Critical Error: Exceção durante a chamada validateUserCredentials.", error);
+          console.error("Authorize Critical Error: Exceção durante a chamada getOrCreateUser.", error);
           return null;
         }
       },
