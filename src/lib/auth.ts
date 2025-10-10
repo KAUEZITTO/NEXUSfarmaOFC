@@ -141,17 +141,15 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+  // Callbacks são removidos para permitir que a estratégia 'database' e o adapter funcionem como padrão.
+  // A sessão será preenchida automaticamente pelo adapter.
   callbacks: {
-    // O callback JWT não é mais necessário com a estratégia 'database' e foi removido.
     async session({ session, user }) {
         if (session.user) {
-            // O objeto 'user' aqui é o que o adapter retorna do banco de dados.
             session.user.id = user.id;
             session.user.accessLevel = (user as AppUser).accessLevel;
-            session.user.name = (user as AppUser).name;
-            session.user.email = (user as AppUser).email;
-            session.user.image = (user as AppUser).image;
-            session.user.birthdate = (user as AppUser).birthdate;
+            session.user.role = (user as AppUser).role;
+            session.user.subRole = (user as AppUser).subRole;
         }
         return session;
     }
