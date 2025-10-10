@@ -23,8 +23,14 @@ export function LoginForm() {
 
   useEffect(() => {
     const authError = searchParams.get('error');
-    if (authError === 'CredentialsSignin') {
-      setError('Credenciais inválidas ou erro de servidor. Tente novamente.');
+    if (authError) {
+      if (authError === 'CredentialsSignin') {
+        setError('Credenciais inválidas ou erro de servidor. Tente novamente.');
+      } else if (authError === 'Configuration') {
+          setError('Erro de configuração no servidor de autenticação. Contacte o suporte.');
+      } else {
+        setError('Ocorreu um erro de autenticação. Tente novamente.');
+      }
     }
   }, [searchParams]);
 
@@ -52,7 +58,12 @@ export function LoginForm() {
 
         if (result?.error) {
           // Este erro vem do 'authorize' ou do próprio NextAuth
-          setError('Credenciais inválidas ou erro de servidor. Tente novamente.');
+          const authError = new URLSearchParams(result.url.split('?')[1]).get('error');
+          if (authError === 'CredentialsSignin') {
+             setError('Credenciais inválidas. Verifique seu email e senha.');
+          } else {
+             setError('Ocorreu um erro ao iniciar a sessão. Tente novamente.');
+          }
           console.error("NextAuth signIn error:", result.error);
         } else if (result?.ok) {
           // 3. Redirecionar para o dashboard em caso de sucesso
