@@ -1,4 +1,5 @@
 
+
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { User } from '@/lib/types';
@@ -18,12 +19,16 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        // Agora esperamos o objeto do usuário do Firebase, não mais email/senha.
-        // O NextAuth usará isso para passar os dados para 'authorize'.
+        // Define os campos que o NextAuth deve esperar.
+        // Isso é crucial para que os dados sejam passados para 'authorize'.
+        uid: { label: "UID", type: "text" },
+        email: { label: "Email", type: "text" },
+        displayName: { label: "Name", type: "text" },
+        photoURL: { label: "Photo URL", type: "text" },
       },
       async authorize(credentials: any) {
         if (!credentials?.uid || !credentials?.email) {
-          console.error("Authorize Error: Missing UID or email from Firebase user object.", { credentials });
+          console.error("Authorize Error: UID ou email ausente no objeto de credenciais.", { credentials });
           return null;
         }
 
@@ -41,15 +46,15 @@ export const authOptions: NextAuthOptions = {
           });
           
           if (appUser) {
-            console.log("Authorize Success: User found or created.", { email: appUser.email });
+            console.log("Authorize Success: Usuário encontrado ou criado no banco de dados da aplicação.", { email: appUser.email });
             return appUser;
           }
 
-          console.error("Authorize Error: Failed to get or create the application user from KV store.", { credentials });
+          console.error("Authorize Error: Falha ao obter ou criar o usuário no KV store.", { credentials });
           return null;
           
         } catch (error) {
-          console.error("Authorize Critical Error: Exception during getOrCreateUser call.", error);
+          console.error("Authorize Critical Error: Exceção durante a chamada getOrCreateUser.", error);
           return null;
         }
       },
