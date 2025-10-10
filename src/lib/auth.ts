@@ -53,7 +53,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       // No login inicial, o objeto 'user' está disponível.
       // Populamos o token com os dados mínimos necessários.
       if (user) {
@@ -73,7 +73,7 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       // A sessão do cliente é populada a partir do nosso token JWT minimalista.
-      if (session.user) {
+      if (session.user && token) {
         session.user.id = token.id as string;
         session.user.accessLevel = token.accessLevel as User['accessLevel'];
         session.user.email = token.email;
