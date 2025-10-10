@@ -169,8 +169,10 @@ export async function getOrCreateUser(userData: { id: string; email: string; nam
             console.warn(`Inconsistência de ID encontrada para ${userData.email}. Atualizando para o ID correto do Firebase.`);
             existingUser.id = userData.id;
             const userIndex = allUsers.findIndex(u => u.email === userData.email);
-            allUsers[userIndex] = existingUser;
-            await writeData('users', allUsers);
+            if (userIndex !== -1) {
+                allUsers[userIndex] = existingUser;
+                await writeData('users', allUsers);
+            }
         }
         return existingUser;
     }
