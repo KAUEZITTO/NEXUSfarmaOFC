@@ -1,10 +1,9 @@
 
-
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { User } from '@/lib/types';
+import { getOrCreateUser } from '@/lib/data';
 
-// NENHUMA importação estática de pacotes do servidor aqui.
 
 /**
  * Opções de configuração para o NextAuth.js.
@@ -19,8 +18,6 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        // Define os campos que o NextAuth deve esperar.
-        // Isso é crucial para que os dados sejam passados para 'authorize'.
         uid: { label: "UID", type: "text" },
         email: { label: "Email", type: "text" },
         displayName: { label: "Name", type: "text" },
@@ -33,11 +30,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // Importa a função de dados dinamicamente para evitar erro de build
-          const { getOrCreateUser } = await import('@/lib/data');
-
-          // Busca ou cria o usuário em nosso banco de dados (Vercel KV)
-          // usando os dados já validados do Firebase.
+          // A função getOrCreateUser já lida com a busca ou criação no Vercel KV
           const appUser = await getOrCreateUser({
             id: credentials.uid,
             email: credentials.email,
