@@ -25,7 +25,7 @@ export function LoginForm() {
     const authError = searchParams.get('error');
     if (authError) {
       if (authError === 'CredentialsSignin') {
-        setError('Credenciais inválidas. Verifique seu e-mail e senha.');
+        setError('Credenciais inválidas ou usuário não encontrado em nosso sistema.');
       } else if (authError === 'Configuration') {
           setError('Erro de configuração no servidor de autenticação. Contacte o suporte.');
       } else {
@@ -48,27 +48,22 @@ export function LoginForm() {
       if (firebaseUser) {
         // 2. Se o login no Firebase for bem-sucedido, use NextAuth para criar a sessão do app
         const result = await signIn('credentials', {
-          // Passamos os dados do usuário do Firebase para o 'authorize'
           uid: firebaseUser.uid,
-          email: firebaseUser.email!, // Email is guaranteed to exist
+          email: firebaseUser.email!,
           displayName: firebaseUser.displayName,
           photoURL: firebaseUser.photoURL,
           redirect: false, // Manipulamos o redirecionamento manualmente
         });
 
         if (result?.error) {
-          // Este erro vem do 'authorize' ou do próprio NextAuth
-          const authErrorParam = new URL(result.url).searchParams.get('error');
-          if (authErrorParam === 'CredentialsSignin') {
+          // Erro vindo do 'authorize' ou do próprio NextAuth
+          console.error("NextAuth signIn error:", result.error);
+          if (result.error === 'CredentialsSignin') {
              setError('Credenciais inválidas ou usuário não encontrado em nosso sistema. Verifique os dados e tente novamente.');
-          } else if (authErrorParam === 'Configuration') {
-              setError('Erro de configuração no servidor. Contacte o suporte técnico.');
           } else {
              setError('Ocorreu um erro ao iniciar a sessão. Tente novamente.');
           }
-          console.error("NextAuth signIn error:", result.error, "URL:", result.url);
         } else if (result?.ok) {
-          // 3. Redirecionar para o dashboard em caso de sucesso
           router.push('/dashboard');
         } else {
             setError('Falha ao iniciar sessão. Resposta inesperada do servidor.');

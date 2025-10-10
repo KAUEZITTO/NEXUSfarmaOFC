@@ -118,8 +118,6 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials: any) {
         if (!credentials?.uid || !credentials?.email) {
           console.error("Authorize Error: UID ou email ausente no objeto de credenciais.", { credentials });
-          // Returning null triggers the error flow.
-          // This should lead to a 'CredentialsSignin' error on the client, not 'Configuration'.
           return null;
         }
 
@@ -134,27 +132,24 @@ export const authOptions: NextAuthOptions = {
           });
           
           if (appUser) {
-            return appUser; // Success
+            return appUser; // Sucesso
           }
 
-          // If getOrCreateUser returns null for any reason.
           console.error("Authorize Error: A função getOrCreateUser retornou null.", { credentials });
-          return null; // Explicitly return null on failure
+          return null; // Retorna null explicitamente em caso de falha
           
         } catch (error) {
           console.error("Authorize Critical Error: Exceção durante a chamada getOrCreateUser.", error);
-          return null; // Explicitly return null on critical failure
+          return null; // Retorna null explicitamente em caso de falha crítica
         }
       },
     }),
   ],
   callbacks: {
-    // O callback 'session' é essencial para popular o objeto de sessão do cliente
-    // com dados do nosso banco de dados que o adapter busca.
     async session({ session, user }) {
         if (session.user) {
-            session.user.id = user.id;
             const appUser = user as AppUser;
+            session.user.id = appUser.id;
             session.user.accessLevel = appUser.accessLevel;
             session.user.role = appUser.role;
             session.user.subRole = appUser.subRole;
