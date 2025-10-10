@@ -60,5 +60,3 @@ export default async function DashboardLayout({
         </SidebarProvider>
   );
 }
-
-    

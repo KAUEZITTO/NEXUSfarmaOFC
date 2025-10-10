@@ -14,14 +14,15 @@ import type { User as AppUser } from '@/lib/types';
 function KVDriver(client: typeof kv): Adapter {
   return {
     async createUser(user) {
-      const id = crypto.randomUUID();
+      const id = user.id || crypto.randomUUID();
       const newUser = { ...user, id };
       await client.set(`user:${id}`, newUser);
-      return newUser;
+      return newUser as any;
     },
     async getUser(id) {
       const user = await client.get<AppUser>(`user:${id}`);
-      return user ? { ...user, emailVerified: null } : null;
+      if (!user) return null;
+      return { ...user, emailVerified: null };
     },
     async getUserByEmail(email) {
       // This is less efficient but necessary for email-based lookups.
@@ -32,13 +33,15 @@ function KVDriver(client: typeof kv): Adapter {
       if (userKeys.length === 0) return null;
       const users = await client.mget<AppUser[]>(...userKeys);
       const user = users.find(u => u?.email === email);
-      return user ? { ...user, emailVerified: null } : null;
+      if (!user) return null;
+      return { ...user, emailVerified: null };
     },
     async getUserByAccount({ providerAccountId, provider }) {
        const account = await client.get<any>(`account:${provider}:${providerAccountId}`);
        if (!account) return null;
        const user = await client.get<AppUser>(`user:${account.userId}`);
-       return user ? { ...user, emailVerified: null } : null;
+       if (!user) return null;
+       return { ...user, emailVerified: null };
     },
     async updateUser(user) {
       const key = `user:${user.id}`;
@@ -46,7 +49,7 @@ function KVDriver(client: typeof kv): Adapter {
       if (!existingUser) throw new Error("User not found to update.");
       const updatedUser = { ...existingUser, ...user };
       await client.set(key, updatedUser);
-      return { ...updatedUser, emailVerified: null };
+      return { ...updatedUser, emailVerified: null } as any;
     },
     async deleteUser(userId) {
       await client.del(`user:${userId}`);
@@ -64,11 +67,12 @@ function KVDriver(client: typeof kv): Adapter {
     },
     async createSession({ sessionToken, userId, expires }) {
       await client.set(`session:${sessionToken}`, { sessionToken, userId, expires }, {
-          exat: Math.floor(expires.getTime() / 1000)
+          pxat: expires.getTime()
       });
       return { sessionToken, userId, expires };
     },
     async getSessionAndUser(sessionToken) {
+      if (!sessionToken) return null;
       const session = await client.get<any>(`session:${sessionToken}`);
       if (!session) return null;
       const user = await client.get<AppUser>(`user:${session.userId}`);
@@ -79,15 +83,14 @@ function KVDriver(client: typeof kv): Adapter {
         const key = `session:${session.sessionToken}`;
         const existingSession = await client.get<any>(key);
         if (!existingSession) return null;
+        
         const updatedSession = { ...existingSession, ...session };
-        await client.set(key, updatedSession, { exat: Math.floor(updatedSession.expires.getTime() / 1000) });
+
+        await client.set(key, updatedSession, { pxat: updatedSession.expires.getTime() });
         return updatedSession;
     },
     async deleteSession(sessionToken) {
-        const key = `session:${sessionToken}`;
-        const session = await client.get<any>(key);
-        if (session) await client.del(key);
-        return session;
+        await client.del(`session:${sessionToken}`);
     },
   };
 }
@@ -121,7 +124,6 @@ export const authOptions: NextAuthOptions = {
         try {
           // A autenticação da senha já foi feita no cliente com o Firebase.
           // Aqui, apenas garantimos que o usuário existe no nosso banco de dados.
-          // A função getOrCreateUser é segura, pois só interage com o Vercel KV.
           const appUser = await getOrCreateUser({
               id: credentials.uid,
               email: credentials.email,
@@ -144,18 +146,19 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    // Com a estratégia 'database', o callback 'jwt' é desnecessário e foi removido.
-    // O callback 'session' é essencial para popular o objeto de sessão do cliente.
+    // O callback 'session' é essencial para popular o objeto de sessão do cliente
+    // com dados do nosso banco de dados que o adapter busca.
     async session({ session, user }) {
         if (session.user) {
             session.user.id = user.id;
-            session.user.accessLevel = (user as AppUser).accessLevel;
-            session.user.role = (user as AppUser).role;
-            session.user.subRole = (user as AppUser).subRole;
-            session.user.name = (user as AppUser).name;
-            session.user.email = (user as AppUser).email;
-            session.user.image = (user as AppUser).image;
-            session.user.birthdate = (user as AppUser).birthdate;
+            const appUser = user as AppUser;
+            session.user.accessLevel = appUser.accessLevel;
+            session.user.role = appUser.role;
+            session.user.subRole = appUser.subRole;
+            session.user.name = appUser.name;
+            session.user.email = appUser.email;
+            session.user.image = appUser.image;
+            session.user.birthdate = appUser.birthdate;
         }
         return session;
     }

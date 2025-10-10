@@ -25,7 +25,7 @@ export function LoginForm() {
     const authError = searchParams.get('error');
     if (authError) {
       if (authError === 'CredentialsSignin') {
-        setError('Credenciais inválidas ou erro de servidor. Tente novamente.');
+        setError('Credenciais inválidas. Verifique seu e-mail e senha.');
       } else if (authError === 'Configuration') {
           setError('Erro de configuração no servidor de autenticação. Contacte o suporte.');
       } else {
@@ -58,17 +58,20 @@ export function LoginForm() {
 
         if (result?.error) {
           // Este erro vem do 'authorize' ou do próprio NextAuth
-          const authError = new URLSearchParams(result.url.split('?')[1]).get('error');
-          if (authError === 'CredentialsSignin') {
-             setError('Credenciais inválidas. Verifique seu email e senha.');
+          const authErrorParam = new URL(result.url).searchParams.get('error');
+          if (authErrorParam === 'CredentialsSignin') {
+             setError('Credenciais inválidas ou usuário não encontrado em nosso sistema.');
+          } else if (authErrorParam === 'Configuration') {
+              setError('Erro de configuração no servidor. Contacte o suporte.');
           } else {
              setError('Ocorreu um erro ao iniciar a sessão. Tente novamente.');
           }
-          console.error("NextAuth signIn error:", result.error);
+          console.error("NextAuth signIn error:", result.error, "URL:", result.url);
         } else if (result?.ok) {
           // 3. Redirecionar para o dashboard em caso de sucesso
           router.push('/dashboard');
-          router.refresh(); // Força a atualização dos dados da sessão no cliente
+        } else {
+            setError('Falha ao iniciar sessão. Resposta inesperada do servidor.');
         }
       } else {
         throw new Error('Usuário Firebase não encontrado após login.');
