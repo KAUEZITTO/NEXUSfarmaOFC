@@ -143,9 +143,8 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    // Ao usar a estratégia 'database', o callback 'session' é suficiente
-    // para enriquecer o objeto de sessão. O callback 'jwt' não é necessário
-    // e foi removido para evitar conflitos que levavam ao erro de cabeçalho grande.
+    // Com a estratégia 'database', o callback 'jwt' é desnecessário e foi removido.
+    // O callback 'session' é essencial para popular o objeto de sessão do cliente.
     async session({ session, user }) {
         if (session.user) {
             session.user.id = user.id;
@@ -162,6 +161,6 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/login',
-    error: '/login',
+    error: '/login', // Redireciona para o login em caso de qualquer erro de auth.
   },
 };
