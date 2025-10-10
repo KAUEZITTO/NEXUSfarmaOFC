@@ -142,12 +142,10 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    // This callback is called whenever a session is checked.
     async session({ session, user }) {
         if (session.user) {
-            session.user.id = user.id;
-            // The 'user' object from the database has the accessLevel
             const dbUser = user as AppUser;
+            session.user.id = dbUser.id;
             session.user.accessLevel = dbUser.accessLevel;
             session.user.name = dbUser.name;
             session.user.email = dbUser.email;
