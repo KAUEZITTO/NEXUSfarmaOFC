@@ -60,9 +60,9 @@ export function LoginForm() {
           // Este erro vem do 'authorize' ou do próprio NextAuth
           const authErrorParam = new URL(result.url).searchParams.get('error');
           if (authErrorParam === 'CredentialsSignin') {
-             setError('Credenciais inválidas ou usuário não encontrado em nosso sistema.');
+             setError('Credenciais inválidas ou usuário não encontrado em nosso sistema. Verifique os dados e tente novamente.');
           } else if (authErrorParam === 'Configuration') {
-              setError('Erro de configuração no servidor. Contacte o suporte.');
+              setError('Erro de configuração no servidor. Contacte o suporte técnico.');
           } else {
              setError('Ocorreu um erro ao iniciar a sessão. Tente novamente.');
           }
