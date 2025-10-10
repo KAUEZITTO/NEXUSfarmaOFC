@@ -1,16 +1,105 @@
 
-import type { NextAuthOptions } from 'next-auth';
+import type { NextAuthOptions, Awaitable } from 'next-auth';
+import type { Adapter, AdapterUser, AdapterSession, AdapterAccount } from 'next-auth/adapters';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { User } from '@/lib/types';
 import { getOrCreateUser } from './data';
+import { kv } from './kv';
+
+/**
+ * Implements a NextAuth.js adapter using Vercel KV.
+ * This stores sessions in the database, keeping cookies small.
+ */
+function KVDriver(client: typeof kv): Adapter {
+  const getKey = (prefix: string, id: string) => `${prefix}:${id}`;
+
+  return {
+    async createUser(user: Omit<AdapterUser, "id">): Promise<AdapterUser> {
+      const id = crypto.randomUUID();
+      const newUser = { ...user, id };
+      await client.set(getKey('user', id), newUser);
+      return newUser;
+    },
+    async getUser(id: string): Promise<AdapterUser | null> {
+      return await client.get<AdapterUser>(getKey('user', id));
+    },
+    async getUserByEmail(email: string): Promise<AdapterUser | null> {
+      // This is less efficient but necessary for email-based lookups.
+      // In a real production app, consider an index.
+      const userKeys = [];
+      for await (const key of client.scanIterator({ match: 'user:*' })) {
+        userKeys.push(key);
+      }
+      if (userKeys.length === 0) return null;
+
+      const users = await client.mget<AdapterUser[]>(...userKeys);
+      return users.find(u => u && u.email === email) || null;
+    },
+    async getUserByAccount({ providerAccountId, provider }): Promise<AdapterUser | null> {
+       const account = await client.get<AdapterAccount>(getKey('account', `${provider}:${providerAccountId}`));
+       if (!account) return null;
+       return await client.get<AdapterUser>(getKey('user', account.userId));
+    },
+    async updateUser(user: Partial<AdapterUser> & Pick<AdapterUser, 'id'>): Promise<AdapterUser> {
+      const key = getKey('user', user.id);
+      const existingUser = await client.get<AdapterUser>(key);
+      if (!existingUser) throw new Error("User not found to update.");
+      const updatedUser = { ...existingUser, ...user };
+      await client.set(key, updatedUser);
+      return updatedUser;
+    },
+    async deleteUser(userId: string): Promise<void> {
+      await client.del(getKey('user', userId));
+    },
+    async linkAccount(account: AdapterAccount): Promise<AdapterAccount> {
+      const key = getKey('account', `${account.provider}:${account.providerAccountId}`);
+      await client.set(key, account);
+      return account;
+    },
+    async unlinkAccount({ providerAccountId, provider }): Promise<AdapterAccount | undefined> {
+      const key = getKey('account', `${provider}:${providerAccountId}`);
+      const account = await client.get<AdapterAccount>(key);
+      if (account) await client.del(key);
+      return account as AdapterAccount | undefined;
+    },
+    async createSession(session: { sessionToken: string; userId: string; expires: Date }): Promise<AdapterSession> {
+      await client.set(getKey('session', session.sessionToken), session, {
+          exat: Math.floor(session.expires.getTime() / 1000)
+      });
+      return session;
+    },
+    async getSessionAndUser(sessionToken: string): Promise<{ session: AdapterSession; user: AdapterUser } | null> {
+      const session = await client.get<AdapterSession>(getKey('session', sessionToken));
+      if (!session) return null;
+      const user = await client.get<AdapterUser>(getKey('user', session.userId));
+      if (!user) return null;
+      return { session, user };
+    },
+    async updateSession(session: Partial<AdapterSession> & Pick<AdapterSession, 'sessionToken'>): Promise<AdapterSession | null | undefined> {
+        const key = getKey('session', session.sessionToken);
+        const existingSession = await client.get<AdapterSession>(key);
+        if (!existingSession) return null;
+        const updatedSession = { ...existingSession, ...session };
+        await client.set(key, updatedSession, { exat: Math.floor(updatedSession.expires.getTime() / 1000) });
+        return updatedSession;
+    },
+    async deleteSession(sessionToken: string): Promise<AdapterSession | null | undefined> {
+        const key = getKey('session', sessionToken);
+        const session = await client.get<AdapterSession>(key);
+        if (session) await client.del(key);
+        return session;
+    },
+  };
+}
 
 
 /**
  * Opções de configuração para o NextAuth.js.
  */
 export const authOptions: NextAuthOptions = {
+  adapter: KVDriver(kv),
   session: {
-    strategy: 'jwt',
+    strategy: 'database',
     maxAge: 30 * 24 * 60 * 60, // 30 dias
   },
   secret: process.env.NEXTAUTH_SECRET,
@@ -53,33 +142,18 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account }) {
-      // No login inicial, o objeto 'user' está disponível.
-      // Populamos o token com os dados mínimos necessários.
-      if (user) {
-        return {
-          id: user.id,
-          accessLevel: user.accessLevel,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          birthdate: user.birthdate,
-        };
-      }
-      // Em requisições subsequentes, o token já existe.
-      // Apenas o retornamos para garantir que ele não seja modificado ou inflado.
-      return token;
-    },
-
-    async session({ session, token }) {
-      // A sessão do cliente é populada a partir do nosso token JWT minimalista.
-      if (session.user && token) {
-        session.user.id = token.id as string;
-        session.user.accessLevel = token.accessLevel as User['accessLevel'];
-        session.user.email = token.email;
-        session.user.name = token.name;
-        session.user.image = token.image;
-        session.user.birthdate = token.birthdate;
+    // O callback JWT não é mais necessário com a estratégia 'database'
+    
+    async session({ session, user }) {
+      // Com a estratégia de banco de dados, 'user' é o usuário do banco de dados.
+      // Apenas precisamos garantir que o ID do usuário esteja na sessão.
+      if (session.user) {
+        session.user.id = user.id;
+        session.user.accessLevel = user.accessLevel;
+        session.user.name = user.name;
+        session.user.email = user.email;
+        session.user.image = user.image;
+        session.user.birthdate = user.birthdate;
       }
       return session;
     },
