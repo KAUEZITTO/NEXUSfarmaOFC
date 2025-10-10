@@ -27,7 +27,7 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Importações dinâmicas para evitar erros de build e usar o SDK cliente que é mais estável neste ambiente
+        // Importações dinâmicas para evitar erros de build e usar o SDK cliente
         const { initializeApp, getApps, getApp } = await import('firebase/app');
         const { getAuth, signInWithEmailAndPassword } = await import('firebase/auth');
         const { getUserByEmailFromDb } = await import('@/lib/data');
@@ -45,22 +45,30 @@ export const authOptions: NextAuthOptions = {
         const auth = getAuth(app);
 
         try {
-          // 1. Autenticar com o Firebase. Se isso falhar, uma exceção será lançada.
-          await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
+          // 1. Autenticar com o Firebase.
+          const userCredential = await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
           
-          // 2. Se a autenticação acima foi bem-sucedida, buscar o usuário em nosso DB
-          const appUser = await getUserByEmailFromDb(credentials.email);
+          if (userCredential.user) {
+              // 2. Buscar o usuário em nosso DB.
+              const appUser = await getUserByEmailFromDb(credentials.email);
 
-          if (appUser) {
-            // Se o usuário existe, retorna o perfil completo do nosso banco.
-            return appUser;
-          } else {
-            // Se autenticou no Firebase mas não existe no nosso DB, nega o login.
-            console.error(`Login Failure: User ${credentials.email} authenticated with Firebase but does not exist in the app database.`);
-            return null;
+              if (appUser) {
+                // Usuário existe em ambos os lugares, retorna o perfil completo.
+                return appUser;
+              } else {
+                // *** CORREÇÃO CRÍTICA ***
+                // Usuário autenticou no Firebase mas não existe no nosso DB.
+                // Não falhe. Retorne os dados básicos para o callback JWT criar o perfil.
+                console.warn(`User ${credentials.email} authenticated with Firebase but not found in app DB. Profile will be created.`);
+                return {
+                  id: userCredential.user.uid,
+                  email: userCredential.user.email,
+                  name: userCredential.user.displayName
+                };
+              }
           }
+          return null;
         } catch (error: any) {
-          // signInWithEmailAndPassword falhou (senha errada, usuário não encontrado no Firebase, etc.)
           console.error("Authorize Error (signInWithEmailAndPassword failed):", error.code);
           return null; 
         }
@@ -68,18 +76,43 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
         // No login inicial (objeto 'user' está presente)
         if (user) {
             token.id = user.id;
             token.email = user.email;
-            token.name = user.name;
-            token.image = user.image;
-            token.role = user.role;
-            token.subRole = user.subRole;
-            token.accessLevel = user.accessLevel;
-            token.birthdate = user.birthdate;
+
+            // Se o usuário veio completo do 'authorize' (já existia no DB)
+            if ('accessLevel' in user) {
+                token.name = user.name;
+                token.image = user.image;
+                token.role = user.role;
+                token.subRole = user.subRole;
+                token.accessLevel = user.accessLevel;
+                token.birthdate = user.birthdate;
+            }
         }
+        
+        // Se o token ainda não tem 'accessLevel', significa que o perfil precisa ser criado/buscado.
+        if (token.id && !token.accessLevel) {
+            const { getOrCreateUser } = await import('@/lib/data');
+            const appUser = await getOrCreateUser(token.id, token.email!, token.name);
+            if (appUser) {
+                token.name = appUser.name;
+                token.image = appUser.image;
+                token.role = appUser.role;
+                token.subRole = appUser.subRole;
+                token.accessLevel = appUser.accessLevel;
+                token.birthdate = appUser.birthdate;
+            }
+        }
+        
+         // Se o gatilho da atualização for 'update' e houver uma sessão, atualize o token
+        if (trigger === "update" && session) {
+            return { ...token, ...session.user };
+        }
+
+
         return token;
     },
 

@@ -147,6 +147,37 @@ export async function getUserByEmailFromDb(email: string): Promise<User | null> 
   }
 }
 
+/**
+ * Busca um usuário no banco de dados. Se não encontrar, cria um novo com base nos dados do provedor.
+ */
+export async function getOrCreateUser(userId: string, email: string, name?: string | null, image?: string | null): Promise<User | null> {
+    const existingUser = await getUserByEmailFromDb(email);
+    if (existingUser) {
+        return existingUser;
+    }
+
+    // Se não existir, cria um novo.
+    const allUsers = await readData<User>('users');
+    const newUser: User = {
+        id: userId,
+        email: email,
+        name: name || email.split('@')[0],
+        image: image || undefined,
+        // Define roles e permissões padrão para um usuário criado "on-the-fly".
+        role: 'Farmacêutico', 
+        accessLevel: allUsers.length === 0 ? 'Admin' : 'User', // O primeiro usuário é sempre Admin.
+    };
+
+    try {
+        await writeData('users', [...allUsers, newUser]);
+        console.log(`New user profile created for ${email}.`);
+        return newUser;
+    } catch (error) {
+        console.error(`Failed to create user profile for ${email}:`, error);
+        return null;
+    }
+}
+
 
 export async function getKnowledgeBase() {
     return await getKbData();
