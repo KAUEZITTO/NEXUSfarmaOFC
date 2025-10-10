@@ -3,6 +3,7 @@ import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { User } from '@/lib/types';
 import { getOrCreateUser } from './data';
+import { validateUserCredentials } from './server-auth';
 
 
 /**
@@ -30,8 +31,6 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // A lógica agora é simples: confiar nos dados já validados pelo cliente
-          // e garantir que o perfil do usuário exista no nosso banco de dados.
           const appUser = await getOrCreateUser({
               id: credentials.uid,
               email: credentials.email,
@@ -56,21 +55,17 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user, trigger, session }) {
-        // No login inicial (objeto 'user' está presente)
         if (user) {
             token.id = user.id;
-            token.email = user.email;
-            token.name = user.name;
-            token.image = user.image;
-            token.role = user.role;
-            token.subRole = user.subRole;
             token.accessLevel = user.accessLevel;
-            token.birthdate = user.birthdate;
+            token.email = user.email; // Manter email para fallback
         }
         
-         // Se o gatilho da atualização for 'update' e houver uma sessão, atualize o token
-        if (trigger === "update" && session) {
-            return { ...token, ...session.user };
+        if (trigger === "update" && session?.user) {
+            // Se houver uma atualização, podemos atualizar o nível de acesso se necessário
+            if (session.user.accessLevel) {
+              token.accessLevel = session.user.accessLevel;
+            }
         }
 
         return token;
@@ -78,14 +73,10 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       if (session.user && token.id) {
+        // Agora, passamos apenas os dados essenciais para o cliente
         session.user.id = token.id as string;
-        session.user.role = token.role as User['role'];
-        session.user.name = token.name;
-        session.user.email = token.email;
         session.user.accessLevel = token.accessLevel as User['accessLevel'];
-        session.user.image = token.image as string | undefined;
-        session.user.birthdate = token.birthdate as string | undefined;
-        session.user.subRole = token.subRole as User['subRole'];
+        session.user.email = token.email; // O email pode ser útil no cliente
       }
       return session;
     },
