@@ -54,23 +54,32 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user }) {
-        // Na primeira vez que o JWT é criado (após o login), o objeto 'user' está disponível.
-        if (user) {
-            // Persistimos apenas o ID, email e nível de acesso no token.
-            token.id = user.id;
-            token.accessLevel = user.accessLevel;
-            token.email = user.email; 
-        }
-        return token;
+      // No login inicial, o objeto 'user' está disponível.
+      // Populamos o token com os dados mínimos necessários.
+      if (user) {
+        return {
+          id: user.id,
+          accessLevel: user.accessLevel,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+          birthdate: user.birthdate,
+        };
+      }
+      // Em requisições subsequentes, o token já existe.
+      // Apenas o retornamos para garantir que ele não seja modificado ou inflado.
+      return token;
     },
 
     async session({ session, token }) {
-      // O token JWT é passado para o callback de sessão.
-      // Populamos a sessão do cliente com os dados mínimos do token.
-      if (session.user && token.id) {
+      // A sessão do cliente é populada a partir do nosso token JWT minimalista.
+      if (session.user) {
         session.user.id = token.id as string;
         session.user.accessLevel = token.accessLevel as User['accessLevel'];
         session.user.email = token.email;
+        session.user.name = token.name;
+        session.user.image = token.image;
+        session.user.birthdate = token.birthdate;
       }
       return session;
     },
