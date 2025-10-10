@@ -57,6 +57,7 @@ export function LoginForm() {
         } else if (result?.ok) {
           // 3. Redirecionar para o dashboard em caso de sucesso
           router.push('/dashboard');
+          router.refresh(); // Força a atualização dos dados da sessão no cliente
         }
       }
     } catch (error: any) {

@@ -30,6 +30,7 @@ function initializeAdminApp() {
         });
     } catch (error) {
         console.error("Falha Crítica ao Inicializar o Firebase Admin SDK:", error);
+        // Este erro será lançado e capturado durante o build ou na execução da função serverless.
         throw new Error("Não foi possível inicializar o Firebase Admin. Verifique as credenciais do serviço.");
     }
 }
