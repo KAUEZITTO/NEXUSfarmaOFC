@@ -21,11 +21,9 @@ export const authOptions: NextAuthOptions = {
         // Agora esperamos o objeto do usuário do Firebase, não mais email/senha.
         // O NextAuth usará isso para passar os dados para 'authorize'.
       },
-      async authorize(credentials) {
-        // As 'credentials' aqui são na verdade o objeto do usuário do Firebase
-        // que passamos do formulário de login após um login bem-sucedido.
+      async authorize(credentials: any) {
         if (!credentials?.uid || !credentials?.email) {
-          console.error("Authorize: Faltando UID ou email do Firebase.");
+          console.error("Authorize Error: Missing UID or email from Firebase user object.", { credentials });
           return null;
         }
 
@@ -35,23 +33,23 @@ export const authOptions: NextAuthOptions = {
 
           // Busca ou cria o usuário em nosso banco de dados (Vercel KV)
           // usando os dados já validados do Firebase.
-          const appUser = await getOrCreateUser(
-            credentials.uid,
-            credentials.email,
-            credentials.displayName,
-            credentials.photoURL
-          );
-
+          const appUser = await getOrCreateUser({
+            id: credentials.uid,
+            email: credentials.email,
+            name: credentials.displayName,
+            image: credentials.photoURL,
+          });
+          
           if (appUser) {
-            // Se o usuário foi encontrado ou criado com sucesso, retorne-o.
+            console.log("Authorize Success: User found or created.", { email: appUser.email });
             return appUser;
           }
 
-          console.error("Authorize: Falha ao obter ou criar o usuário do aplicativo.");
+          console.error("Authorize Error: Failed to get or create the application user from KV store.", { credentials });
           return null;
           
         } catch (error) {
-          console.error("Authorize: Erro crítico durante getOrCreateUser.", error);
+          console.error("Authorize Critical Error: Exception during getOrCreateUser call.", error);
           return null;
         }
       },

@@ -149,31 +149,48 @@ export async function getUserByEmailFromDb(email: string): Promise<User | null> 
 
 /**
  * Busca um usuário no banco de dados. Se não encontrar, cria um novo com base nos dados do provedor.
+ * Esta função é robusta, buscando primeiro por ID e depois por email.
  */
-export async function getOrCreateUser(userId: string, email: string, name?: string | null, image?: string | null): Promise<User | null> {
-    const existingUser = await getUserByEmailFromDb(email);
+export async function getOrCreateUser(userData: { id: string; email: string; name?: string | null; image?: string | null; }): Promise<User | null> {
+    const allUsers = await readData<User>('users');
+    
+    // 1. Tenta encontrar pelo ID (método mais confiável)
+    let existingUser = allUsers.find(u => u.id === userData.id);
     if (existingUser) {
         return existingUser;
     }
 
-    // Se não existir, cria um novo.
-    const allUsers = await readData<User>('users');
+    // 2. Se não encontrou pelo ID, tenta pelo email (fallback para consistência)
+    existingUser = allUsers.find(u => u.email === userData.email);
+    if (existingUser) {
+         // Opcional: corrigir o ID se estiver inconsistente
+        if (existingUser.id !== userData.id) {
+            console.warn(`Inconsistência de ID encontrada para ${userData.email}. Atualizando para o ID correto do Firebase.`);
+            existingUser.id = userData.id;
+            const userIndex = allUsers.findIndex(u => u.email === userData.email);
+            allUsers[userIndex] = existingUser;
+            await writeData('users', allUsers);
+        }
+        return existingUser;
+    }
+
+    // 3. Se não existe de forma alguma, cria um novo perfil.
+    console.log(`Nenhum perfil encontrado para ${userData.email}. Criando um novo...`);
     const newUser: User = {
-        id: userId,
-        email: email,
-        name: name || email.split('@')[0],
-        image: image || undefined,
-        // Define roles e permissões padrão para um usuário criado "on-the-fly".
-        role: 'Farmacêutico', 
+        id: userData.id,
+        email: userData.email,
+        name: userData.name || userData.email.split('@')[0],
+        image: userData.image || undefined,
+        role: 'Farmacêutico', // Role padrão
         accessLevel: allUsers.length === 0 ? 'Admin' : 'User', // O primeiro usuário é sempre Admin.
     };
 
     try {
         await writeData('users', [...allUsers, newUser]);
-        console.log(`New user profile created for ${email}.`);
+        console.log(`Novo perfil criado com sucesso para ${userData.email}.`);
         return newUser;
     } catch (error) {
-        console.error(`Failed to create user profile for ${email}:`, error);
+        console.error(`Falha ao criar o perfil para ${userData.email}:`, error);
         return null;
     }
 }
