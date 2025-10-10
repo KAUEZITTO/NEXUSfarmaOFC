@@ -1,91 +1,91 @@
 
-import type { NextAuthOptions, Awaitable } from 'next-auth';
-import type { Adapter, AdapterUser, AdapterSession, AdapterAccount } from 'next-auth/adapters';
+import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import type { User } from '@/lib/types';
 import { getOrCreateUser } from './data';
+import { Adapter } from 'next-auth/adapters';
 import { kv } from './kv';
+import type { User as AppUser } from '@/lib/types';
+
 
 /**
  * Implements a NextAuth.js adapter using Vercel KV.
  * This stores sessions in the database, keeping cookies small.
  */
 function KVDriver(client: typeof kv): Adapter {
-  const getKey = (prefix: string, id: string) => `${prefix}:${id}`;
-
   return {
-    async createUser(user: Omit<AdapterUser, "id">): Promise<AdapterUser> {
+    async createUser(user) {
       const id = crypto.randomUUID();
       const newUser = { ...user, id };
-      await client.set(getKey('user', id), newUser);
+      await client.set(`user:${id}`, newUser);
       return newUser;
     },
-    async getUser(id: string): Promise<AdapterUser | null> {
-      return await client.get<AdapterUser>(getKey('user', id));
+    async getUser(id) {
+      const user = await client.get<AppUser>(`user:${id}`);
+      return user ? { ...user, emailVerified: null } : null;
     },
-    async getUserByEmail(email: string): Promise<AdapterUser | null> {
+    async getUserByEmail(email) {
       // This is less efficient but necessary for email-based lookups.
-      // In a real production app, consider an index.
-      const userKeys = [];
+      const userKeys: string[] = [];
       for await (const key of client.scanIterator({ match: 'user:*' })) {
         userKeys.push(key);
       }
       if (userKeys.length === 0) return null;
-
-      const users = await client.mget<AdapterUser[]>(...userKeys);
-      return users.find(u => u && u.email === email) || null;
+      const users = await client.mget<AppUser[]>(...userKeys);
+      const user = users.find(u => u?.email === email);
+      return user ? { ...user, emailVerified: null } : null;
     },
-    async getUserByAccount({ providerAccountId, provider }): Promise<AdapterUser | null> {
-       const account = await client.get<AdapterAccount>(getKey('account', `${provider}:${providerAccountId}`));
+    async getUserByAccount({ providerAccountId, provider }) {
+       const account = await client.get<any>(`account:${provider}:${providerAccountId}`);
        if (!account) return null;
-       return await client.get<AdapterUser>(getKey('user', account.userId));
+       const user = await client.get<AppUser>(`user:${account.userId}`);
+       return user ? { ...user, emailVerified: null } : null;
     },
-    async updateUser(user: Partial<AdapterUser> & Pick<AdapterUser, 'id'>): Promise<AdapterUser> {
-      const key = getKey('user', user.id);
-      const existingUser = await client.get<AdapterUser>(key);
+    async updateUser(user) {
+      const key = `user:${user.id}`;
+      const existingUser = await client.get<AppUser>(key);
       if (!existingUser) throw new Error("User not found to update.");
       const updatedUser = { ...existingUser, ...user };
       await client.set(key, updatedUser);
-      return updatedUser;
+      return { ...updatedUser, emailVerified: null };
     },
-    async deleteUser(userId: string): Promise<void> {
-      await client.del(getKey('user', userId));
+    async deleteUser(userId) {
+      await client.del(`user:${userId}`);
     },
-    async linkAccount(account: AdapterAccount): Promise<AdapterAccount> {
-      const key = getKey('account', `${account.provider}:${account.providerAccountId}`);
+    async linkAccount(account) {
+      const key = `account:${account.provider}:${account.providerAccountId}`;
       await client.set(key, account);
       return account;
     },
-    async unlinkAccount({ providerAccountId, provider }): Promise<AdapterAccount | undefined> {
-      const key = getKey('account', `${provider}:${providerAccountId}`);
-      const account = await client.get<AdapterAccount>(key);
+    async unlinkAccount({ providerAccountId, provider }) {
+      const key = `account:${provider}:${providerAccountId}`;
+      const account = await client.get<any>(key);
       if (account) await client.del(key);
-      return account as AdapterAccount | undefined;
+      return account;
     },
-    async createSession(session: { sessionToken: string; userId: string; expires: Date }): Promise<AdapterSession> {
-      await client.set(getKey('session', session.sessionToken), session, {
-          exat: Math.floor(session.expires.getTime() / 1000)
+    async createSession({ sessionToken, userId, expires }) {
+      await client.set(`session:${sessionToken}`, { sessionToken, userId, expires }, {
+          exat: Math.floor(expires.getTime() / 1000)
       });
-      return session;
+      return { sessionToken, userId, expires };
     },
-    async getSessionAndUser(sessionToken: string): Promise<{ session: AdapterSession; user: AdapterUser } | null> {
-      const session = await client.get<AdapterSession>(getKey('session', sessionToken));
+    async getSessionAndUser(sessionToken) {
+      const session = await client.get<any>(`session:${sessionToken}`);
       if (!session) return null;
-      const user = await client.get<AdapterUser>(getKey('user', session.userId));
+      const user = await client.get<AppUser>(`user:${session.userId}`);
       if (!user) return null;
-      return { session, user };
+      return { session, user: { ...user, emailVerified: null } };
     },
-    async updateSession(session: Partial<AdapterSession> & Pick<AdapterSession, 'sessionToken'>): Promise<AdapterSession | null | undefined> {
-        const key = getKey('session', session.sessionToken);
-        const existingSession = await client.get<AdapterSession>(key);
+    async updateSession(session) {
+        const key = `session:${session.sessionToken}`;
+        const existingSession = await client.get<any>(key);
         if (!existingSession) return null;
         const updatedSession = { ...existingSession, ...session };
         await client.set(key, updatedSession, { exat: Math.floor(updatedSession.expires.getTime() / 1000) });
         return updatedSession;
     },
-    async deleteSession(sessionToken: string): Promise<AdapterSession | null | undefined> {
-        const key = getKey('session', sessionToken);
-        const session = await client.get<AdapterSession>(key);
+    async deleteSession(sessionToken) {
+        const key = `session:${sessionToken}`;
+        const session = await client.get<any>(key);
         if (session) await client.del(key);
         return session;
     },
@@ -119,6 +119,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
+          // getOrCreateUser is safe as it only interacts with Vercel KV, not Firebase Admin.
           const appUser = await getOrCreateUser({
               id: credentials.uid,
               email: credentials.email,
@@ -127,7 +128,6 @@ export const authOptions: NextAuthOptions = {
           });
           
           if (appUser) {
-            console.log("Authorize Success: Usuário validado com sucesso.", { email: appUser.email });
             return appUser;
           }
 
@@ -142,24 +142,23 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    // Com a estratégia 'database', o callback 'jwt' não é invocado.
-    // O callback 'session' é usado para estender o objeto de sessão.
+    // This callback is called whenever a session is checked.
     async session({ session, user }) {
-      // 'user' vem do adaptador de banco de dados.
-      // Anexamos o ID e o nível de acesso ao objeto de sessão.
-      if (session.user) {
-        session.user.id = user.id;
-        session.user.accessLevel = user.accessLevel;
-        session.user.name = user.name;
-        session.user.email = user.email;
-        session.user.image = user.image;
-        session.user.birthdate = user.birthdate;
-      }
-      return session;
-    },
+        if (session.user) {
+            session.user.id = user.id;
+            // The 'user' object from the database has the accessLevel
+            const dbUser = user as AppUser;
+            session.user.accessLevel = dbUser.accessLevel;
+            session.user.name = dbUser.name;
+            session.user.email = dbUser.email;
+            session.user.image = dbUser.image;
+            session.user.birthdate = dbUser.birthdate;
+        }
+        return session;
+    }
   },
   pages: {
     signIn: '/login',
-    error: '/login', // Redireciona para /login em caso de erro, mostrando a mensagem.
+    error: '/login',
   },
 };

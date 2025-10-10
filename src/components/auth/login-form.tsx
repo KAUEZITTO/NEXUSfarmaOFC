@@ -23,7 +23,7 @@ export function LoginForm() {
 
   useEffect(() => {
     const authError = searchParams.get('error');
-    if (authError) {
+    if (authError === 'CredentialsSignin') {
       setError('Credenciais inválidas ou erro de servidor. Tente novamente.');
     }
   }, [searchParams]);
@@ -44,7 +44,7 @@ export function LoginForm() {
         const result = await signIn('credentials', {
           // Passamos os dados do usuário do Firebase para o 'authorize'
           uid: firebaseUser.uid,
-          email: firebaseUser.email,
+          email: firebaseUser.email!, // Email is guaranteed to exist
           displayName: firebaseUser.displayName,
           photoURL: firebaseUser.photoURL,
           redirect: false, // Manipulamos o redirecionamento manualmente
@@ -59,6 +59,8 @@ export function LoginForm() {
           router.push('/dashboard');
           router.refresh(); // Força a atualização dos dados da sessão no cliente
         }
+      } else {
+        throw new Error('Usuário Firebase não encontrado após login.');
       }
     } catch (error: any) {
       // Erro vindo do 'signInWithEmailAndPassword' do Firebase
