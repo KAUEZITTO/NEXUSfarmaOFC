@@ -2,7 +2,9 @@
 
 import { kv } from '@/lib/kv';
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
-import { getKnowledgeBase as getKbData } from './actions';
+import kb from '@/data/knowledge-base.json';
+import type { KnowledgeBaseItem } from './types';
+
 
 // --- GENERIC DATA ACCESS ---
 
@@ -199,6 +201,6 @@ export async function getOrCreateUser(userData: { id: string; email: string; nam
 }
 
 
-export async function getKnowledgeBase() {
-    return await getKbData();
+export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
+    return kb;
 }
