@@ -208,7 +208,7 @@ export default function UserManagementPage() {
               <Skeleton className="h-12 w-full" />
           </div>
         ) : (
-          <DataTable columns={columns} data={users} filterColumn="email" />
+          <DataTable columns={columns} data={users} />
         )}
       </CardContent>
     </Card>
