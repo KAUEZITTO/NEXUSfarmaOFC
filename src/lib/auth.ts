@@ -120,7 +120,9 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // getOrCreateUser is safe as it only interacts with Vercel KV, not Firebase Admin.
+          // A autenticação da senha já foi feita no cliente com o Firebase.
+          // Aqui, apenas garantimos que o usuário existe no nosso banco de dados.
+          // A função getOrCreateUser é segura, pois só interage com o Vercel KV.
           const appUser = await getOrCreateUser({
               id: credentials.uid,
               email: credentials.email,
