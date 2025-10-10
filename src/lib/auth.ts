@@ -142,11 +142,12 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    // O callback JWT não é mais necessário com a estratégia 'database'
+    // O callback JWT é desnecessário e pode causar problemas com a estratégia 'database'.
+    // Foi removido para garantir que a sessão não seja armazenada em um JWT.
     
     async session({ session, user }) {
       // Com a estratégia de banco de dados, 'user' é o usuário do banco de dados.
-      // Apenas precisamos garantir que o ID do usuário esteja na sessão.
+      // Apenas precisamos garantir que os dados desejados estejam na sessão.
       if (session.user) {
         session.user.id = user.id;
         session.user.accessLevel = user.accessLevel;
