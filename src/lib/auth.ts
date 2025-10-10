@@ -3,7 +3,6 @@ import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { User } from '@/lib/types';
 import { getOrCreateUser } from './data';
-import { validateUserCredentials } from './server-auth';
 
 
 /**
@@ -54,29 +53,24 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user }) {
+        // Na primeira vez que o JWT é criado (após o login), o objeto 'user' está disponível.
         if (user) {
+            // Persistimos apenas o ID, email e nível de acesso no token.
             token.id = user.id;
             token.accessLevel = user.accessLevel;
-            token.email = user.email; // Manter email para fallback
+            token.email = user.email; 
         }
-        
-        if (trigger === "update" && session?.user) {
-            // Se houver uma atualização, podemos atualizar o nível de acesso se necessário
-            if (session.user.accessLevel) {
-              token.accessLevel = session.user.accessLevel;
-            }
-        }
-
         return token;
     },
 
     async session({ session, token }) {
+      // O token JWT é passado para o callback de sessão.
+      // Populamos a sessão do cliente com os dados mínimos do token.
       if (session.user && token.id) {
-        // Agora, passamos apenas os dados essenciais para o cliente
         session.user.id = token.id as string;
         session.user.accessLevel = token.accessLevel as User['accessLevel'];
-        session.user.email = token.email; // O email pode ser útil no cliente
+        session.user.email = token.email;
       }
       return session;
     },
