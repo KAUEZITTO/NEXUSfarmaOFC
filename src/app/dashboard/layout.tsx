@@ -9,9 +9,10 @@ import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger
 import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guide';
 import BirthdayBalloons from '@/components/dashboard/birthday-balloons';
 
-const CURRENT_VERSION = '3.1.0';
+const CURRENT_VERSION = '3.1.1';
 
 const changelog = [
+    { version: '3.1.1', changes: ['Implementada a abordagem "get-or-create" para garantir que um perfil de usuário seja sempre encontrado ou criado após a autenticação bem-sucedida no Firebase, resolvendo definitivamente o erro de "Credenciais Inválidas".'] },
     { version: '3.1.0', changes: ['Refatoração completa do fluxo de autenticação para resolver o erro "Credenciais Inválidas" e estabilizar o login.', 'Adicionado botão de visibilidade de senha na tela de login.'] },
     { version: '3.0.9', changes: ['Corrigido fluxo de autenticação do servidor Firebase para resolver falhas de login.'] },
     { version: '3.0.8', changes: ['Resolvido problema de carregamento infinito no login através da refatoração da arquitetura de autenticação.'] },
