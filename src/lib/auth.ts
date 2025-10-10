@@ -142,15 +142,16 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    // O callback JWT não é mais necessário com a estratégia 'database' e foi removido.
     async session({ session, user }) {
         if (session.user) {
-            const dbUser = user as AppUser;
-            session.user.id = dbUser.id;
-            session.user.accessLevel = dbUser.accessLevel;
-            session.user.name = dbUser.name;
-            session.user.email = dbUser.email;
-            session.user.image = dbUser.image;
-            session.user.birthdate = dbUser.birthdate;
+            // O objeto 'user' aqui é o que o adapter retorna do banco de dados.
+            session.user.id = user.id;
+            session.user.accessLevel = (user as AppUser).accessLevel;
+            session.user.name = (user as AppUser).name;
+            session.user.email = (user as AppUser).email;
+            session.user.image = (user as AppUser).image;
+            session.user.birthdate = (user as AppUser).birthdate;
         }
         return session;
     }
