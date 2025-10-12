@@ -12,7 +12,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 const changelog = [
-    { version: '3.1.1', changes: ['Refinamento nas mensagens de erro da tela de login para melhor feedback ao usuário.'] },
     { version: '3.1.0', changes: ['Refatoração completa do fluxo de autenticação para resolver o erro "Credenciais Inválidas" e estabilizar o login.', 'Adicionado botão de visibilidade de senha na tela de login.'] },
     { version: '3.0.9', changes: ['Corrigido fluxo de autenticação do servidor Firebase para resolver falhas de login.'] },
     { version: '3.0.8', changes: ['Resolvido problema de carregamento infinito no login através da refatoração da arquitetura de autenticação.'] },
@@ -80,7 +79,7 @@ export default function AboutPage() {
                     Versão do Sistema
                 </h3>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  NexusFarma v3.1.1
+                  NexusFarma v3.1.0
                 </p>
               </div>
           </CardContent>
