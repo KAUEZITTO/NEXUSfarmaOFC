@@ -1,7 +1,7 @@
 
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { getUserByEmailFromDb, getOrCreateUser } from './data';
+import { getOrCreateUser } from './data';
 import { Adapter } from 'next-auth/adapters';
 import { kv } from './kv';
 import type { User as AppUser } from '@/lib/types';
