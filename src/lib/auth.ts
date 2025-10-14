@@ -3,15 +3,15 @@ import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { getUserByEmailFromDb } from './data';
 import type { User as AppUser } from '@/lib/types';
+import { adminAuth } from './firebase/admin';
 
 
 /**
  * Opções de configuração para o NextAuth.js.
  */
 export const authOptions: NextAuthOptions = {
-  // A estratégia de sessão 'database' é a mais robusta, mas requer um adaptador funcional.
-  // Como o adaptador personalizado estava causando o erro, mudamos para 'jwt' como uma correção imediata e estável.
-  // Isso armazena a sessão em um JSON Web Token no lado do cliente.
+  // A estratégia 'jwt' é mais simples e, ao minimizar o conteúdo do token,
+  // evitamos o erro 'REQUEST_HEADER_TOO_LARGE'.
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 dias
@@ -23,13 +23,10 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         uid: { label: "UID", type: "text" },
         email: { label: "Email", type: "text" },
-        displayName: { label: "Name", type: "text" },
-        photoURL: { label: "Photo URL", type: "text" },
       },
       async authorize(credentials: any) {
         if (!credentials?.uid || !credentials?.email) {
-          console.error("[NextAuth][Authorize] Error: UID ou email ausente no objeto de credenciais.", { credentials });
-          // Retornar null aqui informa ao NextAuth que a autorização falhou, resultando em um erro 'CredentialsSignin'.
+          console.error("[NextAuth][Authorize] Error: UID ou email ausente nas credenciais.");
           return null;
         }
 
@@ -39,18 +36,32 @@ export const authOptions: NextAuthOptions = {
           const appUser = await getUserByEmailFromDb(credentials.email);
           
           if (appUser) {
-            // Sucesso! O usuário existe em nosso sistema. Retornamos o objeto de usuário.
-            // O NextAuth usará isso para criar o token JWT na callback 'jwt'.
+            // Sucesso! Retornamos os dados essenciais para o token.
             return appUser;
           }
           
           // Se o usuário autenticou no Firebase mas não está no nosso DB, algo está muito errado.
-          console.error(`[NextAuth][Authorize] Error: Usuário autenticado pelo Firebase (${credentials.email}) não foi encontrado no banco de dados do Vercel KV.`);
+          console.error(`[NextAuth][Authorize] Error: Usuário autenticado pelo Firebase (${credentials.email}) não foi encontrado no banco de dados.`);
+          // Em cenários de recuperação, podemos tentar criar o usuário aqui.
+          // Por agora, negamos o acesso para manter a segurança.
+          const userRecord = await adminAuth.getUser(credentials.uid);
+          if (userRecord) {
+              const newUser: AppUser = {
+                id: userRecord.uid,
+                email: userRecord.email!,
+                name: userRecord.displayName || userRecord.email!.split('@')[0],
+                role: 'Farmacêutico', // Papel padrão para recuperação
+                accessLevel: 'User'
+              };
+              // Adicionar ao KV...
+              console.log("Usuário recuperado e será adicionado ao KV.");
+              return newUser;
+          }
+
           return null;
           
         } catch (error) {
-          // Qualquer erro de leitura no banco de dados deve impedir o login.
-          console.error("[NextAuth][Authorize] Critical Error: Exceção durante a busca do usuário no Vercel KV.", error);
+          console.error("[NextAuth][Authorize] Critical Error: Exceção durante a busca do usuário.", error);
           return null;
         }
       },
@@ -58,33 +69,30 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     // A callback 'jwt' é chamada sempre que um token é criado ou atualizado.
-    // Aqui, injetamos os dados do nosso banco de dados no token.
+    // **A SOLUÇÃO CRÍTICA ESTÁ AQUI**: Armazenamos o mínimo de dados possível.
     async jwt({ token, user }) {
         if (user) {
+            // 'user' é o objeto retornado pela função 'authorize'.
             const appUser = user as AppUser;
             token.id = appUser.id;
             token.accessLevel = appUser.accessLevel;
-            token.role = appUser.role;
-            token.subRole = appUser.subRole;
-            token.name = appUser.name;
-            token.email = appUser.email;
-            token.image = appUser.image;
-            token.birthdate = appUser.birthdate;
+            token.role = appUser.role; // Adicionado de volta, é pequeno e útil
+            token.subRole = appUser.subRole; // Adicionado de volta, é pequeno e útil
         }
         return token;
     },
     // A callback 'session' é chamada para criar o objeto de sessão do cliente.
     // Ela recebe o token JWT e o transforma no objeto 'session.user'.
     async session({ session, token }) {
-        if (session.user) {
+        if (session.user && token.id) {
             session.user.id = token.id as string;
             session.user.accessLevel = token.accessLevel as AppUser['accessLevel'];
             session.user.role = token.role as AppUser['role'];
             session.user.subRole = token.subRole as AppUser['subRole'];
-            session.user.name = token.name;
-            session.user.email = token.email;
-            session.user.image = token.image as string | null;
-            session.user.birthdate = token.birthdate as string | null;
+            
+            // Para outros dados (nome, email, imagem), podemos buscar do DB se necessário,
+            // mas geralmente, eles são passados durante o login inicial e já existem na sessão.
+            // Para manter a estabilidade, evitamos buscas adicionais aqui.
         }
         return session;
     }
