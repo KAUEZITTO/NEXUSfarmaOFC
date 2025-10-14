@@ -1,5 +1,4 @@
 
-import { kv } from '@/lib/server/kv.server';
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
 import type { KnowledgeBaseItem } from './types';
 
@@ -7,6 +6,8 @@ import type { KnowledgeBaseItem } from './types';
 // --- GENERIC DATA ACCESS ---
 
 export const readData = async <T>(key: string): Promise<T[]> => {
+    // Import kv inside the function to avoid build errors
+    const { kv } = await import('@/lib/server/kv.server');
     try {
         const data = await kv.get<T[]>(key);
         return data || [];
@@ -17,6 +18,8 @@ export const readData = async <T>(key: string): Promise<T[]> => {
 };
 
 export async function writeData<T>(key: string, data: T[]): Promise<void> {
+    // Import kv inside the function to avoid build errors
+    const { kv } = await import('@/lib/server/kv.server');
     try {
         await kv.set(key, data);
     } catch (error) {
