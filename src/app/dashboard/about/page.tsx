@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 const changelog = [
+    { version: '3.1.3', changes: ['Resolvido problema de atualização de dados em tempo real. As listas agora recarregam automaticamente após um novo cadastro ou edição.'] },
     { version: '3.1.2', changes: ['Correção de erro de sintaxe na diretiva `use server` que impedia o build da aplicação.'] },
     { version: '3.1.1', changes: ['Correção definitiva do erro de build `Failed to collect page data` ao isolar a lógica de importação do `knowledge-base.json` para o arquivo `data.ts`, garantindo a estabilidade da compilação.'] },
     { version: '3.1.0', changes: ['Refatoração completa do fluxo de autenticação para resolver o erro "Credenciais Inválidas" e estabilizar o login.', 'Adicionado botão de visibilidade de senha na tela de login.'] },
@@ -81,7 +82,7 @@ export default function AboutPage() {
                     Versão do Sistema
                 </h3>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  NexusFarma v3.1.2
+                  NexusFarma v3.1.3
                 </p>
               </div>
           </CardContent>
