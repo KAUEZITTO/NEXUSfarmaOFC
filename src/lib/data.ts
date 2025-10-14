@@ -3,6 +3,8 @@
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
 import type { KnowledgeBaseItem } from './types';
 import { kv } from './kv';
+import path from 'path';
+import { promises as fs } from 'fs';
 
 
 // --- GENERIC DATA ACCESS ---
@@ -200,8 +202,9 @@ export async function getOrCreateUser(userData: { id: string; email: string; nam
 }
 
 export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
-    // A importação foi movida para dentro da função para evitar que a análise
-    // de dependências do Next.js a associe incorretamente a Server Actions durante o build.
-    const kb = (await import('@/data/knowledge-base.json')).default;
-    return kb;
+    // Read the file from the filesystem instead of importing it to avoid Next.js build errors.
+    const jsonPath = path.join(process.cwd(), 'src', 'data', 'knowledge-base.json');
+    const fileContents = await fs.readFile(jsonPath, 'utf8');
+    const data = JSON.parse(fileContents);
+    return data;
 }
