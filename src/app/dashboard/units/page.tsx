@@ -38,8 +38,8 @@ export default function UnitsPage() {
   }, []);
   
   const handleUnitSaved = () => {
-    fetchData(); // Re-fetch data when a unit is saved
     router.refresh();
+    fetchData();
   };
 
   const getColumns = (onUnitSaved: () => void): ColumnDef<Unit>[] => [

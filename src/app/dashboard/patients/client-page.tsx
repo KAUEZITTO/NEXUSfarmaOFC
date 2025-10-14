@@ -2,7 +2,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition } from "react";
 import { DataTable } from "@/components/ui/data-table";
 import {
   Card,
@@ -19,7 +19,6 @@ import { ColumnDef } from "@tanstack/react-table";
 import { PlusCircle, Loader2, Eye, Edit, UserCheck, UserX, CheckCircle, XCircle, HeartPulse, MoreHorizontal, ArrowUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { updatePatientStatus } from "@/lib/actions";
-import { getPatients } from "@/lib/data";
 import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -51,14 +50,7 @@ export function PatientsClientPage({
   
   const activeFilter = (searchParams?.filter as PatientFilter) || 'active';
 
-  const [patients, setPatients] = useState<Patient[]>(initialPatients);
   const [isPending, startTransition] = useTransition();
-
-  // This effect ensures that when the server component re-renders with new initialPatients,
-  // our client component's state is updated. This is key after a `revalidatePath`.
-  useEffect(() => {
-    setPatients(initialPatients);
-  }, [initialPatients]);
 
   const handleFilterChange = (filter: PatientFilter) => {
     startTransition(() => {
@@ -69,7 +61,6 @@ export function PatientsClientPage({
   }
 
   const handlePatientSaved = () => {
-    // router.refresh() will re-run the Server Component (page.tsx) and fetch new data
     router.refresh(); 
   }
   
@@ -81,7 +72,7 @@ export function PatientsClientPage({
           title: "Status Atualizado!",
           description: `O status do paciente foi alterado para ${status}.`,
         });
-        router.refresh(); // Re-fetch data by refreshing the route
+        router.refresh();
       } catch (error) {
         toast({
           variant: "destructive",
@@ -275,7 +266,7 @@ export function PatientsClientPage({
                 <p className="mt-2 text-muted-foreground">Carregando pacientes...</p>
             </div>
         ) : (
-          <DataTable columns={columns} data={patients} />
+          <DataTable columns={columns} data={initialPatients} />
         )}
       </CardContent>
     </Card>

@@ -1,40 +1,8 @@
 
 import { Suspense } from 'react';
-import { DataTable } from "@/components/ui/data-table";
-import { Button } from "@/components/ui/button";
-import { Search, Printer, PlusCircle, Edit, MoreHorizontal } from "lucide-react";
-import { Input } from '@/components/ui/input';
-import Link from 'next/link';
-import type { Product } from '@/lib/types';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogClose 
-} from '@/components/ui/dialog';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
-import Image from 'next/image';
-import { ColumnDef } from '@tanstack/react-table';
-import { Badge } from '@/components/ui/badge';
-import { ArrowUpDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
+import { getProducts } from '@/lib/data';
+import { Skeleton } from '@/components/ui/skeleton';
+import { InventoryClientPage } from './client-page';
 import {
   Card,
   CardContent,
@@ -42,9 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getProducts } from '@/lib/data';
-import { Skeleton } from '@/components/ui/skeleton';
-import { InventoryClientPage } from './client-page';
 
 
 export default async function InventoryPage({

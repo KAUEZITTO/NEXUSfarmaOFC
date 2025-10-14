@@ -4,6 +4,7 @@ import { getPatients } from '@/lib/data';
 import type { PatientFilter } from '@/lib/types';
 import { PatientsClientPage } from './client-page';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2 } from 'lucide-react';
 
 function PatientsSkeleton() {
@@ -12,18 +13,18 @@ function PatientsSkeleton() {
             <CardHeader>
                 <div className="flex justify-between items-start flex-wrap gap-4">
                     <div>
-                        <div className="h-7 w-48 bg-muted rounded-md animate-pulse" />
-                        <div className="h-4 w-72 mt-2 bg-muted rounded-md animate-pulse" />
+                        <Skeleton className="h-7 w-48 bg-muted rounded-md" />
+                        <Skeleton className="h-4 w-72 mt-2 bg-muted rounded-md" />
                     </div>
                     <div className="flex gap-2">
-                        <div className="h-9 w-32 bg-muted rounded-md animate-pulse" />
-                        <div className="h-9 w-40 bg-muted rounded-md animate-pulse" />
+                        <Skeleton className="h-9 w-32 bg-muted rounded-md" />
+                        <Skeleton className="h-9 w-40 bg-muted rounded-md" />
                     </div>
                 </div>
                 <div className="flex items-center space-x-2 pt-4 overflow-x-auto pb-2">
-                    <div className="h-9 w-20 bg-muted rounded-full animate-pulse" />
-                    <div className="h-9 w-24 bg-muted rounded-full animate-pulse" />
-                    <div className="h-9 w-28 bg-muted rounded-full animate-pulse" />
+                    <Skeleton className="h-9 w-20 bg-muted rounded-full" />
+                    <Skeleton className="h-9 w-24 bg-muted rounded-full" />
+                    <Skeleton className="h-9 w-28 bg-muted rounded-full" />
                 </div>
             </CardHeader>
             <CardContent>

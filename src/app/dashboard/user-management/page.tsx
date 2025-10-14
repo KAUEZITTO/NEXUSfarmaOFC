@@ -53,8 +53,8 @@ export default function UserManagementPage() {
   }, []);
 
   const handleAction = () => {
-    fetchData(); // Refetch data after any action
     router.refresh();
+    fetchData();
   }
 
   const handleAccessLevelChange = async (userId: string, accessLevel: AccessLevel) => {
