@@ -133,23 +133,6 @@ export async function getAllUsers(): Promise<User[]> {
 }
 
 /**
- * Busca um usuário no nosso banco de dados (Vercel KV) pelo email.
- * Centraliza a lógica de leitura e tratamento de erros.
- */
-export async function getUserByEmailFromDb(email: string): Promise<User | null> {
-  if (!email) return null;
-  try {
-    const users = await readData<User>('users');
-    const user = users.find(u => u.email === email);
-    return user || null;
-  } catch (error) {
-    console.error("CRITICAL: Falha ao ler dados do usuário do Vercel KV.", error);
-    // Em caso de falha de leitura do banco, o login deve ser impedido.
-    return null;
-  }
-}
-
-/**
  * Busca um usuário no banco de dados. Se não encontrar, cria um novo com base nos dados do provedor.
  * Esta função é robusta, buscando primeiro por ID e depois por email.
  */
@@ -163,19 +146,19 @@ export async function getOrCreateUser(userData: { id: string; email: string; nam
     }
 
     // 2. Se não encontrou pelo ID, tenta pelo email (fallback para consistência)
-    existingUser = allUsers.find(u => u.email === userData.email);
-    if (existingUser) {
+    const userByEmail = allUsers.find(u => u.email === userData.email);
+    if (userByEmail) {
          // Opcional: corrigir o ID se estiver inconsistente
-        if (existingUser.id !== userData.id) {
+        if (userByEmail.id !== userData.id) {
             console.warn(`Inconsistência de ID encontrada para ${userData.email}. Atualizando para o ID correto do Firebase.`);
-            existingUser.id = userData.id;
+            userByEmail.id = userData.id;
             const userIndex = allUsers.findIndex(u => u.email === userData.email);
             if (userIndex !== -1) {
-                allUsers[userIndex] = existingUser;
+                allUsers[userIndex] = userByEmail;
                 await writeData('users', allUsers);
             }
         }
-        return existingUser;
+        return userByEmail;
     }
 
     // 3. Se não existe de forma alguma, cria um novo perfil.
