@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -171,7 +172,7 @@ export async function updatePatientStatus(patientId: string, status: PatientStat
     if (patientIndex === -1) throw new Error('Paciente não encontrado.');
     patients[patientIndex].status = status;
     await writeData('patients', patients);
-revalidatePath('/dashboard/patients');
+    revalidatePath('/dashboard/patients');
 }
 
 
@@ -264,6 +265,7 @@ export async function updateUserProfile(userId: string, data: { name?: string; b
 
     // Revalidate the path to ensure the UI updates on navigation
     revalidatePath('/dashboard/settings');
+    revalidatePath('/dashboard');
     
     // Return the updated user data so the client can update the session
     return { success: true, user: users[userIndex] };

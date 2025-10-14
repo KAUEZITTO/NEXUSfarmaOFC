@@ -1,7 +1,6 @@
 
 'use client';
 
-import { Suspense } from 'react';
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition, useEffect } from "react";
 import { DataTable } from "@/components/ui/data-table";
@@ -18,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import type { Patient, PatientFilter, PatientStatus } from "@/lib/types";
 import { ColumnDef } from "@tanstack/react-table";
 import { PlusCircle, Loader2, Eye, Edit, UserCheck, UserX, CheckCircle, XCircle, HeartPulse, MoreHorizontal, ArrowUpDown } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { updatePatientStatus } from "@/lib/actions";
 import { getPatients } from "@/lib/data";
@@ -40,7 +38,7 @@ const filterCategories: { label: string, value: PatientFilter }[] = [
     { label: 'Todos', value: 'all' },
 ];
 
-function PatientsPageContent() {
+export default function PatientsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -52,7 +50,7 @@ function PatientsPageContent() {
   const [isPending, startTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchPatients = (filter: PatientFilter) => {
+  const fetchPatientsAndSetState = (filter: PatientFilter) => {
     setIsLoading(true);
     startTransition(async () => {
       const fetchedPatients = await getPatients(filter);
@@ -64,9 +62,8 @@ function PatientsPageContent() {
   useEffect(() => {
     const newFilter = (searchParams.get('filter') as PatientFilter) || 'active';
     setActiveFilter(newFilter);
-    fetchPatients(newFilter);
+    fetchPatientsAndSetState(newFilter);
   }, [searchParams]);
-
 
   const handleFilterChange = (filter: PatientFilter) => {
     startTransition(() => {
@@ -75,7 +72,9 @@ function PatientsPageContent() {
   }
 
   const handlePatientSaved = () => {
-    fetchPatients(activeFilter);
+    // Re-fetch using the current active filter
+    fetchPatientsAndSetState(activeFilter);
+    router.refresh();
   }
   
   const handleUpdateStatus = async (patientId: string, status: PatientStatus) => {
@@ -86,7 +85,8 @@ function PatientsPageContent() {
           title: "Status Atualizado!",
           description: `O status do paciente foi alterado para ${status}.`,
         });
-        fetchPatients(activeFilter);
+        fetchPatientsAndSetState(activeFilter); // Re-fetch data
+        router.refresh();
       } catch (error) {
         toast({
           variant: "destructive",
@@ -97,7 +97,7 @@ function PatientsPageContent() {
     });
   };
 
-  const getColumns = (onPatientSaved: () => void, onUpdateStatus: (patientId: string, status: PatientStatus) => void): ColumnDef<Patient>[] => {
+  const getColumns = (onUpdateStatus: (patientId: string, status: PatientStatus) => void): ColumnDef<Patient>[] => {
     return [
     {
       id: "select",
@@ -196,7 +196,7 @@ function PatientsPageContent() {
                   Ver Histórico
                 </Link>
               </DropdownMenuItem>
-               <AddPatientDialog patientToEdit={patient} onPatientSaved={onPatientSaved} trigger={
+               <AddPatientDialog patientToEdit={patient} onPatientSaved={handlePatientSaved} trigger={
                   <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                       <Edit className="mr-2 h-4 w-4" />
                       <span>Editar Cadastro</span>
@@ -237,7 +237,7 @@ function PatientsPageContent() {
   ]
   }
 
-  const columns = getColumns(handlePatientSaved, handleUpdateStatus);
+  const columns = getColumns(handleUpdateStatus);
 
 
   return (
@@ -275,39 +275,15 @@ function PatientsPageContent() {
         </div>
       </CardHeader>
       <CardContent>
-         {isLoading || isPending ? (
-          <div className="space-y-2">
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-          </div>
+         {(isLoading || isPending) ? (
+            <div className="text-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto" />
+                <p className="mt-2 text-muted-foreground">Carregando pacientes...</p>
+            </div>
         ) : (
           <DataTable columns={columns} data={patients} />
         )}
       </CardContent>
     </Card>
   );
-}
-
-export default function PatientsPage() {
-    return (
-        <Suspense fallback={
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-8 w-1/3" />
-              <Skeleton className="h-4 w-2/3 mt-2" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-              </div>
-            </CardContent>
-          </Card>
-        }>
-            <PatientsPageContent />
-        </Suspense>
-    )
 }

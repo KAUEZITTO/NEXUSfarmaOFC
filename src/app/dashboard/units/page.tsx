@@ -15,11 +15,11 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { AddUnitDialog } from '@/components/dashboard/add-unit-dialog';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown, MoreHorizontal, Check, X, Edit, Eye, PlusCircle } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function UnitsPage() {
   const [units, setUnits] = useState<Unit[]>([]);
@@ -38,7 +38,8 @@ export default function UnitsPage() {
   }, []);
   
   const handleUnitSaved = () => {
-    fetchData();
+    fetchData(); // Re-fetch data when a unit is saved
+    router.refresh();
   };
 
   const getColumns = (onUnitSaved: () => void): ColumnDef<Unit>[] => [
@@ -54,7 +55,6 @@ export default function UnitsPage() {
         </Button>
       ),
       cell: ({ row }) => {
-        const unit = row.original;
         return (
           <div className="capitalize font-medium">{row.getValue('name')}</div>
         );

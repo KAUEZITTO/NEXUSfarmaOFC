@@ -46,7 +46,16 @@ export default function UserManagementPage() {
 
   useEffect(() => {
     fetchData();
+    
+    // Also refresh data periodically to update online status
+    const interval = setInterval(fetchData, 60000); // every minute
+    return () => clearInterval(interval);
   }, []);
+
+  const handleAction = () => {
+    fetchData(); // Refetch data after any action
+    router.refresh();
+  }
 
   const handleAccessLevelChange = async (userId: string, accessLevel: AccessLevel) => {
     try {
@@ -55,7 +64,7 @@ export default function UserManagementPage() {
             title: 'Nível de Acesso Atualizado',
             description: `O usuário agora tem permissão de ${accessLevel}.`
         });
-        fetchData(); // Refetch data
+        handleAction();
     } catch (error) {
         toast({
             variant: 'destructive',
@@ -72,7 +81,7 @@ export default function UserManagementPage() {
             title: 'Usuário Excluído',
             description: 'O usuário foi removido do sistema com sucesso.'
         });
-        fetchData(); // Refetch data
+        handleAction();
     } catch (error) {
          toast({
             variant: 'destructive',
