@@ -110,17 +110,18 @@ export default function OrdersPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
+    const fetchData = async () => {
+        setIsLoading(true);
+        const [unitsData, ordersData] = await Promise.all([
+            getUnits(),
+            getOrders()
+        ]);
+        setUnits(unitsData);
+        setOrders(ordersData);
+        setIsLoading(false);
+    }
+
     useEffect(() => {
-        async function fetchData() {
-            setIsLoading(true);
-            const [unitsData, ordersData] = await Promise.all([
-                getUnits(),
-                getOrders()
-            ]);
-            setUnits(unitsData);
-            setOrders(ordersData);
-            setIsLoading(false);
-        }
         fetchData();
     }, []);
 

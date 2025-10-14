@@ -33,13 +33,13 @@ export default function UnitsPage() {
     setIsLoading(false);
   };
   
-  const handleUnitSaved = () => {
-    fetchData();
-  };
-
   useEffect(() => {
     fetchData();
   }, []);
+  
+  const handleUnitSaved = () => {
+    fetchData();
+  };
 
   const getColumns = (onUnitSaved: () => void): ColumnDef<Unit>[] => [
     {

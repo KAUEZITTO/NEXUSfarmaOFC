@@ -203,7 +203,7 @@ export default function InventoryPage() {
   const [selectedProduct, setSelectedProduct] = useState<GroupedProduct | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
-  const fetchAndSetProducts = () => {
+  const fetchProducts = () => {
     startTransition(async () => {
         setIsLoading(true);
         const fetchedProducts = await getProducts();
@@ -213,11 +213,11 @@ export default function InventoryPage() {
   }
 
   useEffect(() => {
-    fetchAndSetProducts();
+    fetchProducts();
   }, []);
 
   const handleProductSaved = () => {
-    fetchAndSetProducts();
+    fetchProducts();
   }
 
   const handleRowClick = (product: GroupedProduct) => {
