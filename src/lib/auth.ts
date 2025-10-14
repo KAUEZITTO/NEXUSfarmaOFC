@@ -3,8 +3,6 @@ import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { getUserByEmailFromDb } from './data';
 import type { User as AppUser } from '@/lib/types';
-import { adminAuth } from './firebase/admin';
-
 
 /**
  * Opções de configuração para o NextAuth.js.
@@ -40,28 +38,11 @@ export const authOptions: NextAuthOptions = {
             return appUser;
           }
           
-          // Se o usuário autenticou no Firebase mas não está no nosso DB, algo está muito errado.
           console.error(`[NextAuth][Authorize] Error: Usuário autenticado pelo Firebase (${credentials.email}) não foi encontrado no banco de dados.`);
-          // Em cenários de recuperação, podemos tentar criar o usuário aqui.
-          // Por agora, negamos o acesso para manter a segurança.
-          const userRecord = await adminAuth.getUser(credentials.uid);
-          if (userRecord) {
-              const newUser: AppUser = {
-                id: userRecord.uid,
-                email: userRecord.email!,
-                name: userRecord.displayName || userRecord.email!.split('@')[0],
-                role: 'Farmacêutico', // Papel padrão para recuperação
-                accessLevel: 'User'
-              };
-              // Adicionar ao KV...
-              console.log("Usuário recuperado e será adicionado ao KV.");
-              return newUser;
-          }
-
           return null;
           
         } catch (error) {
-          console.error("[NextAuth][Authorize] Critical Error: Exceção durante a busca do usuário.", error);
+          console.error("[NextAuth][Authorize] Critical Error: Exceção durante a busca do usuário no KV.", error);
           return null;
         }
       },
@@ -76,8 +57,8 @@ export const authOptions: NextAuthOptions = {
             const appUser = user as AppUser;
             token.id = appUser.id;
             token.accessLevel = appUser.accessLevel;
-            token.role = appUser.role; // Adicionado de volta, é pequeno e útil
-            token.subRole = appUser.subRole; // Adicionado de volta, é pequeno e útil
+            token.role = appUser.role;
+            token.subRole = appUser.subRole;
         }
         return token;
     },
@@ -89,10 +70,6 @@ export const authOptions: NextAuthOptions = {
             session.user.accessLevel = token.accessLevel as AppUser['accessLevel'];
             session.user.role = token.role as AppUser['role'];
             session.user.subRole = token.subRole as AppUser['subRole'];
-            
-            // Para outros dados (nome, email, imagem), podemos buscar do DB se necessário,
-            // mas geralmente, eles são passados durante o login inicial e já existem na sessão.
-            // Para manter a estabilidade, evitamos buscas adicionais aqui.
         }
         return session;
     }

@@ -5,8 +5,38 @@
 import { revalidatePath } from 'next/cache';
 import { readData, writeData, getProducts } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, KnowledgeBaseItem, AccessLevel, OrderType } from './types';
-import { adminAuth } from './firebase/admin';
+import * as admin from 'firebase-admin';
 import kb from '../data/knowledge-base.json';
+
+// --- FIREBASE ADMIN INITIALIZATION (MOVED HERE) ---
+function initializeAdminApp() {
+    if (admin.apps.length > 0) {
+        return admin.app();
+    }
+
+    const serviceAccountBase64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
+    if (!serviceAccountBase64) {
+        throw new Error('A variável de ambiente FIREBASE_SERVICE_ACCOUNT_BASE64 não está definida.');
+    }
+
+    try {
+        const decodedServiceAccount = Buffer.from(serviceAccountBase64, 'base64').toString('utf-8');
+        const serviceAccount = JSON.parse(decodedServiceAccount);
+
+        if (!serviceAccount.projectId || !serviceAccount.client_email || !serviceAccount.private_key) {
+            throw new Error("As credenciais do Firebase decodificadas estão incompletas.");
+        }
+
+        return admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+        });
+
+    } catch (error: any) {
+        console.error("Falha Crítica ao Inicializar o Firebase Admin SDK em actions.ts:", error.message);
+        throw new Error(`Não foi possível inicializar o Firebase Admin. Causa: ${error.message}`);
+    }
+}
+
 
 // --- UTILITIES ---
 const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -255,6 +285,7 @@ export async function updateUserAccessLevel(userId: string, accessLevel: AccessL
 }
 
 export async function deleteUser(userId: string) {
+    const adminAuth = initializeAdminApp().auth();
     const users = await readData<User>('users');
     const userToDelete = users.find(u => u.id === userId);
     if (!userToDelete) {
@@ -308,6 +339,7 @@ export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
 export async function register({ email, password, role, subRole }: { email: string; password: string; role: Role; subRole?: SubRole; }) {
     
     try {
+        const adminAuth = initializeAdminApp().auth();
         const users = await readData<User>('users');
 
         if (users.some(u => u.email === email)) {
