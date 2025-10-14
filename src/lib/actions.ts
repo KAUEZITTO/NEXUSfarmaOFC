@@ -356,6 +356,9 @@ export async function register({ email, password, role, subRole }: { email: stri
         };
 
         await writeData<User>('users', [...users, newUser]);
+        
+        // **FIX**: Revalidate the user management page path after adding a new user.
+        revalidatePath('/dashboard/user-management');
 
         return { success: true, message: 'Usuário registrado com sucesso.' };
 
