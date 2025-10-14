@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { readData, writeData, getProducts } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, KnowledgeBaseItem, AccessLevel, OrderType } from './types';
 import * as admin from 'firebase-admin';
-import kb from '../data/knowledge-base.json';
+import kb from '@/data/knowledge-base.json';
 
 // --- FIREBASE ADMIN INITIALIZATION (MOVED HERE) ---
 function initializeAdminApp() {
