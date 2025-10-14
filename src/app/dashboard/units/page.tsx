@@ -1,179 +1,40 @@
 
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense } from 'react';
 import { getUnits } from '@/lib/data';
-import type { Unit } from '@/lib/types';
-import { DataTable } from '@/components/ui/data-table';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { AddUnitDialog } from '@/components/dashboard/add-unit-dialog';
-import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown, MoreHorizontal, Check, X, Edit, Eye, PlusCircle } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import Link from 'next/link';
+import { UnitsClientPage } from './client-page';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export default function UnitsPage() {
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
+function UnitsSkeleton() {
+    return (
+        <Card>
+            <CardHeader>
+                <div className="flex justify-between items-center">
+                    <div>
+                        <Skeleton className="h-7 w-24" />
+                        <Skeleton className="h-4 w-64 mt-2" />
+                    </div>
+                    <Skeleton className="h-9 w-40" />
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-2">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    const unitsData = await getUnits();
-    setUnits(unitsData);
-    setIsLoading(false);
-  };
-  
-  useEffect(() => {
-    fetchData();
-  }, []);
-  
-  const handleUnitSaved = () => {
-    router.refresh();
-    fetchData();
-  };
 
-  const getColumns = (onUnitSaved: () => void): ColumnDef<Unit>[] => [
-    {
-      accessorKey: 'name',
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        >
-          Nome
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => {
-        return (
-          <div className="capitalize font-medium">{row.getValue('name')}</div>
-        );
-      },
-    },
-    {
-      accessorKey: 'address',
-      header: 'Endereço',
-    },
-    {
-      accessorKey: 'coordinatorName',
-      header: 'Coordenador(a)',
-      cell: ({ row }) => <div>{row.getValue('coordinatorName') || 'N/A'}</div>,
-    },
-    {
-      accessorKey: 'hasPharmacy',
-      header: 'Farmácia',
-      cell: ({ row }) => {
-        const hasPharmacy = row.getValue('hasPharmacy');
-        return hasPharmacy ? (
-          <Check className="h-4 w-4 text-green-500" />
-        ) : (
-          <X className="h-4 w-4 text-red-500" />
-        );
-      },
-    },
-    {
-      accessorKey: 'hasDentalOffice',
-      header: 'Odonto',
-      cell: ({ row }) => {
-        const hasOffice = row.getValue('hasDentalOffice');
-        return hasOffice ? (
-          <Check className="h-4 w-4 text-green-500" />
-        ) : (
-          <X className="h-4 w-4 text-red-500" />
-        );
-      },
-    },
-    {
-      id: 'actions',
-      cell: ({ row }) => {
-        const unit = row.original;
+export default async function UnitsPage() {
+    const units = await getUnits();
 
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Ações</DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                <Link
-                  href={`/dashboard/units/${unit.id}`}
-                  className="w-full h-full flex items-center cursor-pointer"
-                >
-                  <Eye className="mr-2 h-4 w-4" />
-                  Ver Detalhes
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <AddUnitDialog
-                unitToEdit={unit}
-                onUnitSaved={onUnitSaved}
-                trigger={
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    <span>Editar Unidade</span>
-                  </DropdownMenuItem>
-                }
-              />
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
-    },
-  ];
-
-  const columns = getColumns(handleUnitSaved);
-
-  const handleRowClick = (unit: Unit) => {
-    router.push(`/dashboard/units/${unit.id}`);
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle>Unidades</CardTitle>
-            <CardDescription>
-              Cadastre e gerencie as unidades que recebem os produtos.
-            </CardDescription>
-          </div>
-          <AddUnitDialog
-            onUnitSaved={handleUnitSaved}
-            trigger={
-              <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Adicionar Unidade
-              </Button>
-            }
-          />
-        </div>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-            <div className="space-y-2">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-            </div>
-        ) : (
-            <DataTable columns={columns} data={units} onRowClick={handleRowClick} />
-        )}
-      </CardContent>
-    </Card>
-  );
+    return (
+        <Suspense fallback={<UnitsSkeleton />}>
+            <UnitsClientPage initialUnits={units} />
+        </Suspense>
+    );
 }
