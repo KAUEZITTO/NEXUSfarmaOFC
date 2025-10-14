@@ -117,7 +117,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials: any) {
         if (!credentials?.uid || !credentials?.email) {
-          console.error("Authorize Error: UID ou email ausente no objeto de credenciais.", { credentials });
+          console.error("[NextAuth][Authorize] Error: UID ou email ausente no objeto de credenciais.", { credentials });
           return null; // Retorna nulo, o que aciona um erro de 'CredentialsSignin'
         }
 
@@ -127,16 +127,17 @@ export const authOptions: NextAuthOptions = {
           const appUser = await getUserByEmailFromDb(credentials.email);
           
           if (appUser) {
-            return appUser; // Sucesso, usuário encontrado no nosso DB.
+            // Sucesso, usuário encontrado no nosso DB.
+            return appUser;
           }
           
           // Se o usuário autenticou no Firebase mas não está no nosso DB, algo está muito errado.
           // Isso não deve acontecer com o fluxo de registro correto.
-          console.error(`Authorize Error: Usuário autenticado pelo Firebase (${credentials.email}) não foi encontrado no banco de dados do Vercel KV.`);
+          console.error(`[NextAuth][Authorize] Error: Usuário autenticado pelo Firebase (${credentials.email}) não foi encontrado no banco de dados do Vercel KV.`);
           return null;
           
         } catch (error) {
-          console.error("Authorize Critical Error: Exceção durante a busca do usuário no Vercel KV.", error);
+          console.error("[NextAuth][Authorize] Critical Error: Exceção durante a busca do usuário no Vercel KV.", error);
           // Qualquer erro de leitura no banco de dados deve impedir o login.
           return null;
         }
