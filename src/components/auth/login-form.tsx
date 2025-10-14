@@ -25,10 +25,10 @@ export function LoginForm() {
     const authError = searchParams.get('error');
     if (authError) {
       if (authError === 'CredentialsSignin') {
+        // Esta mensagem agora será exibida corretamente, pois o erro 'Configuration' foi resolvido.
         setError('Credenciais inválidas ou usuário não encontrado em nosso sistema.');
-      } else if (authError === 'Configuration') {
-          setError('Erro de configuração no servidor de autenticação. Contacte o suporte.');
       } else {
+        // O erro de configuração não deve mais acontecer, mas mantemos um fallback.
         setError('Ocorreu um erro de autenticação. Tente novamente.');
       }
     }
@@ -50,20 +50,20 @@ export function LoginForm() {
         const result = await signIn('credentials', {
           uid: firebaseUser.uid,
           email: firebaseUser.email!,
-          displayName: firebaseUser.displayName,
-          photoURL: firebaseUser.photoURL,
           redirect: false, // Manipulamos o redirecionamento manualmente
         });
 
         if (result?.error) {
-          // Erro vindo do 'authorize' ou do próprio NextAuth
+          // Erro vindo do 'authorize' (retornou null) ou do próprio NextAuth
           console.error("NextAuth signIn error:", result.error);
           if (result.error === 'CredentialsSignin') {
              setError('Credenciais inválidas ou usuário não encontrado em nosso sistema. Verifique os dados e tente novamente.');
           } else {
+             // Este erro agora é menos provável, mas é bom ter um fallback.
              setError('Ocorreu um erro ao iniciar a sessão. Tente novamente.');
           }
         } else if (result?.ok) {
+          // Sucesso! Redireciona para o dashboard.
           router.push('/dashboard');
         } else {
             setError('Falha ao iniciar sessão. Resposta inesperada do servidor.');
@@ -72,7 +72,7 @@ export function LoginForm() {
         throw new Error('Usuário Firebase não encontrado após login.');
       }
     } catch (error: any) {
-      // Erro vindo do 'signInWithEmailAndPassword' do Firebase
+      // Erro vindo do 'signInWithEmailAndPassword' do Firebase (senha incorreta, etc.)
       console.error("Firebase Auth Error:", error.code);
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         setError('Credenciais inválidas. Verifique seu email e senha.');
