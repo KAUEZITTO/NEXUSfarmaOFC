@@ -9,9 +9,10 @@ import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger
 import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guide';
 import BirthdayBalloons from '@/components/dashboard/birthday-balloons';
 
-const CURRENT_VERSION = '3.1.3';
+const CURRENT_VERSION = '3.2.0';
 
 const changelog = [
+    { version: '3.2.0', changes: ['Refatorada a arquitetura de busca de dados em todas as páginas de listagem para resolver definitivamente o problema de "dados fantasmas", garantindo que as informações sejam atualizadas em tempo real após qualquer cadastro ou edição.'] },
     { version: '3.1.3', changes: ['Resolvido problema de atualização de dados em tempo real. As listas (inventário, pacientes, etc.) agora recarregam automaticamente após um novo cadastro ou edição.'] },
     { version: '3.1.2', changes: ['Correção de erro de sintaxe na diretiva `use server` que impedia o build da aplicação.'] },
     { version: '3.1.1', changes: ['Correção definitiva do erro de build `Failed to collect page data` ao isolar a lógica de importação do `knowledge-base.json` para o arquivo `data.ts`, garantindo a estabilidade da compilação.'] },
