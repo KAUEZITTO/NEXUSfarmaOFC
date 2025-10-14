@@ -2,7 +2,6 @@
 
 import { kv } from '@/lib/server/kv.server';
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
-import kb from '@/data/knowledge-base.json';
 import type { KnowledgeBaseItem } from './types';
 
 
@@ -200,7 +199,8 @@ export async function getOrCreateUser(userData: { id: string; email: string; nam
     }
 }
 
-
 export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
+    // Importação dinâmica/interna para evitar problemas de resolução de módulo no build
+    const kb = (await import('@/data/knowledge-base.json')).default;
     return kb;
 }
