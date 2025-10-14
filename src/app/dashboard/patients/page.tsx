@@ -52,17 +52,19 @@ function PatientsPageContent() {
   const [isPending, startTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const newFilter = (searchParams.get('filter') as PatientFilter) || 'active';
-    setActiveFilter(newFilter);
-    
+  const fetchPatients = (filter: PatientFilter) => {
     setIsLoading(true);
     startTransition(async () => {
-      const fetchedPatients = await getPatients(newFilter);
+      const fetchedPatients = await getPatients(filter);
       setPatients(fetchedPatients);
       setIsLoading(false);
     });
+  };
 
+  useEffect(() => {
+    const newFilter = (searchParams.get('filter') as PatientFilter) || 'active';
+    setActiveFilter(newFilter);
+    fetchPatients(newFilter);
   }, [searchParams]);
 
 
@@ -73,9 +75,7 @@ function PatientsPageContent() {
   }
 
   const handlePatientSaved = () => {
-    startTransition(() => {
-      handleFilterChange(activeFilter);
-    });
+    fetchPatients(activeFilter);
   }
   
   const handleUpdateStatus = async (patientId: string, status: PatientStatus) => {
@@ -86,7 +86,7 @@ function PatientsPageContent() {
           title: "Status Atualizado!",
           description: `O status do paciente foi alterado para ${status}.`,
         });
-        handleFilterChange(activeFilter);
+        fetchPatients(activeFilter);
       } catch (error) {
         toast({
           variant: "destructive",

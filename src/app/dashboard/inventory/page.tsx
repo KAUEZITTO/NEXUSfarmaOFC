@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { Search, Printer, Loader2, Edit, MoreHorizontal, PlusCircle } from "lucide-react";
@@ -367,4 +366,3 @@ export default function InventoryPage() {
     </Card>
   );
 }
-
