@@ -3,10 +3,9 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { readData, writeData, getProducts } from './data';
+import { readData, writeData, getProducts, getKnowledgeBase } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, KnowledgeBaseItem, AccessLevel, OrderType } from './types';
 import * as admin from 'firebase-admin';
-import kb from '@/data/knowledge-base.json';
 
 // --- FIREBASE ADMIN INITIALIZATION (MOVED HERE) ---
 function initializeAdminApp() {
@@ -328,12 +327,6 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
 
     return { success: true, filePath: dataUrl };
 }
-
-// --- KNOWLEDGE BASE ---
-export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
-    return kb;
-}
-
 
 // --- REGISTER ---
 export async function register({ email, password, role, subRole }: { email: string; password: string; role: Role; subRole?: SubRole; }) {
