@@ -200,7 +200,8 @@ export async function getOrCreateUser(userData: { id: string; email: string; nam
 }
 
 export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
-    // Importação dinâmica/interna para evitar problemas de resolução de módulo no build
+    // A importação foi movida para dentro da função para evitar que a análise
+    // de dependências do Next.js a associe incorretamente a Server Actions durante o build.
     const kb = (await import('@/data/knowledge-base.json')).default;
     return kb;
 }
