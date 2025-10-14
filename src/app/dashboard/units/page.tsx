@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getUnits } from '@/lib/data';
 import type { Unit } from '@/lib/types';
@@ -17,7 +17,7 @@ import {
 import { AddUnitDialog } from '@/components/dashboard/add-unit-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown, MoreHorizontal, Check, X, Edit, Eye, PlusCircle, Loader2 } from 'lucide-react';
+import { ArrowUpDown, MoreHorizontal, Check, X, Edit, Eye, PlusCircle } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
 
@@ -25,7 +25,6 @@ export default function UnitsPage() {
   const [units, setUnits] = useState<Unit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -35,12 +34,7 @@ export default function UnitsPage() {
   };
   
   const handleUnitSaved = () => {
-    startTransition(() => {
-      // Forçar a revalidação buscando os dados novamente.
-      // O router.refresh() pode ser usado aqui também, mas buscar os dados diretamente
-      // no cliente é mais explícito neste caso de componente cliente.
-      fetchData();
-    });
+    fetchData();
   };
 
   useEffect(() => {
@@ -169,9 +163,8 @@ export default function UnitsPage() {
         </div>
       </CardHeader>
       <CardContent>
-        {(isLoading && !isPending) || isPending ? (
+        {isLoading ? (
             <div className="space-y-2">
-                {isPending && <div className="flex items-center text-sm text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Atualizando...</div>}
                 <Skeleton className="h-12 w-full" />
                 <Skeleton className="h-12 w-full" />
                 <Skeleton className="h-12 w-full" />

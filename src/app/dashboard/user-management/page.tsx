@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
@@ -36,15 +36,12 @@ export default function UserManagementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
 
-  const fetchData = () => {
-    startTransition(async () => {
-        setIsLoading(true);
-        const fetchedUsers = await getAllUsers();
-        setUsers(fetchedUsers);
-        setIsLoading(false);
-    });
+  const fetchData = async () => {
+    setIsLoading(true);
+    const fetchedUsers = await getAllUsers();
+    setUsers(fetchedUsers);
+    setIsLoading(false);
   }
 
   useEffect(() => {
@@ -52,41 +49,37 @@ export default function UserManagementPage() {
   }, []);
 
   const handleAccessLevelChange = async (userId: string, accessLevel: AccessLevel) => {
-    startTransition(async () => {
-        try {
-            await updateUserAccessLevel(userId, accessLevel);
-            toast({
-                title: 'Nível de Acesso Atualizado',
-                description: `O usuário agora tem permissão de ${accessLevel}.`
-            });
-            fetchData(); // Refetch data
-        } catch (error) {
-            toast({
-                variant: 'destructive',
-                title: 'Erro ao Atualizar',
-                description: 'Não foi possível alterar o nível de acesso.'
-            });
-        }
-    });
+    try {
+        await updateUserAccessLevel(userId, accessLevel);
+        toast({
+            title: 'Nível de Acesso Atualizado',
+            description: `O usuário agora tem permissão de ${accessLevel}.`
+        });
+        fetchData(); // Refetch data
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Erro ao Atualizar',
+            description: 'Não foi possível alterar o nível de acesso.'
+        });
+    }
   };
     
   const handleDeleteUser = async (userId: string) => {
-     startTransition(async () => {
-        try {
-            await deleteUser(userId);
-            toast({
-                title: 'Usuário Excluído',
-                description: 'O usuário foi removido do sistema com sucesso.'
-            });
-            fetchData(); // Refetch data
-        } catch (error) {
-             toast({
-                variant: 'destructive',
-                title: 'Erro ao Excluir',
-                description: 'Não foi possível excluir o usuário.'
-            });
-        }
-    });
+    try {
+        await deleteUser(userId);
+        toast({
+            title: 'Usuário Excluído',
+            description: 'O usuário foi removido do sistema com sucesso.'
+        });
+        fetchData(); // Refetch data
+    } catch (error) {
+         toast({
+            variant: 'destructive',
+            title: 'Erro ao Excluir',
+            description: 'Não foi possível excluir o usuário.'
+        });
+    }
   };
 
   const columns: ColumnDef<User>[] = [
@@ -201,7 +194,7 @@ export default function UserManagementPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {isLoading || isPending ? (
+        {isLoading ? (
           <div className="space-y-2 mt-4">
               <Skeleton className="h-12 w-full" />
               <Skeleton className="h-12 w-full" />

@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import Link from "next/link";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, ArrowUpDown, MoreHorizontal, Eye, CalendarClock, Loader2 } from "lucide-react";
+import { PlusCircle, ArrowUpDown, MoreHorizontal, Eye, CalendarClock } from "lucide-react";
 import type { Unit, Order } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { ColumnDef } from "@tanstack/react-table";
@@ -129,11 +129,13 @@ export default function OrdersPage() {
     );
     
     const unitLastOrderMap = new Map<string, Order>();
-    orders.forEach(order => {
-        if (!unitLastOrderMap.has(order.unitId) || new Date(order.sentDate) > new Date(unitLastOrderMap.get(order.unitId)!.sentDate)) {
-            unitLastOrderMap.set(order.unitId, order);
-        }
-    });
+    if (orders.length > 0) {
+        orders.forEach(order => {
+            if (!unitLastOrderMap.has(order.unitId) || new Date(order.sentDate) > new Date(unitLastOrderMap.get(order.unitId)!.sentDate)) {
+                unitLastOrderMap.set(order.unitId, order);
+            }
+        });
+    }
 
     const tableColumns = getColumns(unitLastOrderMap);
 
