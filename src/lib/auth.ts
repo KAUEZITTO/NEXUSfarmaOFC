@@ -1,7 +1,7 @@
 
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { getOrCreateUser } from './data';
+import { getUserByEmailFromDb } from './data';
 import { Adapter } from 'next-auth/adapters';
 import { kv } from './kv';
 import type { User as AppUser } from '@/lib/types';
@@ -118,29 +118,27 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials: any) {
         if (!credentials?.uid || !credentials?.email) {
           console.error("Authorize Error: UID ou email ausente no objeto de credenciais.", { credentials });
-          return null;
+          return null; // Retorna nulo, o que aciona um erro de 'CredentialsSignin'
         }
 
         try {
           // A autenticação da senha já foi feita no cliente com o Firebase.
-          // Aqui, apenas garantimos que o usuário existe no nosso banco de dados.
-          const appUser = await getOrCreateUser({
-              id: credentials.uid,
-              email: credentials.email,
-              name: credentials.displayName,
-              image: credentials.photoURL,
-          });
+          // Aqui, apenas garantimos que o usuário existe no nosso banco de dados KV.
+          const appUser = await getUserByEmailFromDb(credentials.email);
           
           if (appUser) {
-            return appUser; // Sucesso
+            return appUser; // Sucesso, usuário encontrado no nosso DB.
           }
-
-          console.error("Authorize Error: A função getOrCreateUser retornou null.", { credentials });
-          return null; // Retorna null explicitamente em caso de falha
+          
+          // Se o usuário autenticou no Firebase mas não está no nosso DB, algo está muito errado.
+          // Isso não deve acontecer com o fluxo de registro correto.
+          console.error(`Authorize Error: Usuário autenticado pelo Firebase (${credentials.email}) não foi encontrado no banco de dados do Vercel KV.`);
+          return null;
           
         } catch (error) {
-          console.error("Authorize Critical Error: Exceção durante a chamada getOrCreateUser.", error);
-          return null; // Retorna null explicitamente em caso de falha crítica
+          console.error("Authorize Critical Error: Exceção durante a busca do usuário no Vercel KV.", error);
+          // Qualquer erro de leitura no banco de dados deve impedir o login.
+          return null;
         }
       },
     }),

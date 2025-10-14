@@ -13,7 +13,6 @@ const CURRENT_VERSION = '3.1.0';
 
 const changelog = [
     { version: '3.1.0', changes: ['Refatoração completa do fluxo de autenticação para resolver o erro "Credenciais Inválidas" e estabilizar o login.', 'Adicionado botão de visibilidade de senha na tela de login.'] },
-    { version: '3.0.9', changes: ['Corrigido fluxo de autenticação do servidor Firebase para resolver falhas de login.'] },
 ];
 
 export default async function DashboardLayout({
