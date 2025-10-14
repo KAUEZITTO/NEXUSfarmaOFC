@@ -22,16 +22,24 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials: any) {
         if (!credentials?.uid || !credentials?.email) {
-          console.error("[NextAuth][Authorize] Error: UID or email missing in credentials.");
-          return null;
+          console.error("[NextAuth][Authorize] Error: UID ou email ausente nas credenciais.");
+          return null; // Retorna nulo se as credenciais essenciais não forem fornecidas.
         }
         
-        // A validação de senha já ocorreu no cliente com o Firebase.
-        // Aqui, apenas passamos os dados para a próxima etapa se as credenciais existirem.
-        // A busca no banco de dados será feita no callback 'jwt'.
+        // **CORREÇÃO**: Verifica se o usuário existe no banco de dados (Vercel KV)
+        // antes de prosseguir. A senha já foi validada pelo Firebase no cliente.
+        const userFromDb = await getUserByEmailFromDb(credentials.email);
+
+        if (!userFromDb) {
+            console.error(`[NextAuth][Authorize] Error: Usuário com email ${credentials.email} não encontrado no banco de dados.`);
+            return null; // Usuário autenticado no Firebase, mas não existe no nosso sistema. Nega o login.
+        }
+
+        // Se o usuário existe, retorna o objeto para ser usado no callback JWT.
+        // Usamos o ID do Firebase que veio das credenciais para garantir consistência.
         return {
           id: credentials.uid,
-          email: credentials.email,
+          email: userFromDb.email,
         } as AppUser;
       },
     }),
