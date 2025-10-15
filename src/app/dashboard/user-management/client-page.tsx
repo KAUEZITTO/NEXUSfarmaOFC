@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ArrowUpDown, MoreHorizontal, ShieldCheck, Trash2 } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, ShieldCheck, Trash2, User as UserIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { updateUserAccessLevel, deleteUser } from "@/lib/actions";
 import type { User, AccessLevel } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const isUserOnline = (lastSeen?: string) => {
     if (!lastSeen) return false;
@@ -85,9 +86,24 @@ export function UserManagementClientPage({ initialUsers }: { initialUsers: User[
       cell: ({ row }) => {
           const user = row.original;
           const online = isUserOnline(user.lastSeen);
+          const fallbackInitial = user.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? '?';
           return (
-              <div className="flex items-center gap-2">
-                  <span className={cn("h-2 w-2 rounded-full", online ? "bg-green-500" : "bg-gray-400")} title={online ? 'Online' : 'Offline'}></span>
+              <div className="flex items-center gap-3">
+                  <div className="relative">
+                      <Avatar className="h-9 w-9">
+                          <AvatarImage src={user.image || ''} alt={user.name || user.email} />
+                          <AvatarFallback>
+                              {fallbackInitial}
+                          </AvatarFallback>
+                      </Avatar>
+                      <span 
+                        className={cn(
+                            "absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-background", 
+                            online ? "bg-green-500" : "bg-red-500"
+                        )} 
+                        title={online ? 'Online' : 'Offline'} 
+                      />
+                  </div>
                   <span className="font-medium">{user.email}</span>
               </div>
           )
