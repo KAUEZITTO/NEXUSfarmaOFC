@@ -6,7 +6,7 @@ export function Logo({ className }: { className?: string }) {
   return (
     <div className={cn("relative w-[140px] h-[40px]", className)}>
       <Image
-        src="/NEXUS NOVO.png"
+        src="/NEXUSnv.png"
         alt="NexusFarma Logo"
         fill
         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
