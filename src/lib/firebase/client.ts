@@ -1,6 +1,6 @@
 // src/lib/firebase/client.ts
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { getAuth, Auth } from 'firebase/auth';
 
 // Configuração segura para o lado do cliente (navegador).
 // Apenas variáveis com o prefixo NEXT_PUBLIC_ são expostas aqui.
@@ -14,7 +14,19 @@ const firebaseConfig = {
 };
 
 // Inicializa o Firebase App para o cliente, garantindo que não seja reinicializado (Singleton pattern).
-const firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(firebaseApp);
+// A inicialização só ocorre se a chave da API estiver presente.
+let firebaseApp: FirebaseApp;
+if (firebaseConfig.apiKey) {
+    firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+} else {
+    // Se não houver chave, o app não é inicializado, mas evitamos o crash.
+    // Funções que dependem do 'auth' não funcionarão, o que é esperado.
+    console.warn("As variáveis de ambiente do Firebase não estão configuradas. A autenticação não funcionará.");
+}
+
+
+// Exporta 'auth' apenas se a inicialização foi bem-sucedida.
+// @ts-ignore
+const auth: Auth = firebaseApp ? getAuth(firebaseApp) : {};
 
 export { firebaseApp, auth };
