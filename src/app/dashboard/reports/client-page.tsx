@@ -52,6 +52,9 @@ interface ReportsClientPageProps {
     initialStockMovements: StockMovement[];
 }
 
+const productCategories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Não Padronizado (Compra)'];
+
+
 function calculateStats(products: Product[], patients: Patient[], dispensations: Dispensation[]): ReportStats {
     const now = new Date();
     const thirtyDaysFromNow = new Date();
@@ -135,6 +138,8 @@ export function ReportsClientPage({
   const [date, setDate] = useState<DateRange | undefined>({ from: new Date(), to: addDays(new Date(), 0) });
   const [month, setMonth] = useState((new Date().getMonth() + 1).toString());
   const [year, setYear] = useState(new Date().getFullYear().toString());
+  const [stockCategoryFilter, setStockCategoryFilter] = useState('all');
+
 
   const getPeriodString = (): string => {
     if (filterType === 'year') {
@@ -215,7 +220,7 @@ export function ReportsClientPage({
   const periodString = getPeriodString();
 
   const handleExportComplete = () => generatePdf('complete', () => generateCompleteReportPDF(initialProducts, initialPatients, initialDispensations));
-  const handleExportStock = () => generatePdf('stock', () => generateStockReportPDF(initialProducts));
+  const handleExportStock = () => generatePdf('stock', () => generateStockReportPDF(initialProducts, stockCategoryFilter === 'all' ? undefined : stockCategoryFilter));
   const handleExportExpiry = () => generatePdf('expiry', () => generateExpiryReportPDF(initialProducts));
   const handleExportPatient = () => generatePdf('patient', () => generatePatientReportPDF(filteredDispensations));
   const handleExportPatientList = () => generatePdf('patientList', () => generatePatientListReportPDF(initialPatients));
@@ -223,25 +228,23 @@ export function ReportsClientPage({
   const handleExportBatch = () => generatePdf('batch', () => generateBatchReportPDF(initialProducts));
   const handleExportEntriesAndExits = () => generatePdf('entriesAndExits', () => generateEntriesAndExitsReportPDF(filteredMovements, initialProducts, periodString));
   
-  const reportHandlers: Record<string, () => void> = {
-    "Dispensação por Unidade": handleExportUnitDispensation,
-    "Estoque Atual": handleExportStock,
-    "Produtos a Vencer": handleExportExpiry,
-    "Atendimento de Pacientes": handleExportPatient,
-    "Entradas e Saídas": handleExportEntriesAndExits,
-    "Relatório de Lotes": handleExportBatch,
-    "Lista de Pacientes": handleExportPatientList,
-  };
-
-  const buttonKeys: Record<string, keyof GeneratingState> = {
-    "Dispensação por Unidade": 'unitDispensation',
-    "Estoque Atual": 'stock',
-    "Produtos a Vencer": 'expiry',
-    "Atendimento de Pacientes": 'patient',
-    "Entradas e Saídas": 'entriesAndExits',
-    "Relatório de Lotes": 'batch',
-    "Lista de Pacientes": 'patientList',
-  };
+  const reportHandlers: { name: string; handler: () => void; key: keyof GeneratingState, filter?: React.ReactNode }[] = [
+    { name: "Dispensação por Unidade", handler: handleExportUnitDispensation, key: 'unitDispensation' },
+    { name: "Estoque Atual", handler: handleExportStock, key: 'stock', filter: (
+        <Select value={stockCategoryFilter} onValueChange={setStockCategoryFilter}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+                <SelectItem value="all">Todas as Categorias</SelectItem>
+                {productCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+            </SelectContent>
+        </Select>
+    ) },
+    { name: "Produtos a Vencer", handler: handleExportExpiry, key: 'expiry' },
+    { name: "Atendimento de Pacientes", handler: handleExportPatient, key: 'patient' },
+    { name: "Entradas e Saídas", handler: handleExportEntriesAndExits, key: 'entriesAndExits' },
+    { name: "Relatório de Lotes", handler: handleExportBatch, key: 'batch' },
+    { name: "Lista de Pacientes", handler: handleExportPatientList, key: 'patientList' },
+  ];
 
   return (
      <div className="space-y-6">
@@ -344,24 +347,25 @@ export function ReportsClientPage({
                     <CardHeader>
                     <CardTitle>Gerar Relatórios Específicos</CardTitle>
                     <CardDescription>
-                        Selecione um tipo de relatório para gerar um documento PDF. Relatórios de movimentação serão baseados no filtro de data selecionado.
+                        Selecione um tipo de relatório para gerar um documento PDF.
                     </CardDescription>
                     </CardHeader>
-                    <CardContent className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                        {Object.keys(reportHandlers).map((reportName) => {
-                            const key = buttonKeys[reportName];
+                    <CardContent className="grid gap-x-4 gap-y-6 sm:grid-cols-2 md:grid-cols-3">
+                        {reportHandlers.map(({ name, handler, key, filter }) => {
                             const isGen = isGenerating[key];
                             return (
-                                <Button 
-                                    key={reportName}
-                                    variant="outline" 
-                                    className="justify-start"
-                                    onClick={reportHandlers[reportName]}
-                                    disabled={isGen}
-                                >
-                                    {isGen ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
-                                    {isGen ? 'Gerando...' : reportName}
-                                </Button>
+                                <div key={name} className="space-y-2">
+                                     <Button 
+                                        variant="outline" 
+                                        className="justify-start w-full"
+                                        onClick={handler}
+                                        disabled={isGen}
+                                    >
+                                        {isGen ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                                        {isGen ? 'Gerando...' : name}
+                                    </Button>
+                                    {filter && <div className="px-1">{filter}</div>}
+                                </div>
                             )
                         })}
                     </CardContent>

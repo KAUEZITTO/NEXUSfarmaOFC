@@ -140,29 +140,34 @@ export const generateCompleteReportPDF = async (
   return doc.output('datauristring');
 };
 
-export const generateStockReportPDF = async (products: Product[]): Promise<string> => {
-    const doc = new jsPDF() as jsPDFWithAutoTable;
+export const generateStockReportPDF = async (allProducts: Product[], category?: string): Promise<string> => {
+    const doc = new jsPDF('l') as jsPDFWithAutoTable; // 'l' for landscape
+    
+    const title = category ? `Relatório de Estoque - ${category}` : 'Relatório de Estoque Geral';
+    addHeader(doc, title);
 
-    addHeader(doc, 'Relatório de Estoque Atual');
+    const productsToDisplay = category ? allProducts.filter(p => p.category === category) : allProducts;
 
-    const inventoryBody = products.map(p => [
+    const inventoryBody = productsToDisplay.map(p => [
         p.name,
         p.category,
-        p.quantity.toString(),
+        p.quantity.toLocaleString('pt-BR'),
         p.status,
         p.expiryDate ? new Date(p.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : 'N/A',
-        p.batch || 'N/A'
+        p.batch || 'N/A',
+        p.manufacturer || 'N/A',
+        p.supplier || 'N/A',
     ]);
 
     doc.autoTable({
         startY: 55,
-        head: [['Nome', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote']],
+        head: [['Nome', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote', 'Fabricante', 'Fornecedor']],
         body: inventoryBody,
         theme: 'grid',
         headStyles: { fillColor: [37, 99, 235] },
         didDrawPage: (data) => {
             if (data.pageNumber > 1) {
-                addHeader(doc, 'Relatório de Estoque Atual');
+                addHeader(doc, title);
             }
         }
     });
