@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import jsPDF from 'jspdf';
@@ -229,6 +230,38 @@ export const generatePatientReportPDF = async (dispensations: Dispensation[]): P
     addFooter(doc);
     return doc.output('datauristring');
 };
+
+export const generatePatientListReportPDF = async (patients: Patient[]): Promise<string> => {
+    const doc = new jsPDF() as jsPDFWithAutoTable;
+    addHeader(doc, 'Relatório de Pacientes Cadastrados');
+
+    const body = patients.map(p => [
+        p.name,
+        p.cpf,
+        p.cns,
+        p.status,
+        p.demandItems?.join(', ') || 'Nenhuma'
+    ]);
+    
+    doc.autoTable({
+        startY: 50,
+        head: [['Nome do Paciente', 'CPF', 'CNS', 'Status', 'Demandas']],
+        body: body,
+        theme: 'grid',
+        headStyles: { fillColor: [107, 33, 168] }, // Purple
+        columnStyles: {
+            4: { cellWidth: 50 } // Demandas column
+        },
+        didDrawPage: (data) => {
+            if (data.pageNumber > 1) {
+                addHeader(doc, 'Relatório de Pacientes Cadastrados');
+            }
+        }
+    });
+
+    addFooter(doc);
+    return doc.output('datauristring');
+}
 
 export const generateUnitDispensationReportPDF = async (orders: Order[], units: Unit[]): Promise<string> => {
     const doc = new jsPDF() as jsPDFWithAutoTable;

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -10,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, FileText, Loader2, BarChart2, Package, Users, AlertTriangle, Sparkles, Calendar, Filter } from "lucide-react";
-import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF, generatePatientReportPDF, generateUnitDispensationReportPDF, generateBatchReportPDF, generateEntriesAndExitsReportPDF } from "@/lib/pdf-generator";
+import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF, generatePatientReportPDF, generateUnitDispensationReportPDF, generateBatchReportPDF, generateEntriesAndExitsReportPDF, generatePatientListReportPDF } from "@/lib/pdf-generator";
 import { useState, useEffect } from "react";
 import type { Product, Patient, Dispensation, Unit, Order, StockMovement } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -30,6 +31,7 @@ type GeneratingState = {
     stock: boolean;
     expiry: boolean;
     patient: boolean;
+    patientList: boolean;
     unitDispensation: boolean;
     entriesAndExits: boolean;
     batch: boolean;
@@ -48,7 +50,7 @@ export default function ReportsPage() {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState<GeneratingState>({
     complete: false, stock: false, expiry: false, patient: false, 
-    unitDispensation: false, entriesAndExits: false, batch: false,
+    patientList: false, unitDispensation: false, entriesAndExits: false, batch: false,
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -227,6 +229,7 @@ export default function ReportsPage() {
   const handleExportStock = () => generatePdf('stock', () => generateStockReportPDF(products));
   const handleExportExpiry = () => generatePdf('expiry', () => generateExpiryReportPDF(products));
   const handleExportPatient = () => generatePdf('patient', () => generatePatientReportPDF(filteredDispensations));
+  const handleExportPatientList = () => generatePdf('patientList', () => generatePatientListReportPDF(patients));
   const handleExportUnitDispensation = () => generatePdf('unitDispensation', () => generateUnitDispensationReportPDF(filteredOrders, units));
   const handleExportBatch = () => generatePdf('batch', () => generateBatchReportPDF(products));
   const handleExportEntriesAndExits = () => generatePdf('entriesAndExits', () => generateEntriesAndExitsReportPDF(filteredMovements));
@@ -238,6 +241,7 @@ export default function ReportsPage() {
     "Atendimento de Pacientes": handleExportPatient,
     "Entradas e Saídas": handleExportEntriesAndExits,
     "Relatório de Lotes": handleExportBatch,
+    "Lista de Pacientes": handleExportPatientList,
   };
 
   const buttonKeys: Record<string, keyof GeneratingState> = {
@@ -247,6 +251,7 @@ export default function ReportsPage() {
     "Atendimento de Pacientes": 'patient',
     "Entradas e Saídas": 'entriesAndExits',
     "Relatório de Lotes": 'batch',
+    "Lista de Pacientes": 'patientList',
   };
 
   if (isLoading || !reportStats) {
