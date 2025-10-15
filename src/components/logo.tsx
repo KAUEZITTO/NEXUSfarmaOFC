@@ -4,15 +4,16 @@ import { cn } from '@/lib/utils';
 
 export function Logo({ className }: { className?: string }) {
   return (
-    <div className={cn("flex items-center", className)}>
-      <Image
-        src="/NEXUS.png"
-        alt="NexusFarma Logo"
-        width={140}
-        height={40}
-        className="object-contain"
-        priority
-      />
+    <div className={cn("flex items-center justify-center", className)}>
+      <div className="relative w-[140px] h-[40px]">
+        <Image
+          src="/NEXUS.png"
+          alt="NexusFarma Logo"
+          fill
+          className="object-contain"
+          priority
+        />
+      </div>
     </div>
   );
 }
