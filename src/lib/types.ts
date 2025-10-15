@@ -1,4 +1,5 @@
 
+
 // Adicionando tipos do NextAuth para extender o objeto de sessão
 import type { DefaultUser, DefaultSession } from 'next-auth';
 import { ColumnDef } from '@tanstack/react-table';
@@ -112,7 +113,7 @@ export type Dosage = {
     quantity: number;
 }
 
-export type PatientDemandItem = 'Fraldas' | 'Insulinas Análogas' | 'Tiras de Glicemia' | 'Itens Judiciais' | 'Imunoglobulina';
+export type PatientDemandItem = 'Fraldas' | 'Insulinas Análogas' | 'Tiras de Glicemia' | 'Itens Judiciais' | 'Imunoglobulina' | 'Fórmulas' | 'Medicamentos/Materiais Comprados';
 
 
 export type Patient = {
@@ -124,9 +125,12 @@ export type Patient = {
     address?: string;
     phone?: string;
     isAnalogInsulinUser?: boolean; // Kept for backwards compatibility if needed, but logic moves to demandItems
-    analogInsulinType?: 'Lantus (Glargina)' | 'Apidra (Glulisina)';
+    analogInsulinType?: 'Lantus (Glargina)' | 'Apidra (Glulisina)' | 'Outro';
+    customInsulinType?: string;
+    insulinReportDate?: string;
     hasInsulinReport?: boolean;
     insulinDosages?: Dosage[];
+    manualDispensingQuantity?: number;
     insulinPresentation?: 'Caneta' | 'Frasco';
     usesStrips?: boolean; // Kept for backwards compatibility if needed, logic moves to demandItems
     stripDosages?: Dosage[];

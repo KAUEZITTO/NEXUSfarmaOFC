@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -158,8 +159,6 @@ export async function addPatient(patientData: Omit<Patient, 'id' | 'status'>) {
     const patients = await readData<Patient>('patients');
     const newPatient: Patient = {
         ...patientData,
-        isAnalogInsulinUser: patientData.demandItems?.includes('Insulinas Análogas'),
-        usesStrips: patientData.demandItems?.includes('Tiras de Glicemia'),
         id: generateId('pat'),
         status: 'Ativo',
     };
@@ -174,8 +173,6 @@ export async function updatePatient(patientId: string, patientData: Partial<Omit
     patients[patientIndex] = { 
         ...patients[patientIndex], 
         ...patientData,
-        isAnalogInsulinUser: patientData.demandItems?.includes('Insulinas Análogas'),
-        usesStrips: patientData.demandItems?.includes('Tiras de Glicemia'),
     };
     await writeData('patients', patients);
     revalidatePath('/dashboard/patients');

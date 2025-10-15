@@ -26,16 +26,17 @@ import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Save, Trash2, Loader2 } from 'lucide-react';
+import { Save, Trash2, Loader2, AlertTriangle } from 'lucide-react';
 import { addPatient, updatePatient } from '@/lib/actions';
 import { getUnits } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import type { Patient, Dosage, Unit, PatientDemandItem } from '@/lib/types';
 import { Separator } from '../ui/separator';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 const dosagePeriods: Dosage['period'][] = ['Manhã', 'Tarde', 'Noite', 'Ao deitar', 'Após Café', 'Jejum'];
 
-const allDemandItems: PatientDemandItem[] = ['Fraldas', 'Insulinas Análogas', 'Tiras de Glicemia', 'Itens Judiciais', 'Imunoglobulina'];
+const allDemandItems: PatientDemandItem[] = ['Fraldas', 'Insulinas Análogas', 'Tiras de Glicemia', 'Itens Judiciais', 'Imunoglobulina', 'Fórmulas', 'Medicamentos/Materiais Comprados'];
 
 const DosageInput = ({ dosages, setDosages, unitLabel }: { dosages: Dosage[], setDosages: (dosages: Dosage[]) => void, unitLabel: string }) => {
     
@@ -107,8 +108,12 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
   const [insulinDosages, setInsulinDosages] = useState<Dosage[]>([]);
   const [stripDosages, setStripDosages] = useState<Dosage[]>([]);
   const [hasInsulinReport, setHasInsulinReport] = useState(false);
-  const [insulinType, setInsulinType] = useState<'Lantus (Glargina)' | 'Apidra (Glulisina)'>('Lantus (Glargina)');
-  const [insulinPresentation, setInsulinPresentation] = useState<'Caneta' | 'Frasco'>('Caneta');
+  const [insulinReportDate, setInsulinReportDate] = useState('');
+  const [insulinType, setInsulinType] = useState<Patient['analogInsulinType']>('Lantus (Glargina)');
+  const [customInsulinType, setCustomInsulinType] = useState('');
+  const [insulinPresentation, setInsulinPresentation] = useState<Patient['insulinPresentation']>('Caneta');
+  const [manualDispensingQuantity, setManualDispensingQuantity] = useState<number | undefined>(undefined);
+
 
   const [units, setUnits] = useState<Unit[]>([]);
 
@@ -136,6 +141,11 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
     setInsulinDosages([]);
     setStripDosages([]);
     setHasInsulinReport(false);
+    setInsulinReportDate('');
+    setCustomInsulinType('');
+    setManualDispensingQuantity(undefined);
+    setInsulinType('Lantus (Glargina)');
+    setInsulinPresentation('Caneta');
   }
   
   const handleDemandItemChange = (item: PatientDemandItem, checked: boolean) => {
@@ -143,7 +153,12 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
         const newItems = checked ? [...prev, item] : prev.filter(i => i !== item);
         // Clear related data if item is unchecked
         if (!checked) {
-            if (item === 'Insulinas Análogas') setInsulinDosages([]);
+            if (item === 'Insulinas Análogas') {
+                setInsulinDosages([]);
+                setHasInsulinReport(false);
+                setInsulinReportDate('');
+                setCustomInsulinType('');
+            }
             if (item === 'Tiras de Glicemia') setStripDosages([]);
         }
         return newItems;
@@ -163,10 +178,13 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
         setIsBedridden(patientToEdit.isBedridden || false);
         setDemandItems(patientToEdit.demandItems || []);
         setHasInsulinReport(patientToEdit.hasInsulinReport || false);
+        setInsulinReportDate(patientToEdit.insulinReportDate || '');
         setInsulinType(patientToEdit.analogInsulinType || 'Lantus (Glargina)');
+        setCustomInsulinType(patientToEdit.customInsulinType || '');
         setInsulinPresentation(patientToEdit.insulinPresentation || 'Caneta');
         setInsulinDosages(patientToEdit.insulinDosages || []);
         setStripDosages(patientToEdit.stripDosages || []);
+        setManualDispensingQuantity(patientToEdit.manualDispensingQuantity);
     } else if (!isEditing && isOpen) {
         resetForm();
     }
@@ -199,8 +217,11 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
             isBedridden,
             demandItems,
             analogInsulinType: demandItems.includes('Insulinas Análogas') ? insulinType : undefined,
+            customInsulinType: demandItems.includes('Insulinas Análogas') && insulinType === 'Outro' ? customInsulinType : undefined,
             hasInsulinReport: demandItems.includes('Insulinas Análogas') ? hasInsulinReport : undefined,
+            insulinReportDate: demandItems.includes('Insulinas Análogas') && hasInsulinReport ? insulinReportDate : undefined,
             insulinDosages: demandItems.includes('Insulinas Análogas') ? insulinDosages : [],
+            manualDispensingQuantity: demandItems.includes('Insulinas Análogas') ? manualDispensingQuantity : undefined,
             insulinPresentation: demandItems.includes('Insulinas Análogas') ? insulinPresentation : undefined,
             stripDosages: demandItems.includes('Tiras de Glicemia') ? stripDosages : [],
         }
@@ -237,6 +258,22 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
   
   const isInsulinUser = demandItems.includes('Insulinas Análogas');
   const usesStrips = demandItems.includes('Tiras de Glicemia');
+
+  const isReportExpired = () => {
+    if (!insulinReportDate) return false;
+    const reportDate = new Date(insulinReportDate);
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    return reportDate < sixMonthsAgo;
+  }
+
+  const calculateDispensingQuantity = () => {
+    if (!isInsulinUser) return 0;
+    const totalDailyUI = insulinDosages.reduce((sum, d) => sum + d.quantity, 0);
+    const totalMonthlyUI = totalDailyUI * 30;
+    const unitsPerItem = insulinPresentation === 'Caneta' ? 300 : 1000;
+    return Math.ceil(totalMonthlyUI / unitsPerItem);
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -316,13 +353,31 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
                 {isInsulinUser && (
                     <div className="ml-0 p-4 border rounded-md space-y-4 bg-muted/20">
                         <h4 className="font-semibold text-md">Detalhes da Insulina Análoga</h4>
-                        <div className="flex items-center space-x-2">
-                            <Switch id="has-insulin-report" checked={hasInsulinReport} onCheckedChange={setHasInsulinReport} />
-                            <Label htmlFor="has-insulin-report">Apresentou Laudo?</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="flex items-center space-x-2">
+                                <Switch id="has-insulin-report" checked={hasInsulinReport} onCheckedChange={setHasInsulinReport} />
+                                <Label htmlFor="has-insulin-report">Apresentou Laudo?</Label>
+                            </div>
+                            {hasInsulinReport && (
+                                <div className="space-y-2">
+                                    <Label htmlFor="insulin-report-date">Data do Laudo</Label>
+                                    <Input id="insulin-report-date" type="date" value={insulinReportDate} onChange={e => setInsulinReportDate(e.target.value)} />
+                                </div>
+                            )}
                         </div>
+
+                        {hasInsulinReport && isReportExpired() && (
+                            <Alert variant="destructive">
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertTitle>Laudo Vencido</AlertTitle>
+                                <AlertDescription>
+                                    O laudo do paciente tem mais de 6 meses. Solicite um novo.
+                                </AlertDescription>
+                            </Alert>
+                        )}
                         
                         <div>
-                            <Label>Especificar Tipo de Insulina:</Label>
+                            <Label>Tipo de Insulina:</Label>
                             <RadioGroup value={insulinType} onValueChange={(v) => setInsulinType(v as any)} className="mt-2 flex gap-4">
                                 <div className="flex items-center space-x-2">
                                     <RadioGroupItem value="Lantus (Glargina)" id="lantus" />
@@ -332,19 +387,29 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
                                     <RadioGroupItem value="Apidra (Glulisina)" id="apidra" />
                                     <Label htmlFor="apidra">Apidra (Glulisina)</Label>
                                 </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="Outro" id="outro" />
+                                    <Label htmlFor="outro">Outro</Label>
+                                </div>
                             </RadioGroup>
                         </div>
+                         {insulinType === 'Outro' && (
+                            <div className="space-y-2">
+                                <Label htmlFor="custom-insulin-type">Especifique a Insulina</Label>
+                                <Input id="custom-insulin-type" value={customInsulinType} onChange={e => setCustomInsulinType(e.target.value)} />
+                            </div>
+                         )}
 
                         <div>
                             <Label>Apresentação:</Label>
                             <RadioGroup value={insulinPresentation} onValueChange={(v) => setInsulinPresentation(v as any)} className="mt-2 flex gap-4">
                                 <div className="flex items-center space-x-2">
                                     <RadioGroupItem value="Caneta" id="pen" />
-                                    <Label htmlFor="pen">Caneta</Label>
+                                    <Label htmlFor="pen">Caneta (300 UI)</Label>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                     <RadioGroupItem value="Frasco" id="vial" />
-                                    <Label htmlFor="vial">Frasco</Label>
+                                    <Label htmlFor="vial">Frasco (1000 UI)</Label>
                                 </div>
                             </RadioGroup>
                         </div>
@@ -353,6 +418,22 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
                            <Label>Posologia</Label>
                            <DosageInput dosages={insulinDosages} setDosages={setInsulinDosages} unitLabel="UI" />
                         </div>
+                         <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Dispensação Sugerida</Label>
+                                <Input value={`${calculateDispensingQuantity()} ${insulinPresentation}(s)/mês`} readOnly className="bg-muted/80" />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="manual-dispensing-quantity">Ajuste Manual (Opcional)</Label>
+                                <Input 
+                                    id="manual-dispensing-quantity"
+                                    type="number"
+                                    placeholder="Ex: 2"
+                                    value={manualDispensingQuantity || ''} 
+                                    onChange={e => setManualDispensingQuantity(e.target.value ? parseInt(e.target.value, 10) : undefined)} 
+                                />
+                            </div>
+                         </div>
                     </div>
                 )}
               
