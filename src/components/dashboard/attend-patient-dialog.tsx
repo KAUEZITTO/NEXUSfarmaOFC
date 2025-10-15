@@ -57,6 +57,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { unstable_noStore as noStore } from 'next/cache';
+
 
 type DispensationItem = DispensationItemType & {
   internalId: string;
@@ -145,21 +147,34 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
   useEffect(() => {
     async function loadData() {
         if (isOpen) {
+            noStore(); // Explicitly disable caching for this fetch
             setLoading(true);
-            const [patients, products] = await Promise.all([getPatients('all'), getProducts()]);
-            setAllPatients(patients);
-            setAllProducts(products);
-            setLoading(false);
+            try {
+                const [patients, products] = await Promise.all([getPatients('all'), getProducts()]);
+                setAllPatients(patients);
+                setAllProducts(products);
+            } catch (error) {
+                console.error("Failed to load data for dialog:", error);
+                toast({
+                    variant: 'destructive',
+                    title: 'Erro ao carregar dados',
+                    description: 'Não foi possível buscar pacientes e produtos.'
+                });
+            } finally {
+                setLoading(false);
+            }
         }
     }
     loadData();
-  }, [isOpen])
+  }, [isOpen, toast]);
 
-  const filteredPatients = allPatients.filter(
-    (patient) =>
-      patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.cpf.replace(/[^\d]/g, '').includes(searchTerm.replace(/[^\d]/g, ''))
-  );
+  const filteredPatients = searchTerm
+    ? allPatients.filter(
+        (patient) =>
+          patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          patient.cpf?.replace(/[^\d]/g, '').includes(searchTerm.replace(/[^\d]/g, ''))
+      )
+    : allPatients;
   
   const setupInitialItems = (patient: Patient) => {
     const initialItems: DispensationItem[] = [];
@@ -437,6 +452,11 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
                       </Button>
                     </div>
                   ))}
+                   {!loading && filteredPatients.length === 0 && (
+                    <div className="text-center text-muted-foreground py-10">
+                      Nenhum paciente encontrado.
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
             </div>
