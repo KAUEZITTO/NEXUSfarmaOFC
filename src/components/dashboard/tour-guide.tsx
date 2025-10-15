@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import 'intro.js/introjs.css';
@@ -276,5 +277,3 @@ export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boo
         />
     );
 }
-
-

@@ -39,7 +39,7 @@ body {
   .dark {
     --background: 224 71.4% 4.1%;
     --foreground: 210 20% 98%;
-    --card: 224 71.4% 4.1%;
+    --card: 215 27.9% 16.9%;
     --card-foreground: 210 20% 98%;
     --popover: 224 71.4% 4.1%;
     --popover-foreground: 210 20% 98%;
@@ -122,9 +122,9 @@ body {
 
 /* Custom styles for Intro.js */
 .custom-tooltip-class {
-    background-color: hsl(var(--card));
+    background-color: hsl(var(--card)) !important;
     border: 1px solid hsl(var(--border));
-    color: hsl(var(--card-foreground));
+    color: hsl(var(--card-foreground)) !important;
     border-radius: var(--radius);
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     max-width: 350px !important;
@@ -156,6 +156,8 @@ body {
 
 .introjs-skipbutton {
     color: hsl(var(--muted-foreground)) !important;
+    font-size: 0.75rem !important; /* Smaller font size for "Pular" */
+    font-weight: 400 !important;
 }
 .introjs-skipbutton:hover {
     color: hsl(var(--foreground)) !important;
@@ -164,6 +166,7 @@ body {
 .introjs-tooltiptext {
     line-height: 1.7;
     padding: 0.5rem;
+    color: hsl(var(--card-foreground)) !important;
 }
 
 .introjs-arrow.top {
