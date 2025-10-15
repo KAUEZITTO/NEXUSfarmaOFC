@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -220,7 +221,7 @@ export function ReportsClientPage({
   const periodString = getPeriodString();
 
   const handleExportComplete = () => generatePdf('complete', () => generateCompleteReportPDF(initialProducts, initialPatients, initialDispensations));
-  const handleExportStock = () => generatePdf('stock', () => generateStockReportPDF(initialProducts, stockCategoryFilter === 'all' ? undefined : stockCategoryFilter));
+  const handleExportStock = () => generatePdf('stock', () => generateStockReportPDF(initialProducts, stockCategoryFilter));
   const handleExportExpiry = () => generatePdf('expiry', () => generateExpiryReportPDF(initialProducts));
   const handleExportPatient = () => generatePdf('patient', () => generatePatientReportPDF(filteredDispensations));
   const handleExportPatientList = () => generatePdf('patientList', () => generatePatientListReportPDF(initialPatients));
@@ -408,3 +409,5 @@ export function ReportsClientPage({
     </div>
   )
 }
+
+    

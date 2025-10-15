@@ -140,16 +140,22 @@ export const generateCompleteReportPDF = async (
   return doc.output('datauristring');
 };
 
-export const generateStockReportPDF = async (allProducts: Product[], category?: string): Promise<string> => {
+export const generateStockReportPDF = async (allProducts: Product[], categoryFilter?: string): Promise<string> => {
     const doc = new jsPDF('l') as jsPDFWithAutoTable; // 'l' for landscape
     
-    const title = category ? `Relatório de Estoque - ${category}` : 'Relatório de Estoque Geral';
+    const title = categoryFilter && categoryFilter !== 'all' 
+        ? `Relatório de Estoque - ${categoryFilter}` 
+        : 'Relatório de Estoque Geral';
     addHeader(doc, title);
 
-    const productsToDisplay = category ? allProducts.filter(p => p.category === category) : allProducts;
+    const productsToDisplay = categoryFilter && categoryFilter !== 'all' 
+        ? allProducts.filter(p => p.category === categoryFilter) 
+        : allProducts;
 
     const inventoryBody = productsToDisplay.map(p => [
         p.name,
+        p.commercialName || 'N/A',
+        p.presentation || 'N/A',
         p.category,
         p.quantity.toLocaleString('pt-BR'),
         p.status,
@@ -161,10 +167,11 @@ export const generateStockReportPDF = async (allProducts: Product[], category?: 
 
     doc.autoTable({
         startY: 55,
-        head: [['Nome', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote', 'Fabricante', 'Fornecedor']],
+        head: [['Princípio Ativo', 'Nome Comercial', 'Apresentação', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote', 'Fabricante', 'Fornecedor']],
         body: inventoryBody,
         theme: 'grid',
-        headStyles: { fillColor: [37, 99, 235] },
+        headStyles: { fillColor: [37, 99, 235], fontSize: 8 },
+        styles: { fontSize: 8 },
         didDrawPage: (data) => {
             if (data.pageNumber > 1) {
                 addHeader(doc, title);
@@ -448,3 +455,5 @@ export const generateEntriesAndExitsReportPDF = async (movements: StockMovement[
     addFooter(doc);
     return doc.output('datauristring');
 };
+
+    
