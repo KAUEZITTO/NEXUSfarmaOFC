@@ -50,6 +50,9 @@ export default function LandingPage() {
             </Link>
           </div>
           <div className="flex items-center gap-4">
+             <Link href="/about" className="text-sm font-medium text-muted-foreground hover:text-foreground">
+                Sobre
+             </Link>
             <Button asChild>
               <Link href="/login">Acessar Sistema</Link>
             </Button>

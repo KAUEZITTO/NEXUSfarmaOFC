@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, Suspense } from "react";
@@ -20,7 +21,7 @@ import { getOrder } from "@/lib/data";
 const renderItemRows = (items: OrderItem[]) => {
     if (!items || items.length === 0) return null;
     return items.map((item, index) => (
-        <TableRow key={item.productId + item.batch} className={`border-b print:even:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-muted/20'}`}>
+        <TableRow key={item.productId + (item.batch || index)} className={`border-b print:even:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-muted/20'}`}>
             <TableCell className="font-medium">{item.name}</TableCell>
             <TableCell className="text-center">{item.presentation || "--"}</TableCell>
             <TableCell className="text-center">{item.batch || "--"}</TableCell>

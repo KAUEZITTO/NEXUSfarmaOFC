@@ -46,7 +46,7 @@ export function UnitsClientPage({ initialUnits }: { initialUnits: Unit[] }) {
     }
   }
 
-  const getColumns = (onUnitSaved: () => void): ColumnDef<Unit>[] => [
+  const columns: ColumnDef<Unit>[] = [
     {
       accessorKey: 'name',
       header: ({ column }) => (
@@ -125,7 +125,7 @@ export function UnitsClientPage({ initialUnits }: { initialUnits: Unit[] }) {
                 <DropdownMenuSeparator />
                 <AddUnitDialog
                   unitToEdit={unit}
-                  onUnitSaved={onUnitSaved}
+                  onUnitSaved={handleUnitSaved}
                   trigger={
                     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                       <Edit className="mr-2 h-4 w-4" />
@@ -161,8 +161,6 @@ export function UnitsClientPage({ initialUnits }: { initialUnits: Unit[] }) {
       },
     },
   ];
-
-  const columns = getColumns(handleUnitSaved);
 
   return (
     <Card>

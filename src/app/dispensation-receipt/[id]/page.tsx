@@ -22,7 +22,7 @@ import { getDispensation } from "@/lib/data";
 const renderItemRows = (items: DispensationItem[]) => {
     if (!items || items.length === 0) return null;
     return items.map((item, index) => (
-        <TableRow key={item.productId} className={`border-b print:even:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-muted/20'}`}>
+        <TableRow key={item.productId + (item.batch || index)} className={`border-b print:even:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-muted/20'}`}>
             <TableCell className="font-medium">{item.name}</TableCell>
             <TableCell className="text-center">{item.presentation || "--"}</TableCell>
             <TableCell className="text-center">{item.batch || "--"}</TableCell>
@@ -77,7 +77,7 @@ const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensatio
                 <div><span className="font-semibold">CPF:</span> {dispensation.patient.cpf}</div>
                 <div><span className="font-semibold">CNS:</span> {dispensation.patient.cns}</div>
                 {dispensation.patient.unitName && <div><span className="font-semibold">Unidade:</span> {dispensation.patient.unitName}</div>}
-                <div><span className="font-semibold">Mandado:</span> {dispensation.patient.mandateType}</div>
+                <div><span className="font-semibold">Mandado:</span> {dispensation.patient.mandateType || 'N/A'}</div>
                 <div><span className="font-semibold">Data:</span> {formattedDispensationDate}</div>
                 <div className="font-bold"><span className="font-semibold">Retorno:</span> {returnDate}</div>
                 <div><span className="font-semibold">ID da Dispensa:</span> {dispensation.id}</div>
@@ -205,5 +205,3 @@ export default function DispensationReceiptPage({ params }: { params: { id: stri
     </>
   );
 }
-
-    
