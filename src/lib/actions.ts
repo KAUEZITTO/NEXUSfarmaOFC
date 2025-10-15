@@ -4,7 +4,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { readData, writeData, getProducts, getKnowledgeBase } from './data';
-import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile } from './types';
+import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus } from './types';
 import * as admin from 'firebase-admin';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './auth';
@@ -211,7 +211,7 @@ export async function addOrder(orderData: { unitId: string; unitName: string; or
         orderType: orderData.orderType,
         notes: orderData.notes,
         sentDate: sentDate,
-        status: 'Em Trânsito',
+        status: 'Em análise',
         itemCount: orderData.items.reduce((sum, item) => sum + item.quantity, 0),
         creatorName: session?.user?.name || 'Usuário Desconhecido',
     };
@@ -287,6 +287,26 @@ export async function deleteOrder(orderId: string): Promise<{ success: boolean; 
     revalidatePath('/dashboard/reports');
 
     return { success: true };
+}
+
+export async function updateOrderStatus(orderId: string, status: OrderStatus) {
+    const orders = await readData<Order>('orders');
+    const orderIndex = orders.findIndex(o => o.id === orderId);
+    if (orderIndex === -1) throw new Error('Pedido não encontrado.');
+    
+    orders[orderIndex].status = status;
+    if (status === 'Atendido') {
+        orders[orderIndex].deliveryDate = new Date().toISOString();
+    } else {
+        delete orders[orderIndex].deliveryDate;
+    }
+
+    await writeData('orders', orders);
+    
+    revalidatePath('/dashboard/orders');
+    revalidatePath(`/dashboard/orders/history/${orders[orderIndex].unitId}`);
+    revalidatePath('/dashboard/units');
+    revalidatePath('/dashboard/reports');
 }
 
 

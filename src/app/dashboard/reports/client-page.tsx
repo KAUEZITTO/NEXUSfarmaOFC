@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, FileText, Loader2, BarChart2, Package, Users, AlertTriangle, Sparkles, Filter } from "lucide-react";
-import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF, generatePatientReportPDF, generateUnitDispensationReportPDF, generateBatchReportPDF, generateEntriesAndExitsReportPDF, generatePatientListReportPDF } from "@/lib/pdf-generator";
+import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF, generatePatientReportPDF, generateUnitDispensationReportPDF, generateBatchReportPDF, generateEntriesAndExitsReportPDF, generatePatientListReportPDF, generateOrderStatusReportPDF } from "@/lib/pdf-generator";
 import { useState } from "react";
 import type { Product, Patient, Dispensation, Unit, Order, StockMovement } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +33,9 @@ type GeneratingState = {
     unitDispensation: boolean;
     entriesAndExits: boolean;
     batch: boolean;
+    orderStatusAttended: boolean;
+    orderStatusNotAttended: boolean;
+    orderStatusInAnalysis: boolean;
 }
 
 interface ReportStats {
@@ -130,6 +133,7 @@ export function ReportsClientPage({
   const [isGenerating, setIsGenerating] = useState<GeneratingState>({
     complete: false, stock: false, expiry: false, patient: false, 
     patientList: false, unitDispensation: false, entriesAndExits: false, batch: false,
+    orderStatusAttended: false, orderStatusNotAttended: false, orderStatusInAnalysis: false
   });
 
   const reportStats = calculateStats(initialProducts, initialPatients, initialDispensations);
@@ -219,6 +223,14 @@ export function ReportsClientPage({
   
   const { filteredMovements, filteredDispensations, filteredOrders } = getFilteredData();
   const periodString = getPeriodString();
+  
+  const lastOrdersMap = new Map<string, Order>();
+  initialOrders.forEach(order => {
+      if (!lastOrdersMap.has(order.unitId) || new Date(order.sentDate) > new Date(lastOrdersMap.get(order.unitId)!.sentDate)) {
+        lastOrdersMap.set(order.unitId, order);
+      }
+  });
+
 
   const handleExportComplete = () => generatePdf('complete', () => generateCompleteReportPDF(initialProducts, initialPatients, initialDispensations, periodString));
   const handleExportStock = () => generatePdf('stock', () => generateStockReportPDF(initialProducts, stockCategoryFilter));
@@ -228,8 +240,11 @@ export function ReportsClientPage({
   const handleExportUnitDispensation = () => generatePdf('unitDispensation', () => generateUnitDispensationReportPDF(filteredOrders, initialUnits, periodString));
   const handleExportBatch = () => generatePdf('batch', () => generateBatchReportPDF(initialProducts));
   const handleExportEntriesAndExits = () => generatePdf('entriesAndExits', () => generateEntriesAndExitsReportPDF(filteredMovements, initialProducts, periodString));
+  const handleExportOrderStatusAttended = () => generatePdf('orderStatusAttended', () => generateOrderStatusReportPDF(initialUnits, lastOrdersMap, 'Atendido'));
+  const handleExportOrderStatusNotAttended = () => generatePdf('orderStatusNotAttended', () => generateOrderStatusReportPDF(initialUnits, lastOrdersMap, 'Não atendido'));
+  const handleExportOrderStatusInAnalysis = () => generatePdf('orderStatusInAnalysis', () => generateOrderStatusReportPDF(initialUnits, lastOrdersMap, 'Em análise'));
   
-  const reportHandlers: { name: string; handler: () => void; key: keyof GeneratingState, filter?: React.ReactNode }[] = [
+  const reportHandlers: { name: string; handler: () => void; key: keyof GeneratingState, filter?: React.ReactNode, colSpan?: 'sm:col-span-2' | 'sm:col-span-3' }[] = [
     { name: "Dispensação por Unidade", handler: handleExportUnitDispensation, key: 'unitDispensation' },
     { name: "Estoque Atual", handler: handleExportStock, key: 'stock', filter: (
         <Select value={stockCategoryFilter} onValueChange={setStockCategoryFilter}>
@@ -245,6 +260,9 @@ export function ReportsClientPage({
     { name: "Entradas e Saídas", handler: handleExportEntriesAndExits, key: 'entriesAndExits' },
     { name: "Relatório de Lotes", handler: handleExportBatch, key: 'batch' },
     { name: "Lista de Pacientes", handler: handleExportPatientList, key: 'patientList' },
+    { name: "Unidades Atendidas", handler: handleExportOrderStatusAttended, key: 'orderStatusAttended' },
+    { name: "Unidades Não Atendidas", handler: handleExportOrderStatusNotAttended, key: 'orderStatusNotAttended' },
+    { name: "Unidades em Análise", handler: handleExportOrderStatusInAnalysis, key: 'orderStatusInAnalysis' },
   ];
 
   return (

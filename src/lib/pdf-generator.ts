@@ -4,7 +4,7 @@
 
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import type { Product, Patient, Dispensation, Order, Unit, StockMovement } from './types';
+import type { Product, Patient, Dispensation, Order, Unit, StockMovement, OrderStatus } from './types';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -502,4 +502,44 @@ export const generateEntriesAndExitsReportPDF = async (movements: StockMovement[
     return doc.output('datauristring');
 };
 
-    
+export const generateOrderStatusReportPDF = async (
+    units: Unit[],
+    lastOrdersMap: Map<string, Order>,
+    status: OrderStatus
+): Promise<string> => {
+    const doc = new jsPDF() as jsPDFWithAutoTable;
+    const title = `Relatório de Unidades: Status "${status}"`;
+
+    await addHeader(doc, title);
+
+    const filteredUnits = units.filter(unit => {
+        const lastOrder = lastOrdersMap.get(unit.id);
+        return lastOrder?.status === status;
+    });
+
+    const body = filteredUnits.map(unit => {
+        const lastOrder = lastOrdersMap.get(unit.id);
+        return [
+            unit.name,
+            unit.type,
+            lastOrder ? new Date(lastOrder.sentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : 'N/A',
+            lastOrder?.orderType || 'N/A'
+        ];
+    });
+
+    doc.autoTable({
+        startY: 75,
+        head: [['Nome da Unidade', 'Tipo', 'Data do Último Pedido', 'Tipo do Pedido']],
+        body: body,
+        theme: 'grid',
+        headStyles: { fillColor: [37, 99, 235] },
+        didDrawPage: async (data) => {
+            if (data.pageNumber > 1) {
+                await addHeader(doc, title);
+            }
+        },
+    });
+
+    addFooter(doc);
+    return doc.output('datauristring');
+};

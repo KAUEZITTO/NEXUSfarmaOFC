@@ -6,7 +6,7 @@ import Link from "next/link";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, ArrowUpDown, MoreHorizontal, Eye, CalendarClock } from "lucide-react";
-import type { Unit, Order } from "@/lib/types";
+import type { Unit, Order, OrderStatus } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { ColumnDef } from "@tanstack/react-table";
 import {
@@ -71,6 +71,32 @@ const getColumns = (lastOrderMap: Map<string, Order>): ColumnDef<Unit>[] => [
                 </div>
             </div>
         )
+    }
+  },
+  {
+    id: "lastOrderStatus",
+    header: "Status do Último Pedido",
+    cell: ({ row }) => {
+        const unit = row.original;
+        const lastOrder = lastOrderMap.get(unit.id);
+        if (!lastOrder) return <div className="text-muted-foreground text-center">—</div>;
+
+        const status = lastOrder.status;
+        const variantMap: { [key in OrderStatus]: "destructive" | "secondary" | "default" } = {
+          'Não atendido': "destructive",
+          'Em análise': "secondary",
+          'Atendido': "default",
+        };
+
+        return <Badge 
+          variant={variantMap[status] || "default"} 
+          className={cn({
+              'bg-accent text-accent-foreground': status === 'Em análise',
+              'bg-green-600 text-white': status === 'Atendido',
+          })}
+        >
+          {status}
+        </Badge>
     }
   },
   {

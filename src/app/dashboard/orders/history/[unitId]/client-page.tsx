@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Order, OrderItem, Unit } from '@/lib/types';
+import { Order, OrderItem, Unit, OrderStatus } from '@/lib/types';
 import { DataTable } from '@/components/ui/data-table';
 import {
   Dialog,
@@ -33,12 +33,12 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, Eye, Printer, Trash2 } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Eye, Printer, Trash2, Edit, CheckCircle, XCircle, Hourglass } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuPortal, DropdownMenuSubContent } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { deleteOrder } from '@/lib/actions';
+import { deleteOrder, updateOrderStatus } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 
 const renderItemRows = (items: OrderItem[]) => {
@@ -87,6 +87,23 @@ export function OrderHistoryClientPage({ initialUnit, initialOrders }: OrderHist
     }
   };
 
+  const handleStatusChange = async (orderId: string, status: OrderStatus) => {
+      try {
+        await updateOrderStatus(orderId, status);
+        toast({
+          title: "Status do Pedido Atualizado!",
+          description: `O status do pedido foi alterado para ${status}.`,
+        });
+        router.refresh();
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao atualizar status",
+          description: "Não foi possível alterar o status do pedido.",
+        });
+      }
+  };
+
   const columns = (onViewOrder: (order: Order) => void, onDeleteOrder: (order: Order) => void): ColumnDef<Order>[] => [
     {
       accessorKey: "id",
@@ -119,20 +136,18 @@ export function OrderHistoryClientPage({ initialUnit, initialOrders }: OrderHist
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => {
-        const status: string = row.getValue("status");
-         const variantMap: { [key: string]: "destructive" | "secondary" | "default" } = {
-          Cancelado: "destructive",
-          Pendente: "secondary",
-          Entregue: "default",
-          "Em Trânsito": "default"
+        const status: OrderStatus = row.getValue("status");
+         const variantMap: { [key in OrderStatus]: "destructive" | "secondary" | "default" } = {
+          'Não atendido': "destructive",
+          'Em análise': "secondary",
+          'Atendido': "default",
         };
   
         return <Badge 
           variant={variantMap[status] || "default"} 
           className={cn({
-              'bg-accent text-accent-foreground': status === 'Pendente',
-              'bg-blue-500 text-white': status === 'Em Trânsito',
-              'bg-secondary text-secondary-foreground': status === 'Entregue'
+              'bg-accent text-accent-foreground': status === 'Em análise',
+              'bg-green-600 text-white': status === 'Atendido',
           })}
         >
           {status}
@@ -172,6 +187,29 @@ export function OrderHistoryClientPage({ initialUnit, initialOrders }: OrderHist
                         Imprimir Recibo
                     </Link>
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                        <Edit className="mr-2 h-4 w-4" />
+                        <span>Alterar Status</span>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                        <DropdownMenuSubContent>
+                            <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Em análise')}>
+                                <Hourglass className="mr-2 h-4 w-4" />
+                                <span>Em análise</span>
+                            </DropdownMenuItem>
+                             <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Atendido')}>
+                                <CheckCircle className="mr-2 h-4 w-4" />
+                                <span>Atendido</span>
+                            </DropdownMenuItem>
+                             <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Não atendido')}>
+                                <XCircle className="mr-2 h-4 w-4" />
+                                <span>Não atendido</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                </DropdownMenuSub>
                 <DropdownMenuSeparator />
                  <AlertDialogTrigger asChild>
                   <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>

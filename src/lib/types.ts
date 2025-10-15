@@ -165,13 +165,15 @@ export type OrderItem = {
 
 export type OrderType = 'Pedido Mensal' | 'Pedido Extra' | 'Pedido Urgente';
 
+export type OrderStatus = 'Atendido' | 'Em análise' | 'Não atendido';
+
 export type Order = {
   id: string;
   unitId: string;
   unitName: string;
   sentDate: string;
   deliveryDate?: string;
-  status: 'Entregue' | 'Pendente' | 'Cancelado' | 'Em Trânsito';
+  status: OrderStatus;
   orderType: OrderType;
   itemCount: number;
   items: OrderItem[];
