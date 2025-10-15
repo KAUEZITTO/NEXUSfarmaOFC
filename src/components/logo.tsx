@@ -4,25 +4,29 @@ import Image from 'next/image';
 
 export function Logo({ className }: { className?: string }) {
   return (
-    <div className={cn("flex items-center justify-center", className)}>
+    <div className={cn("relative w-36 h-10", className)}>
       {/* Light mode logo */}
-      <Image
-        src="/NEXUSnv.png"
-        alt="NexusFarma Logo"
-        width={140}
-        height={40}
-        priority
-        className="dark:hidden"
-      />
+      <div className="absolute inset-0 dark:hidden">
+        <Image
+          src="/NEXUSnv.png"
+          alt="NexusFarma Logo"
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          style={{ objectFit: 'contain' }}
+          priority
+        />
+      </div>
       {/* Dark mode logo */}
-      <Image
-        src="/NEXUSnv-branco.png"
-        alt="NexusFarma Logo"
-        width={140}
-        height={40}
-        priority
-        className="hidden dark:block"
-      />
+      <div className="absolute inset-0 hidden dark:block">
+        <Image
+          src="/NEXUSnv-branco.png"
+          alt="NexusFarma Logo"
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          style={{ objectFit: 'contain' }}
+          priority
+        />
+      </div>
     </div>
   );
 }
