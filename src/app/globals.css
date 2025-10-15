@@ -71,6 +71,30 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+
+  @media print {
+    body {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .print\:hidden {
+      display: none;
+    }
+    @page {
+      size: A4;
+      margin: 5mm;
+    }
+    .print-container {
+      margin: 0;
+      padding: 0;
+    }
+    .page-break-after {
+      page-break-after: always;
+    }
+    .page-break-before {
+      page-break-before: always;
+    }
+  }
 }
 
 .loading-capsule {

@@ -66,29 +66,6 @@ export default async function ShelfLabelsPage() {
 
   return (
     <>
-        <style jsx global>{`
-            @media print {
-                body {
-                    -webkit-print-color-adjust: exact;
-                    print-color-adjust: exact;
-                }
-                .print-container {
-                    margin: 0;
-                    padding: 0;
-                }
-                .print\\:hidden {
-                    display: none;
-                }
-                .page-break-before {
-                    page-break-before: always;
-                }
-                @page {
-                    size: A4;
-                    margin: 5mm;
-                }
-            }
-        `}</style>
-
         <div className="print-container bg-gray-100 print:bg-white">
             {pages.map((pageLabels, index) => (
                 <div 

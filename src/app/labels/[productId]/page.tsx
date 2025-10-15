@@ -3,8 +3,6 @@
 
 import React from 'react';
 import { notFound } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import type { Product } from '@/lib/types';
 import { getProduct } from '@/lib/data';
@@ -68,29 +66,6 @@ export default async function LabelsPage({ params }: { params: { productId: stri
 
   return (
     <>
-      <style jsx global>{`
-        @media print {
-            body {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-            .print-container {
-                margin: 0;
-                padding: 0;
-            }
-            .print\\:hidden {
-                display: none;
-            }
-             .page-break-before {
-                page-break-before: always;
-            }
-            @page {
-                size: A4;
-                margin: 5mm; /* Give a little margin for the printer */
-            }
-        }
-      `}</style>
-
         <div className="print-container bg-gray-100 print:bg-white text-black">
                 <div 
                     className="grid bg-white w-[210mm] h-[297mm] mx-auto my-4 shadow-lg print:shadow-none print:my-0"
