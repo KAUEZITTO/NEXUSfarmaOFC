@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { notFound } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -33,10 +33,13 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, Eye, Printer } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Eye, Printer, Trash2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { deleteOrder } from '@/lib/actions';
+import { useToast } from '@/hooks/use-toast';
 
 const renderItemRows = (items: OrderItem[]) => {
   if (!items || items.length === 0) return null;
@@ -57,6 +60,8 @@ interface OrderHistoryClientPageProps {
 }
 
 export function OrderHistoryClientPage({ initialUnit, initialOrders }: OrderHistoryClientPageProps) {
+  const router = useRouter();
+  const { toast } = useToast();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
   
@@ -64,8 +69,25 @@ export function OrderHistoryClientPage({ initialUnit, initialOrders }: OrderHist
     setSelectedOrder(order);
     setIsViewOpen(true);
   };
+  
+  const handleDeleteOrder = async (order: Order) => {
+    const result = await deleteOrder(order.id);
+    if (result.success) {
+      toast({
+        title: 'Pedido Excluído!',
+        description: `O pedido ${order.id} foi excluído e os itens foram estornados para o inventário.`,
+      });
+      router.refresh();
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao Excluir',
+        description: result.message || 'Não foi possível excluir o pedido.',
+      });
+    }
+  };
 
-  const columns = (onViewOrder: (order: Order) => void): ColumnDef<Order>[] => [
+  const columns = (onViewOrder: (order: Order) => void, onDeleteOrder: (order: Order) => void): ColumnDef<Order>[] => [
     {
       accessorKey: "id",
       header: "ID do Pedido",
@@ -130,33 +152,57 @@ export function OrderHistoryClientPage({ initialUnit, initialOrders }: OrderHist
         const order = row.original
   
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Ações</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => onViewOrder(order)} className="cursor-pointer">
-                <Eye className="mr-2 h-4 w-4" />
-                Visualizar Itens
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                  <Link href={`/receipt/${order.id}`} target="_blank" className="w-full h-full flex items-center cursor-pointer">
-                      <Printer className="mr-2 h-4 w-4" />
-                      Imprimir Recibo
-                  </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <AlertDialog>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => onViewOrder(order)} className="cursor-pointer">
+                  <Eye className="mr-2 h-4 w-4" />
+                  Visualizar Itens
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link href={`/receipt/${order.id}`} target="_blank" className="w-full h-full flex items-center cursor-pointer">
+                        <Printer className="mr-2 h-4 w-4" />
+                        Imprimir Recibo
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                 <AlertDialogTrigger asChild>
+                  <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span>Excluir Pedido</span>
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação não pode ser desfeita. Isso irá excluir permanentemente o pedido <strong>{order.id}</strong> e estornar todos os seus itens de volta para o inventário.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => onDeleteOrder(order)}>
+                      Sim, excluir pedido
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )
       },
     },
   ]
 
-  const tableColumns = columns(handleViewOrder);
+  const tableColumns = columns(handleViewOrder, handleDeleteOrder);
 
   return (
     <>

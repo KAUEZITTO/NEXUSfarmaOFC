@@ -188,7 +188,7 @@ export type StockMovement = {
   productId: string;
   productName: string;
   type: 'Entrada' | 'Saída' | 'Ajuste';
-  reason: 'Entrada por Compra' | 'Saída por Remessa' | 'Saída por Dispensação' | 'Ajuste de Inventário' | 'Entrada Inicial';
+  reason: 'Entrada por Compra' | 'Saída por Remessa' | 'Saída por Dispensação' | 'Ajuste de Inventário' | 'Entrada Inicial' | 'Estorno de Remessa';
   quantityChange: number;
   quantityBefore: number;
   quantityAfter: number;

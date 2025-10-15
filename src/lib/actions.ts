@@ -231,6 +231,60 @@ export async function addOrder(orderData: { unitId: string; unitName: string; or
     revalidatePath(`/dashboard/orders/history/${orderData.unitId}`);
 }
 
+export async function deleteOrder(orderId: string): Promise<{ success: boolean; message?: string }> {
+    const allOrders = await readData<Order>('orders');
+    const allProducts = await getProducts();
+
+    const orderToDelete = allOrders.find(o => o.id === orderId);
+    if (!orderToDelete) {
+        return { success: false, message: 'Pedido não encontrado.' };
+    }
+
+    const reversalDate = new Date().toISOString();
+
+    // Return items to stock
+    for (const item of orderToDelete.items) {
+        const productIndex = allProducts.findIndex(p => p.id === item.productId);
+        if (productIndex !== -1) {
+            const originalQuantity = allProducts[productIndex].quantity;
+            allProducts[productIndex].quantity += item.quantity;
+            allProducts[productIndex].status = allProducts[productIndex].quantity <= 0 ? 'Sem Estoque' : allProducts[productIndex].quantity < 20 ? 'Baixo Estoque' : 'Em Estoque';
+            await logStockMovement(item.productId, item.name, 'Entrada', 'Estorno de Remessa', item.quantity, originalQuantity, reversalDate, orderToDelete.id);
+        } else {
+            // Product does not exist anymore, create it
+            console.warn(`Produto com ID ${item.productId} não encontrado durante estorno. Criando novo produto.`);
+            const newProduct: Product = {
+                id: item.productId,
+                name: item.name,
+                category: item.category as Product['category'],
+                quantity: item.quantity,
+                expiryDate: item.expiryDate || '',
+                batch: item.batch,
+                presentation: item.presentation as Product['presentation'],
+                status: item.quantity > 0 ? 'Em Estoque' : 'Sem Estoque',
+            };
+            allProducts.push(newProduct);
+            await logStockMovement(newProduct.id, newProduct.name, 'Entrada', 'Estorno de Remessa', newProduct.quantity, 0, reversalDate, orderToDelete.id);
+        }
+    }
+
+    // Filter out the deleted order
+    const updatedOrders = allOrders.filter(o => o.id !== orderId);
+
+    // Save updated data
+    await writeData('products', allProducts);
+    await writeData('orders', updatedOrders);
+
+    // Revalidate paths
+    revalidatePath('/dashboard/orders');
+    revalidatePath(`/dashboard/orders/history/${orderToDelete.unitId}`);
+    revalidatePath('/dashboard/inventory');
+    revalidatePath('/dashboard/reports');
+
+    return { success: true };
+}
+
+
 // --- DISPENSATION ACTIONS ---
 export async function addDispensation(dispensationData: { patientId: string; patient: Omit<Patient, 'files'>; items: DispensationItem[] }): Promise<Dispensation> {
     const dispensations = await readData<Dispensation>('dispensations');
