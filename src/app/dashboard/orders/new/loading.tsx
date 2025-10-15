@@ -23,19 +23,29 @@ export default function LoadingNewOrderPage() {
                         <Card>
                             <CardHeader><CardTitle><Skeleton className="h-6 w-40" /></CardTitle></CardHeader>
                             <CardContent>
-                                <Skeleton className="h-10 w-full" />
-                                <Skeleton className="h-4 w-3/4 mt-2" />
+                                <div className="space-y-2">
+                                  <Skeleton className="h-10 w-full" />
+                                  <Skeleton className="h-10 w-full mt-2" />
+                                </div>
                             </CardContent>
                         </Card>
                          <Card>
                             <CardHeader><CardTitle><Skeleton className="h-6 w-40" /></CardTitle></CardHeader>
-                            <CardContent><Skeleton className="h-10 w-full" /></CardContent>
+                            <CardContent>
+                              <div className="flex flex-wrap gap-2">
+                                <Skeleton className="h-9 w-24" />
+                                <Skeleton className="h-9 w-24" />
+                                <Skeleton className="h-9 w-24" />
+                              </div>
+                            </CardContent>
                         </Card>
                         <Card>
                             <CardHeader><CardTitle><Skeleton className="h-6 w-40" /></CardTitle></CardHeader>
                             <CardContent>
-                                <Skeleton className="h-10 w-full" />
-                                <Skeleton className="h-4 w-1/2 mt-2" />
+                                <div className="space-y-2">
+                                  <Skeleton className="h-10 w-full" />
+                                  <Skeleton className="h-4 w-3/4 mt-1" />
+                                </div>
                             </CardContent>
                         </Card>
                     </div>
