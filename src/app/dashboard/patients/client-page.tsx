@@ -167,56 +167,68 @@ export function PatientsClientPage({
         const patient = row.original
 
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Ações</DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                <Link href={`/dashboard/patients/${patient.id}`} className="cursor-pointer">
-                  <Eye className="mr-2 h-4 w-4" />
-                  Ver Histórico
-                </Link>
-              </DropdownMenuItem>
-               <AddPatientDialog patientToEdit={patient} onPatientSaved={handlePatientSaved} trigger={
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                      <Edit className="mr-2 h-4 w-4" />
-                      <span>Editar Cadastro</span>
-                  </DropdownMenuItem>
-              } />
-              <DropdownMenuSeparator />
-               <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                      <HeartPulse className="mr-2 h-4 w-4" />
-                      <span>Alterar Status</span>
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuPortal>
-                      <DropdownMenuSubContent>
-                           <DropdownMenuItem onClick={() => onUpdateStatus(patient.id, 'Ativo')} disabled={isPending}>
-                              <UserCheck className="mr-2 h-4 w-4" />
-                              <span>Ativo</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => onUpdateStatus(patient.id, 'Tratamento Concluído')} disabled={isPending}>
-                              <CheckCircle className="mr-2 h-4 w-4" />
-                              <span>Tratamento Concluído</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => onUpdateStatus(patient.id, 'Tratamento Interrompido')} disabled={isPending}>
-                              <XCircle className="mr-2 h-4 w-4" />
-                              <span>Tratamento Interrompido</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => onUpdateStatus(patient.id, 'Óbito')} disabled={isPending}>
-                              <UserX className="mr-2 h-4 w-4" />
-                              <span>Óbito</span>
-                          </DropdownMenuItem>
-                      </DropdownMenuSubContent>
-                  </DropdownMenuPortal>
-              </DropdownMenuSub>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-2">
+            <AttendPatientDialog
+                initialPatient={patient}
+                onDispensationSaved={handlePatientSaved}
+                trigger={
+                    <Button variant="outline" size="sm">
+                        <UserCheck className="mr-2 h-4 w-4" />
+                        Atender
+                    </Button>
+                }
+            />
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Open menu</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                <DropdownMenuItem asChild>
+                    <Link href={`/dashboard/patients/${patient.id}`} className="cursor-pointer">
+                    <Eye className="mr-2 h-4 w-4" />
+                    Ver Histórico
+                    </Link>
+                </DropdownMenuItem>
+                <AddPatientDialog patientToEdit={patient} onPatientSaved={handlePatientSaved} trigger={
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        <span>Editar Cadastro</span>
+                    </DropdownMenuItem>
+                } />
+                <DropdownMenuSeparator />
+                <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                        <HeartPulse className="mr-2 h-4 w-4" />
+                        <span>Alterar Status</span>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                        <DropdownMenuSubContent>
+                            <DropdownMenuItem onClick={() => onUpdateStatus(patient.id, 'Ativo')} disabled={isPending}>
+                                <UserCheck className="mr-2 h-4 w-4" />
+                                <span>Ativo</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onUpdateStatus(patient.id, 'Tratamento Concluído')} disabled={isPending}>
+                                <CheckCircle className="mr-2 h-4 w-4" />
+                                <span>Tratamento Concluído</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onUpdateStatus(patient.id, 'Tratamento Interrompido')} disabled={isPending}>
+                                <XCircle className="mr-2 h-4 w-4" />
+                                <span>Tratamento Interrompido</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onUpdateStatus(patient.id, 'Óbito')} disabled={isPending}>
+                                <UserX className="mr-2 h-4 w-4" />
+                                <span>Óbito</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                </DropdownMenuSub>
+                </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         )
       },
     },

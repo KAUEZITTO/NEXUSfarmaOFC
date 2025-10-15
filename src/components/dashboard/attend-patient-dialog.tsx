@@ -128,9 +128,11 @@ const getProductsForCategory = (allProducts: Product[], category: Category): Par
 
 interface AttendPatientDialogProps {
     onDispensationSaved: () => void;
+    trigger?: React.ReactNode;
+    initialPatient?: Patient;
 }
 
-export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialogProps) {
+export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatient }: AttendPatientDialogProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<'selectPatient' | 'dispenseForm'>(
@@ -168,6 +170,12 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
     }
     loadData();
   }, [isOpen, toast]);
+
+  useEffect(() => {
+    if (initialPatient && isOpen) {
+        handleSelectPatient(initialPatient);
+    }
+  }, [initialPatient, isOpen]);
 
   const filteredPatients = searchTerm
     ? allPatients.filter(
@@ -409,21 +417,23 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <UserCheck className="mr-2 h-4 w-4" />
-          Atender Paciente
-        </Button>
+        {trigger ? trigger : (
+            <Button>
+                <UserCheck className="mr-2 h-4 w-4" />
+                Atender Paciente
+            </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-4xl h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center">
-            {step === 'selectPatient' ? (
+            {step === 'selectPatient' && !initialPatient ? (
               'Atender Paciente'
             ) : (
               <>
-                <Button variant="ghost" size="icon" className="mr-2" onClick={handleBack}>
+                {!initialPatient && <Button variant="ghost" size="icon" className="mr-2" onClick={handleBack}>
                   <ChevronLeft className="h-4 w-4" />
-                </Button>
+                </Button>}
                 Dispensação para: {selectedPatient?.name}
               </>
             )}
@@ -431,7 +441,7 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
         </DialogHeader>
 
         <div className="flex-grow overflow-hidden">
-          {step === 'selectPatient' && (
+          {step === 'selectPatient' && !initialPatient && (
             <div className="p-1">
               <div className="relative mb-4">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
