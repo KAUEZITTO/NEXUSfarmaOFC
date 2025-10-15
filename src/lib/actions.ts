@@ -155,12 +155,13 @@ export async function deleteUnit(unitId: string): Promise<{ success: boolean; me
 
 
 // --- PATIENT ACTIONS ---
-export async function addPatient(patientData: Omit<Patient, 'id' | 'status'>) {
+export async function addPatient(patientData: Omit<Patient, 'id' | 'status' | 'createdAt'>) {
     const patients = await readData<Patient>('patients');
     const newPatient: Patient = {
         ...patientData,
         id: generateId('pat'),
         status: 'Ativo',
+        createdAt: new Date().toISOString(),
     };
     await writeData('patients', [newPatient, ...patients]);
     revalidatePath('/dashboard/patients');

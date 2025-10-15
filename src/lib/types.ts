@@ -124,6 +124,7 @@ export type Patient = {
     rg?: string;
     address?: string;
     phone?: string;
+    createdAt?: string; // ISO 8601 date string
     isAnalogInsulinUser?: boolean; // Kept for backwards compatibility if needed, but logic moves to demandItems
     analogInsulinType?: 'Lantus (Glargina)' | 'Apidra (Glulisina)' | 'Outro';
     customInsulinType?: string;

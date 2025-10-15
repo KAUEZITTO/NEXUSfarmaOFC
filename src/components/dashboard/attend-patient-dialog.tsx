@@ -58,6 +58,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { unstable_noStore as noStore } from 'next/cache';
+import { Badge } from '../ui/badge';
 
 
 type DispensationItem = DispensationItemType & {
@@ -147,9 +148,9 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
   useEffect(() => {
     async function loadData() {
         if (isOpen) {
-            noStore(); // Explicitly disable caching for this fetch
             setLoading(true);
             try {
+                // Ensure fresh data is fetched every time dialog is opened
                 const [patients, products] = await Promise.all([getPatients('all'), getProducts()]);
                 setAllPatients(patients);
                 setAllProducts(products);
@@ -309,6 +310,14 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
         setIsSaving(false);
     }
   };
+
+  const isNewlyRegistered = (patient: Patient): boolean => {
+    if (!patient.createdAt) return false;
+    const fiveMinutes = 5 * 60 * 1000;
+    const createdAtDate = new Date(patient.createdAt);
+    const now = new Date();
+    return now.getTime() - createdAtDate.getTime() < fiveMinutes;
+  }
   
   const renderItemInput = (item: DispensationItem) => {
     const productList = getProductsForCategory(allProducts, item.category as Category);
@@ -442,7 +451,10 @@ export function AttendPatientDialog({ onDispensationSaved }: AttendPatientDialog
                       onClick={() => handleSelectPatient(patient)}
                     >
                       <div>
-                        <p className="font-medium">{patient.name}</p>
+                        <p className="font-medium flex items-center gap-2">
+                          {patient.name}
+                           {isNewlyRegistered(patient) && <Badge variant="secondary">Recém-cadastrado</Badge>}
+                        </p>
                         <p className="text-sm text-muted-foreground">
                           CPF: {patient.cpf}
                         </p>
