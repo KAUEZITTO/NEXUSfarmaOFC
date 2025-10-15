@@ -1,13 +1,10 @@
 
-'use client';
+'use server';
 
-import React, { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft, Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import React from 'react';
 import type { Product } from '@/lib/types';
 import { getProducts } from '@/lib/data';
-import { Skeleton } from '@/components/ui/skeleton';
+import { PrintActions } from '../labels/[productId]/print-actions';
 
 const ShelfLabel = ({ product }: { product: Product }) => {
     return (
@@ -24,49 +21,29 @@ const ShelfLabel = ({ product }: { product: Product }) => {
     );
 };
 
-export default function ShelfLabelsPage() {
-    const router = useRouter();
-    const [products, setProducts] = useState<Product[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        async function fetchData() {
-            setIsLoading(true);
-            const fetchedProducts = await getProducts();
-            
-            // Group products by name and presentation, creating a unique key for each combination
-            const groupedProductsMap = new Map<string, Product>();
-            fetchedProducts.forEach(product => {
-                const key = `${product.name}|${product.presentation}`;
-                if (!groupedProductsMap.has(key)) {
-                    groupedProductsMap.set(key, product);
-                }
-            });
-
-            const uniqueProducts = Array.from(groupedProductsMap.values());
-            
-            // Sort by category first, then by name
-            uniqueProducts.sort((a, b) => {
-                if (a.category < b.category) return -1;
-                if (a.category > b.category) return 1;
-                if (a.name < b.name) return -1;
-                if (a.name > b.name) return 1;
-                return 0;
-            });
-            
-            setProducts(uniqueProducts);
-            setIsLoading(false);
+export default async function ShelfLabelsPage() {
+    const fetchedProducts = await getProducts();
+    
+    // Group products by name and presentation, creating a unique key for each combination
+    const groupedProductsMap = new Map<string, Product>();
+    fetchedProducts.forEach(product => {
+        const key = `${product.name}|${product.presentation}`;
+        if (!groupedProductsMap.has(key)) {
+            groupedProductsMap.set(key, product);
         }
-        fetchData();
-    }, []);
+    });
 
-    useEffect(() => {
-        // Automatically trigger print dialog when the data is loaded
-        if (!isLoading && products.length > 0) {
-            window.print();
-        }
-    }, [isLoading, products]);
-
+    const uniqueProducts = Array.from(groupedProductsMap.values());
+    
+    // Sort by category first, then by name
+    uniqueProducts.sort((a, b) => {
+        if (a.category < b.category) return -1;
+        if (a.category > b.category) return 1;
+        if (a.name < b.name) return -1;
+        if (a.name > b.name) return 1;
+        return 0;
+    });
+    
     const labelW = 100; // mm
     const labelH = 30;  // mm
     const pageW = 210;
@@ -75,26 +52,17 @@ export default function ShelfLabelsPage() {
     const cols = Math.floor(pageW / labelW);
     const rows = Math.floor(pageH / labelH);
     const labelsPerPage = cols * rows;
-    const pageCount = Math.ceil(products.length / labelsPerPage);
+    const pageCount = Math.ceil(uniqueProducts.length / labelsPerPage);
 
     const pages = Array.from({ length: pageCount }, (_, pageIndex) => {
         const start = pageIndex * labelsPerPage;
         const end = start + labelsPerPage;
-        return products.slice(start, end).map((product, i) => (
+        return uniqueProducts.slice(start, end).map((product, i) => (
             <div key={`${pageIndex}-${i}`} style={{ width: `${labelW}mm`, height: `${labelH}mm`, boxSizing: 'border-box' }}>
                 <ShelfLabel product={product} />
             </div>
         ));
     });
-
-    if (isLoading) {
-         return (
-            <div className="fixed inset-0 flex items-center justify-center bg-gray-100">
-                <Loader2 className="h-8 w-8 animate-spin" />
-                <p className="ml-4">Carregando etiquetas de prateleira...</p>
-            </div>
-        )
-    }
 
   return (
     <>
@@ -143,16 +111,7 @@ export default function ShelfLabelsPage() {
             ))}
         </div>
 
-        <div className="fixed bottom-4 right-4 flex gap-2 print:hidden">
-            <Button variant="outline" onClick={() => router.back()}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar
-            </Button>
-            <Button onClick={() => window.print()}>
-                <Printer className="mr-2 h-4 w-4" />
-                Imprimir
-            </Button>
-        </div>
+        <PrintActions />
     </>
   );
 }

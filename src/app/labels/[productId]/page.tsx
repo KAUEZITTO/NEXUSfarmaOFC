@@ -1,38 +1,16 @@
 
-'use client';
+'use server';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { notFound, useRouter } from 'next/navigation';
+import React from 'react';
+import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft, Loader2 } from 'lucide-react';
+import { Printer, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import type { Product } from '@/lib/types';
-import JsBarcode from 'jsbarcode';
 import { getProduct } from '@/lib/data';
+import { Barcode } from './barcode';
+import { PrintActions } from './print-actions';
 
-const Barcode = ({ value }: { value: string }) => {
-    const svgRef = useRef<SVGSVGElement | null>(null);
-    const shortId = value.slice(-4);
-
-    useEffect(() => {
-        if (svgRef.current) {
-            JsBarcode(svgRef.current, value, {
-                format: 'CODE128',
-                displayValue: false,
-                margin: 0,
-                height: 30,
-                width: 1.2,
-            });
-        }
-    }, [value]);
-
-    return (
-        <div className="w-full text-center flex flex-col items-center">
-            <svg ref={svgRef} className="w-full max-w-[80%]"></svg>
-            <p className="font-mono text-[8px] tracking-wider font-bold">CÓD: {shortId}</p>
-        </div>
-    );
-};
 
 const ProductLabel = ({ product }: { product: Product }) => {
     return (
@@ -59,38 +37,11 @@ const ProductLabel = ({ product }: { product: Product }) => {
     )
 }
 
-export default function LabelsPage({ params }: { params: { productId: string } }) {
-    const router = useRouter();
-    const [product, setProduct] = useState<Product | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-      async function fetchProduct() {
-        setIsLoading(true);
-        const productData = await getProduct(params.productId);
-        if (!productData) {
-          notFound();
-        }
-        setProduct(productData);
-        setIsLoading(false);
-      }
-      fetchProduct();
-    }, [params.productId]);
+export default async function LabelsPage({ params }: { params: { productId: string } }) {
+    const product = await getProduct(params.productId);
     
-    useEffect(() => {
-        // Automatically trigger print dialog when the data is loaded
-        if (product) {
-            window.print();
-        }
-    }, [product]);
-
-    if (isLoading || !product) {
-        return (
-            <div className="fixed inset-0 flex items-center justify-center bg-gray-100">
-                <Loader2 className="h-8 w-8 animate-spin" />
-                <p className="ml-4">Carregando etiquetas...</p>
-            </div>
-        )
+    if (!product) {
+        notFound();
     }
 
     const isBox = ['Caixa c/ 100', 'Caixa c/ 50', 'Pacote', 'Bolsa'].includes(product.presentation || '');
@@ -160,16 +111,7 @@ export default function LabelsPage({ params }: { params: { productId: string } }
                 </div>
         </div>
 
-      <div className="fixed bottom-4 right-4 flex gap-2 print:hidden">
-          <Button variant="outline" onClick={() => router.back()}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Voltar
-          </Button>
-          <Button onClick={() => window.print()}>
-            <Printer className="mr-2 h-4 w-4" />
-            Imprimir
-        </Button>
-      </div>
+      <PrintActions />
     </>
   );
 }
