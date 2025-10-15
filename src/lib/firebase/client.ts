@@ -21,8 +21,10 @@ if (firebaseConfig.apiKey) {
 } else {
     // Se não houver chave, o app não é inicializado, mas evitamos o crash.
     // Funções que dependem do 'auth' não funcionarão, o que é esperado.
-    console.warn("As variáveis de ambiente do Firebase não estão configuradas. A autenticação não funcionará.");
-    // @ts-ignore
+    if (process.env.NODE_ENV !== 'production') {
+        console.warn("As variáveis de ambiente do Firebase não estão configuradas. A autenticação não funcionará. Adicione suas credenciais Firebase ao arquivo .env");
+    }
+    // @ts-ignore - Atribuímos undefined para garantir que o 'auth' também não seja inicializado.
     firebaseApp = undefined;
 }
 

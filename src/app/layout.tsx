@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
@@ -26,24 +25,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const firebaseApiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn('min-h-screen bg-background font-body antialiased', inter.variable)}>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                const theme = localStorage.getItem('theme') || 'light';
-                document.documentElement.classList.toggle('dark', theme === 'dark');
-                if (!'${firebaseApiKey}') {
-                  console.warn('As variáveis de ambiente do Firebase não estão configuradas. A autenticação não funcionará. Adicione suas credenciais Firebase ao arquivo .env');
-                }
-              })();
-            `,
-          }}
-        />
         <AuthProvider>
           {children}
         </AuthProvider>
