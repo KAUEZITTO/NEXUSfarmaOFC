@@ -1,7 +1,6 @@
+'use server';
 
-'use client';
-
-import React, { useEffect, useState, Suspense } from "react";
+import React, { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -14,9 +13,10 @@ import {
 import { Printer, ArrowLeft, Loader2 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import Image from "next/image";
-import { useRouter } from 'next/navigation';
 import type { Order, OrderItem, Product } from "@/lib/types";
 import { getOrder } from "@/lib/data";
+import { notFound } from "next/navigation";
+import { PrintActions } from "./print-actions";
 
 const renderItemRows = (items: OrderItem[]) => {
     if (!items || items.length === 0) return null;
@@ -128,66 +128,21 @@ const ReceiptCopy = ({ order, showSignature, isFirstCopy }: { order: Order, show
 };
 
 
-function ReceiptPageContent({ params }: { params: { id: string } }) {
-  const router = useRouter();
-  const [orderData, setOrderData] = useState<Order | null>(null);
-  const [loading, setLoading] = useState(true);
+export default async function ReceiptPage({ params }: { params: { id: string } }) {
+    const orderData = await getOrder(params.id);
 
-  useEffect(() => {
-    async function fetchOrderData() {
-        setLoading(true);
-        const order = await getOrder(params.id);
-        setOrderData(order);
-        setLoading(false);
+    if (!orderData) {
+        notFound();
     }
-    if (params.id) {
-        fetchOrderData();
-    }
-  }, [params.id]);
-
-
-  if (loading) {
+  
     return (
-        <div className="flex h-screen w-full items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <p className="ml-4">Carregando recibo...</p>
-        </div>
+        <>
+            <div className="print-container">
+                <ReceiptCopy order={orderData} showSignature={true} isFirstCopy={true} />
+                <ReceiptCopy order={orderData} showSignature={false} isFirstCopy={false} />
+            </div>
+
+            <PrintActions />
+        </>
     );
-  }
-
-  if (!orderData) {
-      return (
-        <div className="flex h-screen w-full items-center justify-center">
-            <p>Recibo não encontrado.</p>
-        </div>
-    );
-  }
-
-  return (
-    <>
-      <div className="print-container">
-        <ReceiptCopy order={orderData} showSignature={true} isFirstCopy={true} />
-        <ReceiptCopy order={orderData} showSignature={false} isFirstCopy={false} />
-      </div>
-
-      <div className="fixed bottom-4 right-4 flex gap-2 print:hidden">
-          <Button variant="outline" onClick={() => router.back()}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar
-          </Button>
-          <Button onClick={() => window.print()}>
-            <Printer className="mr-2 h-4 w-4" />
-            Imprimir
-        </Button>
-      </div>
-    </>
-  );
-}
-
-export default function ReceiptPage({ params }: { params: { id: string } }) {
-    return (
-        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /><p className="ml-4">Carregando...</p></div>}>
-            <ReceiptPageContent params={params} />
-        </Suspense>
-    )
 }
