@@ -1,15 +1,18 @@
 
+'use server';
 
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
 import type { KnowledgeBaseItem } from './types';
 import { kv } from './kv';
 import path from 'path';
 import { promises as fs } from 'fs';
+import { unstable_noStore as noStore } from 'next/cache';
 
 
 // --- GENERIC DATA ACCESS ---
 
 export const readData = async <T>(key: string): Promise<T[]> => {
+    noStore(); // Desativa o cache estático para esta função
     try {
         const data = await kv.get<T[]>(key);
         return data || [];
@@ -36,6 +39,7 @@ export async function writeData<T>(key: string, data: T[]): Promise<void> {
  * @returns A promise that resolves to an array of products.
  */
 export async function getProducts(): Promise<Product[]> {
+    noStore();
     try {
         const products = await readData<Product>('products');
         return products;
@@ -46,21 +50,25 @@ export async function getProducts(): Promise<Product[]> {
 }
 
 export async function getProduct(productId: string): Promise<Product | null> {
+    noStore();
     const products = await getProducts();
     return products.find(p => p.id === productId) || null;
 }
 
 export const getUnits = async (): Promise<Unit[]> => {
+    noStore();
     const units = await readData<Unit>('units');
     return units.sort((a, b) => a.name.localeCompare(b.name));
 };
 
 export async function getUnit(unitId: string): Promise<Unit | null> {
+    noStore();
     const units = await getUnits();
     return units.find(u => u.id === unitId) || null;
 }
 
 export const getPatients = async (filter: PatientFilter = 'active'): Promise<Patient[]> => {
+    noStore();
     const allPatients = await readData<Patient>('patients');
     
     switch (filter) {
@@ -85,47 +93,57 @@ export const getPatients = async (filter: PatientFilter = 'active'): Promise<Pat
 };
 
 export const getAllPatients = async (): Promise<Patient[]> => {
+    noStore();
     return await readData<Patient>('patients');
 };
 
 export async function getPatient(patientId: string): Promise<Patient | null> {
+    noStore();
     const patients = await getAllPatients();
     return patients.find(p => p.id === patientId) || null;
 }
 
 export const getOrders = async (): Promise<Order[]> => {
+    noStore();
     return await readData<Order>('orders');
 };
 
 export async function getOrder(orderId: string): Promise<Order | null> {
+    noStore();
     const orders = await getOrders();
     return orders.find(o => o.id === orderId) || null;
 }
 
 export const getOrdersForUnit = async (unitId: string): Promise<Order[]> => {
+    noStore();
     const allOrders = await readData<Order>('orders');
     return allOrders.filter(o => o.unitId === unitId);
 };
 
 export const getAllDispensations = async (): Promise<Dispensation[]> => {
+    noStore();
     return await readData<Dispensation>('dispensations');
 };
 
 export async function getDispensation(dispensationId: string): Promise<Dispensation | null> {
+    noStore();
     const dispensations = await getAllDispensations();
     return dispensations.find(d => d.id === dispensationId) || null;
 }
 
 export const getDispensationsForPatient = async (patientId: string): Promise<Dispensation[]> => {
+    noStore();
     const allDispensations = await readData<Dispensation>('dispensations');
     return allDispensations.filter(d => d.patientId === patientId);
 };
 
 export const getStockMovements = async (): Promise<StockMovement[]> => {
+    noStore();
     return await readData<StockMovement>('stockMovements');
 };
 
 export async function getAllUsers(): Promise<User[]> {
+    noStore();
     const users = await readData<User>('users');
     // Remove o campo 'password' de cada usuário antes de retornar
     return users.map(u => {
@@ -139,6 +157,7 @@ export async function getAllUsers(): Promise<User[]> {
  * Centraliza a lógica de leitura e tratamento de erros.
  */
 export async function getUserByEmailFromDb(email: string): Promise<User | null> {
+  noStore();
   if (!email) return null;
   try {
     const users = await readData<User>('users');
@@ -156,6 +175,7 @@ export async function getUserByEmailFromDb(email: string): Promise<User | null> 
  * Esta função é robusta, buscando primeiro por ID e depois por email.
  */
 export async function getOrCreateUser(userData: { id: string; email: string; name?: string | null; image?: string | null; }): Promise<User | null> {
+    noStore();
     const allUsers = await readData<User>('users');
     
     // 1. Tenta encontrar pelo ID (método mais confiável)
@@ -202,6 +222,7 @@ export async function getOrCreateUser(userData: { id: string; email: string; nam
 }
 
 export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
+    noStore();
     // Read the file from the filesystem instead of importing it to avoid Next.js build errors.
     const jsonPath = path.join(process.cwd(), 'src', 'data', 'knowledge-base.json');
     const fileContents = await fs.readFile(jsonPath, 'utf8');
