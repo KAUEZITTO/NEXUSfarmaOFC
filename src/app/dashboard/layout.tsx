@@ -9,9 +9,10 @@ import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger
 import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guide';
 import BirthdayBalloons from '@/components/dashboard/birthday-balloons';
 
-const CURRENT_VERSION = '3.3.1';
+const CURRENT_VERSION = '3.3.2';
 
 const changelog = [
+    { version: '3.3.2', changes: ['Corrigido bug na exibição da data de validade em recibos de remessa.', 'Corrigida a fonte de dados do relatório de dispensação por unidade para garantir precisão.', 'Melhorada a usabilidade da tela de login, desabilitando o botão durante a autenticação.'] },
     { version: '3.3.1', changes: ['Correção de erro crítico que impedia a impressão de recibos de remessa e a geração de relatórios.', 'Adicionado nome do usuário que gerou o documento nos rodapés dos recibos para rastreabilidade.', 'Melhorado o fluxo de atendimento ao paciente, exibindo a lista completa de pacientes e adicionando um botão de "Atender" na tabela principal.', 'Adicionado indicador de status (online/offline) e avatar na tela de gerenciamento de usuários.'] },
     { version: '3.3.0', changes: ['Modernização completa da interface com nova paleta de cores (azul, laranja) e identidade visual.', 'Ajustes de layout e modernização da página inicial e rodapé.'] },
     { version: '3.2.2', changes: ['Correção arquitetural definitiva para o carregamento de dados em páginas dinâmicas, resolvendo bugs de unidades e pacientes não encontrados.', 'Implementada a funcionalidade de exclusão de pedidos (com estorno de estoque) e de unidades.', 'Melhorado o cadastro de pacientes com controle de laudo de insulina, cálculo de dispensação e novas demandas.'] },
