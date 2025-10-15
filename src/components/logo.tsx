@@ -6,7 +6,7 @@ export function Logo({ className }: { className?: string }) {
   return (
     <div className={cn("relative w-36 h-10", className)}>
       {/* Light mode logo */}
-      <div className="absolute inset-0 dark:hidden">
+      <div className="block dark:hidden">
         <Image
           src="/NEXUSnv.png"
           alt="NexusFarma Logo"
@@ -17,7 +17,7 @@ export function Logo({ className }: { className?: string }) {
         />
       </div>
       {/* Dark mode logo */}
-      <div className="absolute inset-0 hidden dark:block">
+      <div className="hidden dark:block">
         <Image
           src="/NEXUSnv-branco.png"
           alt="NexusFarma Logo"
