@@ -47,7 +47,7 @@ type RemessaItem = {
   category: string;
 };
 
-const itemCategories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Não Padronizado (Compra)'];
+const itemCategories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)'];
 
 interface NewOrderClientPageProps {
     initialUnits: Unit[];
@@ -236,7 +236,7 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
     return acc;
   }, {} as Record<string, RemessaItem[]>);
 
-  const categoryOrder: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Não Padronizado (Compra)'];
+  const categoryOrder: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)'];
   
   const productsForManualAdd = selectedCategory ? initialProducts.filter(p => p.category === selectedCategory) : [];
 

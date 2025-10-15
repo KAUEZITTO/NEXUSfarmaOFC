@@ -34,7 +34,7 @@ type GroupedProduct = {
   batches: Product[];
 };
 
-const categories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Não Padronizado (Compra)'];
+const categories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)'];
 
 export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct }: AddItemsManuallyDialogProps) {
   const { toast } = useToast();

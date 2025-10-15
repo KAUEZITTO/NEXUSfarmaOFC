@@ -78,7 +78,7 @@ export type Product = {
   name: string;
   commercialName?: string;
   manufacturer?: string;
-  category: 'Medicamento' | 'Material Técnico' | 'Odontológico' | 'Laboratório' | 'Fraldas' | 'Não Padronizado (Compra)';
+  category: 'Medicamento' | 'Material Técnico' | 'Odontológico' | 'Laboratório' | 'Fraldas' | 'Fórmulas' | 'Não Padronizado (Compra)';
   therapeuticClass?: string; 
   mainFunction?: string; 
   quantity: number;

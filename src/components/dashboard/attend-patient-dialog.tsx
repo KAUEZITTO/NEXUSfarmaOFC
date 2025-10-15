@@ -28,6 +28,7 @@ import {
   Loader2,
   FileText,
   ShieldHalf,
+  Milk,
 } from 'lucide-react';
 import { addDispensation } from '@/lib/actions';
 import { getPatients, getProducts } from '@/lib/data';
@@ -71,6 +72,7 @@ type Category =
   | 'Medicamentos'
   | 'Material Técnico'
   | 'Fraldas'
+  | 'Fórmulas'
   | 'Itens Judiciais'
   | 'Imunoglobulina'
   | 'Outros';
@@ -83,6 +85,7 @@ const categories: {
   { name: 'Insulinas', icon: Syringe, demandItem: 'Insulinas Análogas' },
   { name: 'Tiras/Lancetas', icon: ClipboardList, demandItem: 'Tiras de Glicemia' },
   { name: 'Fraldas', icon: Baby, demandItem: 'Fraldas' },
+  { name: 'Fórmulas', icon: Milk, demandItem: 'Fórmulas' },
   { name: 'Itens Judiciais', icon: FileText, demandItem: 'Itens Judiciais' },
   { name: 'Imunoglobulina', icon: ShieldHalf, demandItem: 'Imunoglobulina' },
   { name: 'Medicamentos', icon: Pill },
@@ -98,6 +101,12 @@ const getProductsForCategory = (allProducts: Product[], category: Category): Par
     if (category === 'Fraldas') {
         const diaperProducts = allProducts.filter(p => p.category === 'Fraldas');
         if (diaperProducts.length > 0) return diaperProducts;
+        return [];
+    }
+    
+    if (category === 'Fórmulas') {
+        const formulaProducts = allProducts.filter(p => p.category === 'Fórmulas');
+        if (formulaProducts.length > 0) return formulaProducts;
         return [];
     }
 

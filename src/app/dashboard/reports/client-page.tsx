@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -56,7 +55,7 @@ interface ReportsClientPageProps {
     initialStockMovements: StockMovement[];
 }
 
-const productCategories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Não Padronizado (Compra)'];
+const productCategories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)'];
 
 
 function calculateStats(products: Product[], patients: Patient[], dispensations: Dispensation[]): ReportStats {

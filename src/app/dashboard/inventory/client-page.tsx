@@ -149,7 +149,7 @@ function BatchDetailsDialog({ isOpen, onOpenChange, product }: BatchDetailsDialo
 }
 
 type FilterCategory = 'Todos' | Product['category'];
-const filterCategories: FilterCategory[] = ['Todos', 'Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Não Padronizado (Compra)'];
+const filterCategories: FilterCategory[] = ['Todos', 'Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)'];
 
 const groupAndFilterProducts = (products: Product[], filter: FilterCategory, searchTerm: string): GroupedProduct[] => {
     const groupedProductsMap = new Map<string, GroupedProduct>();
