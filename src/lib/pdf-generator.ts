@@ -1,40 +1,83 @@
 
-
 'use server';
 
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import type { Product, Patient, Dispensation, Order, Unit, StockMovement } from './types';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 // Extend jsPDF with the autoTable plugin
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
 }
 
-const addHeader = (doc: jsPDFWithAutoTable, title: string, subtitle?: string) => {
+const getImageAsBase64 = async (imagePath: string): Promise<string | null> => {
+    try {
+        const fullPath = path.join(process.cwd(), 'public', imagePath);
+        const file = await fs.readFile(fullPath);
+        const fileExtension = path.extname(imagePath).slice(1);
+        return `data:image/${fileExtension};base64,${file.toString('base64')}`;
+    } catch (error) {
+        console.error(`Error reading image file: ${imagePath}`, error);
+        return null;
+    }
+}
+
+const addHeader = async (doc: jsPDFWithAutoTable, title: string, subtitle?: string) => {
     const pageWidth = doc.internal.pageSize.getWidth();
     
-    // Add title
-    doc.setFontSize(16);
+    // Load images
+    const [prefLogo, nexusLogo, cafLogo] = await Promise.all([
+        getImageAsBase64('/SMS-PREF.png'),
+        getImageAsBase64('/NEXUSnv.png'),
+        getImageAsBase64('/CAF.png')
+    ]);
+
+    // Left Logo (Prefeitura)
+    if (prefLogo) {
+        doc.addImage(prefLogo, 'PNG', 15, 12, 25, 25);
+    }
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU', 15, 40);
+    doc.text('SECRETARIA MUNICIPAL DE SAÚDE', 15, 44);
+
+    // Center Logo (NexusFarma)
+    if (nexusLogo) {
+        doc.addImage(nexusLogo, 'PNG', pageWidth / 2 - 20, 15, 40, 15);
+    }
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('NEXUS FARMA', pageWidth / 2, 35, { align: 'center' });
+
+    // Right Logo (CAF)
+    if (cafLogo) {
+        doc.addImage(cafLogo, 'PNG', pageWidth - 40, 12, 25, 25);
+    }
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CAF - CENTRO DE ABASTÊCIMENTO\nFARMACÊUTICO', pageWidth - 15, 40, { align: 'right' });
+
+
+    // Add title & subtitle
+    doc.setFontSize(14);
     doc.setTextColor(40);
     doc.setFont('helvetica', 'bold');
-    doc.text('NexusFarma', pageWidth / 2, 20, { align: 'center' });
-    doc.setFontSize(14);
-    doc.text(title, pageWidth / 2, 30, { align: 'center' });
-
-    // Add subtitle/date
+    doc.text(title, pageWidth / 2, 55, { align: 'center' });
+    
     doc.setFontSize(10);
     doc.setTextColor(100);
     const generatedDate = `Relatório Gerado em: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`;
     const period = subtitle || '';
-    doc.text(generatedDate, pageWidth / 2, 37, { align: 'center' });
+    doc.text(generatedDate, pageWidth / 2, 62, { align: 'center' });
     if (period) {
-        doc.text(`Período: ${period}`, pageWidth / 2, 42, { align: 'center' });
+        doc.text(`Período: ${period}`, pageWidth / 2, 67, { align: 'center' });
     }
 
     // Add separator line
     doc.setLineWidth(0.5);
-    doc.line(20, 48, pageWidth - 20, 48);
+    doc.line(15, 72, pageWidth - 15, 72);
 };
 
 const addFooter = (doc: jsPDFWithAutoTable) => {
@@ -45,8 +88,8 @@ const addFooter = (doc: jsPDFWithAutoTable) => {
     doc.setTextColor(150);
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
-        doc.text(`Página ${i} de ${pageCount}`, pageWidth - 20, pageHeight - 10, { align: 'right' });
-        doc.text('NexusFarma - Sistema de Gestão Farmacêutica', 20, pageHeight - 10);
+        doc.text(`Página ${i} de ${pageCount}`, pageWidth - 15, pageHeight - 10, { align: 'right' });
+        doc.text('NexusFarma - Sistema de Gestão Farmacêutica', 15, pageHeight - 10);
     }
 };
 
@@ -58,11 +101,11 @@ export const generateCompleteReportPDF = async (
   const doc = new jsPDF() as jsPDFWithAutoTable;
 
   // --- Summary Page ---
-  addHeader(doc, 'Relatório Gerencial Completo');
+  await addHeader(doc, 'Relatório Gerencial Completo');
 
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text('Resumo Geral', 20, 60);
+  doc.text('Resumo Geral', 20, 80);
 
   const summaryData = [
     ['Total de Produtos em Inventário:', products.length.toString()],
@@ -74,7 +117,7 @@ export const generateCompleteReportPDF = async (
   ];
 
   doc.autoTable({
-    startY: 65,
+    startY: 85,
     head: [['Métrica', 'Valor']],
     body: summaryData,
     theme: 'striped',
@@ -87,7 +130,7 @@ export const generateCompleteReportPDF = async (
 
   // --- Inventory Section ---
   doc.addPage();
-  addHeader(doc, 'Relatório de Inventário');
+  await addHeader(doc, 'Relatório de Inventário');
   
   const inventoryBody = products.map(p => [
     p.name,
@@ -99,19 +142,19 @@ export const generateCompleteReportPDF = async (
   ]);
   
   doc.autoTable({
-    startY: 50,
+    startY: 75,
     head: [['Nome', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote']],
     body: inventoryBody,
     theme: 'grid',
     headStyles: { fillColor: [37, 99, 235] },
-    didDrawPage: (data) => {
-       addHeader(doc, 'Relatório de Inventário');
+    didDrawPage: async (data) => {
+       await addHeader(doc, 'Relatório de Inventário');
     }
   });
 
   // --- Patients Section ---
   doc.addPage();
-  addHeader(doc, 'Relatório de Pacientes Ativos');
+  await addHeader(doc, 'Relatório de Pacientes Ativos');
   
   const patientsBody = patients
     .filter(p => p.status === 'Ativo')
@@ -124,13 +167,13 @@ export const generateCompleteReportPDF = async (
   ]);
   
   doc.autoTable({
-    startY: 50,
+    startY: 75,
     head: [['Nome', 'CPF', 'CNS', 'Unidade', 'Demandas']],
     body: patientsBody,
     theme: 'grid',
     headStyles: { fillColor: [37, 99, 235] },
-    didDrawPage: (data) => {
-       addHeader(doc, 'Relatório de Pacientes Ativos');
+    didDrawPage: async (data) => {
+       await addHeader(doc, 'Relatório de Pacientes Ativos');
     }
   });
 
@@ -146,7 +189,7 @@ export const generateStockReportPDF = async (allProducts: Product[], categoryFil
     const title = categoryFilter && categoryFilter !== 'all' 
         ? `Relatório de Estoque - ${categoryFilter}` 
         : 'Relatório de Estoque Geral';
-    addHeader(doc, title);
+    await addHeader(doc, title);
 
     const productsToDisplay = categoryFilter && categoryFilter !== 'all' 
         ? allProducts.filter(p => p.category === categoryFilter) 
@@ -166,15 +209,15 @@ export const generateStockReportPDF = async (allProducts: Product[], categoryFil
     ]);
 
     doc.autoTable({
-        startY: 55,
+        startY: 75,
         head: [['Princípio Ativo', 'Nome Comercial', 'Apresentação', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote', 'Fabricante', 'Fornecedor']],
         body: inventoryBody,
         theme: 'grid',
         headStyles: { fillColor: [37, 99, 235], fontSize: 8 },
         styles: { fontSize: 8 },
-        didDrawPage: (data) => {
+        didDrawPage: async (data) => {
             if (data.pageNumber > 1) {
-                addHeader(doc, title);
+                await addHeader(doc, title);
             }
         }
     });
@@ -186,7 +229,7 @@ export const generateStockReportPDF = async (allProducts: Product[], categoryFil
 export const generateExpiryReportPDF = async (products: Product[]): Promise<string> => {
     const doc = new jsPDF() as jsPDFWithAutoTable;
 
-    addHeader(doc, 'Relatório de Produtos a Vencer');
+    await addHeader(doc, 'Relatório de Produtos a Vencer');
 
     const expiringProducts = products
         .filter(p => p.expiryDate) // Only products with an expiry date
@@ -200,14 +243,14 @@ export const generateExpiryReportPDF = async (products: Product[]): Promise<stri
     ]);
 
     doc.autoTable({
-        startY: 55,
+        startY: 75,
         head: [['Nome do Produto', 'Lote', 'Data de Validade', 'Quantidade']],
         body: body,
         theme: 'grid',
         headStyles: { fillColor: [217, 119, 6] }, // Orange color for warning
-        didDrawPage: (data) => {
+        didDrawPage: async (data) => {
             if (data.pageNumber > 1) {
-                addHeader(doc, 'Relatório de Produtos a Vencer');
+                await addHeader(doc, 'Relatório de Produtos a Vencer');
             }
         }
     });
@@ -219,7 +262,7 @@ export const generateExpiryReportPDF = async (products: Product[]): Promise<stri
 export const generatePatientReportPDF = async (dispensations: Dispensation[]): Promise<string> => {
     const doc = new jsPDF() as jsPDFWithAutoTable;
 
-    addHeader(doc, 'Relatório de Atendimento de Pacientes');
+    await addHeader(doc, 'Relatório de Atendimento de Pacientes');
 
     const body = dispensations.map(d => {
         const totalItems = d.items.reduce((sum, item) => sum + item.quantity, 0);
@@ -232,14 +275,14 @@ export const generatePatientReportPDF = async (dispensations: Dispensation[]): P
     });
 
     doc.autoTable({
-        startY: 55,
+        startY: 75,
         head: [['Paciente', 'CPF', 'Data da Dispensação', 'Nº de Itens']],
         body: body,
         theme: 'grid',
         headStyles: { fillColor: [107, 33, 168] }, // Purple color for patients
-        didDrawPage: (data) => {
+        didDrawPage: async (data) => {
             if (data.pageNumber > 1) {
-                addHeader(doc, 'Relatório de Atendimento de Pacientes');
+                await addHeader(doc, 'Relatório de Atendimento de Pacientes');
             }
         }
     });
@@ -250,7 +293,7 @@ export const generatePatientReportPDF = async (dispensations: Dispensation[]): P
 
 export const generatePatientListReportPDF = async (patients: Patient[]): Promise<string> => {
     const doc = new jsPDF() as jsPDFWithAutoTable;
-    addHeader(doc, 'Relatório de Pacientes Cadastrados');
+    await addHeader(doc, 'Relatório de Pacientes Cadastrados');
 
     const body = patients.map(p => [
         p.name,
@@ -261,7 +304,7 @@ export const generatePatientListReportPDF = async (patients: Patient[]): Promise
     ]);
     
     doc.autoTable({
-        startY: 55,
+        startY: 75,
         head: [['Nome do Paciente', 'CPF', 'CNS', 'Status', 'Demandas']],
         body: body,
         theme: 'grid',
@@ -269,9 +312,9 @@ export const generatePatientListReportPDF = async (patients: Patient[]): Promise
         columnStyles: {
             4: { cellWidth: 50 } // Demandas column
         },
-        didDrawPage: (data) => {
+        didDrawPage: async (data) => {
             if (data.pageNumber > 1) {
-                addHeader(doc, 'Relatório de Pacientes Cadastrados');
+                await addHeader(doc, 'Relatório de Pacientes Cadastrados');
             }
         }
     });
@@ -282,7 +325,7 @@ export const generatePatientListReportPDF = async (patients: Patient[]): Promise
 
 export const generateUnitDispensationReportPDF = async (orders: Order[], units: Unit[]): Promise<string> => {
     const doc = new jsPDF() as jsPDFWithAutoTable;
-    addHeader(doc, 'Relatório de Dispensação por Unidade');
+    await addHeader(doc, 'Relatório de Dispensação por Unidade');
 
     const unitDataMap = new Map<string, { totalItems: number, orderCount: number, type: string, name: string }>();
 
@@ -306,14 +349,14 @@ export const generateUnitDispensationReportPDF = async (orders: Order[], units: 
     ]);
 
     doc.autoTable({
-        startY: 55,
+        startY: 75,
         head: [['Nome da Unidade', 'Tipo', 'Total de Pedidos', 'Total de Itens Recebidos']],
         body: body,
         theme: 'grid',
         headStyles: { fillColor: [13, 148, 136] }, // Teal color for units
-        didDrawPage: (data) => {
+        didDrawPage: async (data) => {
             if (data.pageNumber > 1) {
-                addHeader(doc, 'Relatório de Dispensação por Unidade');
+                await addHeader(doc, 'Relatório de Dispensação por Unidade');
             }
         }
     });
@@ -324,7 +367,7 @@ export const generateUnitDispensationReportPDF = async (orders: Order[], units: 
 
 export const generateBatchReportPDF = async (products: Product[]): Promise<string> => {
     const doc = new jsPDF() as jsPDFWithAutoTable;
-    addHeader(doc, 'Relatório de Lotes');
+    await addHeader(doc, 'Relatório de Lotes');
 
     const body = products.map(p => [
         p.name,
@@ -334,14 +377,14 @@ export const generateBatchReportPDF = async (products: Product[]): Promise<strin
     ]);
     
     doc.autoTable({
-        startY: 55,
+        startY: 75,
         head: [['Nome do Produto', 'Lote', 'Validade', 'Quantidade']],
         body: body,
         theme: 'grid',
         headStyles: { fillColor: [19, 78, 74] }, // Dark Teal
-        didDrawPage: (data) => {
+        didDrawPage: async (data) => {
             if (data.pageNumber > 1) {
-                addHeader(doc, 'Relatório de Lotes');
+                await addHeader(doc, 'Relatório de Lotes');
             }
         }
     });
@@ -353,7 +396,7 @@ export const generateBatchReportPDF = async (products: Product[]): Promise<strin
 
 export const generateEntriesAndExitsReportPDF = async (movements: StockMovement[], allProducts: Product[], period: string): Promise<string> => {
     const doc = new jsPDF() as jsPDFWithAutoTable;
-    addHeader(doc, 'Relatório de Entradas e Saídas', period);
+    await addHeader(doc, 'Relatório de Entradas e Saídas', period);
 
     const productMap = new Map(allProducts.map(p => [p.id, p]));
 
@@ -381,9 +424,9 @@ export const generateEntriesAndExitsReportPDF = async (movements: StockMovement[
 
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('Resumo de Movimentações por Categoria', 20, 58);
+    doc.text('Resumo de Movimentações por Categoria', 20, 80);
     doc.autoTable({
-        startY: 62,
+        startY: 85,
         head: [['Categoria', 'Total de Entradas (Itens)', 'Total de Saídas (Itens)']],
         body: summaryBody,
         theme: 'grid',
@@ -391,13 +434,12 @@ export const generateEntriesAndExitsReportPDF = async (movements: StockMovement[
     });
 
 
-    let finalY = (doc as any).lastAutoTable.finalY || 60;
+    let finalY = (doc as any).lastAutoTable.finalY || 80;
     
     const checkPageBreak = (yOffset: number) => {
         if (finalY + yOffset > doc.internal.pageSize.height - 30) {
             doc.addPage();
-            addHeader(doc, 'Relatório de Entradas e Saídas', period);
-            finalY = 55;
+            finalY = 75;
         }
     };
     
@@ -423,6 +465,7 @@ export const generateEntriesAndExitsReportPDF = async (movements: StockMovement[
             body: entriesBody,
             theme: 'grid',
             headStyles: { fillColor: [22, 163, 74] }, // Green
+            didDrawPage: async () => await addHeader(doc, 'Relatório de Entradas e Saídas (Continuação)', period)
         });
         finalY = (doc as any).lastAutoTable.finalY;
     }
@@ -449,11 +492,10 @@ export const generateEntriesAndExitsReportPDF = async (movements: StockMovement[
             body: exitsBody,
             theme: 'grid',
             headStyles: { fillColor: [220, 38, 38] }, // Red
+            didDrawPage: async () => await addHeader(doc, 'Relatório de Entradas e Saídas (Continuação)', period)
         });
     }
 
     addFooter(doc);
     return doc.output('datauristring');
 };
-
-    
