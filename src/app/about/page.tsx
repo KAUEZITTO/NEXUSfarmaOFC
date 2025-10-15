@@ -1,7 +1,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Package, Users, BarChart2, ShieldCheck, HeartPulse } from 'lucide-react';
+import { FileText, Package, Users, BarChart2, ShieldCheck, HeartPulse, Pill, ClipboardList, Stethoscope } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Logo } from '@/components/logo';
@@ -13,12 +13,12 @@ const features = [
     description: 'Gestão completa de lotes, validades e inventário em tempo real para evitar perdas e rupturas.',
   },
   {
-    icon: <Users className="h-8 w-8 text-primary" />,
+    icon: <ClipboardList className="h-8 w-8 text-primary" />,
     title: 'Gestão de Pacientes',
     description: 'Cadastro detalhado de pacientes, histórico de dispensação e acompanhamento de mandados judiciais e municipais.',
   },
   {
-    icon: <FileText className="h-8 w-8 text-primary" />,
+    icon: <Pill className="h-8 w-8 text-primary" />,
     title: 'Dispensação e Remessas',
     description: 'Gere guias de remessa para unidades e registre a dispensação de itens para pacientes com agilidade.',
   },
@@ -60,14 +60,14 @@ export default function LandingPage() {
         </div>
       </header>
       <main className="flex-1">
-        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-gradient-to-b from-muted/30 to-background">
+        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-gradient-to-br from-primary/5 via-background to-background">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center space-y-4 text-center">
                 <div className="space-y-4">
-                   <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm font-medium text-primary">
+                   <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
                     Gestão Farmacêutica Inteligente
                   </div>
-                  <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
+                  <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none bg-clip-text text-transparent bg-gradient-to-r from-primary to-foreground/80">
                     NexusFarma: A ponte para uma saúde pública eficiente.
                   </h1>
                   <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
@@ -89,7 +89,7 @@ export default function LandingPage() {
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm text-primary font-semibold">Recursos Principais</div>
+                <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary font-semibold">Recursos Principais</div>
                 <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Tudo que você precisa em um só lugar</h2>
                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   O NexusFarma foi desenhado para simplificar a complexa rotina do Centro de Abastecimento Farmacêutico (CAF), integrando todas as operações em uma plataforma robusta e intuitiva.
@@ -98,9 +98,9 @@ export default function LandingPage() {
             </div>
             <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:grid-cols-3 mt-12">
               {features.map((feature) => (
-                <Card key={feature.title} className="border-border/50 hover:shadow-lg hover:border-primary/50 transition-all duration-300">
+                <Card key={feature.title} className="border-border/50 hover:shadow-lg hover:border-primary/50 transition-all duration-300 transform hover:-translate-y-1">
                   <CardHeader className="flex flex-col items-center text-center gap-4 pb-4">
-                    <div className="bg-primary/10 p-3 rounded-full">
+                    <div className="bg-primary/10 p-4 rounded-full">
                       {feature.icon}
                     </div>
                     <CardTitle className="text-xl">{feature.title}</CardTitle>
@@ -124,7 +124,7 @@ export default function LandingPage() {
                 </div>
             </div>
             <div className="text-xs text-muted-foreground">
-                <p>&copy; 2025 NexusFarma. Todos os direitos reservados.</p>
+                <p>&copy; {new Date().getFullYear()} NexusFarma. Todos os direitos reservados.</p>
                 <p>Desenvolvido com ❤️ por Kauê Moreira para a Prefeitura de Igarapé-Açu.</p>
             </div>
         </div>
