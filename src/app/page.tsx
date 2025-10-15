@@ -98,7 +98,7 @@ export default function LandingPage() {
             </div>
             <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:grid-cols-3 mt-12">
               {features.map((feature) => (
-                <Card key={feature.title} className="border-border/50 hover:shadow-md transition-shadow duration-300">
+                <Card key={feature.title} className="border-border/50 hover:shadow-lg hover:border-primary/50 transition-all duration-300">
                   <CardHeader className="flex flex-col items-center text-center gap-4 pb-4">
                     <div className="bg-primary/10 p-3 rounded-full">
                       {feature.icon}
@@ -114,15 +114,19 @@ export default function LandingPage() {
           </div>
         </section>
       </main>
-      <footer className="flex flex-col gap-4 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
-        <div className="flex-1 text-xs text-muted-foreground text-center sm:text-left">
-            <p>&copy; 2025 NexusFarma. Todos os direitos reservados.</p>
-            <p>Desenvolvido por Kauê Moreira para a Prefeitura de Igarapé-Açu.</p>
-        </div>
-        <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground font-semibold">Apoio:</span>
-            <Image src="/SMS-PREF.png" alt="Logo Prefeitura" width={80} height={80} data-ai-hint="city hall government" />
-            <Image src="/CAF.png" alt="Logo CAF" width={80} height={80} data-ai-hint="pharmacy cross" />
+      <footer className="border-t bg-muted/40 py-8">
+        <div className="container flex flex-col items-center justify-center gap-6 text-center">
+            <div className="flex flex-col items-center gap-2">
+                <span className="text-sm text-muted-foreground font-semibold">Apoio Institucional</span>
+                <div className="flex items-center justify-center gap-6">
+                    <Image src="/SMS-PREF.png" alt="Logo Prefeitura" width={120} height={60} className="object-contain" data-ai-hint="city hall government" />
+                    <Image src="/CAF.png" alt="Logo CAF" width={100} height={60} className="object-contain" data-ai-hint="pharmacy cross" />
+                </div>
+            </div>
+            <div className="text-xs text-muted-foreground">
+                <p>&copy; 2025 NexusFarma. Todos os direitos reservados.</p>
+                <p>Desenvolvido com ❤️ por Kauê Moreira para a Prefeitura de Igarapé-Açu.</p>
+            </div>
         </div>
       </footer>
     </div>
