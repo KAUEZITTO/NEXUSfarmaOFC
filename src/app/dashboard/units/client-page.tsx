@@ -30,18 +30,18 @@ export function UnitsClientPage({ initialUnits }: { initialUnits: Unit[] }) {
   };
 
   const handleDeleteUnit = async (unitId: string, unitName: string) => {
-    try {
-        await deleteUnit(unitId);
+    const result = await deleteUnit(unitId);
+    if (result.success) {
         toast({
             title: 'Unidade Excluída',
             description: `A unidade "${unitName}" foi removida com sucesso.`
         });
         router.refresh();
-    } catch (error: any) {
+    } else {
         toast({
             variant: 'destructive',
             title: 'Erro ao Excluir',
-            description: error.message || 'Não foi possível excluir a unidade. Tente novamente.'
+            description: result.message || 'Não foi possível excluir a unidade. Tente novamente.'
         });
     }
   }

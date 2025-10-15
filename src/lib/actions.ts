@@ -137,18 +137,19 @@ export async function updateUnit(unitId: string, unitData: Partial<Omit<Unit, 'i
     revalidatePath(`/dashboard/units/${unitId}`);
 }
 
-export async function deleteUnit(unitId: string) {
+export async function deleteUnit(unitId: string): Promise<{ success: boolean; message?: string }> {
     const units = await readData<Unit>('units');
     const orders = await readData<Order>('orders');
 
     if (orders.some(order => order.unitId === unitId)) {
-        throw new Error('Não é possível excluir unidades que possuem pedidos associados.');
+        return { success: false, message: 'Não é possível excluir unidades que possuem pedidos associados.' };
     }
 
     const updatedUnits = units.filter(u => u.id !== unitId);
     await writeData('units', updatedUnits);
     revalidatePath('/dashboard/units');
     revalidatePath('/dashboard/orders/new');
+    return { success: true };
 }
 
 
