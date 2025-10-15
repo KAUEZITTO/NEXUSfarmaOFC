@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Slot } from "@radix-ui/react-slot";
+
 import { cn } from "@/lib/utils"
 
 const Table = React.forwardRef<
@@ -63,7 +63,7 @@ const TableRow = React.forwardRef<
     )}
     {...props}
   />
-));
+))
 TableRow.displayName = "TableRow"
 
 const TableHead = React.forwardRef<
