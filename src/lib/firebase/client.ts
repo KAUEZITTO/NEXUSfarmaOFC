@@ -22,11 +22,12 @@ if (firebaseConfig.apiKey) {
     // Se não houver chave, o app não é inicializado, mas evitamos o crash.
     // Funções que dependem do 'auth' não funcionarão, o que é esperado.
     console.warn("As variáveis de ambiente do Firebase não estão configuradas. A autenticação não funcionará.");
+    // @ts-ignore
+    firebaseApp = undefined;
 }
 
 
 // Exporta 'auth' apenas se a inicialização foi bem-sucedida.
-// @ts-ignore
-const auth: Auth = firebaseApp ? getAuth(firebaseApp) : {};
+const auth: Auth | {} = firebaseApp ? getAuth(firebaseApp) : {};
 
 export { firebaseApp, auth };
