@@ -359,6 +359,3 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
     </>
   );
 }
-    
-
-    

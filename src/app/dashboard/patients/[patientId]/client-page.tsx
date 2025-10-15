@@ -147,7 +147,6 @@ export function PatientHistoryClientPage({ initialPatient, initialDispensations 
                            </div>
                            <div className="flex items-center gap-2">
                                <Button variant="outline" size="sm" asChild>
-                                   {/* In a real app, file.path would be a URL. Here, it's a data URL. */}
                                    <a href={file.path} download={file.name}>
                                        <Download className="mr-2 h-4 w-4"/>
                                        Baixar

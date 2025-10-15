@@ -399,9 +399,8 @@ export async function uploadFile(formData: FormData): Promise<{ success: boolean
         return { success: false, error: 'O arquivo é muito grande (limite de 5MB).' };
     }
 
-    // For demonstration, convert the file to a Base64 data URL.
-    // In a real-world scenario, you would upload to a blob storage service (Vercel Blob, S3, Firebase Storage)
-    // and store the URL. Storing large files directly in KV is not recommended.
+    // Convert the file to a Base64 data URL to store in KV.
+    // This is not ideal for large files but works for a self-contained solution without external storage.
     const arrayBuffer = await file.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString('base64');
     const mimeType = file.type;
@@ -411,7 +410,7 @@ export async function uploadFile(formData: FormData): Promise<{ success: boolean
         id: generateId('file'),
         name: file.name,
         type: file.type,
-        path: dataUrl, // In a real app, this would be a URL like 'https://blob.vercel-storage.com/...'
+        path: dataUrl,
         uploadedAt: new Date().toISOString(),
     };
 
@@ -461,5 +460,29 @@ export async function register({ email, password, role, subRole }: { email: stri
             return { success: false, message: 'A senha deve ter pelo menos 6 caracteres.' };
         }
         return { success: false, message: 'Ocorreu um erro desconhecido ao criar a conta.' };
+    }
+}
+
+export async function uploadImage(formData: FormData): Promise<{ success: boolean; filePath?: string; error?: string }> {
+    const file = formData.get('image') as File | null;
+    if (!file) {
+        return { success: false, error: 'Nenhuma imagem enviada.' };
+    }
+
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit for images
+        return { success: false, error: 'A imagem é muito grande (limite de 2MB).' };
+    }
+
+    try {
+        const arrayBuffer = await file.arrayBuffer();
+        const base64 = Buffer.from(arrayBuffer).toString('base64');
+        const mimeType = file.type;
+        const dataUrl = `data:${mimeType};base64,${base64}`;
+
+        // In a real app, you'd upload to a service and get a URL.
+        // For this self-contained example, the data URL is the "path".
+        return { success: true, filePath: dataUrl };
+    } catch (e) {
+        return { success: false, error: 'Falha ao processar a imagem.' };
     }
 }

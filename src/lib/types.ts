@@ -119,7 +119,7 @@ export type PatientFile = {
     id: string;
     name: string;
     type: string;
-    path: string; // This would be the URL to the file in a real storage service
+    path: string; // This will be a data URL for the file
     uploadedAt: string;
 }
 
