@@ -10,18 +10,18 @@ export function Logo({ className }: { className?: string }) {
         src="/NEXUSnv.png"
         alt="NexusFarma Logo"
         fill
-        style={{ objectFit: 'contain' }}
         priority
-        className="block dark:hidden"
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        className="block dark:hidden object-contain"
       />
       {/* Dark mode logo */}
       <Image
         src="/NEXUSnv-branco.png"
         alt="NexusFarma Logo"
         fill
-        style={{ objectFit: 'contain' }}
         priority
-        className="hidden dark:block"
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        className="hidden dark:block object-contain"
       />
     </div>
   );
