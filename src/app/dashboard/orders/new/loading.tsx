@@ -15,7 +15,7 @@ export default function LoadingNewOrderPage() {
                 </div>
                 
                 <div className="grid gap-6">
-                    <div className="grid md:grid-cols-3 gap-6">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <Card>
                             <CardHeader><CardTitle><Skeleton className="h-6 w-40" /></CardTitle></CardHeader>
                             <CardContent><Skeleton className="h-10 w-full" /></CardContent>
@@ -26,6 +26,10 @@ export default function LoadingNewOrderPage() {
                                 <Skeleton className="h-10 w-full" />
                                 <Skeleton className="h-4 w-3/4 mt-2" />
                             </CardContent>
+                        </Card>
+                         <Card>
+                            <CardHeader><CardTitle><Skeleton className="h-6 w-40" /></CardTitle></CardHeader>
+                            <CardContent><Skeleton className="h-10 w-full" /></CardContent>
                         </Card>
                         <Card>
                             <CardHeader><CardTitle><Skeleton className="h-6 w-40" /></CardTitle></CardHeader>

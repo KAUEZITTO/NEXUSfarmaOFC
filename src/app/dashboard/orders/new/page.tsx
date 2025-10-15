@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -26,7 +27,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { X, Save, Trash2, Loader2, Barcode, Warehouse, PackagePlus, ListPlus, CalendarClock, History } from 'lucide-react';
+import { X, Save, Trash2, Loader2, Barcode, Warehouse, PackagePlus, ListPlus, CalendarClock, History, Layers } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { addOrder } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
@@ -48,6 +49,8 @@ type RemessaItem = {
   category: string;
 };
 
+const itemCategories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Não Padronizado (Compra)'];
+
 export default function NewOrderPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -61,6 +64,7 @@ export default function NewOrderPage() {
   const [orderType, setOrderType] = useState<OrderType>('Pedido Mensal');
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Product['category'] | ''>('');
   
   const [items, setItems] = useState<RemessaItem[]>([]);
   const [scannerInput, setScannerInput] = useState('');
@@ -92,10 +96,10 @@ export default function NewOrderPage() {
   }, [toast]);
 
   useEffect(() => {
-    if (!isLoading && destinationUnitId) {
+    if (!isLoading && destinationUnitId && selectedCategory) {
         scannerInputRef.current?.focus();
     }
-  }, [isLoading, destinationUnitId]);
+  }, [isLoading, destinationUnitId, selectedCategory]);
 
   const addProductToRemessa = (product: Product, quantity: number) => {
     if (product.quantity < quantity) {
@@ -159,7 +163,7 @@ export default function NewOrderPage() {
         return;
     }
 
-    const product = allProducts.find(p => p.id === value);
+    const product = allProducts.find(p => p.id === value && p.category === selectedCategory);
 
     if (product) {
         addProductToRemessa(product, quantityMultiplier);
@@ -167,7 +171,7 @@ export default function NewOrderPage() {
         toast({
             variant: 'destructive',
             title: 'Produto não encontrado',
-            description: `Nenhum produto corresponde ao código "${value}".`
+            description: `Nenhum produto corresponde ao código "${value}" na categoria selecionada.`
         });
     }
 
@@ -263,6 +267,8 @@ export default function NewOrderPage() {
     return <LoadingNewOrderPage />;
   }
 
+  const productsForManualAdd = selectedCategory ? allProducts.filter(p => p.category === selectedCategory) : [];
+
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
       <div className="mx-auto grid w-full max-w-6xl flex-1 auto-rows-max gap-6">
@@ -283,7 +289,7 @@ export default function NewOrderPage() {
         </div>
         
         <div className="grid gap-6">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Warehouse className="h-5 w-5" /> Passo 1: Destino</CardTitle>
@@ -301,7 +307,7 @@ export default function NewOrderPage() {
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card className={!destinationUnitId ? 'opacity-50 pointer-events-none' : ''}>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><CalendarClock className="h-5 w-5" /> Passo 2: Tipo e Data</CardTitle>
                     </CardHeader>
@@ -322,7 +328,7 @@ export default function NewOrderPage() {
                          <div>
                              <Label htmlFor="sentDate" className="mb-2 block flex items-center gap-2">
                                 <History className="h-4 w-4" /> 
-                                Data de Envio (para registros antigos)
+                                Data de Envio (registros antigos)
                             </Label>
                             <Input
                                 id="sentDate"
@@ -333,10 +339,27 @@ export default function NewOrderPage() {
                          </div>
                     </CardContent>
                 </Card>
-
-                <Card className={!destinationUnitId ? 'opacity-50 pointer-events-none' : ''}>
+                
+                 <Card className={!destinationUnitId ? 'opacity-50 pointer-events-none' : ''}>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Barcode className="h-5 w-5" /> Passo 3: Escanear ou Adicionar</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><Layers className="h-5 w-5" /> Passo 3: Categoria</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                         <Label htmlFor="category" className="mb-2 block">Selecione a Categoria dos Itens</Label>
+                         <Select onValueChange={(v) => setSelectedCategory(v as Product['category'])} value={selectedCategory}>
+                            <SelectTrigger id="category"><SelectValue placeholder="Selecione a categoria..." /></SelectTrigger>
+                            <SelectContent>
+                                {itemCategories.map(cat => (
+                                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                ))}
+                            </SelectContent>
+                         </Select>
+                    </CardContent>
+                </Card>
+
+                <Card className={!destinationUnitId || !selectedCategory ? 'opacity-50 pointer-events-none' : ''}>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Barcode className="h-5 w-5" /> Passo 4: Adicionar Itens</CardTitle>
                     </CardHeader>
                     <CardContent>
                          <div className="space-y-4">
@@ -349,14 +372,14 @@ export default function NewOrderPage() {
                                     value={scannerInput}
                                     onChange={(e) => setScannerInput(e.target.value)}
                                     onKeyDown={handleScannerKeyDown}
-                                    disabled={!destinationUnitId || isSaving}
+                                    disabled={!destinationUnitId || !selectedCategory || isSaving}
                                 />
                                 <p className="text-xs text-muted-foreground mt-2">
-                                Dica: Para múltiplos itens, digite a quantidade e um asterisco (ex: <strong>4*</strong>) antes de escanear.
+                                Dica: Digite a quantidade e um asterisco (ex: <strong>4*</strong>) antes de escanear.
                                 </p>
                             </div>
                             <AddItemsManuallyDialog 
-                                allProducts={allProducts} 
+                                allProducts={productsForManualAdd} 
                                 onAddProduct={addProductToRemessa} 
                                 trigger={
                                     <Button variant="outline" className="w-full">
@@ -374,7 +397,7 @@ export default function NewOrderPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><PackagePlus className="h-5 w-5" /> Itens na Remessa</CardTitle>
                     <CardDescription>
-                        Lista de produtos adicionados à remessa, agrupados por categoria.
+                        Lista de produtos adicionados à remessa.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
