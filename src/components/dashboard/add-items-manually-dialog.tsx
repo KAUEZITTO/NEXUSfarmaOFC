@@ -22,6 +22,7 @@ type AddItemsManuallyDialogProps = {
   trigger: React.ReactNode;
   allProducts: Product[];
   onAddProduct: (product: Product, quantity: number) => boolean;
+  selectedCategories: Product['category'][];
 };
 
 type GroupedProduct = {
@@ -34,18 +35,36 @@ type GroupedProduct = {
   batches: Product[];
 };
 
-const categories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)'];
+const allCategories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)'];
 
-export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct }: AddItemsManuallyDialogProps) {
+export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, selectedCategories }: AddItemsManuallyDialogProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [step, setStep] = useState<'category' | 'list' | 'details'>('category');
-  const [selectedCategory, setSelectedCategory] = useState<Product['category'] | null>(null);
+  
+  // Determine initial step based on selected categories
+  const initialStep = selectedCategories.length > 1 ? 'category' : 'list';
+  const initialCategory = selectedCategories.length === 1 ? selectedCategories[0] : null;
+
+  const [step, setStep] = useState<'category' | 'list' | 'details'>(initialStep);
+  const [currentCategory, setCurrentCategory] = useState<Product['category'] | null>(initialCategory);
   const [selectedProduct, setSelectedProduct] = useState<GroupedProduct | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
 
+  // Reset state when dialog opens or closes
+  React.useEffect(() => {
+    if (isOpen) {
+      const newInitialStep = selectedCategories.length > 1 ? 'category' : 'list';
+      const newInitialCategory = selectedCategories.length === 1 ? selectedCategories[0] : null;
+      setStep(newInitialStep);
+      setCurrentCategory(newInitialCategory);
+      setSelectedProduct(null);
+      setQuantities({});
+    }
+  }, [isOpen, selectedCategories]);
+
+
   const handleCategorySelect = (category: Product['category']) => {
-    setSelectedCategory(category);
+    setCurrentCategory(category);
     setStep('list');
   };
 
@@ -66,8 +85,14 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct }: A
       setSelectedProduct(null);
       setQuantities({});
     } else if (step === 'list') {
-      setStep('category');
-      setSelectedCategory(null);
+      // If we started from a multi-category selection, go back to category selection
+      if (selectedCategories.length > 1) {
+        setStep('category');
+        setCurrentCategory(null);
+      } else {
+        // If we started with a single category, just close the dialog
+        setIsOpen(false);
+      }
     }
   };
 
@@ -93,12 +118,6 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct }: A
     }
     
     setIsOpen(false);
-    setTimeout(() => {
-        setStep('category');
-        setSelectedCategory(null);
-        setSelectedProduct(null);
-        setQuantities({});
-    }, 300);
   };
   
   const groupProducts = (products: Product[]): GroupedProduct[] => {
@@ -119,16 +138,16 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct }: A
             });
         }
     });
-    return Array.from(map.values());
+    return Array.from(map.values()).sort((a,b) => a.name.localeCompare(b.name));
   }
 
-  const productsForCategory = selectedCategory ? groupProducts(allProducts.filter(p => p.category === selectedCategory)) : [];
+  const productsForCategory = currentCategory ? groupProducts(allProducts.filter(p => p.category === currentCategory)) : [];
 
   const renderContent = () => {
     if (step === 'category') {
       return (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {categories.map(cat => (
+          {selectedCategories.map(cat => (
             <Button key={cat} variant="outline" className="h-20" onClick={() => handleCategorySelect(cat)}>
               {cat}
             </Button>
@@ -141,12 +160,14 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct }: A
       return (
         <ScrollArea className="h-96">
             <div className="space-y-2">
-                {productsForCategory.map(p => (
+                {productsForCategory.length > 0 ? productsForCategory.map(p => (
                     <div key={p.name + p.presentation} className="border p-3 rounded-md cursor-pointer hover:bg-muted" onClick={() => handleProductSelect(p)}>
                         <p className="font-semibold">{p.name}</p>
                         <p className="text-sm text-muted-foreground">{p.presentation}</p>
                     </div>
-                ))}
+                )) : (
+                    <div className="text-center text-muted-foreground pt-10">Nenhum produto encontrado para esta categoria.</div>
+                )}
             </div>
         </ScrollArea>
       );
@@ -197,7 +218,7 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct }: A
             )}
             <DialogTitle>
                 {step === 'category' && 'Selecione a Categoria'}
-                {step === 'list' && `Itens em ${selectedCategory}`}
+                {step === 'list' && `Itens em ${currentCategory}`}
                 {step === 'details' && 'Adicionar Lotes e Quantidades'}
             </DialogTitle>
           </div>

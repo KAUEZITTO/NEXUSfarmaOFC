@@ -34,6 +34,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { Unit, Product, OrderType } from '@/lib/types';
 import { AddItemsManuallyDialog } from '@/components/dashboard/add-items-manually-dialog';
+import { cn } from '@/lib/utils';
 
 
 type RemessaItem = {
@@ -63,7 +64,7 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
   const [orderType, setOrderType] = useState<OrderType>('Pedido Mensal');
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Product['category'] | ''>('');
+  const [selectedCategories, setSelectedCategories] = useState<Product['category'][]>([]);
   
   const [items, setItems] = useState<RemessaItem[]>([]);
   const [scannerInput, setScannerInput] = useState('');
@@ -71,10 +72,18 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
   const [sentDate, setSentDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
-    if (destinationUnitId && selectedCategory) {
+    if (destinationUnitId && selectedCategories.length > 0) {
         scannerInputRef.current?.focus();
     }
-  }, [destinationUnitId, selectedCategory]);
+  }, [destinationUnitId, selectedCategories]);
+
+   const handleCategoryToggle = (category: Product['category']) => {
+    setSelectedCategories(prev => 
+      prev.includes(category) 
+        ? prev.filter(c => c !== category) 
+        : [...prev, category]
+    );
+  };
 
   const addProductToRemessa = (product: Product, quantity: number) => {
     if (product.quantity < quantity) {
@@ -138,7 +147,7 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
         return;
     }
 
-    const product = initialProducts.find(p => p.id === value && p.category === selectedCategory);
+    const product = initialProducts.find(p => p.id === value && selectedCategories.includes(p.category));
 
     if (product) {
         addProductToRemessa(product, quantityMultiplier);
@@ -146,7 +155,7 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
         toast({
             variant: 'destructive',
             title: 'Produto não encontrado',
-            description: `Nenhum produto corresponde ao código "${value}" na categoria selecionada.`
+            description: `Nenhum produto corresponde ao código "${value}" nas categorias selecionadas.`
         });
     }
 
@@ -238,7 +247,9 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
 
   const categoryOrder: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)'];
   
-  const productsForManualAdd = selectedCategory ? initialProducts.filter(p => p.category === selectedCategory) : [];
+  const productsForManualAdd = selectedCategories.length > 0
+    ? initialProducts.filter(p => selectedCategories.includes(p.category))
+    : [];
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
@@ -313,22 +324,27 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
                 
                  <Card className={!destinationUnitId ? 'opacity-50 pointer-events-none' : ''}>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Layers className="h-5 w-5" /> Passo 3: Categoria</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><Layers className="h-5 w-5" /> Passo 3: Categoria(s)</CardTitle>
                     </CardHeader>
                     <CardContent>
-                         <Label htmlFor="category" className="mb-2 block">Selecione a Categoria dos Itens</Label>
-                         <Select onValueChange={(v) => setSelectedCategory(v as Product['category'])} value={selectedCategory}>
-                            <SelectTrigger id="category"><SelectValue placeholder="Selecione a categoria..." /></SelectTrigger>
-                            <SelectContent>
-                                {itemCategories.map(cat => (
-                                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                ))}
-                            </SelectContent>
-                         </Select>
+                         <Label className="mb-2 block">Selecione as Categorias dos Itens</Label>
+                         <div className="flex flex-wrap gap-2">
+                            {itemCategories.map(cat => (
+                                <Button
+                                    key={cat}
+                                    type="button"
+                                    variant={selectedCategories.includes(cat) ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => handleCategoryToggle(cat)}
+                                >
+                                    {cat}
+                                </Button>
+                            ))}
+                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className={!destinationUnitId || !selectedCategory ? 'opacity-50 pointer-events-none' : ''}>
+                <Card className={!destinationUnitId || selectedCategories.length === 0 ? 'opacity-50 pointer-events-none' : ''}>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Barcode className="h-5 w-5" /> Passo 4: Adicionar Itens</CardTitle>
                     </CardHeader>
@@ -343,14 +359,15 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
                                     value={scannerInput}
                                     onChange={(e) => setScannerInput(e.target.value)}
                                     onKeyDown={handleScannerKeyDown}
-                                    disabled={!destinationUnitId || !selectedCategory || isSaving}
+                                    disabled={!destinationUnitId || selectedCategories.length === 0 || isSaving}
                                 />
                                 <p className="text-xs text-muted-foreground mt-2">
                                 Dica: Digite a quantidade e um asterisco (ex: <strong>4*</strong>) antes de escanear.
                                 </p>
                             </div>
                             <AddItemsManuallyDialog 
-                                allProducts={productsForManualAdd} 
+                                allProducts={productsForManualAdd}
+                                selectedCategories={selectedCategories}
                                 onAddProduct={addProductToRemessa} 
                                 trigger={
                                     <Button variant="outline" className="w-full">
