@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -26,11 +26,11 @@ import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Save, Trash2, Loader2, AlertTriangle } from 'lucide-react';
-import { addPatient, updatePatient } from '@/lib/actions';
+import { Save, Trash2, Loader2, AlertTriangle, Upload, File, X } from 'lucide-react';
+import { addPatient, updatePatient, uploadFile } from '@/lib/actions';
 import { getUnits } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import type { Patient, Dosage, Unit, PatientDemandItem } from '@/lib/types';
+import type { Patient, Dosage, Unit, PatientDemandItem, PatientFile } from '@/lib/types';
 import { Separator } from '../ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
@@ -93,6 +93,9 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const isEditing = !!patientToEdit;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
 
   // Form state
   const [name, setName] = useState('');
@@ -113,6 +116,7 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
   const [customInsulinType, setCustomInsulinType] = useState('');
   const [insulinPresentation, setInsulinPresentation] = useState<Patient['insulinPresentation']>('Caneta');
   const [manualDispensingQuantity, setManualDispensingQuantity] = useState<number | undefined>(undefined);
+  const [files, setFiles] = useState<PatientFile[]>([]);
 
 
   const [units, setUnits] = useState<Unit[]>([]);
@@ -146,6 +150,7 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
     setManualDispensingQuantity(undefined);
     setInsulinType('Lantus (Glargina)');
     setInsulinPresentation('Caneta');
+    setFiles([]);
   }
   
   const handleDemandItemChange = (item: PatientDemandItem, checked: boolean) => {
@@ -163,6 +168,44 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
         }
         return newItems;
     });
+  };
+
+   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = event.target.files;
+    if (!selectedFiles || selectedFiles.length === 0) return;
+
+    setIsUploading(true);
+    try {
+      const uploadPromises = Array.from(selectedFiles).map(file => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return uploadFile(formData);
+      });
+
+      const results = await Promise.all(uploadPromises);
+      const newFiles: PatientFile[] = [];
+      results.forEach(result => {
+        if (result.success && result.file) {
+          newFiles.push(result.file);
+        } else {
+          toast({ variant: 'destructive', title: 'Erro de Upload', description: result.error });
+        }
+      });
+
+      setFiles(prev => [...prev, ...newFiles]);
+      toast({ title: 'Arquivos Carregados', description: `${newFiles.length} arquivo(s) pronto(s) para salvar.` });
+
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Erro de Upload', description: 'Ocorreu um erro inesperado.' });
+    } finally {
+      setIsUploading(false);
+      // Reset file input to allow uploading the same file again
+      if(fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const removeFile = (fileId: string) => {
+    setFiles(prev => prev.filter(f => f.id !== fileId));
   };
 
 
@@ -185,6 +228,7 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
         setInsulinDosages(patientToEdit.insulinDosages || []);
         setStripDosages(patientToEdit.stripDosages || []);
         setManualDispensingQuantity(patientToEdit.manualDispensingQuantity);
+        setFiles(patientToEdit.files || []);
     } else if (!isEditing && isOpen) {
         resetForm();
     }
@@ -224,6 +268,7 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
             manualDispensingQuantity: demandItems.includes('Insulinas Análogas') ? manualDispensingQuantity : undefined,
             insulinPresentation: demandItems.includes('Insulinas Análogas') ? insulinPresentation : undefined,
             stripDosages: demandItems.includes('Tiras de Glicemia') ? stripDosages : [],
+            files,
         }
 
         if (isEditing && patientToEdit) {
@@ -280,7 +325,7 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
       <DialogTrigger asChild>
         {trigger}
       </DialogTrigger>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Editar Paciente' : 'Adicionar Novo Paciente'}</DialogTitle>
         </DialogHeader>
@@ -447,6 +492,44 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
                 )}
                
               <Separator />
+
+              {/* File Upload */}
+              <div className="space-y-4 pt-4 border-t">
+                  <Label>Anexar Documentos (Receitas, Laudos, etc.)</Label>
+                  <div className="flex items-center gap-4">
+                      <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                          {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4"/>}
+                          {isUploading ? 'Enviando...' : 'Selecionar Arquivos'}
+                      </Button>
+                      <Input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".pdf"
+                        multiple
+                        className="hidden"
+                        onChange={handleFileChange}
+                        disabled={isUploading}
+                      />
+                  </div>
+                  {files.length > 0 && (
+                      <div className="space-y-2">
+                          <h4 className="text-sm font-medium">Arquivos Anexados:</h4>
+                          <ul className="space-y-2 rounded-md border p-2">
+                              {files.map(file => (
+                                  <li key={file.id} className="flex items-center justify-between text-sm text-muted-foreground p-2 bg-muted/50 rounded-md">
+                                      <div className="flex items-center gap-2">
+                                          <File className="h-4 w-4"/>
+                                          <span>{file.name}</span>
+                                      </div>
+                                      <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeFile(file.id)}>
+                                          <X className="h-4 w-4"/>
+                                      </Button>
+                                  </li>
+                              ))}
+                          </ul>
+                      </div>
+                  )}
+              </div>
             </div>
           </ScrollArea>
           <DialogFooter className="pt-4">

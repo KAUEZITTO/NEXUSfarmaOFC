@@ -115,6 +115,13 @@ export type Dosage = {
 
 export type PatientDemandItem = 'Fraldas' | 'Insulinas Análogas' | 'Tiras de Glicemia' | 'Itens Judiciais' | 'Imunoglobulina' | 'Fórmulas' | 'Medicamentos/Materiais Comprados';
 
+export type PatientFile = {
+    id: string;
+    name: string;
+    type: string;
+    path: string; // This would be the URL to the file in a real storage service
+    uploadedAt: string;
+}
 
 export type Patient = {
     id: string;
@@ -141,6 +148,7 @@ export type Patient = {
     status: PatientStatus;
     isBedridden?: boolean;
     mandateType?: string; // Added from patient report
+    files?: PatientFile[];
 };
 
 export type PatientFilter = 'active' | 'inactive' | 'insulin' | 'diapers' | 'bedridden' | 'legal' | 'municipal' | 'all';

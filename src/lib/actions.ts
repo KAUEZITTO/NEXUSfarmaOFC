@@ -4,7 +4,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { readData, writeData, getProducts, getKnowledgeBase } from './data';
-import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType } from './types';
+import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile } from './types';
 import * as admin from 'firebase-admin';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './auth';
@@ -170,10 +170,11 @@ export async function addPatient(patientData: Omit<Patient, 'id' | 'status' | 'c
     revalidatePath('/dashboard/patients');
 }
 
-export async function updatePatient(patientId: string, patientData: Partial<Omit<Patient, 'id'>>) {
+export async function updatePatient(patientId: string, patientData: Partial<Omit<Patient, 'id'>>): Promise<Patient> {
     const patients = await readData<Patient>('patients');
     const patientIndex = patients.findIndex(p => p.id === patientId);
     if (patientIndex === -1) throw new Error('Paciente não encontrado.');
+    
     patients[patientIndex] = { 
         ...patients[patientIndex], 
         ...patientData,
@@ -181,6 +182,7 @@ export async function updatePatient(patientId: string, patientData: Partial<Omit
     await writeData('patients', patients);
     revalidatePath('/dashboard/patients');
     revalidatePath(`/dashboard/patients/${patientId}`);
+    return patients[patientIndex];
 }
 
 export async function updatePatientStatus(patientId: string, status: PatientStatus) {
@@ -386,23 +388,36 @@ export async function deleteUser(userId: string) {
 }
 
 
-// --- FILE UPLOAD ---
-// This is a placeholder. In a real app, you'd upload to a blob storage service.
-export async function uploadImage(formData: FormData): Promise<{ success: boolean; filePath?: string; error?: string; }> {
-    const file = formData.get('image') as File | null;
+// --- FILE ACTIONS ---
+export async function uploadFile(formData: FormData): Promise<{ success: boolean; file?: PatientFile; error?: string; }> {
+    const file = formData.get('file') as File | null;
     if (!file) {
         return { success: false, error: 'Nenhum arquivo enviado.' };
     }
-    
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        return { success: false, error: 'O arquivo é muito grande (limite de 5MB).' };
+    }
+
     // For demonstration, convert the file to a Base64 data URL.
-    // This is NOT suitable for large files or production use.
+    // In a real-world scenario, you would upload to a blob storage service (Vercel Blob, S3, Firebase Storage)
+    // and store the URL. Storing large files directly in KV is not recommended.
     const arrayBuffer = await file.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString('base64');
     const mimeType = file.type;
     const dataUrl = `data:${mimeType};base64,${base64}`;
 
-    return { success: true, filePath: dataUrl };
+    const newFile: PatientFile = {
+        id: generateId('file'),
+        name: file.name,
+        type: file.type,
+        path: dataUrl, // In a real app, this would be a URL like 'https://blob.vercel-storage.com/...'
+        uploadedAt: new Date().toISOString(),
+    };
+
+    return { success: true, file: newFile };
 }
+
 
 // --- REGISTER ---
 export async function register({ email, password, role, subRole }: { email: string; password: string; role: Role; subRole?: SubRole; }) {
