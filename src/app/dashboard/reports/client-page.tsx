@@ -220,12 +220,12 @@ export function ReportsClientPage({
   const { filteredMovements, filteredDispensations, filteredOrders } = getFilteredData();
   const periodString = getPeriodString();
 
-  const handleExportComplete = () => generatePdf('complete', () => generateCompleteReportPDF(initialProducts, initialPatients, initialDispensations));
+  const handleExportComplete = () => generatePdf('complete', () => generateCompleteReportPDF(initialProducts, initialPatients, initialDispensations, periodString));
   const handleExportStock = () => generatePdf('stock', () => generateStockReportPDF(initialProducts, stockCategoryFilter));
   const handleExportExpiry = () => generatePdf('expiry', () => generateExpiryReportPDF(initialProducts));
-  const handleExportPatient = () => generatePdf('patient', () => generatePatientReportPDF(filteredDispensations));
+  const handleExportPatient = () => generatePdf('patient', () => generatePatientReportPDF(filteredDispensations, periodString));
   const handleExportPatientList = () => generatePdf('patientList', () => generatePatientListReportPDF(initialPatients));
-  const handleExportUnitDispensation = () => generatePdf('unitDispensation', () => generateUnitDispensationReportPDF(filteredOrders, initialUnits));
+  const handleExportUnitDispensation = () => generatePdf('unitDispensation', () => generateUnitDispensationReportPDF(filteredOrders, initialUnits, periodString));
   const handleExportBatch = () => generatePdf('batch', () => generateBatchReportPDF(initialProducts));
   const handleExportEntriesAndExits = () => generatePdf('entriesAndExits', () => generateEntriesAndExitsReportPDF(filteredMovements, initialProducts, periodString));
   
@@ -348,7 +348,7 @@ export function ReportsClientPage({
                     <CardHeader>
                     <CardTitle>Gerar Relatórios Específicos</CardTitle>
                     <CardDescription>
-                        Selecione um tipo de relatório para gerar um documento PDF.
+                        Selecione um tipo de relatório para gerar um documento PDF. Alguns relatórios são afetados pelo filtro de data.
                     </CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-x-4 gap-y-6 sm:grid-cols-2 md:grid-cols-3">
@@ -409,5 +409,6 @@ export function ReportsClientPage({
     </div>
   )
 }
+    
 
     

@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import jsPDF from 'jspdf';
@@ -96,12 +97,13 @@ const addFooter = (doc: jsPDFWithAutoTable) => {
 export const generateCompleteReportPDF = async (
     products: Product[],
     patients: Patient[],
-    dispensations: Dispensation[]
+    dispensations: Dispensation[],
+    period: string
 ): Promise<string> => {
   const doc = new jsPDF() as jsPDFWithAutoTable;
 
   // --- Summary Page ---
-  await addHeader(doc, 'Relatório Gerencial Completo');
+  await addHeader(doc, 'Relatório Gerencial Completo', period);
 
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
@@ -130,7 +132,7 @@ export const generateCompleteReportPDF = async (
 
   // --- Inventory Section ---
   doc.addPage();
-  await addHeader(doc, 'Relatório de Inventário');
+  await addHeader(doc, 'Relatório de Inventário', period);
   
   const inventoryBody = products.map(p => [
     p.name,
@@ -148,13 +150,13 @@ export const generateCompleteReportPDF = async (
     theme: 'grid',
     headStyles: { fillColor: [37, 99, 235] },
     didDrawPage: async (data) => {
-       await addHeader(doc, 'Relatório de Inventário');
+       await addHeader(doc, 'Relatório de Inventário', period);
     }
   });
 
   // --- Patients Section ---
   doc.addPage();
-  await addHeader(doc, 'Relatório de Pacientes Ativos');
+  await addHeader(doc, 'Relatório de Pacientes Ativos', period);
   
   const patientsBody = patients
     .filter(p => p.status === 'Ativo')
@@ -173,7 +175,7 @@ export const generateCompleteReportPDF = async (
     theme: 'grid',
     headStyles: { fillColor: [37, 99, 235] },
     didDrawPage: async (data) => {
-       await addHeader(doc, 'Relatório de Pacientes Ativos');
+       await addHeader(doc, 'Relatório de Pacientes Ativos', period);
     }
   });
 
@@ -259,10 +261,10 @@ export const generateExpiryReportPDF = async (products: Product[]): Promise<stri
     return doc.output('datauristring');
 };
 
-export const generatePatientReportPDF = async (dispensations: Dispensation[]): Promise<string> => {
+export const generatePatientReportPDF = async (dispensations: Dispensation[], period: string): Promise<string> => {
     const doc = new jsPDF() as jsPDFWithAutoTable;
 
-    await addHeader(doc, 'Relatório de Atendimento de Pacientes');
+    await addHeader(doc, 'Relatório de Atendimento de Pacientes', period);
 
     const body = dispensations.map(d => {
         const totalItems = d.items.reduce((sum, item) => sum + item.quantity, 0);
@@ -282,7 +284,7 @@ export const generatePatientReportPDF = async (dispensations: Dispensation[]): P
         headStyles: { fillColor: [107, 33, 168] }, // Purple color for patients
         didDrawPage: async (data) => {
             if (data.pageNumber > 1) {
-                await addHeader(doc, 'Relatório de Atendimento de Pacientes');
+                await addHeader(doc, 'Relatório de Atendimento de Pacientes', period);
             }
         }
     });
@@ -323,9 +325,9 @@ export const generatePatientListReportPDF = async (patients: Patient[]): Promise
     return doc.output('datauristring');
 }
 
-export const generateUnitDispensationReportPDF = async (orders: Order[], units: Unit[]): Promise<string> => {
+export const generateUnitDispensationReportPDF = async (orders: Order[], units: Unit[], period: string): Promise<string> => {
     const doc = new jsPDF() as jsPDFWithAutoTable;
-    await addHeader(doc, 'Relatório de Dispensação por Unidade');
+    await addHeader(doc, 'Relatório de Dispensação por Unidade', period);
 
     const unitDataMap = new Map<string, { totalItems: number, orderCount: number, type: string, name: string }>();
 
@@ -356,7 +358,7 @@ export const generateUnitDispensationReportPDF = async (orders: Order[], units: 
         headStyles: { fillColor: [13, 148, 136] }, // Teal color for units
         didDrawPage: async (data) => {
             if (data.pageNumber > 1) {
-                await addHeader(doc, 'Relatório de Dispensação por Unidade');
+                await addHeader(doc, 'Relatório de Dispensação por Unidade', period);
             }
         }
     });
@@ -499,3 +501,5 @@ export const generateEntriesAndExitsReportPDF = async (movements: StockMovement[
     addFooter(doc);
     return doc.output('datauristring');
 };
+
+    
