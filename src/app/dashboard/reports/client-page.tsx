@@ -136,6 +136,19 @@ export function ReportsClientPage({
   const [month, setMonth] = useState((new Date().getMonth() + 1).toString());
   const [year, setYear] = useState(new Date().getFullYear().toString());
 
+  const getPeriodString = (): string => {
+    if (filterType === 'year') {
+        return `Ano de ${year}`;
+    } else if (filterType === 'range' && date?.from && date?.to) {
+        return `de ${format(date.from, "dd/MM/yy")} a ${format(date.to, "dd/MM/yy")}`;
+    } else { // month
+        const y = parseInt(year);
+        const m = parseInt(month) - 1;
+        const dateForMonth = new Date(y, m);
+        return dateForMonth.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+    }
+  }
+
   const getFilteredData = () => {
     let startDate: Date;
     let endDate: Date;
@@ -199,6 +212,7 @@ export function ReportsClientPage({
   };
   
   const { filteredMovements, filteredDispensations, filteredOrders } = getFilteredData();
+  const periodString = getPeriodString();
 
   const handleExportComplete = () => generatePdf('complete', () => generateCompleteReportPDF(initialProducts, initialPatients, initialDispensations));
   const handleExportStock = () => generatePdf('stock', () => generateStockReportPDF(initialProducts));
@@ -207,7 +221,7 @@ export function ReportsClientPage({
   const handleExportPatientList = () => generatePdf('patientList', () => generatePatientListReportPDF(initialPatients));
   const handleExportUnitDispensation = () => generatePdf('unitDispensation', () => generateUnitDispensationReportPDF(filteredOrders, initialUnits));
   const handleExportBatch = () => generatePdf('batch', () => generateBatchReportPDF(initialProducts));
-  const handleExportEntriesAndExits = () => generatePdf('entriesAndExits', () => generateEntriesAndExitsReportPDF(filteredMovements));
+  const handleExportEntriesAndExits = () => generatePdf('entriesAndExits', () => generateEntriesAndExitsReportPDF(filteredMovements, initialProducts, periodString));
   
   const reportHandlers: Record<string, () => void> = {
     "Dispensação por Unidade": handleExportUnitDispensation,
@@ -390,5 +404,3 @@ export function ReportsClientPage({
     </div>
   )
 }
-
-    

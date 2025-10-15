@@ -11,7 +11,7 @@ interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
 }
 
-const addHeader = (doc: jsPDFWithAutoTable, title: string) => {
+const addHeader = (doc: jsPDFWithAutoTable, title: string, subtitle?: string) => {
     const pageWidth = doc.internal.pageSize.getWidth();
     
     // Add title
@@ -25,11 +25,16 @@ const addHeader = (doc: jsPDFWithAutoTable, title: string) => {
     // Add subtitle/date
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Relatório Gerado em: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`, pageWidth / 2, 37, { align: 'center' });
+    const generatedDate = `Relatório Gerado em: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`;
+    const period = subtitle || '';
+    doc.text(generatedDate, pageWidth / 2, 37, { align: 'center' });
+    if (period) {
+        doc.text(`Período: ${period}`, pageWidth / 2, 42, { align: 'center' });
+    }
 
     // Add separator line
     doc.setLineWidth(0.5);
-    doc.line(20, 45, pageWidth - 20, 45);
+    doc.line(20, 48, pageWidth - 20, 48);
 };
 
 const addFooter = (doc: jsPDFWithAutoTable) => {
@@ -150,7 +155,7 @@ export const generateStockReportPDF = async (products: Product[]): Promise<strin
     ]);
 
     doc.autoTable({
-        startY: 50,
+        startY: 55,
         head: [['Nome', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote']],
         body: inventoryBody,
         theme: 'grid',
@@ -183,7 +188,7 @@ export const generateExpiryReportPDF = async (products: Product[]): Promise<stri
     ]);
 
     doc.autoTable({
-        startY: 50,
+        startY: 55,
         head: [['Nome do Produto', 'Lote', 'Data de Validade', 'Quantidade']],
         body: body,
         theme: 'grid',
@@ -215,7 +220,7 @@ export const generatePatientReportPDF = async (dispensations: Dispensation[]): P
     });
 
     doc.autoTable({
-        startY: 50,
+        startY: 55,
         head: [['Paciente', 'CPF', 'Data da Dispensação', 'Nº de Itens']],
         body: body,
         theme: 'grid',
@@ -244,7 +249,7 @@ export const generatePatientListReportPDF = async (patients: Patient[]): Promise
     ]);
     
     doc.autoTable({
-        startY: 50,
+        startY: 55,
         head: [['Nome do Paciente', 'CPF', 'CNS', 'Status', 'Demandas']],
         body: body,
         theme: 'grid',
@@ -289,7 +294,7 @@ export const generateUnitDispensationReportPDF = async (orders: Order[], units: 
     ]);
 
     doc.autoTable({
-        startY: 50,
+        startY: 55,
         head: [['Nome da Unidade', 'Tipo', 'Total de Pedidos', 'Total de Itens Recebidos']],
         body: body,
         theme: 'grid',
@@ -317,7 +322,7 @@ export const generateBatchReportPDF = async (products: Product[]): Promise<strin
     ]);
     
     doc.autoTable({
-        startY: 50,
+        startY: 55,
         head: [['Nome do Produto', 'Lote', 'Validade', 'Quantidade']],
         body: body,
         theme: 'grid',
@@ -334,32 +339,106 @@ export const generateBatchReportPDF = async (products: Product[]): Promise<strin
 };
 
 
-export const generateEntriesAndExitsReportPDF = async (movements: StockMovement[]): Promise<string> => {
+export const generateEntriesAndExitsReportPDF = async (movements: StockMovement[], allProducts: Product[], period: string): Promise<string> => {
     const doc = new jsPDF() as jsPDFWithAutoTable;
-    addHeader(doc, 'Relatório de Entradas e Saídas');
+    addHeader(doc, 'Relatório de Entradas e Saídas', period);
 
-    const body = movements.map(m => [
-        new Date(m.date).toLocaleString('pt-BR', { timeZone: 'UTC'}),
-        m.productName,
-        m.type,
-        m.reason,
-        m.quantityChange.toString(),
-        m.quantityAfter.toString(),
-        m.user,
-    ]);
+    const productMap = new Map(allProducts.map(p => [p.id, p]));
 
-    doc.autoTable({
-        startY: 50,
-        head: [['Data', 'Produto', 'Tipo', 'Motivo', 'Alteração', 'Estoque Final', 'Usuário']],
-        body: body,
-        theme: 'grid',
-        headStyles: { fillColor: [107, 114, 128] }, // Gray
-        didDrawPage: (data) => {
-            if (data.pageNumber > 1) {
-                addHeader(doc, 'Relatório de Entradas e Saídas');
-            }
+    // 1. Summary by Category
+    const summary: Record<string, { entries: number, exits: number }> = {};
+    
+    movements.forEach(m => {
+        const product = productMap.get(m.productId);
+        const category = product?.category || 'Desconhecida';
+        if (!summary[category]) {
+            summary[category] = { entries: 0, exits: 0 };
+        }
+        if (m.type === 'Entrada') {
+            summary[category].entries += m.quantityChange;
+        } else if (m.type === 'Saída') {
+            summary[category].exits += Math.abs(m.quantityChange);
         }
     });
+
+    const summaryBody = Object.entries(summary).map(([category, data]) => [
+        category,
+        data.entries.toLocaleString('pt-BR'),
+        data.exits.toLocaleString('pt-BR')
+    ]);
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Resumo de Movimentações por Categoria', 20, 58);
+    doc.autoTable({
+        startY: 62,
+        head: [['Categoria', 'Total de Entradas (Itens)', 'Total de Saídas (Itens)']],
+        body: summaryBody,
+        theme: 'grid',
+        headStyles: { fillColor: [107, 114, 128] }, // Gray
+    });
+
+
+    let finalY = (doc as any).lastAutoTable.finalY || 60;
+    
+    const checkPageBreak = (yOffset: number) => {
+        if (finalY + yOffset > doc.internal.pageSize.height - 30) {
+            doc.addPage();
+            addHeader(doc, 'Relatório de Entradas e Saídas', period);
+            finalY = 55;
+        }
+    };
+    
+    // 2. Entries List
+    const entries = movements.filter(m => m.type === 'Entrada');
+    if (entries.length > 0) {
+        checkPageBreak(20);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Detalhes de Entradas', 20, finalY + 15);
+
+        const entriesBody = entries.map(m => [
+            new Date(m.date).toLocaleString('pt-BR', { timeZone: 'UTC' }),
+            m.productName,
+            m.reason,
+            m.quantityChange.toLocaleString('pt-BR'),
+            m.user,
+        ]);
+
+        doc.autoTable({
+            startY: finalY + 20,
+            head: [['Data', 'Produto', 'Motivo', 'Quantidade', 'Usuário']],
+            body: entriesBody,
+            theme: 'grid',
+            headStyles: { fillColor: [22, 163, 74] }, // Green
+        });
+        finalY = (doc as any).lastAutoTable.finalY;
+    }
+
+    // 3. Exits List
+    const exits = movements.filter(m => m.type === 'Saída');
+    if (exits.length > 0) {
+        checkPageBreak(20);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Detalhes de Saídas', 20, finalY + 15);
+
+        const exitsBody = exits.map(m => [
+            new Date(m.date).toLocaleString('pt-BR', { timeZone: 'UTC' }),
+            m.productName,
+            m.reason,
+            Math.abs(m.quantityChange).toLocaleString('pt-BR'),
+            m.user,
+        ]);
+        
+        doc.autoTable({
+            startY: finalY + 20,
+            head: [['Data', 'Produto', 'Motivo', 'Quantidade', 'Usuário']],
+            body: exitsBody,
+            theme: 'grid',
+            headStyles: { fillColor: [220, 38, 38] }, // Red
+        });
+    }
 
     addFooter(doc);
     return doc.output('datauristring');
