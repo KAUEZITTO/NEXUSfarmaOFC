@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useState, useTransition, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -118,9 +118,15 @@ const getProductsForCategory = (allProducts: Product[], category: Category): Par
     }
     
     if (category === 'Outros') {
-        const usedProductIds = new Set(
-            categories.flatMap(cat => getProductsForCategory(allProducts, cat.name as Category)).map(p => p.id)
-        );
+        const usedProductIds = new Set<string>();
+        categories.forEach(cat => {
+            if (cat.name !== 'Outros') {
+                const products = getProductsForCategory(allProducts, cat.name as Category);
+                products.forEach(p => {
+                    if (p.id) usedProductIds.add(p.id);
+                });
+            }
+        });
         return allProducts.filter(p => !usedProductIds.has(p.id));
     }
     return [];
@@ -146,6 +152,8 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [items, setItems] = useState<DispensationItem[]>([]);
   const { toast } = useToast();
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
 
   useEffect(() => {
     async function loadData() {
@@ -230,6 +238,9 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
         presentation: '',
       },
     ]);
+     setTimeout(() => {
+      scrollAreaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 100);
   };
 
   const handleRemoveItem = (id: string) => {
@@ -440,7 +451,7 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-grow overflow-hidden">
+        <div className="flex-grow overflow-hidden" ref={scrollAreaRef}>
           {step === 'selectPatient' && !initialPatient && (
             <div className="p-1">
               <div className="relative mb-4">
