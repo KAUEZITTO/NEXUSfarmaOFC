@@ -9,9 +9,10 @@ import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger
 import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guide';
 import BirthdayBalloons from '@/components/dashboard/birthday-balloons';
 
-const CURRENT_VERSION = '3.2.1';
+const CURRENT_VERSION = '3.2.2';
 
 const changelog = [
+    { version: '3.2.2', changes: ['Correção arquitetural definitiva para o carregamento de dados em páginas dinâmicas, resolvendo bugs de unidades e pacientes não encontrados.', 'Implementada a funcionalidade de exclusão de pedidos (com estorno de estoque) e de unidades.', 'Melhorado o cadastro de pacientes com controle de laudo de insulina, cálculo de dispensação e novas demandas.'] },
     { version: '3.2.1', changes: ['Corrigido o problema de cache de dados que impedia a exibição de informações recém-cadastradas, garantindo que os dados sejam sempre atualizados em tempo real.'] },
     { version: '3.2.0', changes: ['Refatorada a arquitetura de busca de dados em todas as páginas de listagem para resolver definitivamente o problema de "dados fantasmas", garantindo que as informações sejam atualizadas em tempo real após qualquer cadastro ou edição.'] },
     { version: '3.1.3', changes: ['Resolvido problema de atualização de dados em tempo real. As listas (inventário, pacientes, etc.) agora recarregam automaticamente após um novo cadastro ou edição.'] },
