@@ -1,7 +1,7 @@
+
 'use server';
 
 import React, { Suspense } from "react";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -10,7 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Printer, ArrowLeft, Loader2 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import Image from "next/image";
 import type { Order, OrderItem, Product } from "@/lib/types";
@@ -118,6 +117,7 @@ const ReceiptCopy = ({ order, showSignature, isFirstCopy }: { order: Order, show
               <p>Av. Marechal Deodoro – Centro – IGARAPÉ-AÇU/PA - CEP 68.725-000</p>
               <p>email: caf.igarape18@gmail.com | CNPJ: 11.718.379/0001-96</p>
               <p className="font-semibold mt-2">PEDIDOS E DEMAIS DEMANDAS PODEM SER ENVIADAS POR EMAIL!</p>
+              {order.creatorName && <p className="mt-2">Documento gerado por: {order.creatorName}</p>}
           </div>
          <p className="text-xs text-center mt-4 text-gray-500">
           {isFirstCopy ? "1ª VIA - CAF" : "2ª VIA - UNIDADE"}

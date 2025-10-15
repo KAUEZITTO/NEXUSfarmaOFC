@@ -1,8 +1,8 @@
 
+
 'use client';
 
 import React, { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -17,6 +17,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { Dispensation, DispensationItem, Product } from "@/lib/types";
 import { getDispensation } from "@/lib/data";
+import { PrintActions } from "@/app/receipt/[id]/print-actions";
 
 
 const renderItemRows = (items: DispensationItem[]) => {
@@ -124,6 +125,7 @@ const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensatio
               <p>Av. Marechal Deodoro – Centro – IGARAPÉ-AÇU/PA - CEP 68.725-000</p>
               <p>email: caf.igarape18@gmail.com | CNPJ: 11.718.379/0001-96</p>
               <p className="font-semibold mt-2">PEDIDOS E DEMAIS DEMANDAS PODEM SER ENVIADAS POR EMAIL!</p>
+              {dispensation.creatorName && <p className="mt-2">Documento gerado por: {dispensation.creatorName}</p>}
           </div>
         <p className="text-xs text-center mt-4 text-gray-500">
           {isFirstCopy ? "1ª VIA - CAF" : "2ª VIA - PACIENTE"}
@@ -135,7 +137,6 @@ const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensatio
 
 
 export default function DispensationReceiptPage({ params }: { params: { id: string } }) {
-  const router = useRouter();
   const [dispensationData, setDispensationData] = useState<Dispensation | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -151,11 +152,16 @@ export default function DispensationReceiptPage({ params }: { params: { id: stri
     
     async function fetchDispensation() {
         setLoading(true);
-        const data = await getDispensation(params.id);
-        if (data) {
-            setDispensationData(data);
+        try {
+          const data = await getDispensation(params.id);
+          if (data) {
+              setDispensationData(data);
+          }
+        } catch (error) {
+          console.error("Failed to fetch dispensation", error);
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
     }
     fetchDispensation();
   }, [params.id]);
@@ -179,8 +185,10 @@ export default function DispensationReceiptPage({ params }: { params: { id: stri
 
   if (!dispensationData) {
       return (
-        <div className="flex h-screen w-full items-center justify-center">
+        <div className="flex h-screen w-full items-center justify-center flex-col gap-4">
             <p>Recibo não encontrado.</p>
+            <p className="text-sm text-muted-foreground">O ID pode estar incorreto ou o recibo foi excluído.</p>
+            <PrintActions backOnly={true} />
         </div>
     );
   }
@@ -192,16 +200,7 @@ export default function DispensationReceiptPage({ params }: { params: { id: stri
         <ReceiptCopy dispensation={dispensationData} showSignature={false} isFirstCopy={false} />
       </div>
 
-      <div className="fixed bottom-4 right-4 flex gap-2 print:hidden">
-          <Button variant="outline" onClick={() => router.back()}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Voltar
-          </Button>
-          <Button onClick={() => window.print()}>
-            <Printer className="mr-2 h-4 w-4" />
-            Imprimir
-        </Button>
-      </div>
+      <PrintActions />
     </>
   );
 }

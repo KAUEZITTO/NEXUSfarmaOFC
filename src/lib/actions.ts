@@ -6,6 +6,8 @@ import { revalidatePath } from 'next/cache';
 import { readData, writeData, getProducts, getKnowledgeBase } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType } from './types';
 import * as admin from 'firebase-admin';
+import { getServerSession } from 'next-auth';
+import { authOptions } from './auth';
 
 // --- FIREBASE ADMIN INITIALIZATION (MOVED HERE) ---
 function initializeAdminApp() {
@@ -56,9 +58,10 @@ const logStockMovement = async (
   movementDate: string,
   relatedId?: string
 ) => {
+  const session = await getServerSession(authOptions);
   const movements = await readData<StockMovement>('stockMovements');
-  const userEmail = 'Sistema'; // Placeholder, idealmente obter da sessão
-  
+  const userEmail = session?.user?.name || 'Sistema';
+
   const newMovement: StockMovement = {
     id: generateId('mov'),
     productId,
@@ -192,6 +195,7 @@ export async function updatePatientStatus(patientId: string, status: PatientStat
 
 // --- ORDER ACTIONS ---
 export async function addOrder(orderData: { unitId: string; unitName: string; orderType: OrderType, items: OrderItem[]; notes?: string; sentDate?: string; }) {
+    const session = await getServerSession(authOptions);
     const orders = await readData<Order>('orders');
     const products = await getProducts();
 
@@ -207,6 +211,7 @@ export async function addOrder(orderData: { unitId: string; unitName: string; or
         sentDate: sentDate,
         status: 'Em Trânsito',
         itemCount: orderData.items.reduce((sum, item) => sum + item.quantity, 0),
+        creatorName: session?.user?.name || 'Usuário Desconhecido',
     };
 
     // Update stock for each item
@@ -285,6 +290,7 @@ export async function deleteOrder(orderId: string): Promise<{ success: boolean; 
 
 // --- DISPENSATION ACTIONS ---
 export async function addDispensation(dispensationData: { patientId: string; patient: Omit<Patient, 'files'>; items: DispensationItem[] }): Promise<Dispensation> {
+    const session = await getServerSession(authOptions);
     const dispensations = await readData<Dispensation>('dispensations');
     const products = await getProducts();
     const dispensationDate = new Date().toISOString();
@@ -295,6 +301,7 @@ export async function addDispensation(dispensationData: { patientId: string; pat
       patient: dispensationData.patient,
       items: dispensationData.items,
       date: dispensationDate,
+      creatorName: session?.user?.name || 'Usuário Desconhecido',
     };
 
     // Update stock for each item

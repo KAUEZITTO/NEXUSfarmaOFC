@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -5,17 +6,19 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Printer, ArrowLeft } from 'lucide-react';
 
-export function PrintActions() {
+export function PrintActions({ backOnly = false }: { backOnly?: boolean }) {
     const router = useRouter();
 
     useEffect(() => {
         // Automatically trigger print dialog when component mounts
-        const timer = setTimeout(() => {
-            window.print();
-        }, 100); // Small delay to ensure content is rendered
+        if (!backOnly) {
+            const timer = setTimeout(() => {
+                window.print();
+            }, 100); // Small delay to ensure content is rendered
 
-        return () => clearTimeout(timer);
-    }, []);
+            return () => clearTimeout(timer);
+        }
+    }, [backOnly]);
 
     return (
         <div className="fixed bottom-4 right-4 flex gap-2 print:hidden">
@@ -23,10 +26,12 @@ export function PrintActions() {
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Voltar
             </Button>
-            <Button onClick={() => window.print()}>
-                <Printer className="mr-2 h-4 w-4" />
-                Imprimir
-            </Button>
+            {!backOnly && (
+                <Button onClick={() => window.print()}>
+                    <Printer className="mr-2 h-4 w-4" />
+                    Imprimir
+                </Button>
+            )}
         </div>
     );
 }

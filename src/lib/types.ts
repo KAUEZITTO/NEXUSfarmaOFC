@@ -168,6 +168,7 @@ export type Order = {
   itemCount: number;
   items: OrderItem[];
   notes?: string;
+  creatorName?: string;
 };
 
 export type DispensationItem = {
@@ -186,6 +187,7 @@ export type Dispensation = {
     patient: Omit<Patient, 'files'>;
     date: string;
     items: DispensationItem[];
+    creatorName?: string;
 };
 
 export type StockMovement = {
