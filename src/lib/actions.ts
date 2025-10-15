@@ -124,6 +124,7 @@ export async function addUnit(unitData: Omit<Unit, 'id'>) {
     };
     await writeData('units', [...units, newUnit]);
     revalidatePath('/dashboard/units');
+    revalidatePath('/dashboard/orders/new');
 }
 
 export async function updateUnit(unitId: string, unitData: Partial<Omit<Unit, 'id'>>) {
@@ -134,6 +135,20 @@ export async function updateUnit(unitId: string, unitData: Partial<Omit<Unit, 'i
     await writeData('units', units);
     revalidatePath('/dashboard/units');
     revalidatePath(`/dashboard/units/${unitId}`);
+}
+
+export async function deleteUnit(unitId: string) {
+    const units = await readData<Unit>('units');
+    const orders = await readData<Order>('orders');
+
+    if (orders.some(order => order.unitId === unitId)) {
+        throw new Error('Não é possível excluir unidades que possuem pedidos associados.');
+    }
+
+    const updatedUnits = units.filter(u => u.id !== unitId);
+    await writeData('units', updatedUnits);
+    revalidatePath('/dashboard/units');
+    revalidatePath('/dashboard/orders/new');
 }
 
 
@@ -201,7 +216,7 @@ export async function addOrder(orderData: { unitId: string; unitName: string; or
         if (productIndex !== -1) {
             const originalQuantity = products[productIndex].quantity;
             products[productIndex].quantity -= item.quantity;
-            products[productIndex].status = products[productIndex].quantity === 0 ? 'Sem Estoque' : products[productIndex].quantity < 20 ? 'Baixo Estoque' : 'Em Estoque';
+            products[productIndex].status = products[productIndex].quantity <= 0 ? 'Sem Estoque' : products[productIndex].quantity < 20 ? 'Baixo Estoque' : 'Em Estoque';
             await logStockMovement(item.productId, item.name, 'Saída', 'Saída por Remessa', -item.quantity, originalQuantity, sentDate, newOrder.id);
         }
     }
@@ -212,6 +227,7 @@ export async function addOrder(orderData: { unitId: string; unitName: string; or
     revalidatePath('/dashboard/orders');
     revalidatePath('/dashboard/inventory');
     revalidatePath('/dashboard/reports');
+    revalidatePath(`/dashboard/orders/history/${orderData.unitId}`);
 }
 
 // --- DISPENSATION ACTIONS ---
@@ -234,7 +250,7 @@ export async function addDispensation(dispensationData: { patientId: string; pat
         if (productIndex !== -1) {
             const originalQuantity = products[productIndex].quantity;
             products[productIndex].quantity -= item.quantity;
-            products[productIndex].status = products[productIndex].quantity === 0 ? 'Sem Estoque' : products[productIndex].quantity < 20 ? 'Baixo Estoque' : 'Em Estoque';
+            products[productIndex].status = products[productIndex].quantity <= 0 ? 'Sem Estoque' : products[productIndex].quantity < 20 ? 'Baixo Estoque' : 'Em Estoque';
             await logStockMovement(item.productId, item.name, 'Saída', 'Saída por Dispensação', -item.quantity, originalQuantity, dispensationDate, newDispensation.id);
         }
     }
@@ -357,7 +373,6 @@ export async function register({ email, password, role, subRole }: { email: stri
 
         await writeData<User>('users', [...users, newUser]);
         
-        // **FIX**: Revalidate the user management page path after adding a new user.
         revalidatePath('/dashboard/user-management');
 
         return { success: true, message: 'Usuário registrado com sucesso.' };

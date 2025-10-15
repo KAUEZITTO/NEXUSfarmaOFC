@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -71,16 +70,26 @@ export default function NewOrderPage() {
   useEffect(() => {
     async function fetchData() {
         setIsLoading(true);
-        const [unitsData, productsData] = await Promise.all([
-            getUnits(),
-            getProducts()
-        ]);
-        setUnits(unitsData);
-        setAllProducts(productsData);
-        setIsLoading(false);
+        try {
+            const [unitsData, productsData] = await Promise.all([
+                getUnits(),
+                getProducts()
+            ]);
+            setUnits(unitsData);
+            setAllProducts(productsData);
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao carregar dados',
+                description: 'Não foi possível buscar as unidades e produtos. Tente recarregar a página.'
+            });
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
     }
     fetchData();
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     if (!isLoading && destinationUnitId) {
@@ -447,5 +456,3 @@ export default function NewOrderPage() {
     </div>
   );
 }
-
-    

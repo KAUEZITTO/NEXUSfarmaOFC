@@ -14,16 +14,37 @@ import {
 } from '@/components/ui/card';
 import { AddUnitDialog } from '@/components/dashboard/add-unit-dialog';
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown, MoreHorizontal, Check, X, Edit, Eye, PlusCircle } from 'lucide-react';
+import { ArrowUpDown, MoreHorizontal, Check, X, Edit, Eye, PlusCircle, Trash2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { deleteUnit } from '@/lib/actions';
+import { useToast } from '@/hooks/use-toast';
 
 export function UnitsClientPage({ initialUnits }: { initialUnits: Unit[] }) {
   const router = useRouter();
+  const { toast } = useToast();
 
   const handleUnitSaved = () => {
     router.refresh();
   };
+
+  const handleDeleteUnit = async (unitId: string, unitName: string) => {
+    try {
+        await deleteUnit(unitId);
+        toast({
+            title: 'Unidade Excluída',
+            description: `A unidade "${unitName}" foi removida com sucesso.`
+        });
+        router.refresh();
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Erro ao Excluir',
+            description: error.message || 'Não foi possível excluir a unidade. Tente novamente.'
+        });
+    }
+  }
 
   const getColumns = (onUnitSaved: () => void): ColumnDef<Unit>[] => [
     {
@@ -82,47 +103,66 @@ export function UnitsClientPage({ initialUnits }: { initialUnits: Unit[] }) {
         const unit = row.original;
 
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Ações</DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                <Link
-                  href={`/dashboard/units/${unit.id}`}
-                  className="w-full h-full flex items-center cursor-pointer"
-                >
-                  <Eye className="mr-2 h-4 w-4" />
-                  Ver Detalhes
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <AddUnitDialog
-                unitToEdit={unit}
-                onUnitSaved={onUnitSaved}
-                trigger={
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    <span>Editar Unidade</span>
+          <AlertDialog>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href={`/dashboard/units/${unit.id}`}
+                    className="w-full h-full flex items-center cursor-pointer"
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    Ver Detalhes
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <AddUnitDialog
+                  unitToEdit={unit}
+                  onUnitSaved={onUnitSaved}
+                  trigger={
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      <span>Editar Unidade</span>
+                    </DropdownMenuItem>
+                  }
+                />
+                 <AlertDialogTrigger asChild>
+                  <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span>Excluir Unidade</span>
                   </DropdownMenuItem>
-                }
-              />
-            </DropdownMenuContent>
-          </DropdownMenu>
+                </AlertDialogTrigger>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação não pode ser desfeita. Isso irá excluir permanentemente a unidade <strong>{unit.name}</strong> e remover seus dados de nossos servidores.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => handleDeleteUnit(unit.id, unit.name)}>
+                    Sim, excluir unidade
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         );
       },
     },
   ];
 
   const columns = getColumns(handleUnitSaved);
-
-  const handleRowClick = (unit: Unit) => {
-    router.push(`/dashboard/units/${unit.id}`);
-  };
 
   return (
     <Card>
@@ -146,7 +186,7 @@ export function UnitsClientPage({ initialUnits }: { initialUnits: Unit[] }) {
         </div>
       </CardHeader>
       <CardContent>
-          <DataTable columns={columns} data={initialUnits} onRowClick={handleRowClick} />
+          <DataTable columns={columns} data={initialUnits} />
       </CardContent>
     </Card>
   );

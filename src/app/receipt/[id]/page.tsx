@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -25,7 +24,7 @@ const renderItemRows = (items: OrderItem[]) => {
             <TableCell className="font-medium">{item.name}</TableCell>
             <TableCell className="text-center">{item.presentation || "--"}</TableCell>
             <TableCell className="text-center">{item.batch || "--"}</TableCell>
-            <TableCell className="text-center">{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : "--"}</TableCell>
+            <TableCell className="text-center">{item.expiryDate ? item.expiryDate : "--"}</TableCell>
             <TableCell className="text-right">{item.quantity.toLocaleString('pt-BR')}</TableCell>
         </TableRow>
     ));
@@ -128,7 +127,7 @@ const ReceiptCopy = ({ order, showSignature, isFirstCopy }: { order: Order, show
 };
 
 
-export default function ReceiptPage({ params }: { params: { id: string } }) {
+function ReceiptPageContent({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [orderData, setOrderData] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
@@ -184,4 +183,10 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
   );
 }
 
-    
+export default function ReceiptPage({ params }: { params: { id: string } }) {
+    return (
+        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /><p className="ml-4">Carregando...</p></div>}>
+            <ReceiptPageContent params={params} />
+        </Suspense>
+    )
+}
