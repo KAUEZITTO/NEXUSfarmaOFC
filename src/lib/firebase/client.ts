@@ -1,6 +1,7 @@
+
 // src/lib/firebase/client.ts
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
+import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
+import { getAuth, type Auth } from 'firebase/auth';
 
 // Configuração segura para o lado do cliente (navegador).
 // Apenas variáveis com o prefixo NEXT_PUBLIC_ são expostas aqui.
@@ -13,23 +14,21 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Inicializa o Firebase App para o cliente, garantindo que não seja reinicializado (Singleton pattern).
-// A inicialização só ocorre se a chave da API estiver presente.
-let firebaseApp: FirebaseApp;
+// Inicializa o Firebase App e o Auth de forma segura, apenas se a chave da API estiver presente.
+let firebaseApp: FirebaseApp | null = null;
+let auth: Auth | null = null;
+
 if (firebaseConfig.apiKey) {
-    firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+  if (!getApps().length) {
+    firebaseApp = initializeApp(firebaseConfig);
+  } else {
+    firebaseApp = getApp();
+  }
+  auth = getAuth(firebaseApp);
 } else {
-    // Se não houver chave, o app não é inicializado, mas evitamos o crash.
-    // Funções que dependem do 'auth' não funcionarão, o que é esperado.
-    if (process.env.NODE_ENV !== 'production') {
-        console.warn("As variáveis de ambiente do Firebase não estão configuradas. A autenticação não funcionará. Adicione suas credenciais Firebase ao arquivo .env");
-    }
-    // @ts-ignore - Atribuímos undefined para garantir que o 'auth' também não seja inicializado.
-    firebaseApp = undefined;
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn("As variáveis de ambiente do Firebase não estão configuradas. A autenticação não funcionará. Adicione suas credenciais Firebase ao arquivo .env");
+  }
 }
-
-
-// Exporta 'auth' apenas se a inicialização foi bem-sucedida.
-const auth: Auth | {} = firebaseApp ? getAuth(firebaseApp) : {};
 
 export { firebaseApp, auth };
