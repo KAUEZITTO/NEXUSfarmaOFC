@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Building2, Users, Pill, Stethoscope, ArrowLeft, FileText, CheckCircle, XCircle } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import type { Order, Unit as UnitType } from "@/lib/types";
+import type { Order, Unit as UnitType, OrderStatus } from "@/lib/types";
 
 const calculateItemTotals = (orders: Order[]) => {
     let medCount = 0;
@@ -49,6 +49,18 @@ interface UnitDetailsClientPageProps {
 export function UnitDetailsClientPage({ initialUnit, initialPatientCount, initialOrders }: UnitDetailsClientPageProps) {
   
   const { medCount: totalMedicationsSent, materialCount: totalMaterialsSent } = calculateItemTotals(initialOrders);
+
+  const statusVariantMap: { [key in OrderStatus]: "destructive" | "secondary" | "default" } = {
+    'Não atendido': "destructive",
+    'Em análise': "secondary",
+    'Atendido': "default",
+  };
+
+  const statusClassMap = {
+      'Em análise': 'bg-accent text-accent-foreground',
+      'Atendido': 'bg-green-600 text-white',
+  };
+
 
   return (
     <div className="space-y-6">
@@ -115,9 +127,14 @@ export function UnitDetailsClientPage({ initialUnit, initialPatientCount, initia
       <Card>
         <CardHeader>
           <CardTitle>Histórico de Pedidos Recentes</CardTitle>
-          <CardDescription>
-            Últimos pedidos e remessas para esta unidade.
-          </CardDescription>
+           <div className="flex justify-between items-center">
+              <CardDescription>
+                Últimos pedidos e remessas para esta unidade.
+              </CardDescription>
+              <Button asChild variant="outline">
+                  <Link href={`/dashboard/orders/history/${initialUnit.id}`}>Ver Histórico Completo</Link>
+              </Button>
+           </div>
         </CardHeader>
         <CardContent>
            <Table>
@@ -140,12 +157,8 @@ export function UnitDetailsClientPage({ initialUnit, initialPatientCount, initia
                       <TableCell>{order.itemCount}</TableCell>
                       <TableCell>
                          <Badge 
-                            variant={order.status === 'Cancelado' ? 'destructive' : order.status === 'Pendente' ? 'secondary' : 'default'} 
-                            className={cn({
-                                'bg-orange-500 text-white': order.status === 'Pendente',
-                                'bg-blue-500 text-white': order.status === 'Em Trânsito',
-                                'bg-green-600 text-white': order.status === 'Entregue'
-                            })}
+                            variant={statusVariantMap[order.status] || "default"}
+                            className={cn(statusClassMap[order.status as keyof typeof statusClassMap])}
                          >
                             {order.status}
                         </Badge>
