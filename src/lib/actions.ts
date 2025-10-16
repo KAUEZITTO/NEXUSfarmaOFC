@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -443,7 +444,7 @@ export async function addDispensation(dispensationData: { patientId: string; pat
 
 // --- USER PROFILE ACTIONS ---
 
-export async function updateUserProfile(userId: string, data: { name?: string; birthdate?: string; image?: string }) {
+export async function updateUserProfile(userId: string, data: { name?: string; birthdate?: string; avatarColor?: string }) {
     const users = await readData<User>('users');
     const userIndex = users.findIndex(u => u.id === userId);
     if (userIndex === -1) {

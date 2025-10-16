@@ -10,24 +10,24 @@ declare module 'next-auth' {
       id: string;
       name?: string | null;
       email?: string | null;
-      // image?: string | null; // REMOVED
-      birthdate?: string | null; // Adicionado para data de nascimento
+      birthdate?: string | null;
       role?: Role;
       subRole?: SubRole;
       accessLevel?: AccessLevel;
       lastSeen?: string;
+      avatarColor?: string; 
     };
   }
   interface User extends DefaultUser {
       id: string;
       name?: string | null;
       email?: string | null;
-      // image?: string | null; // REMOVED
-      birthdate?: string | null; // Adicionado para data de nascimento
+      birthdate?: string | null;
       role?: Role;
       subRole?: SubRole;
       accessLevel?: AccessLevel;
       lastSeen?: string;
+      avatarColor?: string;
   }
 }
 
@@ -40,8 +40,8 @@ declare module 'next-auth/jwt' {
         accessLevel?: AccessLevel;
         name?: string | null;
         email?: string | null;
-        // image?: string | null; // REMOVED
         birthdate?: string | null;
+        avatarColor?: string;
     }
 }
 
@@ -71,6 +71,7 @@ export type User = {
     accessLevel: AccessLevel;
     lastSeen?: string; // ISO 8601 date string
     password?: string; // Only used for creation, should not be stored or returned in most cases
+    avatarColor?: string; // e.g., 'hsl(211 100% 50%)'
 }
 
 export type Product = {
@@ -207,7 +208,7 @@ export type StockMovement = {
   productId: string;
   productName: string;
   type: 'Entrada' | 'Saída' | 'Ajuste';
-  reason: 'Entrada por Compra' | 'Saída por Remessa' | 'Saída por Dispensação' | 'Ajuste de Inventário' | 'Entrada Inicial' | 'Estorno de Remessa';
+  reason: 'Entrada por Compra' | 'Saída por Remessa' | 'Saída por Dispensação' | 'Ajuste de Inventário' | 'Entrada Inicial' | 'Estorno de Remessa' | 'Exclusão de Produto';
   quantityChange: number;
   quantityBefore: number;
   quantityAfter: number;

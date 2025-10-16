@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,10 +8,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, User } from 'lucide-react';
+import { Loader2, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { updateUserProfile } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+
+const avatarColors = [
+  'hsl(211 100% 50%)', // Blue
+  'hsl(39 100% 50%)', // Orange
+  'hsl(0 84.2% 60.2%)', // Red
+  'hsl(142.1 76.2% 36.3%)', // Green
+  'hsl(262.1 83.3% 57.8%)', // Purple
+  'hsl(314.5 72.4% 57.3%)', // Pink
+  'hsl(198.8 93.4% 42%)' // Teal
+];
 
 export function AccountForm() {
   const { data: session, update: updateSession } = useSession();
@@ -20,6 +32,7 @@ export function AccountForm() {
 
   const [name, setName] = useState('');
   const [birthdate, setBirthdate] = useState('');
+  const [avatarColor, setAvatarColor] = useState('');
   
   const [isSaving, setIsSaving] = useState(false);
   
@@ -27,6 +40,7 @@ export function AccountForm() {
     if(user) {
         setName(user.name || '');
         setBirthdate(user.birthdate ? user.birthdate.split('T')[0] : '');
+        setAvatarColor(user.avatarColor || avatarColors[0]);
     }
   }, [user]);
 
@@ -35,8 +49,7 @@ export function AccountForm() {
     if (!user) return;
     setIsSaving(true);
     try {
-      // Pass only name and birthdate, image is no longer managed here.
-      const result = await updateUserProfile(user.id, { name, birthdate });
+      const result = await updateUserProfile(user.id, { name, birthdate, avatarColor });
       
       await updateSession({ ...session, user: { ...session?.user, ...result.user } });
 
@@ -65,15 +78,34 @@ export function AccountForm() {
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <Avatar className="h-20 w-20">
-            {/* The AvatarImage is removed as we no longer use profile pictures */}
-            <AvatarFallback className="text-3xl">
+            <AvatarFallback 
+                className="text-3xl text-white font-bold"
+                style={{ backgroundColor: avatarColor }}
+            >
               {fallbackInitial}
             </AvatarFallback>
           </Avatar>
            <div className="text-center sm:text-left">
               <h4 className="text-lg font-semibold">Avatar do Perfil</h4>
-              <p className="text-sm text-muted-foreground">O avatar é gerado automaticamente a partir da inicial do seu nome.</p>
+              <p className="text-sm text-muted-foreground">O avatar é gerado automaticamente a partir da inicial do seu nome. Escolha sua cor de fundo preferida abaixo.</p>
            </div>
+        </div>
+
+        <div>
+            <Label>Cor do Avatar</Label>
+            <div className="flex flex-wrap gap-2 mt-2">
+                {avatarColors.map(color => (
+                    <button
+                        key={color}
+                        type="button"
+                        onClick={() => setAvatarColor(color)}
+                        className={cn('h-8 w-8 rounded-full border-2 transition-all', avatarColor === color ? 'border-ring' : 'border-transparent')}
+                        style={{ backgroundColor: color }}
+                    >
+                        {avatarColor === color && <Check className="h-5 w-5 text-white" />}
+                    </button>
+                ))}
+            </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -1,4 +1,5 @@
 
+
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { User as AppUser } from '@/lib/types';
@@ -50,8 +51,8 @@ export const authOptions: NextAuthOptions = {
                 token.role = appUser.role;
                 token.subRole = appUser.subRole;
                 token.name = appUser.name;
-                // token.image = appUser.image; // REMOVED to prevent large headers
                 token.birthdate = appUser.birthdate;
+                token.avatarColor = appUser.avatarColor;
             }
         }
         
@@ -63,8 +64,8 @@ export const authOptions: NextAuthOptions = {
                 token.role = appUser.role;
                 token.subRole = appUser.subRole;
                 token.name = appUser.name;
-                // token.image = appUser.image; // REMOVED to prevent large headers
                 token.birthdate = appUser.birthdate;
+                token.avatarColor = appUser.avatarColor;
             }
         }
         
@@ -77,8 +78,8 @@ export const authOptions: NextAuthOptions = {
             session.user.role = token.role as AppUser['role'];
             session.user.subRole = token.subRole as AppUser['subRole'];
             session.user.name = token.name;
-            // session.user.image = token.image; // REMOVED to prevent large headers
             session.user.birthdate = token.birthdate;
+            session.user.avatarColor = token.avatarColor as string;
         }
         return session;
     }

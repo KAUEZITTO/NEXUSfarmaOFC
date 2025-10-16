@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -24,6 +25,7 @@ import { Skeleton } from '../ui/skeleton';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { User as UserIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function UserNav() {
   const { startTour } = useTour();
@@ -52,11 +54,13 @@ export function UserNav() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-            <Avatar className="h-8 w-8">
-              {/* AvatarImage is no longer used */}
-              <AvatarFallback>
-                {fallbackInitial}
-              </AvatarFallback>
+             <Avatar className="h-8 w-8">
+                <AvatarFallback
+                    className={cn('text-white font-bold')}
+                    style={{ backgroundColor: user.avatarColor || 'hsl(var(--primary))' }}
+                >
+                    {fallbackInitial}
+                </AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
