@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { readData, writeData, getProducts, getKnowledgeBase } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus } from './types';
 import * as admin from 'firebase-admin';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next/auth';
 import { authOptions } from './auth';
 
 // --- FIREBASE ADMIN INITIALIZATION (MOVED HERE) ---
@@ -556,5 +556,17 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
         return { success: true, filePath: dataUrl };
     } catch (e) {
         return { success: false, error: 'Falha ao processar a imagem.' };
+    }
+}
+
+
+export async function updateUserLastSeen(userId: string) {
+    const users = await readData<User>('users');
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex !== -1) {
+        users[userIndex].lastSeen = new Date().toISOString();
+        await writeData('users', users);
+        // We don't need to revalidate here, as it's a background task.
+        // The dashboard page will refetch on its own interval.
     }
 }

@@ -1,13 +1,14 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
-
+import { useSession } from 'next-auth/react';
 import { UserNav } from '@/components/dashboard/user-nav';
 import { DashboardNav } from '@/components/dashboard/dashboard-nav';
 import { Logo } from '@/components/logo';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guide';
 import BirthdayBalloons from '@/components/dashboard/birthday-balloons';
+import { updateUserLastSeen } from '@/lib/actions';
 
 const CURRENT_VERSION = '3.3.3';
 
@@ -25,7 +26,27 @@ const changelog = [
     { version: '3.1.0', changes: ['Refatoração completa do fluxo de autenticação para resolver o erro "Credenciais Inválidas" e estabilizar o login.', 'Adicionado botão de visibilidade de senha na tela de login.'] },
 ];
 
-export default async function DashboardLayout({
+function UserActivityTracker() {
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (status === 'authenticated' && session.user?.id) {
+      const updateLastSeen = async () => {
+        await updateUserLastSeen(session.user!.id);
+      };
+      
+      updateLastSeen(); // Update once on load
+      
+      const intervalId = setInterval(updateLastSeen, 30000); // Update every 30 seconds
+      
+      return () => clearInterval(intervalId);
+    }
+  }, [status, session]);
+
+  return null; // This component does not render anything
+}
+
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -33,6 +54,7 @@ export default async function DashboardLayout({
   return (
         <SidebarProvider>
           <TourGuideWrapper>
+            <UserActivityTracker />
             <BirthdayBalloons />
             <div className="grid min-h-screen w-full md:grid-cols-[var(--sidebar-width)_1fr] peer-data-[state=collapsed]:md:grid-cols-[var(--sidebar-width-icon)_1fr] transition-[grid-template-columns] duration-300 ease-in-out">
               <Sidebar>
