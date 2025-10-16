@@ -85,25 +85,15 @@ export function UserManagementClientPage({ initialUsers }: { initialUsers: User[
       ),
       cell: ({ row }) => {
           const user = row.original;
-          const online = isUserOnline(user.lastSeen);
           const fallbackInitial = user.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? '?';
           return (
               <div className="flex items-center gap-3">
-                  <div className="relative">
-                      <Avatar className="h-9 w-9">
-                          <AvatarImage src={user.image || ''} alt={user.name || user.email} />
-                          <AvatarFallback>
-                              {fallbackInitial}
-                          </AvatarFallback>
-                      </Avatar>
-                      <span 
-                        className={cn(
-                            "absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-background", 
-                            online ? "bg-green-500" : "bg-red-500"
-                        )} 
-                        title={online ? 'Online' : 'Offline'} 
-                      />
-                  </div>
+                  <Avatar className="h-9 w-9">
+                      <AvatarImage src={user.image || ''} alt={user.name || user.email} />
+                      <AvatarFallback>
+                          {fallbackInitial}
+                      </AvatarFallback>
+                  </Avatar>
                   <span className="font-medium">{user.email}</span>
               </div>
           )
@@ -126,6 +116,19 @@ export function UserManagementClientPage({ initialUsers }: { initialUsers: User[
       cell: ({ row }) => {
           const level: string = row.getValue("accessLevel");
           return <Badge variant={level === 'Admin' ? 'destructive' : 'secondary'}>{level}</Badge>
+      }
+    },
+    {
+      id: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const user = row.original;
+        const online = isUserOnline(user.lastSeen);
+        return (
+          <Badge className={cn(online ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600")}>
+            {online ? "Online" : "Offline"}
+          </Badge>
+        );
       }
     },
     {
