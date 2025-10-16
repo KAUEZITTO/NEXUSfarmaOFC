@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { readData, writeData, getProducts, getKnowledgeBase } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus } from './types';
 import * as admin from 'firebase-admin';
-import { getServerSession } from 'next/auth';
+import { getServerSession } from 'next-auth';
 import { authOptions } from './auth';
 
 // --- FIREBASE ADMIN INITIALIZATION (MOVED HERE) ---

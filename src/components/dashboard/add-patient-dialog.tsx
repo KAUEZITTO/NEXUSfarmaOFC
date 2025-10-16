@@ -118,6 +118,7 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
   const [insulinPresentation, setInsulinPresentation] = useState<Patient['insulinPresentation']>('Caneta');
   const [manualDispensingQuantity, setManualDispensingQuantity] = useState<number | undefined>(undefined);
   const [files, setFiles] = useState<PatientFile[]>([]);
+  const [diabetesType, setDiabetesType] = useState<Patient['diabetesType'] | undefined>(undefined);
 
 
   const [units, setUnits] = useState<Unit[]>([]);
@@ -152,6 +153,7 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
     setManualDispensingQuantity(undefined);
     setInsulinType('Lantus (Glargina)');
     setInsulinPresentation('Caneta');
+    setDiabetesType(undefined);
     setFiles([]);
   }
   
@@ -165,6 +167,7 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
                 setHasInsulinReport(false);
                 setInsulinReportDate('');
                 setCustomInsulinType('');
+                setDiabetesType(undefined);
             }
             if (item === 'Tiras de Glicemia') setStripDosages([]);
         }
@@ -231,6 +234,7 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
         setInsulinDosages(patientToEdit.insulinDosages || []);
         setStripDosages(patientToEdit.stripDosages || []);
         setManualDispensingQuantity(patientToEdit.manualDispensingQuantity);
+        setDiabetesType(patientToEdit.diabetesType);
         setFiles(patientToEdit.files || []);
     } else if (!isEditing && isOpen) {
         resetForm();
@@ -264,6 +268,7 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
             isBedridden,
             pathology: isBedridden ? pathology : undefined,
             demandItems,
+            diabetesType: demandItems.includes('Insulinas Análogas') ? diabetesType : undefined,
             analogInsulinType: demandItems.includes('Insulinas Análogas') ? insulinType : undefined,
             customInsulinType: demandItems.includes('Insulinas Análogas') && insulinType === 'Outro' ? customInsulinType : undefined,
             hasInsulinReport: demandItems.includes('Insulinas Análogas') ? hasInsulinReport : undefined,
@@ -430,6 +435,20 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
                                 </AlertDescription>
                             </Alert>
                         )}
+                        
+                        <div>
+                            <Label>Tipo de Diabetes:</Label>
+                            <RadioGroup value={diabetesType} onValueChange={(v) => setDiabetesType(v as any)} className="mt-2 flex gap-4">
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="DM1" id="dm1" />
+                                    <Label htmlFor="dm1">DM1</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="DM2" id="dm2" />
+                                    <Label htmlFor="dm2">DM2</Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
                         
                         <div>
                             <Label>Tipo de Insulina:</Label>

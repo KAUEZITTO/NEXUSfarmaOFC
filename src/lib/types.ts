@@ -133,6 +133,7 @@ export type Patient = {
     phone?: string;
     createdAt?: string; // ISO 8601 date string
     isAnalogInsulinUser?: boolean; // Kept for backwards compatibility if needed, but logic moves to demandItems
+    diabetesType?: 'DM1' | 'DM2';
     analogInsulinType?: 'Lantus (Glargina)' | 'Apidra (Glulisina)' | 'Outro';
     customInsulinType?: string;
     insulinReportDate?: string;
