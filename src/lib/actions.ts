@@ -118,6 +118,58 @@ export async function updateProduct(productId: string, productData: Partial<Omit
     return updatedProduct;
 }
 
+export async function zeroStock(category?: Product['category']): Promise<{ success: boolean, message: string }> {
+    const session = await getServerSession(authOptions);
+    const userEmail = session?.user?.name || 'Sistema';
+    const products = await getProducts();
+    const movements: StockMovement[] = [];
+    const movementDate = new Date().toISOString();
+    let count = 0;
+
+    const productsToUpdate = category && category !== 'Todos'
+        ? products.filter(p => p.category === category)
+        : products;
+    
+    if (productsToUpdate.length === 0) {
+        return { success: false, message: 'Nenhum produto encontrado para a categoria selecionada.' };
+    }
+
+    productsToUpdate.forEach(p => {
+        if (p.quantity !== 0) {
+            const originalQuantity = p.quantity;
+            p.quantity = 0;
+            p.status = 'Sem Estoque';
+            count++;
+            
+            const newMovement: StockMovement = {
+                id: generateId('mov'),
+                productId: p.id,
+                productName: p.name,
+                type: 'Saída',
+                reason: 'Ajuste de Inventário (Zerar)',
+                quantityChange: -originalQuantity,
+                quantityBefore: originalQuantity,
+                quantityAfter: 0,
+                date: movementDate,
+                user: userEmail,
+                relatedId: `zero_stock_${category || 'all'}`
+            };
+            movements.push(newMovement);
+        }
+    });
+
+    if (count > 0) {
+        await writeData('products', products);
+        const existingMovements = await readData<StockMovement>('stockMovements');
+        await writeData('stockMovements', [...movements, ...existingMovements]);
+        revalidatePath('/dashboard/inventory');
+        revalidatePath('/dashboard/reports');
+    }
+
+    const categoryText = category && category !== 'Todos' ? `da categoria "${category}"` : 'completo';
+    return { success: true, message: `${count} produto(s) tiveram seu estoque zerado. O zeramento de estoque ${categoryText} foi concluído.` };
+}
+
 
 // --- UNIT ACTIONS ---
 export async function addUnit(unitData: Omit<Unit, 'id'>) {

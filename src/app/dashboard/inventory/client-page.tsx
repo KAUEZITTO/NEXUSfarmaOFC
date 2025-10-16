@@ -1,11 +1,12 @@
 
+
 'use client';
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { Search, Printer, Loader2, Edit, MoreHorizontal, PlusCircle } from "lucide-react";
+import { Search, Printer, Loader2, Edit, MoreHorizontal, PlusCircle, Trash2 } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import type { Product } from '@/lib/types';
@@ -30,8 +31,14 @@ import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Image from 'next/image';
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
@@ -45,6 +52,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { zeroStock } from '@/lib/actions';
+import { useToast } from '@/hooks/use-toast';
+
 
 type GroupedProduct = Product & {
     batches: Product[];
@@ -197,8 +207,10 @@ const groupAndFilterProducts = (products: Product[], filter: FilterCategory, sea
 
 export function InventoryClientPage({ initialProducts, searchParams }: { initialProducts: Product[], searchParams: { [key: string]: string | string[] | undefined }}) {
   const router = useRouter();
+  const { toast } = useToast();
   
   const [isPending, startTransition] = useTransition();
+  const [isZeroing, setIsZeroing] = useState(false);
 
   const activeFilter = (searchParams.category as FilterCategory) || 'Todos';
   const searchTerm = (searchParams.q as string) || '';
@@ -229,6 +241,18 @@ export function InventoryClientPage({ initialProducts, searchParams }: { initial
   
   const handleDialogClose = () => {
       setIsDialogOpen(false);
+  }
+
+  const handleZeroStock = async (category?: Product['category']) => {
+    setIsZeroing(true);
+    const result = await zeroStock(category);
+    if(result.success) {
+        toast({ title: 'Operação Concluída', description: result.message });
+    } else {
+        toast({ variant: 'destructive', title: 'Erro', description: result.message });
+    }
+    setIsZeroing(false);
+    router.refresh();
   }
 
   const processedProducts = groupAndFilterProducts(initialProducts, activeFilter, searchTerm);
@@ -309,9 +333,9 @@ export function InventoryClientPage({ initialProducts, searchParams }: { initial
                             variant={activeFilter === filter ? "default" : "outline"}
                             onClick={() => handleFilterChange('category', filter)}
                             className="rounded-full flex-shrink-0"
-                            disabled={isPending}
+                            disabled={isPending || isZeroing}
                         >
-                            {isPending && activeFilter === filter ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                            {(isPending || isZeroing) && activeFilter === filter ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                             {filter}
                         </Button>
                     ))}
@@ -323,6 +347,43 @@ export function InventoryClientPage({ initialProducts, searchParams }: { initial
                             Etiquetas de Prateleira
                         </Link>
                     </Button>
+                     <AlertDialog>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="destructive">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Zerar Estoque
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem disabled={activeFilter === 'Todos'} onSelect={(e) => e.preventDefault()}>
+                                        Zerar Estoque da Categoria "{activeFilter}"
+                                    </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                        Zerar Estoque Completo
+                                    </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                         <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Esta ação não pode ser desfeita. Isso zerará o estoque de todos os produtos {activeFilter !== 'Todos' ? `na categoria "${activeFilter}"` : `em todas as categorias`}. Todos os itens terão sua quantidade definida como 0.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel disabled={isZeroing}>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleZeroStock(activeFilter)} disabled={isZeroing}>
+                                {isZeroing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                Sim, zerar estoque
+                            </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                     <AddProductDialog onProductSaved={handleProductSaved} trigger={
                         <Button>
                             <PlusCircle className="mr-2 h-4 w-4" />
