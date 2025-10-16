@@ -29,6 +29,7 @@ import {
   FileText,
   ShieldHalf,
   Milk,
+  ShoppingCart,
 } from 'lucide-react';
 import { addDispensation } from '@/lib/actions';
 import { getPatients, getProducts } from '@/lib/data';
@@ -75,6 +76,7 @@ type Category =
   | 'Fórmulas'
   | 'Itens Judiciais'
   | 'Imunoglobulina'
+  | 'Não Padronizado'
   | 'Outros';
 
 const categories: {
@@ -88,6 +90,7 @@ const categories: {
   { name: 'Fórmulas', icon: Milk, demandItem: 'Fórmulas' },
   { name: 'Itens Judiciais', icon: FileText, demandItem: 'Itens Judiciais' },
   { name: 'Imunoglobulina', icon: ShieldHalf, demandItem: 'Imunoglobulina' },
+  { name: 'Não Padronizado', icon: ShoppingCart },
   { name: 'Medicamentos', icon: Pill },
   { name: 'Material Técnico', icon: Stethoscope },
   { name: 'Outros', icon: Package },
@@ -105,10 +108,14 @@ const getProductsForCategory = (allProducts: Product[], category: Category): Pro
         case 'Material Técnico':
             return allProducts.filter(p => p.category === 'Material Técnico');
         case 'Medicamentos':
-        case 'Itens Judiciais':
-        case 'Imunoglobulina':
              // Retorna todos os medicamentos, exceto insulinas que têm categoria própria.
             return allProducts.filter(p => p.category === 'Medicamento' && !insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)));
+        case 'Itens Judiciais':
+        case 'Imunoglobulina':
+            // Estas categorias usam os mesmos produtos que 'Medicamentos' por padrão, a menos que uma lógica diferente seja necessária
+            return allProducts.filter(p => p.category === 'Medicamento' && !insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)));
+        case 'Não Padronizado':
+            return allProducts.filter(p => p.category === 'Não Padronizado (Compra)');
         case 'Insulinas':
             return allProducts.filter(p => insulinKeywords.some(keyword => p.name.toLowerCase().includes(keyword)));
         case 'Tiras/Lancetas':
@@ -521,7 +528,7 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
 
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Adicionar itens para dispensar:</h3>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-8 gap-2">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                     {categories.map(({ name, icon: Icon }) => (
                       <Button
                         key={name}
@@ -562,5 +569,7 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
     </Dialog>
   );
 }
+
+    
 
     
