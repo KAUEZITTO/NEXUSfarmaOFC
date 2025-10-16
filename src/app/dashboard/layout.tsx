@@ -1,4 +1,6 @@
 
+'use client';
+
 import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
@@ -31,7 +33,7 @@ function UserActivityTracker() {
   const { data: session, status } = useSession();
 
   useEffect(() => {
-    if (status === 'authenticated' && session.user?.id) {
+    if (status === 'authenticated' && session?.user?.id) {
       const updateLastSeen = async () => {
         await updateUserLastSeen(session.user!.id);
       };
@@ -88,5 +90,3 @@ export default function DashboardLayout({
         </SidebarProvider>
   );
 }
-
-    
