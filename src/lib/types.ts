@@ -113,7 +113,7 @@ export type Dosage = {
     quantity: number;
 }
 
-export type PatientDemandItem = 'Fraldas' | 'Insulinas Análogas' | 'Tiras de Glicemia' | 'Itens Judiciais' | 'Imunoglobulina' | 'Fórmulas' | 'Medicamentos/Materiais Comprados';
+export type PatientDemandItem = 'Fraldas' | 'Insulinas Análogas' | 'Tiras de Glicemia' | 'Itens Judiciais' | 'Imunoglobulina' | 'Fórmulas' | 'Medicamentos/Materiais Comprados' | 'Materiais Técnicos (Acamados)';
 
 export type PatientFile = {
     id: string;
@@ -147,6 +147,7 @@ export type Patient = {
     unitId?: string;
     status: PatientStatus;
     isBedridden?: boolean;
+    pathology?: string;
     mandateType?: string; // Added from patient report
     files?: PatientFile[];
 };

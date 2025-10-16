@@ -36,7 +36,7 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 const dosagePeriods: Dosage['period'][] = ['Manhã', 'Tarde', 'Noite', 'Ao deitar', 'Após Café', 'Jejum'];
 
-const allDemandItems: PatientDemandItem[] = ['Fraldas', 'Insulinas Análogas', 'Tiras de Glicemia', 'Itens Judiciais', 'Imunoglobulina', 'Fórmulas', 'Medicamentos/Materiais Comprados'];
+const allDemandItems: PatientDemandItem[] = ['Fraldas', 'Insulinas Análogas', 'Tiras de Glicemia', 'Itens Judiciais', 'Imunoglobulina', 'Fórmulas', 'Medicamentos/Materiais Comprados', 'Materiais Técnicos (Acamados)'];
 
 const DosageInput = ({ dosages, setDosages, unitLabel }: { dosages: Dosage[], setDosages: (dosages: Dosage[]) => void, unitLabel: string }) => {
     
@@ -106,6 +106,7 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
   const [phone, setPhone] = useState('');
   const [unitId, setUnitId] = useState('');
   const [isBedridden, setIsBedridden] = useState(false);
+  const [pathology, setPathology] = useState('');
   
   const [demandItems, setDemandItems] = useState<PatientDemandItem[]>([]);
   const [insulinDosages, setInsulinDosages] = useState<Dosage[]>([]);
@@ -141,6 +142,7 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
     setPhone('');
     setUnitId('');
     setIsBedridden(false);
+    setPathology('');
     setDemandItems([]);
     setInsulinDosages([]);
     setStripDosages([]);
@@ -219,6 +221,7 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
         setPhone(patientToEdit.phone || '');
         setUnitId(patientToEdit.unitId || '');
         setIsBedridden(patientToEdit.isBedridden || false);
+        setPathology(patientToEdit.pathology || '');
         setDemandItems(patientToEdit.demandItems || []);
         setHasInsulinReport(patientToEdit.hasInsulinReport || false);
         setInsulinReportDate(patientToEdit.insulinReportDate || '');
@@ -259,6 +262,7 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
             unitId,
             unitName: units.find(u => u.id === unitId)?.name,
             isBedridden,
+            pathology: isBedridden ? pathology : undefined,
             demandItems,
             analogInsulinType: demandItems.includes('Insulinas Análogas') ? insulinType : undefined,
             customInsulinType: demandItems.includes('Insulinas Análogas') && insulinType === 'Outro' ? customInsulinType : undefined,
@@ -377,6 +381,12 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
                     <Switch id="is-bedridden" checked={isBedridden} onCheckedChange={setIsBedridden} />
                     <Label htmlFor="is-bedridden">Paciente Acamado?</Label>
                   </div>
+                  {isBedridden && (
+                    <div className="space-y-2 pl-6">
+                        <Label htmlFor="pathology">Patologia (Opcional)</Label>
+                        <Input id="pathology" name="pathology" value={pathology} onChange={e => setPathology(e.target.value)} placeholder="Ex: Sequelas de AVC"/>
+                    </div>
+                  )}
               </div>
               
               <div className="space-y-4 pt-4 border-t">
