@@ -113,6 +113,7 @@ export const generateCompleteReportPDF = async (
     products: Product[],
     patients: Patient[],
     dispensations: Dispensation[],
+    orders: Order[],
     period: string
 ): Promise<string> => {
   const doc = new jsPDF() as jsPDFWithAutoTable;
@@ -123,15 +124,15 @@ export const generateCompleteReportPDF = async (
 
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text('Resumo Geral', 20, 80);
+  doc.text('Resumo do Período', 15, 80);
 
   const summaryData = [
-    ['Total de Produtos em Inventário:', products.length.toString()],
-    ['Total de Itens em Estoque:', products.reduce((sum, p) => sum + p.quantity, 0).toLocaleString('pt-BR')],
-    ['Produtos com Baixo Estoque:', products.filter(p => p.status === 'Baixo Estoque').length.toString()],
-    ['Produtos Próximos ao Vencimento (30d):', products.filter(p => p.expiryDate && new Date(p.expiryDate) <= new Date(new Date().setDate(new Date().getDate() + 30))).length.toString()],
-    ['Total de Pacientes Ativos:', patients.filter(p => p.status === 'Ativo').length.toString()],
-    ['Total de Dispensações Registradas:', dispensations.length.toString()],
+    ['Total de Produtos em Inventário (Geral):', products.length.toString()],
+    ['Total de Itens em Estoque (Geral):', products.reduce((sum, p) => sum + p.quantity, 0).toLocaleString('pt-BR')],
+    ['Produtos com Baixo Estoque (Geral):', products.filter(p => p.status === 'Baixo Estoque').length.toString()],
+    ['Total de Pacientes Ativos (Geral):', patients.filter(p => p.status === 'Ativo').length.toString()],
+    ['Total de Dispensações no Período:', dispensations.length.toLocaleString('pt-BR')],
+    ['Total de Pedidos para Unidades no Período:', orders.length.toLocaleString('pt-BR')],
   ];
 
   doc.autoTable({
@@ -140,60 +141,86 @@ export const generateCompleteReportPDF = async (
     body: summaryData,
     theme: 'striped',
     headStyles: { fillColor: [22, 163, 74] },
-    didDrawPage: (data) => {
-      // Don't add footer on the first pass
-    }
+    didDrawPage: (data) => {}
   });
 
-
-  // --- Inventory Section ---
-  doc.addPage();
-  await addHeader(doc, 'Relatório de Inventário', period);
+  const addEmptySection = (title: string) => {
+      doc.addPage();
+      addHeader(doc, title, period);
+      doc.text('Nenhum dado para exibir neste período.', 15, startY);
+  };
   
-  const inventoryBody = products.map(p => [
-    p.name,
-    p.category,
-    p.quantity.toString(),
-    p.status,
-    p.expiryDate ? new Date(p.expiryDate).toLocaleDateString('pt-BR') : 'N/A',
-    p.batch || 'N/A'
-  ]);
-  
-  doc.autoTable({
-    startY: startY,
-    head: [['Nome', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote']],
-    body: inventoryBody,
-    theme: 'grid',
-    headStyles: { fillColor: [37, 99, 235] },
-    didDrawPage: async (data) => {
-       await addHeader(doc, 'Relatório de Inventário', period);
+  const drawTableOrEmpty = async (title: string, head: any[], body: any[][], options: any) => {
+    doc.addPage();
+    await addHeader(doc, title, period);
+    if (body.length > 0) {
+        doc.autoTable({
+            startY: startY,
+            head: head,
+            body: body,
+            ...options
+        });
+    } else {
+        doc.text('Nenhum dado para exibir neste período.', 15, startY);
     }
-  });
+  }
 
-  // --- Patients Section ---
-  doc.addPage();
-  await addHeader(doc, 'Relatório de Pacientes Ativos', period);
+
+  // --- Inventory Section (shows all current inventory, not period-dependent) ---
+  await drawTableOrEmpty(
+    'Relatório de Inventário (Estoque Atual)',
+    [['Nome', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote']],
+    products.map(p => [
+        p.name,
+        p.category,
+        p.quantity.toString(),
+        p.status,
+        p.expiryDate ? new Date(p.expiryDate).toLocaleDateString('pt-BR') : 'N/A',
+        p.batch || 'N/A'
+    ]),
+    { theme: 'grid', headStyles: { fillColor: [37, 99, 235] } }
+  );
+
+  // --- Dispensations Section ---
+  await drawTableOrEmpty(
+    'Relatório de Dispensações no Período',
+    [['Data', 'Paciente', 'CPF', 'Nº de Itens']],
+     dispensations.map(d => [
+        new Date(d.date).toLocaleDateString('pt-BR', { timeZone: 'UTC'}),
+        d.patient.name,
+        d.patient.cpf,
+        d.items.reduce((sum, item) => sum + item.quantity, 0).toString()
+    ]),
+    { theme: 'grid', headStyles: { fillColor: [107, 33, 168] } }
+  );
+
+  // --- Orders Section ---
+  await drawTableOrEmpty(
+    'Relatório de Pedidos no Período',
+    [['Data', 'Unidade', 'Tipo', 'Nº de Itens', 'Status']],
+     orders.map(o => [
+        new Date(o.sentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}),
+        o.unitName,
+        o.orderType,
+        o.itemCount.toString(),
+        o.status
+    ]),
+    { theme: 'grid', headStyles: { fillColor: [13, 148, 136] } }
+  );
   
-  const patientsBody = patients
-    .filter(p => p.status === 'Ativo')
-    .map(p => [
+  // --- Active Patients Section (shows all active patients, not period-dependent) ---
+  await drawTableOrEmpty(
+    'Relatório de Pacientes Ativos (Geral)',
+    [['Nome', 'CPF', 'CNS', 'Unidade', 'Demandas']],
+    patients.filter(p => p.status === 'Ativo').map(p => [
         p.name,
         p.cpf,
         p.cns,
         p.unitName || 'N/A',
         p.demandItems?.join(', ') || 'N/A'
-  ]);
-  
-  doc.autoTable({
-    startY: startY,
-    head: [['Nome', 'CPF', 'CNS', 'Unidade', 'Demandas']],
-    body: patientsBody,
-    theme: 'grid',
-    headStyles: { fillColor: [37, 99, 235] },
-    didDrawPage: async (data) => {
-       await addHeader(doc, 'Relatório de Pacientes Ativos', period);
-    }
-  });
+    ]),
+    { theme: 'grid', headStyles: { fillColor: [192, 38, 211] } }
+  );
 
   addFooter(doc);
 

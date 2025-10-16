@@ -92,7 +92,7 @@ function calculateStats(products: Product[], patients: Patient[], dispensations:
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const itemsDispensedThisMonth = dispensations
         .filter(d => new Date(d.date) >= firstDayOfMonth)
-        .reduce((total, d) => total + d.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
+        .reduce((total, d) => total + d.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0), 0);
     
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const firstDayOfLastMonth = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1);
@@ -100,7 +100,7 @@ function calculateStats(products: Product[], patients: Patient[], dispensations:
 
     const itemsDispensedLastMonth = dispensations
         .filter(d => new Date(d.date) >= firstDayOfLastMonth && new Date(d.date) <= lastDayOfLastMonth)
-        .reduce((total, d) => total + d.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
+        .reduce((total, d) => total + d.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0), 0);
     
     let monthlyChangePercentage = 0;
     if (itemsDispensedLastMonth > 0) {
@@ -234,7 +234,7 @@ export function ReportsClientPage({
   });
 
 
-  const handleExportComplete = () => generatePdf('complete', () => generateCompleteReportPDF(initialProducts, initialPatients, initialDispensations, periodString));
+  const handleExportComplete = () => generatePdf('complete', () => generateCompleteReportPDF(initialProducts, initialPatients, filteredDispensations, filteredOrders, periodString));
   const handleExportStock = () => generatePdf('stock', () => generateStockReportPDF(initialProducts, stockCategoryFilter));
   const handleExportExpiry = () => generatePdf('expiry', () => generateExpiryReportPDF(initialProducts));
   const handleExportPatient = () => {
