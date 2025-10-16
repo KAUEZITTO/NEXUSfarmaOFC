@@ -9,31 +9,28 @@ import * as admin from 'firebase-admin';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './auth';
 
-// --- FIREBASE ADMIN INITIALIZATION (MOVED HERE) ---
+// --- FIREBASE ADMIN INITIALIZATION (CORRECTED) ---
 function initializeAdminApp() {
     if (admin.apps.length > 0) {
         return admin.app();
     }
 
-    const serviceAccountBase64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
-    if (!serviceAccountBase64) {
-        throw new Error('A variável de ambiente FIREBASE_SERVICE_ACCOUNT_BASE64 não está definida.');
+    // A variável de ambiente FIREBASE_SERVICE_ACCOUNT deve conter o JSON completo, não em Base64.
+    // Isso evita o uso de `Buffer` que não é compatível com o Edge Runtime.
+    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
+    if (!serviceAccountString) {
+        throw new Error('A variável de ambiente FIREBASE_SERVICE_ACCOUNT não está definida ou está vazia.');
     }
 
     try {
-        const decodedServiceAccount = Buffer.from(serviceAccountBase64, 'base64').toString('utf-8');
-        const serviceAccount = JSON.parse(decodedServiceAccount);
-
-        if (!serviceAccount.projectId || !serviceAccount.client_email || !serviceAccount.private_key) {
-            throw new Error("As credenciais do Firebase decodificadas estão incompletas.");
-        }
+        const serviceAccount = JSON.parse(serviceAccountString);
 
         return admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
         });
 
     } catch (error: any) {
-        console.error("Falha Crítica ao Inicializar o Firebase Admin SDK em actions.ts:", error.message);
+        console.error("Falha Crítica ao Inicializar o Firebase Admin SDK:", error.message);
         throw new Error(`Não foi possível inicializar o Firebase Admin. Causa: ${error.message}`);
     }
 }
@@ -611,3 +608,4 @@ export async function updateUserLastSeen(userId: string) {
         // The dashboard page will refetch on its own interval.
     }
 }
+
