@@ -45,8 +45,8 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
-        // Se 'user' existe (no primeiro login), buscamos os dados completos do nosso banco de dados.
+    async jwt({ token, user, trigger, session }) {
+        // No login inicial (o objeto 'user' está presente)
         if (user && user.email) {
             const appUser = await getUserByEmailFromDb(user.email);
             if (appUser) {
@@ -59,6 +59,21 @@ export const authOptions: NextAuthOptions = {
                 token.birthdate = appUser.birthdate;
             }
         }
+        
+        // Se a sessão for atualizada (ex: mudança de nome), o trigger é 'update'
+        if (trigger === "update" && session?.user) {
+            const appUser = await getUserByEmailFromDb(session.user.email as string);
+            if (appUser) {
+                token.id = appUser.id;
+                token.accessLevel = appUser.accessLevel;
+                token.role = appUser.role;
+                token.subRole = appUser.subRole;
+                token.name = appUser.name;
+                token.image = appUser.image;
+                token.birthdate = appUser.birthdate;
+            }
+        }
+        
         return token;
     },
     async session({ session, token }) {
