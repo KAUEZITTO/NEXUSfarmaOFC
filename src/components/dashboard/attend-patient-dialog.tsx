@@ -83,16 +83,17 @@ const categories: {
   name: Category;
   icon: React.ElementType;
   demandItem?: PatientDemandItem;
+  productCategory?: Product['category'] | (Product['category'])[]
 }[] = [
   { name: 'Insulinas', icon: Syringe, demandItem: 'Insulinas Análogas' },
   { name: 'Tiras/Lancetas', icon: ClipboardList, demandItem: 'Tiras de Glicemia' },
-  { name: 'Fraldas', icon: Baby, demandItem: 'Fraldas' },
-  { name: 'Fórmulas', icon: Milk, demandItem: 'Fórmulas' },
-  { name: 'Itens Judiciais', icon: FileText, demandItem: 'Itens Judiciais' },
-  { name: 'Imunoglobulina', icon: ShieldHalf, demandItem: 'Imunoglobulina' },
-  { name: 'Não Padronizado', icon: ShoppingCart, demandItem: 'Medicamentos/Materiais Comprados' },
-  { name: 'Medicamentos', icon: Pill },
-  { name: 'Material Técnico', icon: Stethoscope },
+  { name: 'Fraldas', icon: Baby, demandItem: 'Fraldas', productCategory: 'Fraldas' },
+  { name: 'Fórmulas', icon: Milk, demandItem: 'Fórmulas', productCategory: 'Fórmulas' },
+  { name: 'Itens Judiciais', icon: FileText, demandItem: 'Itens Judiciais', productCategory: 'Medicamento' },
+  { name: 'Imunoglobulina', icon: ShieldHalf, demandItem: 'Imunoglobulina', productCategory: 'Medicamento' },
+  { name: 'Não Padronizado', icon: ShoppingCart, demandItem: 'Medicamentos/Materiais Comprados', productCategory: 'Não Padronizado (Compra)' },
+  { name: 'Material Técnico', icon: Stethoscope, productCategory: 'Material Técnico' },
+  { name: 'Medicamentos', icon: Pill, productCategory: 'Medicamento' },
   { name: 'Outros', icon: Package },
 ];
 
@@ -100,39 +101,47 @@ const insulinKeywords = ['insulina', 'lantus', 'apidra', 'nph', 'regular', 'agul
 const stripKeywords = ['tira', 'lanceta'];
 
 const getProductsForCategory = (allProducts: Product[], category: Category): Product[] => {
-    switch (category) {
-        case 'Fraldas':
-            return allProducts.filter(p => p.category === 'Fraldas');
-        case 'Fórmulas':
-            return allProducts.filter(p => p.category === 'Fórmulas');
-        case 'Material Técnico':
-            return allProducts.filter(p => p.category === 'Material Técnico');
-        case 'Medicamentos':
-            return allProducts.filter(p => p.category === 'Medicamento' && !insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)));
-        case 'Itens Judiciais':
-        case 'Imunoglobulina':
-             return allProducts.filter(p => p.category === 'Medicamento' && !insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)));
-        case 'Não Padronizado':
-            return allProducts.filter(p => p.category === 'Não Padronizado (Compra)');
-        case 'Insulinas':
-            return allProducts.filter(p => insulinKeywords.some(keyword => p.name.toLowerCase().includes(keyword)));
-        case 'Tiras/Lancetas':
-            return allProducts.filter(p => stripKeywords.some(keyword => p.name.toLowerCase().includes(keyword)));
-        case 'Outros': {
-            const usedProductIds = new Set<string>();
-            categories.forEach(cat => {
-                if (cat.name !== 'Outros') {
-                    const products = getProductsForCategory(allProducts, cat.name as Category);
-                    products.forEach(p => usedProductIds.add(p.id));
-                }
-            });
-            return allProducts.filter(p => !usedProductIds.has(p.id));
-        }
-        default:
-            return [];
-    }
-}
+    const categoryInfo = categories.find(c => c.name === category);
 
+    if (!categoryInfo) {
+        return [];
+    }
+
+    // Special keyword-based filtering
+    if (category === 'Insulinas') {
+        return allProducts.filter(p => insulinKeywords.some(keyword => p.name.toLowerCase().includes(keyword)));
+    }
+    if (category === 'Tiras/Lancetas') {
+        return allProducts.filter(p => stripKeywords.some(keyword => p.name.toLowerCase().includes(keyword)));
+    }
+    
+    // Direct product category filtering
+    if (categoryInfo.productCategory) {
+        const productCategories = Array.isArray(categoryInfo.productCategory) ? categoryInfo.productCategory : [categoryInfo.productCategory];
+        let filtered = allProducts.filter(p => productCategories.includes(p.category));
+
+        // Special exclusion for 'Medicamentos' to avoid showing insulins here
+        if (category === 'Medicamentos') {
+            filtered = filtered.filter(p => !insulinKeywords.some(keyword => p.name.toLowerCase().includes(keyword)));
+        }
+
+        return filtered;
+    }
+    
+    // 'Outros' category logic
+    if (category === 'Outros') {
+        const allCategorizedProductIds = new Set<string>();
+        categories.forEach(catInfo => {
+            if (catInfo.name !== 'Outros') {
+                const products = getProductsForCategory(allProducts, catInfo.name);
+                products.forEach(p => allCategorizedProductIds.add(p.id));
+            }
+        });
+        return allProducts.filter(p => !allCategorizedProductIds.has(p.id));
+    }
+
+    return [];
+}
 
 interface AttendPatientDialogProps {
     onDispensationSaved: () => void;
@@ -566,8 +575,3 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
     </Dialog>
   );
 }
-
-    
-
-    
-
