@@ -114,7 +114,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{getGreeting()}, {session?.user?.name?.split(' ')[0] || 'Usuário'}!</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{getGreeting()}! {session?.user?.name?.split(' ')[0] || 'Usuário'}</h1>
           <p className="text-muted-foreground">Bem-vindo(a) de volta ao painel NexusFarma.</p>
         </div>
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-6 text-sm text-muted-foreground">
