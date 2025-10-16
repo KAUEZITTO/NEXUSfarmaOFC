@@ -144,7 +144,7 @@ export function OrderHistoryClientPage({ initialUnit, initialOrders }: OrderHist
         };
   
         return <Badge 
-          variant={variantMap[status] || "default"} 
+          variant={variantMap[status] || "secondary"} 
           className={cn({
               'bg-accent text-accent-foreground': status === 'Em análise',
               'bg-green-600 text-white': status === 'Atendido',
