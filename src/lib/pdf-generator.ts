@@ -35,48 +35,57 @@ const addHeader = async (doc: jsPDFWithAutoTable, title: string, subtitle?: stri
         getImageAsBase64('/CAF.png')
     ]);
 
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
 
-    // Left Column
+    const columnWidth = pageWidth / 3;
+    const margin = 15;
+
+    // Left Column: Prefeitura
     if (prefLogo) {
-        doc.addImage(prefLogo, 'PNG', 15, 12, 25, 25);
+        doc.addImage(prefLogo, 'PNG', margin, 12, 25, 25);
     }
-    doc.setFontSize(8);
-    doc.text('PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU\nSECRETARIA MUNICIPAL DE SAÚDE', 27.5, 40, { align: 'center' });
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU', margin, 40);
+    doc.text('SECRETARIA MUNICIPAL DE SAÚDE', margin, 44);
 
-    // Center Column
+    // Center Column: NexusFarma
     if (nexusLogo) {
         doc.addImage(nexusLogo, 'PNG', pageWidth / 2 - 20, 15, 40, 15);
     }
-    doc.setFontSize(14);
-    doc.text('NEXUS FARMA', pageWidth / 2, 35, { align: 'center' });
 
-    // Right Column
+    // Right Column: CAF
     if (cafLogo) {
-        doc.addImage(cafLogo, 'PNG', pageWidth - 40, 12, 25, 25);
+        doc.addImage(cafLogo, 'PNG', pageWidth - margin - 25, 12, 25, 25);
     }
-    doc.setFontSize(8);
-    doc.text('CAF - CENTRO DE ABASTÊCIMENTO\nFARMACÊUTICO', pageWidth - 27.5, 40, { align: 'center' });
-
-
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CAF - CENTRO DE ABASTECIMENTO', pageWidth - margin, 40, { align: 'right' });
+    doc.text('FARMACÊUTICO', pageWidth - margin, 44, { align: 'right' });
+    
     // Add title & subtitle
     doc.setFontSize(14);
-    doc.setTextColor(40);
     doc.setFont('helvetica', 'bold');
-    doc.text(title, pageWidth / 2, 55, { align: 'center' });
+    doc.text(title, pageWidth / 2, 58, { align: 'center' });
     
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setTextColor(100);
+    doc.setFont('helvetica', 'normal');
     const generatedDate = `Relatório Gerado em: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`;
     const period = subtitle || '';
-    doc.text(generatedDate, pageWidth / 2, 62, { align: 'center' });
+    
     if (period) {
-        doc.text(`Período: ${period}`, pageWidth / 2, 67, { align: 'center' });
+        doc.text(generatedDate, pageWidth / 2, 64, { align: 'center' });
+        doc.text(`Período: ${period}`, pageWidth / 2, 68, { align: 'center' });
+    } else {
+        doc.text(generatedDate, pageWidth / 2, 65, { align: 'center' });
     }
+
 
     // Add separator line
     doc.setLineWidth(0.5);
-    doc.line(15, 72, pageWidth - 15, 72);
+    doc.line(margin, 75, pageWidth - margin, 75);
 };
 
 const addFooter = (doc: jsPDFWithAutoTable) => {
@@ -99,6 +108,7 @@ export const generateCompleteReportPDF = async (
     period: string
 ): Promise<string> => {
   const doc = new jsPDF() as jsPDFWithAutoTable;
+  const startY = 85;
 
   // --- Summary Page ---
   await addHeader(doc, 'Relatório Gerencial Completo', period);
@@ -142,7 +152,7 @@ export const generateCompleteReportPDF = async (
   ]);
   
   doc.autoTable({
-    startY: 75,
+    startY: startY,
     head: [['Nome', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote']],
     body: inventoryBody,
     theme: 'grid',
@@ -167,7 +177,7 @@ export const generateCompleteReportPDF = async (
   ]);
   
   doc.autoTable({
-    startY: 75,
+    startY: startY,
     head: [['Nome', 'CPF', 'CNS', 'Unidade', 'Demandas']],
     body: patientsBody,
     theme: 'grid',
@@ -209,7 +219,7 @@ export const generateStockReportPDF = async (allProducts: Product[], categoryFil
     ]);
 
     doc.autoTable({
-        startY: 75,
+        startY: 85,
         head: [['Princípio Ativo', 'Nome Comercial', 'Apresentação', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote', 'Fabricante', 'Fornecedor']],
         body: inventoryBody,
         theme: 'grid',
@@ -243,7 +253,7 @@ export const generateExpiryReportPDF = async (products: Product[]): Promise<stri
     ]);
 
     doc.autoTable({
-        startY: 75,
+        startY: 85,
         head: [['Nome do Produto', 'Lote', 'Data de Validade', 'Quantidade']],
         body: body,
         theme: 'grid',
@@ -275,7 +285,7 @@ export const generatePatientReportPDF = async (dispensations: Dispensation[], pe
     });
 
     doc.autoTable({
-        startY: 75,
+        startY: 85,
         head: [['Paciente', 'CPF', 'Data da Dispensação', 'Nº de Itens']],
         body: body,
         theme: 'grid',
@@ -304,7 +314,7 @@ export const generatePatientListReportPDF = async (patients: Patient[]): Promise
     ]);
     
     doc.autoTable({
-        startY: 75,
+        startY: 85,
         head: [['Nome do Paciente', 'CPF', 'CNS', 'Status', 'Demandas']],
         body: body,
         theme: 'grid',
@@ -349,7 +359,7 @@ export const generateUnitDispensationReportPDF = async (orders: Order[], units: 
     ]);
 
     doc.autoTable({
-        startY: 75,
+        startY: 85,
         head: [['Nome da Unidade', 'Tipo', 'Total de Pedidos', 'Total de Itens Recebidos']],
         body: body,
         theme: 'grid',
@@ -377,7 +387,7 @@ export const generateBatchReportPDF = async (products: Product[]): Promise<strin
     ]);
     
     doc.autoTable({
-        startY: 75,
+        startY: 85,
         head: [['Nome do Produto', 'Lote', 'Validade', 'Quantidade']],
         body: body,
         theme: 'grid',
@@ -439,7 +449,7 @@ export const generateEntriesAndExitsReportPDF = async (movements: StockMovement[
     const checkPageBreak = (yOffset: number) => {
         if (finalY + yOffset > doc.internal.pageSize.height - 30) {
             doc.addPage();
-            finalY = 75;
+            finalY = 85;
         }
     };
     
@@ -526,7 +536,7 @@ export const generateOrderStatusReportPDF = async (
     });
 
     doc.autoTable({
-        startY: 75,
+        startY: 85,
         head: [['Nome da Unidade', 'Tipo', 'Data do Último Pedido', 'Tipo do Pedido']],
         body: body,
         theme: 'grid',
@@ -541,3 +551,6 @@ export const generateOrderStatusReportPDF = async (
     addFooter(doc);
     return doc.output('datauristring');
 };
+
+
+    
