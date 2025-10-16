@@ -89,8 +89,10 @@ export function UserManagementClientPage({ initialUsers }: { initialUsers: User[
           return (
               <div className="flex items-center gap-3">
                   <Avatar className="h-9 w-9">
-                      <AvatarImage src={user.image || ''} alt={user.name || user.email} />
-                      <AvatarFallback>
+                      <AvatarFallback
+                        className={cn('text-white font-bold')}
+                        style={{ backgroundColor: user.avatarColor || 'hsl(var(--primary))' }}
+                      >
                           {fallbackInitial}
                       </AvatarFallback>
                   </Avatar>
