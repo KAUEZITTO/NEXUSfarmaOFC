@@ -1,23 +1,15 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Camera, Loader2, Upload, User } from 'lucide-react';
+import { Loader2, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { updateUserProfile } from '@/lib/actions';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useRouter } from 'next/navigation';
 
 export function AccountForm() {
@@ -28,92 +20,31 @@ export function AccountForm() {
 
   const [name, setName] = useState('');
   const [birthdate, setBirthdate] = useState('');
-  const [image, setImage] = useState('');
   
   const [isSaving, setIsSaving] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [hasCameraPermission, setHasCameraPermission] = useState(true);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
   useEffect(() => {
     if(user) {
         setName(user.name || '');
         setBirthdate(user.birthdate ? user.birthdate.split('T')[0] : '');
-        setImage(user.image || '');
     }
   }, [user]);
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    
-    // Simulate upload by creating a data URL.
-    // In a real app, this would call an upload action.
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const dataUrl = reader.result as string;
-      setImage(dataUrl);
-      setIsUploading(false);
-      toast({ title: 'Imagem Carregada', description: 'A nova imagem está pronta para ser salva.' });
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const openCamera = async () => {
-    setIsCameraOpen(true);
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        setHasCameraPermission(true);
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } catch (error) {
-        console.error("Error accessing camera: ", error);
-        setHasCameraPermission(false);
-      }
-    }
-  };
-
-  const takePicture = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const context = canvas.getContext('2d');
-      context?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-      const dataUrl = canvas.toDataURL('image/png');
-      
-      const stream = video.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
-
-      setIsCameraOpen(false);
-      setImage(dataUrl);
-      toast({ title: 'Foto Capturada', description: 'A nova imagem está pronta para ser salva.' });
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
     setIsSaving(true);
     try {
-      const result = await updateUserProfile(user.id, { name, birthdate, image });
+      // Pass only name and birthdate, image is no longer managed here.
+      const result = await updateUserProfile(user.id, { name, birthdate });
       
-      // The `update` function from `useSession` triggers a session update on the client.
       await updateSession({ ...session, user: { ...session?.user, ...result.user } });
 
       toast({
         title: 'Perfil Atualizado!',
         description: 'Suas informações foram salvas com sucesso.',
       });
-      // Refresh the page to ensure all components have the latest user data
+      
       router.refresh();
 
     } catch (error) {
@@ -126,32 +57,23 @@ export function AccountForm() {
       setIsSaving(false);
     }
   };
+  
+  const fallbackInitial = user?.name?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase() ?? '?';
 
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <Avatar className="h-20 w-20">
-            <AvatarImage src={image} alt={name} />
-            <AvatarFallback>
-              <User className="h-10 w-10" />
+            {/* The AvatarImage is removed as we no longer use profile pictures */}
+            <AvatarFallback className="text-3xl">
+              {fallbackInitial}
             </AvatarFallback>
           </Avatar>
-          <div className="flex flex-col gap-2 w-full sm:w-auto">
-             <div className="flex flex-col sm:flex-row gap-2">
-                <Button type="button" className="w-full" onClick={() => document.getElementById('file-upload')?.click()} disabled={isUploading}>
-                    {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
-                    {isUploading ? 'Enviando...' : 'Enviar Foto'}
-                </Button>
-                <Input id="file-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-
-                <Button type="button" variant="outline" className="w-full" onClick={openCamera}>
-                    <Camera className="mr-2 h-4 w-4" />
-                    Tirar Foto
-                </Button>
-             </div>
-             <p className="text-xs text-muted-foreground text-center sm:text-left">PNG, JPG, GIF.</p>
-          </div>
+           <div className="text-center sm:text-left">
+              <h4 className="text-lg font-semibold">Avatar do Perfil</h4>
+              <p className="text-sm text-muted-foreground">O avatar é gerado automaticamente a partir da inicial do seu nome.</p>
+           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -169,36 +91,11 @@ export function AccountForm() {
             </div>
         </div>
 
-        <Button type="submit" disabled={isSaving || isUploading}>
+        <Button type="submit" disabled={isSaving}>
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           {isSaving ? 'Salvando...' : 'Salvar Alterações'}
         </Button>
       </form>
-
-      <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Tirar Foto</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col items-center justify-center gap-4">
-            {hasCameraPermission ? (
-                <video ref={videoRef} className="w-full h-auto rounded-md" autoPlay playsInline />
-            ) : (
-                <Alert variant="destructive">
-                    <AlertTitle>Acesso à Câmera Negado</AlertTitle>
-                    <AlertDescription>
-                        Para tirar uma foto, habilite a permissão de câmera nas configurações do seu navegador.
-                    </AlertDescription>
-                </Alert>
-            )}
-            <canvas ref={canvasRef} className="hidden"></canvas>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCameraOpen(false)}>Cancelar</Button>
-            <Button onClick={takePicture} disabled={!hasCameraPermission}>Tirar Foto</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

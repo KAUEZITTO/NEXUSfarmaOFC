@@ -26,17 +26,13 @@ export const authOptions: NextAuthOptions = {
           return null; // Retorna nulo se as credenciais essenciais não forem fornecidas.
         }
         
-        // **CORREÇÃO**: Verifica se o usuário existe no banco de dados (Vercel KV)
-        // antes de prosseguir. A senha já foi validada pelo Firebase no cliente.
         const userFromDb = await getUserByEmailFromDb(credentials.email);
 
         if (!userFromDb) {
             console.error(`[NextAuth][Authorize] Error: Usuário com email ${credentials.email} não encontrado no banco de dados.`);
-            return null; // Usuário autenticado no Firebase, mas não existe no nosso sistema. Nega o login.
+            return null; 
         }
 
-        // Se o usuário existe, retorna o objeto para ser usado no callback JWT.
-        // Usamos o ID do Firebase que veio das credenciais para garantir consistência.
         return {
           id: credentials.uid,
           email: userFromDb.email,
@@ -46,7 +42,6 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user, trigger, session }) {
-        // No login inicial (o objeto 'user' está presente)
         if (user && user.email) {
             const appUser = await getUserByEmailFromDb(user.email);
             if (appUser) {
@@ -55,12 +50,11 @@ export const authOptions: NextAuthOptions = {
                 token.role = appUser.role;
                 token.subRole = appUser.subRole;
                 token.name = appUser.name;
-                token.image = appUser.image;
+                // token.image = appUser.image; // REMOVED to prevent large headers
                 token.birthdate = appUser.birthdate;
             }
         }
         
-        // Se a sessão for atualizada (ex: mudança de nome), o trigger é 'update'
         if (trigger === "update" && session?.user) {
             const appUser = await getUserByEmailFromDb(session.user.email as string);
             if (appUser) {
@@ -69,7 +63,7 @@ export const authOptions: NextAuthOptions = {
                 token.role = appUser.role;
                 token.subRole = appUser.subRole;
                 token.name = appUser.name;
-                token.image = appUser.image;
+                // token.image = appUser.image; // REMOVED to prevent large headers
                 token.birthdate = appUser.birthdate;
             }
         }
@@ -83,7 +77,7 @@ export const authOptions: NextAuthOptions = {
             session.user.role = token.role as AppUser['role'];
             session.user.subRole = token.subRole as AppUser['subRole'];
             session.user.name = token.name;
-            session.user.image = token.image;
+            // session.user.image = token.image; // REMOVED to prevent large headers
             session.user.birthdate = token.birthdate;
         }
         return session;

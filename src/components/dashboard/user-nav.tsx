@@ -25,20 +25,6 @@ import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { User as UserIcon } from 'lucide-react';
 
-/**
-* Hook personalizado para acessar a sessão. 
-* Em um projeto maior, isso pode ser movido para seu próprio arquivo (ex: src/hooks/use-auth.ts)
-* Por simplicidade, usamos o `useSession` diretamente no componente.
-*/
-// export const useAuth = () => {
-//   const session = useSession();
-//   return {
-//     user: session.data?.user,
-//     status: session.status,
-//   };
-// };
-
-
 export function UserNav() {
   const { startTour } = useTour();
   const { toast } = useToast();
@@ -67,7 +53,7 @@ export function UserNav() {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={user.image || ''} alt={user.name || user.email || 'Avatar'} />
+              {/* AvatarImage is no longer used */}
               <AvatarFallback>
                 {fallbackInitial}
               </AvatarFallback>

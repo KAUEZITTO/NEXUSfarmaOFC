@@ -10,7 +10,7 @@ declare module 'next-auth' {
       id: string;
       name?: string | null;
       email?: string | null;
-      image?: string | null; // Adicionado para imagem do perfil
+      // image?: string | null; // REMOVED
       birthdate?: string | null; // Adicionado para data de nascimento
       role?: Role;
       subRole?: SubRole;
@@ -22,7 +22,7 @@ declare module 'next-auth' {
       id: string;
       name?: string | null;
       email?: string | null;
-      image?: string | null; // Adicionado para imagem do perfil
+      // image?: string | null; // REMOVED
       birthdate?: string | null; // Adicionado para data de nascimento
       role?: Role;
       subRole?: SubRole;
@@ -40,7 +40,7 @@ declare module 'next-auth/jwt' {
         accessLevel?: AccessLevel;
         name?: string | null;
         email?: string | null;
-        image?: string | null;
+        // image?: string | null; // REMOVED
         birthdate?: string | null;
     }
 }
@@ -65,7 +65,7 @@ export type User = {
     email: string;
     name?: string;
     birthdate?: string;
-    image?: string;
+    image?: string; // Kept in DB type, but not used in session
     role: Role;
     subRole?: SubRole;
     accessLevel: AccessLevel;
