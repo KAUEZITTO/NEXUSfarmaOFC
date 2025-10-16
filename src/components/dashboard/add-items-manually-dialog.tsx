@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChevronLeft, PlusCircle } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import React from 'react';
 
 type AddItemsManuallyDialogProps = {
   trigger: React.ReactNode;
@@ -37,7 +38,7 @@ type GroupedProduct = {
 
 const allCategories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)'];
 
-export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, selectedCategories }: AddItemsManuallyDialogProps) {
+export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, selectedCategories }: AddItemsManallyDialogProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   
@@ -51,7 +52,7 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
   const [quantities, setQuantities] = useState<Record<string, number>>({});
 
   // Reset state when dialog opens or closes
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
       const newInitialStep = selectedCategories.length > 1 ? 'category' : 'list';
       const newInitialCategory = selectedCategories.length === 1 ? selectedCategories[0] : null;
