@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import jsPDF from 'jspdf';
@@ -34,30 +35,28 @@ const addHeader = async (doc: jsPDFWithAutoTable, title: string, subtitle?: stri
         getImageAsBase64('/CAF.png')
     ]);
 
-    // Left Logo (Prefeitura)
+    doc.setFont('helvetica', 'bold');
+
+    // Left Column
     if (prefLogo) {
         doc.addImage(prefLogo, 'PNG', 15, 12, 25, 25);
     }
     doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.text('PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU', 15, 40);
-    doc.text('SECRETARIA MUNICIPAL DE SAÚDE', 15, 44);
+    doc.text('PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU\nSECRETARIA MUNICIPAL DE SAÚDE', 27.5, 40, { align: 'center' });
 
-    // Center Logo (NexusFarma)
+    // Center Column
     if (nexusLogo) {
         doc.addImage(nexusLogo, 'PNG', pageWidth / 2 - 20, 15, 40, 15);
     }
     doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
     doc.text('NEXUS FARMA', pageWidth / 2, 35, { align: 'center' });
 
-    // Right Logo (CAF)
+    // Right Column
     if (cafLogo) {
         doc.addImage(cafLogo, 'PNG', pageWidth - 40, 12, 25, 25);
     }
     doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.text('CAF - CENTRO DE ABASTÊCIMENTO\nFARMACÊUTICO', pageWidth - 15, 40, { align: 'right' });
+    doc.text('CAF - CENTRO DE ABASTÊCIMENTO\nFARMACÊUTICO', pageWidth - 27.5, 40, { align: 'center' });
 
 
     // Add title & subtitle
