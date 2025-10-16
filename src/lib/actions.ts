@@ -15,8 +15,6 @@ function initializeAdminApp() {
         return admin.app();
     }
 
-    // A variável de ambiente FIREBASE_SERVICE_ACCOUNT deve conter o JSON completo, não em Base64.
-    // Isso evita o uso de `Buffer` que não é compatível com o Edge Runtime.
     const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
     if (!serviceAccountString) {
         throw new Error('A variável de ambiente FIREBASE_SERVICE_ACCOUNT não está definida ou está vazia.');
@@ -535,9 +533,24 @@ export async function register({ email, password, role, subRole }: { email: stri
         const adminAuth = initializeAdminApp().auth();
         const users = await readData<User>('users');
 
+        // Check in our KV database first
         if (users.some(u => u.email === email)) {
             return { success: false, message: 'Este email já está em uso.' };
         }
+        
+        // Check in Firebase Auth
+        try {
+            await adminAuth.getUserByEmail(email);
+            // If it doesn't throw, user exists in Firebase Auth
+            return { success: false, message: 'Este email já está registrado no sistema de autenticação.' };
+        } catch (error: any) {
+            if (error.code !== 'auth/user-not-found') {
+                // Another error occurred, propagate it
+                throw error;
+            }
+            // If user is not found, we can proceed with creation
+        }
+
 
         // Usar o Firebase Admin SDK para criar o usuário
         const userRecord = await adminAuth.createUser({
@@ -608,4 +621,5 @@ export async function updateUserLastSeen(userId: string) {
         // The dashboard page will refetch on its own interval.
     }
 }
+
 

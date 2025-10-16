@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
@@ -50,8 +51,7 @@ export async function getProducts(): Promise<Product[]> {
 }
 
 export async function getProduct(productId: string): Promise<Product | null> {
-    noStore();
-    const products = await getProducts();
+    const products = await readData<Product>('products');
     return products.find(p => p.id === productId) || null;
 }
 
