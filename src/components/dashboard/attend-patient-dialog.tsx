@@ -123,7 +123,8 @@ const getProductsForCategory = (allProducts: Product[], category: Category): Par
     }
 
     if(category === 'Material Técnico') {
-        return allProducts.filter(p => p.category === 'Material Técnico' && !stripKeywords.some(kw => p.name.toLowerCase().includes(kw)));
+        // Corrected: Return all "Material Técnico" without excluding keywords, as they belong to other categories.
+        return allProducts.filter(p => p.category === 'Material Técnico');
     }
     
     if (category === 'Outros') {
