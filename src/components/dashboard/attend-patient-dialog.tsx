@@ -90,7 +90,7 @@ const categories: {
   { name: 'Fórmulas', icon: Milk, demandItem: 'Fórmulas' },
   { name: 'Itens Judiciais', icon: FileText, demandItem: 'Itens Judiciais' },
   { name: 'Imunoglobulina', icon: ShieldHalf, demandItem: 'Imunoglobulina' },
-  { name: 'Não Padronizado', icon: ShoppingCart },
+  { name: 'Não Padronizado', icon: ShoppingCart, demandItem: 'Medicamentos/Materiais Comprados' },
   { name: 'Medicamentos', icon: Pill },
   { name: 'Material Técnico', icon: Stethoscope },
   { name: 'Outros', icon: Package },
@@ -108,12 +108,10 @@ const getProductsForCategory = (allProducts: Product[], category: Category): Pro
         case 'Material Técnico':
             return allProducts.filter(p => p.category === 'Material Técnico');
         case 'Medicamentos':
-             // Retorna todos os medicamentos, exceto insulinas que têm categoria própria.
             return allProducts.filter(p => p.category === 'Medicamento' && !insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)));
         case 'Itens Judiciais':
         case 'Imunoglobulina':
-            // Estas categorias usam os mesmos produtos que 'Medicamentos' por padrão, a menos que uma lógica diferente seja necessária
-            return allProducts.filter(p => p.category === 'Medicamento' && !insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)));
+             return allProducts.filter(p => p.category === 'Medicamento' && !insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)));
         case 'Não Padronizado':
             return allProducts.filter(p => p.category === 'Não Padronizado (Compra)');
         case 'Insulinas':
@@ -122,7 +120,6 @@ const getProductsForCategory = (allProducts: Product[], category: Category): Pro
             return allProducts.filter(p => stripKeywords.some(keyword => p.name.toLowerCase().includes(keyword)));
         case 'Outros': {
             const usedProductIds = new Set<string>();
-            // Coleta IDs de todas as outras categorias para evitar duplicatas
             categories.forEach(cat => {
                 if (cat.name !== 'Outros') {
                     const products = getProductsForCategory(allProducts, cat.name as Category);
