@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 const changelog = [
+    { version: '3.3.3', changes: ['Corrigido bug crítico que impedia o nome do usuário de aparecer nos documentos gerados.'] },
     { version: '3.3.2', changes: ['Corrigido bug na exibição da data de validade em recibos de remessa.', 'Corrigida a fonte de dados do relatório de dispensação por unidade para garantir precisão.', 'Melhorada a usabilidade da tela de login, desabilitando o botão durante a autenticação.'] },
     { version: '3.3.1', changes: ['Correção de erro crítico que impedia a impressão de recibos de remessa e a geração de relatórios.', 'Adicionado nome do usuário que gerou o documento nos rodapés dos recibos para rastreabilidade.', 'Melhorado o fluxo de atendimento ao paciente, exibindo a lista completa de pacientes e adicionando um botão de "Atender" na tabela principal.', 'Adicionado indicador de status (online/offline) e avatar na tela de gerenciamento de usuários.'] },
     { version: '3.3.0', changes: ['Modernização completa da interface com nova paleta de cores (azul, laranja) e identidade visual.', 'Ajustes de layout e modernização da página inicial e rodapé.'] },
@@ -88,7 +89,7 @@ export default function AboutPage() {
                     Versão do Sistema
                 </h3>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  NexusFarma v3.3.2
+                  NexusFarma v3.3.3
                 </p>
               </div>
           </CardContent>
