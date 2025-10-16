@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 const changelog = [
+    { version: '3.3.6', changes: ['Corrigida definitivamente a falha "erro desconhecido" no cadastro de novos usuários, garantindo compatibilidade da autenticação com o ambiente do servidor.', 'Resolvido erro 404 que impedia a geração de etiquetas de produtos.'] },
     { version: '3.3.5', changes: ['Corrigido erro crítico que impedia o cadastro de novos usuários devido a uma falha na inicialização do serviço de autenticação.'] },
     { version: '3.3.4', changes: ['Saudação do dashboard agora inclui o nome do usuário.', 'Adicionada funcionalidade para excluir produtos do inventário (em massa ou selecionados).', 'Corrigida a exibição de produtos por categoria na tela de dispensação.', 'Adicionado campo "Tipo de Diabetes" (DM1/DM2) para pacientes que usam insulina.'] },
     { version: '3.3.3', changes: ['Corrigido bug crítico que impedia o nome do usuário de aparecer nos documentos gerados.'] },
@@ -91,7 +92,7 @@ export default function AboutPage() {
                     Versão do Sistema
                 </h3>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  NexusFarma v3.3.5
+                  NexusFarma v3.3.6
                 </p>
               </div>
           </CardContent>
