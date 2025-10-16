@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import jsPDF from 'jspdf';
@@ -30,15 +29,14 @@ const addHeader = async (doc: jsPDFWithAutoTable, title: string, subtitle?: stri
     
     // Load images
     const [prefLogo, nexusLogo, cafLogo] = await Promise.all([
-        getImageAsBase64('/SMS-PREF.png'),
-        getImageAsBase64('/NEXUSnv.png'),
-        getImageAsBase64('/CAF.png')
+        getImageAsBase64('SMS-PREF.png'),
+        getImageAsBase64('NEXUSnv.png'),
+        getImageAsBase64('CAF.png')
     ]);
 
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(0, 0, 0);
 
-    const columnWidth = pageWidth / 3;
     const margin = 15;
 
     // Left Column: Prefeitura
@@ -551,6 +549,5 @@ export const generateOrderStatusReportPDF = async (
     addFooter(doc);
     return doc.output('datauristring');
 };
-
-
+    
     
