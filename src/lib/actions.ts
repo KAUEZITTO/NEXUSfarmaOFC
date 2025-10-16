@@ -170,6 +170,47 @@ export async function zeroStock(category?: Product['category']): Promise<{ succe
     return { success: true, message: `${count} produto(s) tiveram seu estoque zerado. O zeramento de estoque ${categoryText} foi concluído.` };
 }
 
+export async function deleteProducts(productIds: string[]): Promise<{ success: boolean; message: string }> {
+    const allProducts = await getProducts();
+    const productsToDelete = allProducts.filter(p => productIds.includes(p.id));
+    const remainingProducts = allProducts.filter(p => !productIds.includes(p.id));
+    
+    if (productsToDelete.length === 0) {
+        return { success: false, message: "Nenhum produto encontrado para exclusão." };
+    }
+
+    // Opcional: registrar a exclusão como uma movimentação de estoque
+    const movements: StockMovement[] = [];
+    const session = await getServerSession(authOptions);
+    const userEmail = session?.user?.name || 'Sistema';
+    const movementDate = new Date().toISOString();
+
+    for (const product of productsToDelete) {
+        movements.push({
+            id: generateId('mov'),
+            productId: product.id,
+            productName: product.name,
+            type: 'Saída',
+            reason: 'Exclusão de Produto',
+            quantityChange: -product.quantity,
+            quantityBefore: product.quantity,
+            quantityAfter: 0,
+            date: movementDate,
+            user: userEmail,
+            relatedId: `delete_prod_${product.id}`
+        });
+    }
+
+    const existingMovements = await readData<StockMovement>('stockMovements');
+    await writeData('stockMovements', [...movements, ...existingMovements]);
+    await writeData('products', remainingProducts);
+
+    revalidatePath('/dashboard/inventory');
+    revalidatePath('/dashboard/reports');
+
+    return { success: true, message: `${productsToDelete.length} produto(s) foram excluídos permanentemente.` };
+}
+
 
 // --- UNIT ACTIONS ---
 export async function addUnit(unitData: Omit<Unit, 'id'>) {

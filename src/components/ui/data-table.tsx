@@ -14,6 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
   Row,
+  RowSelectionState,
 } from "@tanstack/react-table"
 
 import { Button } from "@/components/ui/button"
@@ -31,12 +32,16 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   onRowClick?: (data: TData) => void;
+  rowSelection?: RowSelectionState;
+  setRowSelection?: React.Dispatch<React.SetStateAction<RowSelectionState>>;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   onRowClick,
+  rowSelection,
+  setRowSelection,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -44,8 +49,9 @@ export function DataTable<TData, TValue>({
   )
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = React.useState({})
   const [globalFilter, setGlobalFilter] = React.useState('')
+
+  const isControllingSelection = !!rowSelection && !!setRowSelection;
 
   const table = useReactTable({
     data,
@@ -58,17 +64,24 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
+    ...(isControllingSelection && {
+        onRowSelectionChange: setRowSelection,
+    }),
     state: {
       sorting,
       columnFilters,
       columnVisibility,
-      rowSelection,
+      ...(isControllingSelection && { rowSelection }),
       globalFilter,
     },
   })
 
   const handleRowClick = (row: Row<TData>) => {
+    // Do not trigger row click if a selection checkbox was clicked
+    const target = event?.target as HTMLElement;
+    if (target.closest('[role="checkbox"]')) {
+      return;
+    }
     if (onRowClick) {
       onRowClick(row.original);
     }
@@ -129,10 +142,12 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} de{" "}
-          {table.getFilteredRowModel().rows.length} linha(s) selecionadas.
-        </div>
+        {setRowSelection && (
+          <div className="flex-1 text-sm text-muted-foreground">
+            {table.getFilteredSelectedRowModel().rows.length} de{" "}
+            {table.getFilteredRowModel().rows.length} linha(s) selecionadas.
+          </div>
+        )}
         <div className="space-x-2">
           <Button
             variant="outline"

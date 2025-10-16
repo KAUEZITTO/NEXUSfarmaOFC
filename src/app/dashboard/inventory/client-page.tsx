@@ -2,11 +2,11 @@
 
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { Search, Printer, Loader2, Edit, MoreHorizontal, PlusCircle, Trash2 } from "lucide-react";
+import { Search, Printer, Loader2, Edit, MoreHorizontal, PlusCircle, Trash2, ShieldX } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import type { Product } from '@/lib/types';
@@ -37,6 +37,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuPortal,
   DropdownMenuSubContent,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Image from 'next/image';
@@ -52,8 +53,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { zeroStock } from '@/lib/actions';
+import { zeroStock, deleteProducts } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 type GroupedProduct = Product & {
@@ -205,19 +207,25 @@ const groupAndFilterProducts = (products: Product[], filter: FilterCategory, sea
     return groupedProducts.sort((a, b) => a.name.localeCompare(b.name));
 }
 
+type ActionType = 'zero' | 'delete';
+
 export function InventoryClientPage({ initialProducts, searchParams }: { initialProducts: Product[], searchParams: { [key: string]: string | string[] | undefined }}) {
   const router = useRouter();
   const { toast } = useToast();
   
   const [isPending, startTransition] = useTransition();
-  const [isZeroing, setIsZeroing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const activeFilter = (searchParams.category as FilterCategory) || 'Todos';
   const searchTerm = (searchParams.q as string) || '';
 
   const [selectedProduct, setSelectedProduct] = useState<GroupedProduct | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  
+  const [rowSelection, setRowSelection] = useState({});
+
+  // Memoize processed products to avoid re-calculation on every render
+  const processedProducts = useMemo(() => groupAndFilterProducts(initialProducts, activeFilter, searchTerm), [initialProducts, activeFilter, searchTerm]);
+
   const handleFilterChange = (key: 'category' | 'q', value: string) => {
     startTransition(() => {
         const params = new URLSearchParams(window.location.search);
@@ -241,28 +249,91 @@ export function InventoryClientPage({ initialProducts, searchParams }: { initial
   
   const handleDialogClose = () => {
       setIsDialogOpen(false);
+      setSelectedProduct(null);
   }
 
-  const handleZeroStock = async (category?: Product['category']) => {
-    setIsZeroing(true);
-    const result = await zeroStock(category);
-    if(result.success) {
-        toast({ title: 'Operação Concluída', description: result.message });
-    } else {
-        toast({ variant: 'destructive', title: 'Erro', description: result.message });
+  const handleMassAction = async (type: ActionType, category?: Product['category']) => {
+    setIsProcessing(true);
+    let result: { success: boolean, message: string };
+
+    try {
+      if (type === 'zero') {
+        result = await zeroStock(category);
+      } else { // delete
+        const productsToProcess = category && category !== 'Todos'
+          ? initialProducts.filter(p => p.category === category)
+          : initialProducts;
+        
+        const productIdsToDelete = productsToProcess.map(p => p.id);
+        result = await deleteProducts(productIdsToDelete);
+      }
+
+      if(result.success) {
+          toast({ title: 'Operação Concluída', description: result.message });
+      } else {
+          toast({ variant: 'destructive', title: 'Erro', description: result.message });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Erro Inesperado', description: "Ocorreu um erro ao processar a solicitação." });
+    } finally {
+      setIsProcessing(false);
+      router.refresh();
     }
-    setIsZeroing(false);
-    router.refresh();
   }
+  
+  const handleDeleteSelected = async () => {
+      const selectedIds = Object.keys(rowSelection);
+      if (selectedIds.length === 0) {
+          toast({ variant: 'destructive', title: 'Nenhum item selecionado' });
+          return;
+      }
+      
+      const allProductIdsToDelete: string[] = [];
+      selectedIds.forEach(groupedId => {
+          const productGroup = processedProducts.find(p => p.id === groupedId);
+          if (productGroup) {
+              productGroup.batches.forEach(batch => allProductIdsToDelete.push(batch.id));
+          }
+      });
 
-  const processedProducts = groupAndFilterProducts(initialProducts, activeFilter, searchTerm);
+      setIsProcessing(true);
+      const result = await deleteProducts(allProductIdsToDelete);
+      if (result.success) {
+          toast({ title: 'Itens Excluídos', description: result.message });
+          setRowSelection({}); // Clear selection
+      } else {
+          toast({ variant: 'destructive', title: 'Erro ao Excluir', description: result.message });
+      }
+      setIsProcessing(false);
+      router.refresh();
+  };
 
   const capitalizeFirstLetter = (string: string) => {
       if (!string) return 'N/A';
       return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
   }
 
-  const columns: ColumnDef<GroupedProduct>[] = [
+  const columns: ColumnDef<GroupedProduct>[] = useMemo(() => [
+      {
+        id: 'select',
+        header: ({ table }) => (
+          <Checkbox
+            checked={table.getIsAllPageRowsSelected()}
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Selecionar todas as linhas"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Selecionar linha"
+            onClick={(e) => e.stopPropagation()} // Prevent row click when interacting with checkbox
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
       {
         accessorKey: "name",
         header: ({ column }) => (
@@ -314,7 +385,9 @@ export function InventoryClientPage({ initialProducts, searchParams }: { initial
           </Badge>
         },
       },
-  ];
+  ], []);
+
+  const selectedRowCount = Object.keys(rowSelection).length;
 
   return (
     <Card>
@@ -333,14 +406,39 @@ export function InventoryClientPage({ initialProducts, searchParams }: { initial
                             variant={activeFilter === filter ? "default" : "outline"}
                             onClick={() => handleFilterChange('category', filter)}
                             className="rounded-full flex-shrink-0"
-                            disabled={isPending || isZeroing}
+                            disabled={isPending || isProcessing}
                         >
-                            {(isPending || isZeroing) && activeFilter === filter ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                            {(isPending || isProcessing) && activeFilter === filter ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                             {filter}
                         </Button>
                     ))}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
+                    {selectedRowCount > 0 && (
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" disabled={isProcessing}>
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Excluir Selecionados ({selectedRowCount})
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir Itens Selecionados?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Esta ação não pode ser desfeita. Isso excluirá permanentemente os {selectedRowCount} grupos de produtos selecionados e todos os seus lotes.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel disabled={isProcessing}>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleDeleteSelected} disabled={isProcessing} className="bg-destructive hover:bg-destructive/90">
+                                        {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                        Sim, excluir itens
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    )}
                     <Button variant="outline" asChild>
                         <Link href="/shelf-labels" target="_blank">
                             <Printer className="mr-2 h-4 w-4" />
@@ -350,12 +448,13 @@ export function InventoryClientPage({ initialProducts, searchParams }: { initial
                      <AlertDialog>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="destructive">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Zerar Estoque
+                                <Button variant="destructive" disabled={isProcessing}>
+                                    <ShieldX className="mr-2 h-4 w-4" />
+                                    Ações em Massa
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Zerar Estoque</DropdownMenuLabel>
                                 <AlertDialogTrigger asChild>
                                     <DropdownMenuItem disabled={activeFilter === 'Todos'} onSelect={(e) => e.preventDefault()}>
                                         Zerar Estoque da Categoria "{activeFilter}"
@@ -366,20 +465,37 @@ export function InventoryClientPage({ initialProducts, searchParams }: { initial
                                         Zerar Estoque Completo
                                     </DropdownMenuItem>
                                 </AlertDialogTrigger>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuLabel>Excluir Produtos</DropdownMenuLabel>
+                                 <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" disabled={activeFilter === 'Todos'} onSelect={(e) => e.preventDefault()}>
+                                        Excluir Produtos da Categoria "{activeFilter}"
+                                    </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onSelect={(e) => e.preventDefault()}>
+                                        Excluir TODOS os Produtos
+                                    </DropdownMenuItem>
+                                </AlertDialogTrigger>
                             </DropdownMenuContent>
                         </DropdownMenu>
                          <AlertDialogContent>
                             <AlertDialogHeader>
                             <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Esta ação não pode ser desfeita. Isso zerará o estoque de todos os produtos {activeFilter !== 'Todos' ? `na categoria "${activeFilter}"` : `em todas as categorias`}. Todos os itens terão sua quantidade definida como 0.
+                                Esta ação não pode ser desfeita. Pense bem antes de continuar.
                             </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                            <AlertDialogCancel disabled={isZeroing}>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleZeroStock(activeFilter)} disabled={isZeroing}>
-                                {isZeroing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                                Sim, zerar estoque
+                            <AlertDialogCancel disabled={isProcessing}>Cancelar</AlertDialogCancel>
+                            {/* We use a generic handler and figure out the action inside the dialog. This is not ideal, a state machine would be better, but it works for this limited scope. */}
+                            <AlertDialogAction onClick={() => handleMassAction('zero', activeFilter)} disabled={isProcessing}>
+                                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                Zerar Estoque
+                            </AlertDialogAction>
+                             <AlertDialogAction onClick={() => handleMassAction('delete', activeFilter)} disabled={isProcessing} className="bg-destructive hover:bg-destructive/90">
+                                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                Excluir Produtos
                             </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
@@ -404,7 +520,13 @@ export function InventoryClientPage({ initialProducts, searchParams }: { initial
                 {isPending && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
             </div>
         
-            <DataTable columns={columns} data={processedProducts} onRowClick={handleRowClick} />
+            <DataTable 
+              columns={columns} 
+              data={processedProducts} 
+              onRowClick={handleRowClick}
+              rowSelection={rowSelection}
+              setRowSelection={setRowSelection}
+            />
         
             <BatchDetailsDialog
                 isOpen={isDialogOpen}
