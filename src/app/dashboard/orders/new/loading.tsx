@@ -1,8 +1,8 @@
-
+import React from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
 
 // This component uses basic HTML tags and Tailwind CSS classes to avoid
-// complex component dependencies that can cause prerendering errors during build.
+// complex component dependencies that can cause prerender errors during build.
 export default function LoadingNewOrderPage() {
     return (
         <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 animate-pulse">
