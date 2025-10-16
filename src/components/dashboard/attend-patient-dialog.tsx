@@ -89,9 +89,9 @@ const categories: {
   { name: 'Tiras/Lancetas', icon: ClipboardList, demandItem: 'Tiras de Glicemia' },
   { name: 'Fraldas', icon: Baby, demandItem: 'Fraldas', productCategory: 'Fraldas' },
   { name: 'Fórmulas', icon: Milk, demandItem: 'Fórmulas', productCategory: 'Fórmulas' },
-  { name: 'Itens Judiciais', icon: FileText, demandItem: 'Itens Judiciais', productCategory: 'Medicamento' },
-  { name: 'Imunoglobulina', icon: ShieldHalf, demandItem: 'Imunoglobulina', productCategory: 'Medicamento' },
-  { name: 'Não Padronizado', icon: ShoppingCart, demandItem: 'Medicamentos/Materiais Comprados', productCategory: 'Não Padronizado (Compra)' },
+  { name: 'Itens Judiciais', icon: FileText, demandItem: 'Itens Judiciais' },
+  { name: 'Imunoglobulina', icon: ShieldHalf, demandItem: 'Imunoglobulina'},
+  { name: 'Não Padronizado', icon: ShoppingCart, productCategory: 'Não Padronizado (Compra)' },
   { name: 'Material Técnico', icon: Stethoscope, productCategory: 'Material Técnico' },
   { name: 'Medicamentos', icon: Pill, productCategory: 'Medicamento' },
   { name: 'Outros', icon: Package },
@@ -99,45 +99,61 @@ const categories: {
 
 const insulinKeywords = ['insulina', 'lantus', 'apidra', 'nph', 'regular', 'agulha para caneta'];
 const stripKeywords = ['tira', 'lanceta'];
+const judicialKeywords = ['imunoglobulina'];
 
-const getProductsForCategory = (allProducts: Product[], category: Category): Product[] => {
+const getProductsForCategory = (allProducts: Product[], category: Category, patient: Patient | null): Product[] => {
     const categoryInfo = categories.find(c => c.name === category);
+    if (!categoryInfo) return [];
 
-    if (!categoryInfo) {
+    let productList: Product[] = [];
+
+    // Keyword-based filtering for specific categories
+    if (category === 'Insulinas') {
+        return allProducts.filter(p => insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)));
+    }
+    if (category === 'Tiras/Lancetas') {
+        return allProducts.filter(p => stripKeywords.some(kw => p.name.toLowerCase().includes(kw)));
+    }
+     if (category === 'Imunoglobulina') {
+        return allProducts.filter(p => p.name.toLowerCase().includes('imunoglobulina'));
+    }
+     if (category === 'Itens Judiciais') {
+        const patientDemands = patient?.demandItems || [];
+        const judicialItems = patientDemands.filter(d => d === 'Itens Judiciais' || d === 'Imunoglobulina' || d === 'Medicamentos/Materiais Comprados');
+        if (judicialItems.length > 0) {
+            // This is broad, might need refinement. Let's show all non-standard and specific judicial items.
+            return allProducts.filter(p => p.category === 'Não Padronizado (Compra)' || p.name.toLowerCase().includes('imunoglobulina'));
+        }
         return [];
     }
 
-    // Special keyword-based filtering
-    if (category === 'Insulinas') {
-        return allProducts.filter(p => insulinKeywords.some(keyword => p.name.toLowerCase().includes(keyword)));
-    }
-    if (category === 'Tiras/Lancetas') {
-        return allProducts.filter(p => stripKeywords.some(keyword => p.name.toLowerCase().includes(keyword)));
-    }
-    
-    // Direct product category filtering
+    // Direct productCategory filtering
     if (categoryInfo.productCategory) {
         const productCategories = Array.isArray(categoryInfo.productCategory) ? categoryInfo.productCategory : [categoryInfo.productCategory];
-        let filtered = allProducts.filter(p => productCategories.includes(p.category));
+        productList = allProducts.filter(p => productCategories.includes(p.category));
 
-        // Special exclusion for 'Medicamentos' to avoid showing insulins here
+        // Special exclusion for 'Medicamentos' to avoid showing insulins/imuno here
         if (category === 'Medicamentos') {
-            filtered = filtered.filter(p => !insulinKeywords.some(keyword => p.name.toLowerCase().includes(keyword)));
+            productList = productList.filter(p => 
+                !insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)) &&
+                !p.name.toLowerCase().includes('imunoglobulina')
+            );
         }
 
-        return filtered;
+        return productList;
     }
     
     // 'Outros' category logic
     if (category === 'Outros') {
-        const allCategorizedProductIds = new Set<string>();
+        const allCategorizedProductNames = new Set<string>();
         categories.forEach(catInfo => {
             if (catInfo.name !== 'Outros') {
-                const products = getProductsForCategory(allProducts, catInfo.name);
-                products.forEach(p => allCategorizedProductIds.add(p.id));
+                const products = getProductsForCategory(allProducts, catInfo.name, patient);
+                products.forEach(p => allCategorizedProductNames.add(p.name));
             }
         });
-        return allProducts.filter(p => !allCategorizedProductIds.has(p.id));
+        // Return products that are not in any other specific category
+        return allProducts.filter(p => !allCategorizedProductNames.has(p.name));
     }
 
     return [];
@@ -272,7 +288,7 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
      const itemToUpdate = items.find(i => i.internalId === id);
      if (!itemToUpdate) return;
      
-     const productList = getProductsForCategory(allProducts, itemToUpdate.category as Category);
+     const productList = getProductsForCategory(allProducts, itemToUpdate.category as Category, selectedPatient);
      const product = productList.find(p => p.id === productId);
      
      if (product) {
@@ -350,7 +366,7 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
   }
   
   const renderItemInput = (item: DispensationItem) => {
-    const productList = getProductsForCategory(allProducts, item.category as Category);
+    const productList = getProductsForCategory(allProducts, item.category as Category, selectedPatient);
 
     if (productList.length > 0) {
       return (

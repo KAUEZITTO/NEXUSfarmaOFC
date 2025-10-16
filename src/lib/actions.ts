@@ -627,5 +627,3 @@ export async function updateUserLastSeen(userId: string) {
         // The dashboard page will refetch on its own interval.
     }
 }
-
-    
