@@ -10,9 +10,10 @@ import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guid
 import BirthdayBalloons from '@/components/dashboard/birthday-balloons';
 import { updateUserLastSeen } from '@/lib/actions';
 
-const CURRENT_VERSION = '3.3.3';
+const CURRENT_VERSION = '3.3.4';
 
 const changelog = [
+    { version: '3.3.4', changes: ['Saudação do dashboard agora inclui o nome do usuário.', 'Adicionada funcionalidade para excluir produtos do inventário (em massa ou selecionados).', 'Corrigida a exibição de produtos por categoria na tela de dispensação.', 'Adicionado campo "Tipo de Diabetes" (DM1/DM2) para pacientes que usam insulina.'] },
     { version: '3.3.3', changes: ['Corrigido bug crítico que impedia o nome do usuário de aparecer nos documentos gerados.'] },
     { version: '3.3.2', changes: ['Corrigido bug na exibição da data de validade em recibos de remessa.', 'Corrigida a fonte de dados do relatório de dispensação por unidade para garantir precisão.', 'Melhorada a usabilidade da tela de login, desabilitando o botão durante a autenticação.'] },
     { version: '3.3.1', changes: ['Correção de erro crítico que impedia a impressão de recibos de remessa e a geração de relatórios.', 'Adicionado nome do usuário que gerou o documento nos rodapés dos recibos para rastreabilidade.', 'Melhorado o fluxo de atendimento ao paciente, exibindo a lista completa de pacientes e adicionando um botão de "Atender" na tabela principal.', 'Adicionado indicador de status (online/offline) e avatar na tela de gerenciamento de usuários.'] },
@@ -87,3 +88,5 @@ export default function DashboardLayout({
         </SidebarProvider>
   );
 }
+
+    
