@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Download, FileText, Loader2, BarChart2, Package, Users, AlertTriangle, Sparkles, Filter } from "lucide-react";
 import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF, generatePatientReportPDF, generateUnitDispensationReportPDF, generateBatchReportPDF, generateEntriesAndExitsReportPDF, generatePatientListReportPDF, generateOrderStatusReportPDF } from "@/lib/pdf-generator";
 import { useState } from "react";
-import type { Product, Patient, Dispensation, Unit, Order, StockMovement } from "@/lib/types";
+import type { Product, Patient, Dispensation, Unit, Order, StockMovement, PatientDemandItem } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -56,6 +56,8 @@ interface ReportsClientPageProps {
 }
 
 const productCategories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)'];
+
+const patientDemandItems: PatientDemandItem[] = ['Fraldas', 'Insulinas Análogas', 'Tiras de Glicemia', 'Itens Judiciais', 'Imunoglobulina', 'Fórmulas', 'Medicamentos/Materiais Comprados', 'Materiais Técnicos (Acamados)'];
 
 
 function calculateStats(products: Product[], patients: Patient[], dispensations: Dispensation[]): ReportStats {
@@ -143,6 +145,7 @@ export function ReportsClientPage({
   const [month, setMonth] = useState((new Date().getMonth() + 1).toString());
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [stockCategoryFilter, setStockCategoryFilter] = useState('all');
+  const [patientCategoryFilter, setPatientCategoryFilter] = useState('all');
 
 
   const getPeriodString = (): string => {
@@ -234,7 +237,13 @@ export function ReportsClientPage({
   const handleExportComplete = () => generatePdf('complete', () => generateCompleteReportPDF(initialProducts, initialPatients, initialDispensations, periodString));
   const handleExportStock = () => generatePdf('stock', () => generateStockReportPDF(initialProducts, stockCategoryFilter));
   const handleExportExpiry = () => generatePdf('expiry', () => generateExpiryReportPDF(initialProducts));
-  const handleExportPatient = () => generatePdf('patient', () => generatePatientReportPDF(filteredDispensations, periodString));
+  const handleExportPatient = () => {
+    const dispensationsForReport = patientCategoryFilter === 'all'
+        ? filteredDispensations
+        : filteredDispensations.filter(d => d.patient.demandItems?.includes(patientCategoryFilter as PatientDemandItem));
+    
+    generatePdf('patient', () => generatePatientReportPDF(dispensationsForReport, periodString));
+  };
   const handleExportPatientList = () => generatePdf('patientList', () => generatePatientListReportPDF(initialPatients));
   const handleExportUnitDispensation = () => generatePdf('unitDispensation', () => generateUnitDispensationReportPDF(filteredOrders, initialUnits, periodString));
   const handleExportBatch = () => generatePdf('batch', () => generateBatchReportPDF(initialProducts));
@@ -255,7 +264,15 @@ export function ReportsClientPage({
         </Select>
     ) },
     { name: "Produtos a Vencer", handler: handleExportExpiry, key: 'expiry' },
-    { name: "Atendimento de Pacientes", handler: handleExportPatient, key: 'patient' },
+    { name: "Atendimento de Pacientes", handler: handleExportPatient, key: 'patient', filter: (
+        <Select value={patientCategoryFilter} onValueChange={setPatientCategoryFilter}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+                <SelectItem value="all">Todos os Pacientes</SelectItem>
+                {patientDemandItems.map(item => <SelectItem key={item} value={item}>{item}</SelectItem>)}
+            </SelectContent>
+        </Select>
+    )},
     { name: "Entradas e Saídas", handler: handleExportEntriesAndExits, key: 'entriesAndExits' },
     { name: "Relatório de Lotes", handler: handleExportBatch, key: 'batch' },
     { name: "Lista de Pacientes", handler: handleExportPatientList, key: 'patientList' },
@@ -404,6 +421,8 @@ export function ReportsClientPage({
     </div>
   )
 }
+    
+
     
 
     
