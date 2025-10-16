@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
@@ -229,3 +228,5 @@ export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
     const data = JSON.parse(fileContents);
     return data;
 }
+
+    

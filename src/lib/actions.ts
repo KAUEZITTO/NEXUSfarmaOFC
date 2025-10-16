@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -9,8 +8,11 @@ import * as admin from 'firebase-admin';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './auth';
 
-// --- FIREBASE ADMIN INITIALIZATION (CORRECTED) ---
+// --- FIREBASE ADMIN INITIALIZATION (CORRECTED & CENTRALIZED) ---
+// This function initializes the Firebase Admin SDK. It's designed to be called
+// only when needed and ensures it only runs once.
 function initializeAdminApp() {
+    // If the app is already initialized, return the existing app.
     if (admin.apps.length > 0) {
         return admin.app();
     }
@@ -21,6 +23,8 @@ function initializeAdminApp() {
     }
 
     try {
+        // The service account is now expected to be a direct JSON string,
+        // which avoids file system and Buffer issues in different runtimes.
         const serviceAccount = JSON.parse(serviceAccountString);
 
         return admin.initializeApp({
@@ -29,6 +33,7 @@ function initializeAdminApp() {
 
     } catch (error: any) {
         console.error("Falha Crítica ao Inicializar o Firebase Admin SDK:", error.message);
+        // Throw a more informative error.
         throw new Error(`Não foi possível inicializar o Firebase Admin. Causa: ${error.message}`);
     }
 }
@@ -622,4 +627,4 @@ export async function updateUserLastSeen(userId: string) {
     }
 }
 
-
+    
