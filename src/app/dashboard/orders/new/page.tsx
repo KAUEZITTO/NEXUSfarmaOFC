@@ -10,6 +10,8 @@ export default async function NewOrderPageWrapper() {
     const unitsData = await getUnits();
     const productsData = await getProducts();
 
+    // The Suspense boundary here handles the loading state while data is being fetched.
+    // The fallback points directly to our skeleton component.
     return (
         <Suspense fallback={<LoadingNewOrderPage />}>
             <NewOrderClientPage initialUnits={unitsData} initialProducts={productsData} />

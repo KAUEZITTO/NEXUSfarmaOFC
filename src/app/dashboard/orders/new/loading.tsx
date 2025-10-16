@@ -1,4 +1,3 @@
-
 // Este componente usa apenas tags HTML básicas e classes Tailwind para
 // garantir que não haja erros de pré-renderização durante o build do Next.js.
 export default function LoadingNewOrderPage() {
