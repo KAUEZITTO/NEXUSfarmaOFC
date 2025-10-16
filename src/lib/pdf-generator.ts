@@ -4,8 +4,6 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import type { Product, Patient, Dispensation, Order, Unit, StockMovement, OrderStatus } from './types';
-import { promises as fs } from 'fs';
-import path from 'path';
 
 // Extend jsPDF with the autoTable plugin
 interface jsPDFWithAutoTable extends jsPDF {
@@ -14,12 +12,24 @@ interface jsPDFWithAutoTable extends jsPDF {
 
 const getImageAsBase64 = async (imagePath: string): Promise<string | null> => {
     try {
-        const fullPath = path.join(process.cwd(), 'public', imagePath);
-        const file = await fs.readFile(fullPath);
-        const fileExtension = path.extname(imagePath).slice(1);
-        return `data:image/${fileExtension};base64,${file.toString('base64')}`;
+        // Construct the full URL to the image in the public folder.
+        // This is more robust for different deployment environments (local, Vercel, etc.)
+        const baseUrl = process.env.VERCEL_URL 
+            ? `https://${process.env.VERCEL_URL}` 
+            : 'http://localhost:9002'; // Default to localhost for development
+            
+        const imageUrl = new URL(imagePath, baseUrl).toString();
+
+        const response = await fetch(imageUrl);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const fileExtension = imagePath.split('.').pop() || 'png';
+        return `data:image/${fileExtension};base64,${buffer.toString('base64')}`;
     } catch (error) {
-        console.error(`Error reading image file: ${imagePath}`, error);
+        console.error(`Error loading image file from URL: ${imagePath}`, error);
         return null;
     }
 }
@@ -27,11 +37,11 @@ const getImageAsBase64 = async (imagePath: string): Promise<string | null> => {
 const addHeader = async (doc: jsPDFWithAutoTable, title: string, subtitle?: string) => {
     const pageWidth = doc.internal.pageSize.getWidth();
     
-    // Load images
+    // Load images using the robust fetch method
     const [prefLogo, nexusLogo, cafLogo] = await Promise.all([
-        getImageAsBase64('SMS-PREF.png'),
-        getImageAsBase64('NEXUSnv.png'),
-        getImageAsBase64('CAF.png')
+        getImageAsBase64('/SMS-PREF.png'),
+        getImageAsBase64('/NEXUSnv.png'),
+        getImageAsBase64('/CAF.png')
     ]);
 
     doc.setFont('helvetica', 'normal');
@@ -550,4 +560,6 @@ export const generateOrderStatusReportPDF = async (
     return doc.output('datauristring');
 };
     
+    
+
     
