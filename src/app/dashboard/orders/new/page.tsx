@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { Suspense } from 'react';
 import { getUnits, getProducts } from '@/lib/data';
 import { NewOrderClientPage } from './client-page';
