@@ -14,6 +14,7 @@ import type { Order, OrderItem, Product } from "@/lib/types";
 import { getOrder } from "@/lib/data";
 import { PrintActions } from "./print-actions";
 import { Loader2 } from "lucide-react";
+import { Logo } from "@/components/logo";
 
 const renderItemRows = (items: OrderItem[]) => {
     if (!items || items.length === 0) return null;
@@ -58,7 +59,8 @@ const ReceiptCopy = ({ order, showSignature, isFirstCopy }: { order: Order, show
               </div>
 
               <div className="flex flex-col items-center justify-center">
-                   <h1 className="text-sm font-bold">GUIA DE ENTREGA</h1>
+                   <Logo />
+                   <h1 className="text-sm font-bold mt-2">GUIA DE ENTREGA</h1>
               </div>
 
               <div className="flex flex-col items-center justify-center">
