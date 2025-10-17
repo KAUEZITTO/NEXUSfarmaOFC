@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState, useTransition, useRef } from 'react';
@@ -85,10 +86,10 @@ const categories: {
   productCategory?: Product['category'] | (Product['category'])[]
 }[] = [
   { name: 'Insulinas', icon: Syringe, demandItem: 'Insulinas Análogas' },
-  { name: 'Tiras/Lancetas', icon: ClipboardList, demandItem: 'Tiras de Glicemia' },
+  { name: 'Tiras/Lancetas', icon: ClipboardList, demandItem: 'Tiras de Glicemia', productCategory: 'Tiras de Glicemia/Lancetas' },
   { name: 'Fraldas', icon: Baby, demandItem: 'Fraldas', productCategory: 'Fraldas' },
   { name: 'Fórmulas', icon: Milk, demandItem: 'Fórmulas', productCategory: 'Fórmulas' },
-  { name: 'Itens Judiciais', icon: FileText, demandItem: 'Itens Judiciais' },
+  { name: 'Itens Judiciais', icon: FileText, demandItem: 'Itens Judiciais', productCategory: 'Não Padronizado (Compra)' },
   { name: 'Imunoglobulina', icon: ShieldHalf, demandItem: 'Imunoglobulina'},
   { name: 'Não Padronizado', icon: ShoppingCart, productCategory: 'Não Padronizado (Compra)' },
   { name: 'Material Técnico', icon: Stethoscope, productCategory: 'Material Técnico' },
@@ -97,7 +98,6 @@ const categories: {
 ];
 
 const insulinKeywords = ['insulina', 'lantus', 'apidra', 'nph', 'regular', 'agulha para caneta'];
-const stripKeywords = ['tira', 'lanceta'];
 
 const getProductsForCategory = (allProducts: Product[], categoryName: Category, patient: Patient | null): Product[] => {
     const categoryInfo = categories.find(c => c.name === categoryName);
@@ -106,9 +106,6 @@ const getProductsForCategory = (allProducts: Product[], categoryName: Category, 
     // Keyword-based filters for special composite categories
     if (categoryName === 'Insulinas') {
         return allProducts.filter(p => insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)));
-    }
-    if (categoryName === 'Tiras/Lancetas') {
-        return allProducts.filter(p => stripKeywords.some(kw => p.name.toLowerCase().includes(kw)));
     }
      if (categoryName === 'Imunoglobulina') {
         return allProducts.filter(p => p.name.toLowerCase().includes('imunoglobulina'));
@@ -123,11 +120,6 @@ const getProductsForCategory = (allProducts: Product[], categoryName: Category, 
         return allProducts.filter(p => productCategories.includes(p.category));
     }
     
-    // 'Itens Judiciais' also maps to 'Não Padronizado (Compra)'
-    if (categoryName === 'Itens Judiciais') {
-        return allProducts.filter(p => p.category === 'Não Padronizado (Compra)');
-    }
-    
     if (categoryName === 'Outros') {
         const allMappedProductCategories = categories
             .map(c => c.productCategory)
@@ -137,13 +129,11 @@ const getProductsForCategory = (allProducts: Product[], categoryName: Category, 
         return allProducts.filter(p => 
             !allMappedProductCategories.includes(p.category) &&
             !insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)) &&
-            !stripKeywords.some(kw => p.name.toLowerCase().includes(kw)) &&
             !p.name.toLowerCase().includes('imunoglobulina')
         );
     }
     
-    // Fallback for categories without a specific productCategory mapping (like 'Medicamentos' before refinement)
-    // This part should ideally not be hit if the config is correct, but serves as a safeguard.
+    // Fallback for categories without a specific productCategory mapping
     return [];
 };
 
