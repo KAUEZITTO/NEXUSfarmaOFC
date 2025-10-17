@@ -18,6 +18,7 @@ import { ChevronLeft, PlusCircle } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
+import { Badge } from '../ui/badge';
 
 type AddItemsManuallyDialogProps = {
   trigger: React.ReactNode;
@@ -26,40 +27,24 @@ type AddItemsManuallyDialogProps = {
   selectedCategories: Product['category'][];
 };
 
-type GroupedProduct = {
-  name: string;
-  presentation?: string;
-  category: Product['category'];
-  therapeuticClass?: string;
-  mainFunction?: string;
-  imageUrl?: string;
-  batches: Product[];
-};
-
 const allCategories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)'];
 
-export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, selectedCategories }: AddItemsManallyDialogProps) {
+export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, selectedCategories }: AddItemsManuallyDialogProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   
-  // Determine initial step based on selected categories
   const initialStep = selectedCategories.length > 1 ? 'category' : 'list';
   const initialCategory = selectedCategories.length === 1 ? selectedCategories[0] : null;
 
-  const [step, setStep] = useState<'category' | 'list' | 'details'>(initialStep);
+  const [step, setStep] = useState<'category' | 'list'>(initialStep);
   const [currentCategory, setCurrentCategory] = useState<Product['category'] | null>(initialCategory);
-  const [selectedProduct, setSelectedProduct] = useState<GroupedProduct | null>(null);
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
-
-  // Reset state when dialog opens or closes
+  
   useEffect(() => {
     if (isOpen) {
       const newInitialStep = selectedCategories.length > 1 ? 'category' : 'list';
       const newInitialCategory = selectedCategories.length === 1 ? selectedCategories[0] : null;
       setStep(newInitialStep);
       setCurrentCategory(newInitialCategory);
-      setSelectedProduct(null);
-      setQuantities({});
     }
   }, [isOpen, selectedCategories]);
 
@@ -69,80 +54,31 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
     setStep('list');
   };
 
-  const handleProductSelect = (product: GroupedProduct) => {
-    setSelectedProduct(product);
-    // Initialize quantities for batches
-    const initialQuantities = product.batches.reduce((acc, batch) => {
-        acc[batch.id] = 1;
-        return acc;
-    }, {} as Record<string, number>);
-    setQuantities(initialQuantities);
-    setStep('details');
-  };
-
   const handleBack = () => {
-    if (step === 'details') {
-      setStep('list');
-      setSelectedProduct(null);
-      setQuantities({});
-    } else if (step === 'list') {
-      // If we started from a multi-category selection, go back to category selection
+    if (step === 'list') {
       if (selectedCategories.length > 1) {
         setStep('category');
         setCurrentCategory(null);
       } else {
-        // If we started with a single category, just close the dialog
         setIsOpen(false);
       }
     }
   };
 
-  const handleAddItems = () => {
-    if (!selectedProduct) return;
-    let itemsAdded = 0;
-    
-    for (const batch of selectedProduct.batches) {
-        const quantity = quantities[batch.id];
-        if (quantity > 0) {
-            const wasAdded = onAddProduct(batch, quantity);
-            if (wasAdded) {
-                itemsAdded++;
-            }
-        }
-    }
-
-    if (itemsAdded > 0) {
+  const handleAddProduct = (product: Product) => {
+    const wasAdded = onAddProduct(product, 1); // Add with quantity 1 by default, can be changed later
+    if(wasAdded) {
         toast({
-            title: "Itens Adicionados",
-            description: `${itemsAdded} lote(s) de ${selectedProduct.name} foram adicionados à remessa.`,
-        })
+            title: "Item Adicionado",
+            description: `${product.name} (Lote: ${product.batch}) foi adicionado à remessa.`,
+        });
+        setIsOpen(false);
     }
-    
-    setIsOpen(false);
   };
   
-  const groupProducts = (products: Product[]): GroupedProduct[] => {
-    const map = new Map<string, GroupedProduct>();
-    products.forEach(p => {
-        const key = `${p.name}|${p.presentation}`;
-        if (map.has(key)) {
-            map.get(key)!.batches.push(p);
-        } else {
-            map.set(key, {
-                name: p.name,
-                presentation: p.presentation,
-                category: p.category,
-                therapeuticClass: p.therapeuticClass,
-                mainFunction: p.mainFunction,
-                imageUrl: p.imageUrl,
-                batches: [p]
-            });
-        }
-    });
-    return Array.from(map.values()).sort((a,b) => a.name.localeCompare(b.name));
-  }
-
-  const productsForCategory = currentCategory ? groupProducts(allProducts.filter(p => p.category === currentCategory)) : [];
+  const productsForCategory = currentCategory 
+    ? allProducts.filter(p => p.category === currentCategory).sort((a,b) => a.name.localeCompare(b.name))
+    : [];
 
   const renderContent = () => {
     if (step === 'category') {
@@ -162,9 +98,19 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
         <ScrollArea className="h-96">
             <div className="space-y-2">
                 {productsForCategory.length > 0 ? productsForCategory.map(p => (
-                    <div key={p.name + p.presentation} className="border p-3 rounded-md cursor-pointer hover:bg-muted" onClick={() => handleProductSelect(p)}>
-                        <p className="font-semibold">{p.name}</p>
-                        <p className="text-sm text-muted-foreground">{p.presentation}</p>
+                    <div key={p.id} className="border p-3 rounded-md cursor-pointer hover:bg-muted" onClick={() => handleAddProduct(p)}>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <p className="font-semibold">{p.name}</p>
+                                <p className="text-sm text-muted-foreground">{p.presentation}</p>
+                            </div>
+                            <Badge variant={p.quantity > 0 ? "default" : "destructive"}>
+                                Estoque: {p.quantity}
+                            </Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-2">
+                           <span>Lote: {p.batch || 'N/A'}</span> | <span>Val: {p.expiryDate ? new Date(p.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A'}</span>
+                        </div>
                     </div>
                 )) : (
                     <div className="text-center text-muted-foreground pt-10">Nenhum produto encontrado para esta categoria.</div>
@@ -172,37 +118,6 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
             </div>
         </ScrollArea>
       );
-    }
-
-    if (step === 'details' && selectedProduct) {
-        return (
-             <ScrollArea className="h-96">
-                <div className="space-y-4">
-                    <h3 className="font-bold text-lg">{selectedProduct.name}</h3>
-                    <p>{selectedProduct.presentation}</p>
-                    <div className="space-y-3">
-                        {selectedProduct.batches.map(batch => (
-                            <div key={batch.id} className="flex items-center justify-between gap-4 p-2 border rounded-md">
-                                <div>
-                                    <p className="text-sm">Lote: <span className="font-mono">{batch.batch || 'N/A'}</span></p>
-                                    <p className="text-sm">Validade: <span className="font-mono">{batch.expiryDate ? new Date(batch.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A'}</span></p>
-                                    <p className="text-sm">Estoque: <span className="font-mono">{batch.quantity.toLocaleString('pt-BR')}</span></p>
-                                </div>
-                                <div className="w-24">
-                                     <Input 
-                                        type="number" 
-                                        min="0"
-                                        max={batch.quantity}
-                                        value={quantities[batch.id] || 0}
-                                        onChange={e => setQuantities(q => ({ ...q, [batch.id]: parseInt(e.target.value, 10) || 0 }))}
-                                    />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </ScrollArea>
-        )
     }
   };
 
@@ -220,7 +135,6 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
             <DialogTitle>
                 {step === 'category' && 'Selecione a Categoria'}
                 {step === 'list' && `Itens em ${currentCategory}`}
-                {step === 'details' && 'Adicionar Lotes e Quantidades'}
             </DialogTitle>
           </div>
         </DialogHeader>
@@ -231,12 +145,6 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
             <DialogClose asChild>
                 <Button type="button" variant="outline">Cancelar</Button>
             </DialogClose>
-            {step === 'details' && (
-                <Button onClick={handleAddItems}>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Adicionar à Remessa
-                </Button>
-            )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
