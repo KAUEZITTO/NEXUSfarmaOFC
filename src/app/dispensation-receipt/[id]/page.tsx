@@ -1,8 +1,9 @@
 
 
-'use client';
+'use server';
 
-import React, { useEffect, useState } from "react";
+import React from "react";
+import { notFound } from 'next/navigation';
 import {
   Table,
   TableBody,
@@ -11,10 +12,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Printer, ArrowLeft, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import type { Dispensation, DispensationItem, Product } from "@/lib/types";
 import { getDispensation } from "@/lib/data";
 import { PrintActions } from "@/app/receipt/[id]/print-actions";
@@ -145,56 +145,12 @@ const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensatio
 };
 
 
-export default function DispensationReceiptPage({ params }: { params: { id: string } }) {
-  const [dispensationData, setDispensationData] = useState<Dispensation | null>(null);
-  const [isNew, setIsNew] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('new') === 'true') {
-        setIsNew(true);
-        // Clean the URL
-        const newUrl = window.location.pathname;
-        window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
-    }
-    
-    async function fetchDispensation() {
-        setLoading(true);
-        try {
-          const data = await getDispensation(params.id);
-          if (data) {
-              setDispensationData(data);
-          }
-        } catch (error) {
-          console.error("Failed to fetch dispensation", error);
-        } finally {
-          setLoading(false);
-        }
-    }
-    fetchDispensation();
-  }, [params.id]);
-
-  useEffect(() => {
-      if (dispensationData && isNew) {
-          window.print();
-          setIsNew(false);
-      }
-  }, [dispensationData, isNew]);
-
-
-  if (loading) {
-    return (
-        <div className="flex h-screen w-full items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <p className="ml-4">Carregando recibo...</p>
-        </div>
-    );
-  }
-
+export default async function DispensationReceiptPage({ params }: { params: { id: string } }) {
+  const dispensationData = await getDispensation(params.id);
+  
   if (!dispensationData) {
       return (
-        <div className="flex h-screen w-full items-center justify-center flex-col gap-4">
+        <div className="flex h-screen w-full items-center justify-center flex-col gap-4 bg-gray-100">
             <p>Recibo não encontrado.</p>
             <p className="text-sm text-muted-foreground">O ID pode estar incorreto ou o recibo foi excluído.</p>
             <PrintActions backOnly={true} />
