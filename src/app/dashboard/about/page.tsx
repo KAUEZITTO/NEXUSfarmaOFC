@@ -13,25 +13,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 const changelog = [
-    { version: '3.4.0', changes: ['Corrigido problema de cache que impedia a atualização de dados em tempo real (Not Found em recibos), garantindo que todas as informações sejam sempre as mais recentes.', 'Restaurado o layout visual das guias de remessa (impressão) para o formato original e mais compacto.'] },
-    { version: '3.3.8', changes: ['Corrigido link quebrado que impedia a impressão de guias de dispensação e restaurada a exibição dos logos nos relatórios em PDF.'] },
-    { version: '3.3.7', changes: ['Corrigida a exibição do avatar na tela de gerenciamento de usuários para usar o novo sistema de iniciais e cores.', 'Restaurados os logos da Prefeitura e do CAF nos cabeçalhos de todos os relatórios em PDF.'] },
-    { version: '3.3.6', changes: ['Corrigida definitivamente a falha "erro desconhecido" no cadastro de novos usuários, garantindo compatibilidade da autenticação com o ambiente do servidor.', 'Resolvido erro 404 que impedia a geração de etiquetas de produtos.'] },
-    { version: '3.3.5', changes: ['Corrigido erro crítico que impedia o cadastro de novos usuários devido a uma falha na inicialização do serviço de autenticação.'] },
-    { version: '3.3.4', changes: ['Saudação do dashboard agora inclui o nome do usuário.', 'Adicionada funcionalidade para excluir produtos do inventário (em massa ou selecionados).', 'Corrigida a exibição de produtos por categoria na tela de dispensação.', 'Adicionado campo "Tipo de Diabetes" (DM1/DM2) para pacientes que usam insulina.'] },
-    { version: '3.3.3', changes: ['Corrigido bug crítico que impedia o nome do usuário de aparecer nos documentos gerados.'] },
-    { version: '3.3.2', changes: ['Corrigido bug na exibição da data de validade em recibos de remessa.', 'Corrigida a fonte de dados do relatório de dispensação por unidade para garantir precisão.', 'Melhorada a usabilidade da tela de login, desabilitando o botão durante a autenticação.'] },
-    { version: '3.3.1', changes: ['Correção de erro crítico que impedia a impressão de recibos de remessa e a geração de relatórios.', 'Adicionado nome do usuário que gerou o documento nos rodapés dos recibos para rastreabilidade.', 'Melhorado o fluxo de atendimento ao paciente, exibindo a lista completa de pacientes e adicionando um botão de "Atender" na tabela principal.', 'Adicionado indicador de status (online/offline) e avatar na tela de gerenciamento de usuários.'] },
-    { version: '3.3.0', changes: ['Modernização completa da interface com nova paleta de cores (azul, laranja) e identidade visual.', 'Ajustes de layout e modernização da página inicial e rodapé.'] },
-    { version: '3.2.2', changes: ['Correção arquitetural definitiva para o carregamento de dados em páginas dinâmicas, resolvendo bugs de unidades e pacientes não encontrados.', 'Implementada a funcionalidade de exclusão de pedidos (com estorno de estoque) e de unidades.', 'Melhorado o cadastro de pacientes com controle de laudo de insulina, cálculo de dispensação e novas demandas.'] },
-    { version: '3.2.1', changes: ['Corrigido o problema de cache de dados que impedia a exibição de informações recém-cadastradas, garantindo que os dados sejam sempre atualizados em tempo real.'] },
-    { version: '3.2.0', changes: ['Refatorada a arquitetura de busca de dados em todas as páginas de listagem para resolver definitivamente o problema de "dados fantasmas", garantindo que as informações sejam atualizadas em tempo real após qualquer cadastro ou edição.'] },
-    { version: '3.1.3', changes: ['Resolvido problema de atualização de dados em tempo real. As listas agora recarregam automaticamente após um novo cadastro ou edição.'] },
-    { version: '3.1.2', changes: ['Correção de erro de sintaxe na diretiva `use server` que impedia o build da aplicação.'] },
-    { version: '3.1.1', changes: ['Correção definitiva do erro de build `Failed to collect page data` ao isolar a lógica de importação do `knowledge-base.json` para o arquivo `data.ts`, garantindo a estabilidade da compilação.'] },
-    { version: '3.1.0', changes: ['Refatoração completa do fluxo de autenticação para resolver o erro "Credenciais Inválidas" e estabilizar o login.', 'Adicionado botão de visibilidade de senha na tela de login.'] },
-    { version: '3.0.9', changes: ['Corrigido fluxo de autenticação do servidor Firebase para resolver falhas de login.'] },
-    { version: '3.0.8', changes: ['Resolvido problema de carregamento infinito no login através da refatoração da arquitetura de autenticação.'] },
     { version: '3.0.7', changes: ['Implementada correção arquitetural definitiva na página de Inventário, consolidando toda a lógica em um único componente cliente para resolver o erro de build `Failed to collect page data`.'] },
     { version: '2.9.1', changes: ['Correção arquitetural definitiva para o erro de build `Failed to collect page data` na página de Inventário, utilizando `router.refresh()` para revalidação de dados.'] },
     { version: '2.9.0', changes: ['Refatoração da página de Inventário para isolar componentes Server/Client, corrigindo erro de build.'] },
@@ -96,7 +77,7 @@ export default function AboutPage() {
                     Versão do Sistema
                 </h3>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  NexusFarma v3.4.0
+                  NexusFarma v3.0.7
                 </p>
               </div>
           </CardContent>
