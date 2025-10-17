@@ -99,7 +99,7 @@ const categories: {
 
 const insulinKeywords = ['insulina', 'lantus', 'apidra', 'nph', 'regular', 'agulha para caneta'];
 
-const getProductsForCategory = (allProducts: Product[], categoryName: Category, patient: Patient | null): Product[] => {
+const getProductsForCategory = (allProducts: Product[], categoryName: Category): Product[] => {
     const categoryInfo = categories.find(c => c.name === categoryName);
     if (!categoryInfo) return [];
 
@@ -133,7 +133,7 @@ const getProductsForCategory = (allProducts: Product[], categoryName: Category, 
         );
     }
     
-    // Fallback for categories without a specific productCategory mapping
+    // Fallback for categories without a specific productCategory mapping (like empty ones)
     return [];
 };
 
@@ -352,7 +352,7 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
   }
   
   const renderItemInput = (item: DispensationItem) => {
-    const productList = getProductsForCategory(allProducts, item.category as Category, selectedPatient);
+    const productList = getProductsForCategory(allProducts, item.category as Category);
 
     if (productList.length > 0) {
       return (
@@ -577,3 +577,4 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
     </Dialog>
   );
 }
+
