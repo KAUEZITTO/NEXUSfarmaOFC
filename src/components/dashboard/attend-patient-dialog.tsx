@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useTransition, useRef } from 'react';
@@ -102,8 +103,6 @@ const getProductsForCategory = (allProducts: Product[], categoryName: Category, 
     const categoryInfo = categories.find(c => c.name === categoryName);
     if (!categoryInfo) return [];
 
-    let filteredProducts: Product[] = [];
-
     // Special keyword-based filtering
     if (categoryName === 'Insulinas') {
         return allProducts.filter(p => insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)));
@@ -114,12 +113,11 @@ const getProductsForCategory = (allProducts: Product[], categoryName: Category, 
     if (categoryName === 'Imunoglobulina') {
         return allProducts.filter(p => p.name.toLowerCase().includes('imunoglobulina'));
     }
-    
-    // Logic for 'Itens Judiciais'
+
+    // Logic for 'Itens Judiciais' - shows same as "Não Padronizado"
     if (categoryName === 'Itens Judiciais') {
         const patientDemands = patient?.demandItems || [];
         if (patientDemands.includes('Itens Judiciais') || patientDemands.includes('Medicamentos/Materiais Comprados')) {
-            // Show products from 'Não Padronizado (Compra)' category for judicial patients
             return allProducts.filter(p => p.category === 'Não Padronizado (Compra)');
         }
         return [];
@@ -131,28 +129,34 @@ const getProductsForCategory = (allProducts: Product[], categoryName: Category, 
             ? categoryInfo.productCategory
             : [categoryInfo.productCategory];
         
-        filteredProducts = allProducts.filter(p => productCategories.includes(p.category));
+        let products = allProducts.filter(p => productCategories.includes(p.category));
 
-        // Exclude special items from the general 'Medicamentos' category
+        // Refined exclusion logic for general categories
         if (categoryName === 'Medicamentos') {
-             filteredProducts = filteredProducts.filter(p => 
+             products = products.filter(p => 
                 !insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)) &&
                 !p.name.toLowerCase().includes('imunoglobulina')
             );
         }
-    } else if (categoryName === 'Outros') {
-        // Find all products that don't fit into any other specific product category
-        const categorizedCategories = categories.map(c => c.productCategory).flat().filter(Boolean) as Product['category'][];
-        
-        filteredProducts = allProducts.filter(p => 
-            !categorizedCategories.includes(p.category) && 
+
+        return products;
+    } 
+    
+    if (categoryName === 'Outros') {
+        const allSpecificProductCategories = categories
+            .map(c => c.productCategory)
+            .flat()
+            .filter(Boolean) as Product['category'][];
+            
+        return allProducts.filter(p => 
+            !allSpecificProductCategories.includes(p.category) &&
             !insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)) &&
             !stripKeywords.some(kw => p.name.toLowerCase().includes(kw)) &&
             !p.name.toLowerCase().includes('imunoglobulina')
         );
     }
     
-    return filteredProducts;
+    return [];
 };
 
 
