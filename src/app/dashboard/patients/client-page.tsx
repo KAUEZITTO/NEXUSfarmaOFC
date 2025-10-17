@@ -11,12 +11,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { AttendPatientDialog } from "@/components/dashboard/attend-patient-dialog";
 import { AddPatientDialog } from "@/components/dashboard/add-patient-dialog";
 import { Button } from "@/components/ui/button";
 import type { Patient, PatientFilter, PatientStatus } from "@/lib/types";
 import { ColumnDef } from "@tanstack/react-table";
-import { PlusCircle, Loader2, Eye, Edit, UserCheck, UserX, CheckCircle, XCircle, HeartPulse, MoreHorizontal, ArrowUpDown } from "lucide-react";
+import { PlusCircle, Loader2, Eye, Edit, UserCheck, UserX, CheckCircle, XCircle, HeartPulse, MoreHorizontal, ArrowUpDown, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { updatePatientStatus } from "@/lib/actions";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -24,6 +25,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
+import { useDebounce } from 'use-debounce';
 
 
 const filterCategories: { label: string, value: PatientFilter }[] = [
@@ -49,16 +51,31 @@ export function PatientsClientPage({
   const { toast } = useToast();
   
   const activeFilter = (searchParams?.filter as PatientFilter) || 'active';
+  const initialSearchTerm = (searchParams?.q as string) || '';
 
   const [isPending, startTransition] = useTransition();
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
+  const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
 
-  const handleFilterChange = (filter: PatientFilter) => {
+  const handleUrlChange = (key: 'filter' | 'q', value: string) => {
     startTransition(() => {
-        const params = new URLSearchParams(currentSearchParams.toString());
-        params.set('filter', filter);
+        const params = new URLSearchParams(window.location.search);
+        if (value) {
+            params.set(key, value);
+        } else {
+            params.delete(key);
+        }
         router.push(`/dashboard/patients?${params.toString()}`);
     });
-  }
+  };
+  
+  const filteredPatients = debouncedSearchTerm
+    ? initialPatients.filter(
+        (patient) =>
+          patient.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+          patient.cpf?.replace(/[^\d]/g, '').includes(debouncedSearchTerm.replace(/[^\d]/g, ''))
+      )
+    : initialPatients;
 
   const handlePatientSaved = () => {
     router.refresh(); 
@@ -142,18 +159,19 @@ export function PatientsClientPage({
       header: "Status",
       cell: ({ row }) => {
         const status: PatientStatus = row.getValue("status");
-        if (status === 'Ativo') return null;
-
+        
         const variantMap: { [key in PatientStatus]?: "default" | "secondary" | "destructive" } = {
-          'Tratamento Concluído': 'default',
-          'Tratamento Interrompido': 'secondary',
+          'Ativo': 'default',
+          'Tratamento Concluído': 'secondary',
+          'Tratamento Interrompido': 'destructive',
           'Óbito': 'destructive'
         };
 
         return <Badge 
           variant={variantMap[status] ?? 'default'} 
           className={cn({
-            'bg-green-600 text-white': status === 'Tratamento Concluído',
+            'bg-green-600 text-white': status === 'Ativo',
+            'bg-blue-500 text-white': status === 'Tratamento Concluído',
             'bg-orange-500 text-white': status === 'Tratamento Interrompido',
           })}
         >
@@ -167,7 +185,7 @@ export function PatientsClientPage({
         const patient = row.original
 
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 justify-end">
             <AttendPatientDialog
                 initialPatient={patient}
                 onDispensationSaved={handlePatientSaved}
@@ -248,7 +266,6 @@ export function PatientsClientPage({
             </CardDescription>
           </div>
           <div className="flex gap-2">
-            <AttendPatientDialog onDispensationSaved={handlePatientSaved} />
             <AddPatientDialog onPatientSaved={handlePatientSaved} trigger={
               <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />
@@ -262,13 +279,22 @@ export function PatientsClientPage({
                  <Button 
                     key={filter.value}
                     variant={activeFilter === filter.value ? "default" : "outline"}
-                    onClick={() => handleFilterChange(filter.value)}
+                    onClick={() => handleUrlChange('filter', filter.value)}
                     className="rounded-full flex-shrink-0"
                     disabled={isPending}
                 >
                     {isPending && activeFilter === filter.value ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : filter.label}
                 </Button>
             ))}
+        </div>
+         <div className="relative mt-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+                placeholder="Filtrar por nome ou CPF..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 max-w-sm"
+            />
         </div>
       </CardHeader>
       <CardContent>
@@ -278,9 +304,11 @@ export function PatientsClientPage({
                 <p className="mt-2 text-muted-foreground">Carregando pacientes...</p>
             </div>
         ) : (
-          <DataTable columns={columns} data={initialPatients} />
+          <DataTable columns={columns} data={filteredPatients} />
         )}
       </CardContent>
     </Card>
   );
 }
+
+    

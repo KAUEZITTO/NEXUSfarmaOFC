@@ -17,7 +17,6 @@ function PatientsSkeleton() {
                         <Skeleton className="h-4 w-72 mt-2 bg-muted rounded-md" />
                     </div>
                     <div className="flex gap-2">
-                        <Skeleton className="h-9 w-32 bg-muted rounded-md" />
                         <Skeleton className="h-9 w-40 bg-muted rounded-md" />
                     </div>
                 </div>
@@ -25,6 +24,9 @@ function PatientsSkeleton() {
                     <Skeleton className="h-9 w-20 bg-muted rounded-full" />
                     <Skeleton className="h-9 w-24 bg-muted rounded-full" />
                     <Skeleton className="h-9 w-28 bg-muted rounded-full" />
+                </div>
+                 <div className="relative mt-4">
+                    <Skeleton className="h-10 max-w-sm" />
                 </div>
             </CardHeader>
             <CardContent>
@@ -51,3 +53,5 @@ export default async function PatientsPage({
         </Suspense>
     );
 }
+
+    
