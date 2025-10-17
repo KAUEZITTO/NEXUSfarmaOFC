@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 const changelog = [
+    { version: '3.3.8', changes: ['Corrigido link quebrado que impedia a impressão de guias de dispensação e restaurada a exibição dos logos nos relatórios em PDF.'] },
     { version: '3.3.7', changes: ['Corrigida a exibição do avatar na tela de gerenciamento de usuários para usar o novo sistema de iniciais e cores.', 'Restaurados os logos da Prefeitura e do CAF nos cabeçalhos de todos os relatórios em PDF.'] },
     { version: '3.3.6', changes: ['Corrigida definitivamente a falha "erro desconhecido" no cadastro de novos usuários, garantindo compatibilidade da autenticação com o ambiente do servidor.', 'Resolvido erro 404 que impedia a geração de etiquetas de produtos.'] },
     { version: '3.3.5', changes: ['Corrigido erro crítico que impedia o cadastro de novos usuários devido a uma falha na inicialização do serviço de autenticação.'] },
@@ -94,7 +95,7 @@ export default function AboutPage() {
                     Versão do Sistema
                 </h3>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  NexusFarma v3.3.7
+                  NexusFarma v3.3.8
                 </p>
               </div>
           </CardContent>
