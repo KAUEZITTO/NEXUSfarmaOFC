@@ -152,6 +152,12 @@ export type Patient = {
     pathology?: string;
     mandateType?: string; // Added from patient report
     files?: PatientFile[];
+
+    // New fields
+    diaperSize?: 'Infantil' | 'P' | 'M' | 'G' | 'XG' | 'XXG';
+    bedriddenCid?: string;
+    bedriddenPathology?: string;
+    bedriddenTreatmentDuration?: string;
 };
 
 export type PatientFilter = 'active' | 'inactive' | 'insulin' | 'diapers' | 'bedridden' | 'legal' | 'municipal' | 'all';

@@ -33,6 +33,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Patient, Dosage, Unit, PatientDemandItem, PatientFile } from '@/lib/types';
 import { Separator } from '../ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { Textarea } from '../ui/textarea';
 
 const dosagePeriods: Dosage['period'][] = ['Manhã', 'Tarde', 'Noite', 'Ao deitar', 'Após Café', 'Jejum'];
 
@@ -120,6 +121,12 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
   const [files, setFiles] = useState<PatientFile[]>([]);
   const [diabetesType, setDiabetesType] = useState<Patient['diabetesType'] | undefined>(undefined);
 
+  // New states for conditional fields
+  const [diaperSize, setDiaperSize] = useState<Patient['diaperSize'] | undefined>();
+  const [bedriddenCid, setBedriddenCid] = useState('');
+  const [bedriddenPathology, setBedriddenPathology] = useState('');
+  const [bedriddenTreatmentDuration, setBedriddenTreatmentDuration] = useState('');
+
 
   const [units, setUnits] = useState<Unit[]>([]);
 
@@ -155,6 +162,10 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
     setInsulinPresentation('Caneta');
     setDiabetesType(undefined);
     setFiles([]);
+    setDiaperSize(undefined);
+    setBedriddenCid('');
+    setBedriddenPathology('');
+    setBedriddenTreatmentDuration('');
   }
   
   const handleDemandItemChange = (item: PatientDemandItem, checked: boolean) => {
@@ -170,6 +181,12 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
                 setDiabetesType(undefined);
             }
             if (item === 'Tiras de Glicemia') setStripDosages([]);
+            if (item === 'Fraldas') setDiaperSize(undefined);
+            if (item === 'Materiais Técnicos (Acamados)') {
+              setBedriddenCid('');
+              setBedriddenPathology('');
+              setBedriddenTreatmentDuration('');
+            }
         }
         return newItems;
     });
@@ -236,6 +253,10 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
         setManualDispensingQuantity(patientToEdit.manualDispensingQuantity);
         setDiabetesType(patientToEdit.diabetesType);
         setFiles(patientToEdit.files || []);
+        setDiaperSize(patientToEdit.diaperSize);
+        setBedriddenCid(patientToEdit.bedriddenCid || '');
+        setBedriddenPathology(patientToEdit.bedriddenPathology || '');
+        setBedriddenTreatmentDuration(patientToEdit.bedriddenTreatmentDuration || '');
     } else if (!isEditing && isOpen) {
         resetForm();
     }
@@ -277,6 +298,10 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
             manualDispensingQuantity: demandItems.includes('Insulinas Análogas') ? manualDispensingQuantity : undefined,
             insulinPresentation: demandItems.includes('Insulinas Análogas') ? insulinPresentation : undefined,
             stripDosages: demandItems.includes('Tiras de Glicemia') ? stripDosages : [],
+            diaperSize: demandItems.includes('Fraldas') ? diaperSize : undefined,
+            bedriddenCid: demandItems.includes('Materiais Técnicos (Acamados)') ? bedriddenCid : undefined,
+            bedriddenPathology: demandItems.includes('Materiais Técnicos (Acamados)') ? bedriddenPathology : undefined,
+            bedriddenTreatmentDuration: demandItems.includes('Materiais Técnicos (Acamados)') ? bedriddenTreatmentDuration : undefined,
             files,
         }
 
@@ -312,6 +337,9 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
   
   const isInsulinUser = demandItems.includes('Insulinas Análogas');
   const usesStrips = demandItems.includes('Tiras de Glicemia');
+  const usesDiapers = demandItems.includes('Fraldas');
+  const needsBedriddenMaterials = demandItems.includes('Materiais Técnicos (Acamados)');
+
 
   const isReportExpired = () => {
     if (!insulinReportDate) return false;
@@ -409,6 +437,46 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
                     ))}
                  </div>
               </div>
+
+                {usesDiapers && (
+                    <div className="ml-0 p-4 border rounded-md space-y-4 bg-muted/20">
+                        <h4 className="font-semibold text-md">Detalhes das Fraldas</h4>
+                        <div className="space-y-2">
+                            <Label htmlFor="diaper-size">Tamanho</Label>
+                            <Select name="diaper-size" value={diaperSize} onValueChange={(v) => setDiaperSize(v as Patient['diaperSize'])}>
+                                <SelectTrigger id="diaper-size"><SelectValue placeholder="Selecione o tamanho..." /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Infantil">Infantil</SelectItem>
+                                    <SelectItem value="P">P</SelectItem>
+                                    <SelectItem value="M">M</SelectItem>
+                                    <SelectItem value="G">G</SelectItem>
+                                    <SelectItem value="XG">XG</SelectItem>
+                                    <SelectItem value="XXG">XXG</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                )}
+                
+                {needsBedriddenMaterials && (
+                     <div className="ml-0 p-4 border rounded-md space-y-4 bg-muted/20">
+                        <h4 className="font-semibold text-md">Detalhes dos Materiais para Acamados</h4>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="bedridden-cid">CID</Label>
+                                <Input id="bedridden-cid" value={bedriddenCid} onChange={e => setBedriddenCid(e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="bedridden-treatment-duration">Duração do Tratamento</Label>
+                                <Input id="bedridden-treatment-duration" value={bedriddenTreatmentDuration} onChange={e => setBedriddenTreatmentDuration(e.target.value)} placeholder="Ex: Contínuo, 6 meses..."/>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="bedridden-pathology">Descrição da Patologia/Necessidade</Label>
+                            <Textarea id="bedridden-pathology" value={bedriddenPathology} onChange={e => setBedriddenPathology(e.target.value)} />
+                        </div>
+                    </div>
+                )}
 
                 {isInsulinUser && (
                     <div className="ml-0 p-4 border rounded-md space-y-4 bg-muted/20">
