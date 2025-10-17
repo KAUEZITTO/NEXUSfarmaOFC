@@ -103,7 +103,6 @@ const getProductsForCategory = (allProducts: Product[], categoryName: Category):
     const categoryInfo = categories.find(c => c.name === categoryName);
     if (!categoryInfo) return [];
 
-    // Keyword-based filters for special composite categories
     if (categoryName === 'Insulinas') {
         return allProducts.filter(p => insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)));
     }
@@ -111,7 +110,6 @@ const getProductsForCategory = (allProducts: Product[], categoryName: Category):
         return allProducts.filter(p => p.name.toLowerCase().includes('imunoglobulina'));
     }
 
-    // Handle categories that map to a specific product.category
     if (categoryInfo.productCategory) {
         const productCategories = Array.isArray(categoryInfo.productCategory)
             ? categoryInfo.productCategory
@@ -133,7 +131,6 @@ const getProductsForCategory = (allProducts: Product[], categoryName: Category):
         );
     }
     
-    // Fallback for categories without a specific productCategory mapping (like empty ones)
     return [];
 };
 
@@ -166,10 +163,9 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
         if (isOpen) {
             setLoading(true);
             try {
-                // Ensure fresh data is fetched every time dialog is opened
-                const [patients, products] = await Promise.all([getPatients('all'), getProducts()]);
-                setAllPatients(patients);
-                setAllProducts(products);
+                const [patientsData, productsData] = await Promise.all([getPatients('all'), getProducts()]);
+                setAllPatients(patientsData);
+                setAllProducts(productsData); // Correctly update the state
             } catch (error) {
                 console.error("Failed to load data for dialog:", error);
                 toast({
@@ -205,7 +201,6 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
     patient.demandItems?.forEach(demand => {
         const categoryInfo = categories.find(c => c.demandItem === demand);
         if (categoryInfo) {
-            // Add an empty item to pre-populate the category section
             initialItems.push({
                 internalId: `item-${categoryInfo.name}-${Date.now()}`,
                 productId: '',
@@ -577,4 +572,3 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
     </Dialog>
   );
 }
-

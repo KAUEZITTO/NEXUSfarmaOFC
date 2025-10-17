@@ -26,7 +26,7 @@ import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Save, Trash2, Loader2, AlertTriangle, Upload, File, X } from 'lucide-react';
+import { Save, Trash2, Loader2, AlertTriangle, Upload, File, X, Printer } from 'lucide-react';
 import { addPatient, updatePatient, uploadFile } from '@/lib/actions';
 import { getUnits } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
@@ -277,7 +277,7 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
     }
     
     try {
-        const patientData: Omit<Patient, 'id' | 'status'> = {
+        const patientData: Omit<Patient, 'id' | 'status' | 'createdAt'> & { createdAt?: string } = {
             name,
             cpf,
             cns,
@@ -306,6 +306,7 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
         }
 
         if (isEditing && patientToEdit) {
+            patientData.createdAt = patientToEdit.createdAt; // Preserve original creation date
             await updatePatient(patientToEdit.id, patientData);
         } else {
             await addPatient(patientData);
@@ -356,6 +357,12 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
     const unitsPerItem = insulinPresentation === 'Caneta' ? 300 : 1000;
     return Math.ceil(totalMonthlyUI / unitsPerItem);
   }
+
+  const handlePrintRecord = () => {
+    if (patientToEdit) {
+      window.open(`/patient-record/${patientToEdit.id}`, '_blank');
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -629,10 +636,16 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
               </div>
             </div>
           </ScrollArea>
-          <DialogFooter className="pt-4">
-             <DialogClose asChild>
+          <DialogFooter className="pt-4 items-center">
+            {isEditing && (
+              <Button type="button" variant="secondary" onClick={handlePrintRecord} className="mr-auto">
+                <Printer className="mr-2 h-4 w-4" />
+                Imprimir Cadastro
+              </Button>
+            )}
+            <DialogClose asChild>
                 <Button type="button" variant="outline" disabled={isSaving}>Cancelar</Button>
-             </DialogClose>
+            </DialogClose>
             <Button type="submit" disabled={isSaving}>
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 {isSaving ? 'Salvando...' : (isEditing ? 'Salvar Alterações' : 'Salvar Paciente')}
