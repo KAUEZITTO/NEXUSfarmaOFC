@@ -12,12 +12,16 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ChevronLeft, ChevronDown, ChevronUp, Pill, Stethoscope, Beaker, Baby, Milk, FileText, ShoppingCart, Tooth, Package } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ChevronLeft, ChevronDown, ChevronUp, Pill, Stethoscope, Beaker, Baby, Milk, ShoppingCart, Tooth } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
 import { Badge } from '../ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import { cn } from '@/lib/utils';
+
 
 type AddItemsManuallyDialogProps = {
   trigger: React.ReactNode;
@@ -49,6 +53,7 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({});
+  const [batchQuantities, setBatchQuantities] = useState<Record<string, number>>({});
   
   const initialStep = selectedCategories.length > 1 ? 'category' : 'list';
   const initialCategory = selectedCategories.length === 1 ? selectedCategories[0] : null;
@@ -63,6 +68,7 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
       setStep(newInitialStep);
       setCurrentCategory(newInitialCategory);
       setExpandedProducts({});
+      setBatchQuantities({});
     }
   }, [isOpen, selectedCategories]);
 
@@ -83,14 +89,37 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
     }
   };
 
-  const handleAddProduct = (product: Product) => {
-    const wasAdded = onAddProduct(product, 1);
-    if(wasAdded) {
+ const handleAddSelectedBatches = (productGroup: GroupedProduct) => {
+    let itemsAddedCount = 0;
+    let allAdditionsSucceeded = true;
+    
+    productGroup.batches.forEach(batch => {
+        const quantity = batchQuantities[batch.id];
+        if (quantity && quantity > 0) {
+            const wasAdded = onAddProduct(batch, quantity);
+            if(wasAdded) {
+                itemsAddedCount++;
+            } else {
+                allAdditionsSucceeded = false;
+            }
+        }
+    });
+
+    if (itemsAddedCount > 0) {
         toast({
-            title: "Item Adicionado",
-            description: `${product.name} (Lote: ${product.batch}) foi adicionado à remessa.`,
+            title: `${itemsAddedCount} lote(s) adicionado(s)`,
+            description: `${productGroup.name} foi adicionado à remessa.`,
         });
-        setIsOpen(false);
+    }
+    
+    if (allAdditionsSucceeded) {
+      // Clear quantities for this group and collapse it
+      const newQuantities = {...batchQuantities};
+      productGroup.batches.forEach(batch => {
+          delete newQuantities[batch.id];
+      });
+      setBatchQuantities(newQuantities);
+      setExpandedProducts(prev => ({...prev, [productGroup.id]: false}));
     }
   };
 
@@ -112,7 +141,11 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
       group.totalQuantity += product.quantity;
       group.batches.push(product);
       // Sort batches by expiry date, soonest first
-      group.batches.sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime());
+      group.batches.sort((a, b) => {
+          const dateA = a.expiryDate ? new Date(a.expiryDate).getTime() : Infinity;
+          const dateB = b.expiryDate ? new Date(b.expiryDate).getTime() : Infinity;
+          return dateA - dateB;
+      });
     });
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   };
@@ -170,16 +203,41 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
                                 </div>
                             </div>
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-2 pl-4">
-                            {group.batches.map(batch => (
-                                <div key={batch.id} className="flex cursor-pointer items-center justify-between rounded-md border p-2 text-sm hover:bg-muted/50" onClick={() => handleAddProduct(batch)}>
-                                    <div>
-                                        <p>Lote: <span className="font-mono">{batch.batch || 'N/A'}</span></p>
-                                        <p>Validade: {batch.expiryDate ? new Date(batch.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A'}</p>
+                        <CollapsibleContent className="space-y-2 pl-4 border-l-2 ml-2">
+                             <div className="p-3 bg-muted/50 rounded-md">
+                                {group.batches.map(batch => (
+                                    <div key={batch.id} className="grid grid-cols-5 items-center gap-4 py-2 border-b last:border-b-0">
+                                        <div className="col-span-2">
+                                            <p className="text-sm">Lote: <span className="font-mono">{batch.batch || 'N/A'}</span></p>
+                                            <p className="text-xs text-muted-foreground">Val: {batch.expiryDate ? new Date(batch.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A'}</p>
+                                        </div>
+                                        <div className="text-sm">
+                                            Estoque: <Badge variant="outline">{batch.quantity}</Badge>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <Label htmlFor={`qty-${batch.id}`} className="sr-only">Quantidade</Label>
+                                            <Input 
+                                                id={`qty-${batch.id}`}
+                                                type="number"
+                                                min="0"
+                                                max={batch.quantity}
+                                                placeholder="Qtd."
+                                                className="h-9"
+                                                value={batchQuantities[batch.id] || ''}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    const qty = parseInt(value, 10);
+                                                    setBatchQuantities(prev => ({
+                                                        ...prev,
+                                                        [batch.id]: isNaN(qty) ? 0 : Math.min(qty, batch.quantity)
+                                                    }));
+                                                }}
+                                            />
+                                        </div>
                                     </div>
-                                    <Badge variant="outline">Estoque: {batch.quantity}</Badge>
-                                </div>
-                            ))}
+                                ))}
+                                <Button className="mt-4 w-full" onClick={() => handleAddSelectedBatches(group)}>Adicionar Selecionados</Button>
+                             </div>
                         </CollapsibleContent>
                     </Collapsible>
                 )) : (
@@ -213,7 +271,7 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
         </div>
         <DialogFooter>
             <DialogClose asChild>
-                <Button type="button" variant="outline">Cancelar</Button>
+                <Button type="button" variant="secondary">Fechar</Button>
             </DialogClose>
         </DialogFooter>
       </DialogContent>
