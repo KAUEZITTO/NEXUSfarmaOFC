@@ -4,6 +4,7 @@
 import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { UserNav } from '@/components/dashboard/user-nav';
 import { DashboardNav } from '@/components/dashboard/dashboard-nav';
 import { Logo } from '@/components/logo';
@@ -36,22 +37,26 @@ const changelog = [
 
 function UserActivityTracker() {
   const { data: session, status } = useSession();
+  const router = useRouter();
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.id) {
-      const updateLastSeen = async () => {
+      const updateActivity = async () => {
         await updateUserLastSeen(session.user!.id);
+        // Força a revalidação dos dados da página atual
+        router.refresh(); 
       };
       
-      updateLastSeen(); // Update once on load
+      updateActivity(); // Executa imediatamente ao carregar
       
-      const intervalId = setInterval(updateLastSeen, 30000); // Update every 30 seconds
+      // Continua a atualizar a atividade e os dados da página a cada 30 segundos
+      const intervalId = setInterval(updateActivity, 30000); 
       
       return () => clearInterval(intervalId);
     }
-  }, [status, session]);
+  }, [status, session, router]);
 
-  return null; // This component does not render anything
+  return null; // Este componente não renderiza nada
 }
 
 export default function DashboardLayout({
@@ -95,5 +100,3 @@ export default function DashboardLayout({
         </SidebarProvider>
   );
 }
-
-    

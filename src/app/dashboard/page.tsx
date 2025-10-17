@@ -34,7 +34,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function fetchStats() {
-      setLoadingStats(true);
+      // Don't set loading to true here to avoid skeleton on every refresh
       try {
         const [products, dispensationsData, users] = await Promise.all([
           getProducts(),
@@ -83,16 +83,18 @@ export default function DashboardPage() {
       } catch (error) {
         console.error("Failed to fetch dashboard stats:", error);
       } finally {
-        setLoadingStats(false);
+        // Only set loading to false on the initial fetch
+        if (loadingStats) {
+            setLoadingStats(false);
+        }
       }
     }
 
     if (status === 'authenticated') {
       fetchStats();
-      const statsInterval = setInterval(fetchStats, 30000); // Refresh stats every 30 seconds
-      return () => clearInterval(statsInterval);
+      // No need for a separate interval here, as layout.tsx now handles periodic refresh
     }
-  }, [status]);
+  }, [status, loadingStats]); // Depend on loadingStats to ensure it only runs the "finally" block once
 
 
   if (status === "loading") {
@@ -179,5 +181,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
