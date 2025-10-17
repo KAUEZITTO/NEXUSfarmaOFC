@@ -132,7 +132,7 @@ export function UnitDetailsClientPage({ initialUnit, initialPatientCount, initia
                 Últimos pedidos e remessas para esta unidade.
               </CardDescription>
               <Button asChild variant="outline">
-                  <Link href={`/dashboard/orders/history/${initialUnit.id}`}>Ver Histórico Completo</Link>
+                  <Link href={`/dashboard/orders`}>Ver Histórico Completo</Link>
               </Button>
            </div>
         </CardHeader>

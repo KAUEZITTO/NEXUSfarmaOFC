@@ -1,11 +1,13 @@
 
 import { Suspense } from 'react';
-import { getUnits, getOrders } from "@/lib/data";
+import { getOrders } from "@/lib/data";
 import { OrdersClientPage } from './client-page';
 import {
   Card,
   CardContent,
   CardHeader,
+  CardTitle,
+  CardDescription,
 } from "@/components/ui/card";
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -13,11 +15,9 @@ function OrdersSkeleton() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-center mb-4">
-          <Skeleton className="h-7 w-48" />
-          <Skeleton className="h-4 w-72" />
-        </div>
-        <div className="flex justify-between items-center">
+        <CardTitle>Histórico de Pedidos</CardTitle>
+        <CardDescription>Visualize todos os pedidos enviados para as unidades de saúde.</CardDescription>
+        <div className="flex justify-between items-center pt-4">
             <Skeleton className="h-10 w-64" />
             <Skeleton className="h-10 w-36" />
         </div>
@@ -34,14 +34,12 @@ function OrdersSkeleton() {
 }
 
 export default async function OrdersPage() {
-    const [units, orders] = await Promise.all([
-        getUnits(),
-        getOrders()
-    ]);
+    const orders = await getOrders();
+    const sortedOrders = orders.sort((a, b) => new Date(b.sentDate).getTime() - new Date(a.sentDate).getTime());
 
     return (
         <Suspense fallback={<OrdersSkeleton />}>
-            <OrdersClientPage initialUnits={units} initialOrders={orders} />
+            <OrdersClientPage initialOrders={sortedOrders} />
         </Suspense>
     );
 }
