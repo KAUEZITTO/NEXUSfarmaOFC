@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import jsPDF from 'jspdf';
@@ -585,9 +583,3 @@ export const generateOrderStatusReportPDF = async (
     addFooter(doc);
     return doc.output('datauristring');
 };
-    
-    
-
-    
-
-    

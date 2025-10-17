@@ -1,4 +1,4 @@
-
+'use server';
 
 import React, { Suspense } from "react";
 import {
@@ -62,9 +62,12 @@ const ReceiptCopy = ({ order, showSignature, isFirstCopy }: { order: Order, show
               </div>
 
               <div className="flex flex-col items-center justify-center">
-                  <Logo className="w-28 h-8" />
-                   <p className="text-[8px] font-semibold">NEXUS FARMA</p>
-                  <p className="text-sm mt-1 font-semibold">GUIA DE ENTREGA</p>
+                   <h1 className="text-sm font-bold">GUIA DE ENTREGA</h1>
+                   <div className="text-xs space-y-0.5 mt-2 text-center">
+                        <p><span className="font-bold">ID do Pedido:</span> {order.id}</p>
+                        <p><span className="font-bold">Data:</span> {new Date(order.sentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</p>
+                        <p><span className="font-bold">Tipo:</span> {order.orderType}</p>
+                   </div>
               </div>
 
               <div className="flex flex-col items-center justify-center">
@@ -72,34 +75,16 @@ const ReceiptCopy = ({ order, showSignature, isFirstCopy }: { order: Order, show
                     <p className="text-[6px] font-bold mt-1">CAF - CENTRO DE ABASTÊCIMENTO FARMACÊUTICO</p>
               </div>
           </div>
-        </header>
-        
-        <div className="grid grid-cols-3 gap-x-4 gap-y-1 my-4 text-xs">
-          <div>
-            <p className="font-bold">Unidade de Destino:</p>
-            <p>{order.unitName}</p>
+          <div className="text-center mt-2">
+                <p className="text-xs font-bold">Unidade de Destino: {order.unitName}</p>
           </div>
-          <div>
-            <p className="font-bold">Data do Pedido:</p>
-            <p>{new Date(order.sentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</p>
-          </div>
-          <div>
-            <p className="font-bold">ID do Pedido:</p>
-            <p>{order.id}</p>
-          </div>
-          <div>
-            <p className="font-bold">Tipo do Pedido:</p>
-            <p>{order.orderType}</p>
-          </div>
-        </div>
-
-        {order.notes && (
-            <div className="my-4 text-xs">
-                <p className="font-bold">Justificativa:</p>
-                <p>{order.notes}</p>
+           {order.notes && (
+            <div className="mt-2 text-xs border-t border-b py-1">
+                <p><span className="font-bold">Justificativa:</span> {order.notes}</p>
             </div>
         )}
-
+        </header>
+        
         <div className="space-y-4">
           {categoryOrder.map(category => {
             const items = groupedItems[category];
