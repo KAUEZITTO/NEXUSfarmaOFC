@@ -12,9 +12,10 @@ import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guid
 import BirthdayBalloons from '@/components/dashboard/birthday-balloons';
 import { updateUserLastSeen } from '@/lib/actions';
 
-const CURRENT_VERSION = '3.3.8';
+const CURRENT_VERSION = '3.4.0';
 
 const changelog = [
+    { version: '3.4.0', changes: ['Corrigido problema de cache que impedia a atualização de dados em tempo real (Not Found em recibos), garantindo que todas as informações sejam sempre as mais recentes.', 'Restaurado o layout visual das guias de remessa (impressão) para o formato original e mais compacto.'] },
     { version: '3.3.8', changes: ['Corrigido link quebrado que impedia a impressão de guias de dispensação e restaurada a exibição dos logos nos relatórios em PDF.'] },
     { version: '3.3.7', changes: ['Corrigida a exibição do avatar na tela de gerenciamento de usuários para usar o novo sistema de iniciais e cores.', 'Restaurados os logos da Prefeitura e do CAF nos cabeçalhos de todos os relatórios em PDF.'] },
     { version: '3.3.6', changes: ['Corrigida definitivamente a falha "erro desconhecido" no cadastro de novos usuários, garantindo compatibilidade da autenticação com o ambiente do servidor.', 'Resolvido erro 404 que impedia a geração de etiquetas de produtos.'] },
@@ -94,7 +95,5 @@ export default function DashboardLayout({
         </SidebarProvider>
   );
 }
-
-    
 
     
