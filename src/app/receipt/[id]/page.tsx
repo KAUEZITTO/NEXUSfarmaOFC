@@ -1,4 +1,7 @@
-import React from "react";
+
+'use client';
+
+import React, { useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -7,21 +10,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Logo } from "@/components/logo";
 import Image from "next/image";
 import type { Order, OrderItem, Product } from "@/lib/types";
 import { getOrder } from "@/lib/data";
-import { notFound } from "next/navigation";
 import { PrintActions } from "./print-actions";
+import { Loader2 } from "lucide-react";
 
 const renderItemRows = (items: OrderItem[]) => {
     if (!items || items.length === 0) return null;
     return items.map((item, index) => {
         let formattedDate = "N/A";
         if (item.expiryDate) {
-            // Fix for dates stored as 'YYYY-MM-DD' strings.
-            // new Date('2025-12-31') creates a date at UTC midnight.
-            // Adding timeZone:'UTC' to toLocaleDateString prevents off-by-one day errors.
             const date = new Date(item.expiryDate);
             if (!isNaN(date.getTime())) {
                 formattedDate = date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
@@ -139,11 +138,44 @@ const ReceiptCopy = ({ order, showSignature, isFirstCopy }: { order: Order, show
 };
 
 
-export default async function ReceiptPage({ params }: { params: { id: string } }) {
-    const orderData = await getOrder(params.id);
+export default function ReceiptPage({ params }: { params: { id: string } }) {
+    const [orderData, setOrderData] = useState<Order | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchOrder() {
+            setLoading(true);
+            try {
+                const data = await getOrder(params.id);
+                if (data) {
+                    setOrderData(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch order", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchOrder();
+    }, [params.id]);
+
+    if (loading) {
+        return (
+            <div className="flex h-screen w-full items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <p className="ml-4">Carregando recibo...</p>
+            </div>
+        );
+    }
 
     if (!orderData) {
-        notFound();
+        return (
+            <div className="flex h-screen w-full items-center justify-center flex-col gap-4">
+                <p>Recibo não encontrado.</p>
+                <p className="text-sm text-muted-foreground">O ID pode estar incorreto ou o recibo foi excluído.</p>
+                <PrintActions backOnly={true} />
+            </div>
+        );
     }
   
     return (
@@ -157,3 +189,4 @@ export default async function ReceiptPage({ params }: { params: { id: string } }
         </>
     );
 }
+
