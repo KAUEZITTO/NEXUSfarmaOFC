@@ -35,9 +35,8 @@ const addHeader = async (doc: jsPDFWithAutoTable, title: string, subtitle?: stri
     const pageWidth = doc.internal.pageSize.getWidth();
     
     // Load images using the robust filesystem method
-    const [prefLogo, nexusLogo, cafLogo] = await Promise.all([
+    const [prefLogo, cafLogo] = await Promise.all([
         getImageAsBase64('/SMS-PREF.png'),
-        getImageAsBase64('/NEXUSnv.png'),
         getImageAsBase64('/CAF.png')
     ]);
 
@@ -54,11 +53,6 @@ const addHeader = async (doc: jsPDFWithAutoTable, title: string, subtitle?: stri
     doc.setFont('helvetica', 'bold');
     doc.text('PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU', margin, 40);
     doc.text('SECRETARIA MUNICIPAL DE SAÚDE', margin, 44);
-
-    // Center Column: NexusFarma
-    if (nexusLogo) {
-        doc.addImage(nexusLogo, 'PNG', pageWidth / 2 - 20, 15, 40, 15);
-    }
 
     // Right Column: CAF
     if (cafLogo) {
