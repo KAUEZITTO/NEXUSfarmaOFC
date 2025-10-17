@@ -1,9 +1,13 @@
 
+
 'use server';
 
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import type { Product, Patient, Dispensation, Order, Unit, StockMovement, OrderStatus } from './types';
+import { promises as fs } from 'fs';
+import path from 'path';
+
 
 // Extend jsPDF with the autoTable plugin
 interface jsPDFWithAutoTable extends jsPDF {
@@ -12,32 +16,27 @@ interface jsPDFWithAutoTable extends jsPDF {
 
 const getImageAsBase64 = async (imagePath: string): Promise<string | null> => {
     try {
-        // Construct the full URL to the image in the public folder.
-        // This is more robust for different deployment environments (local, Vercel, etc.)
-        const baseUrl = process.env.VERCEL_URL 
-            ? `https://${process.env.VERCEL_URL}` 
-            : 'http://localhost:9002'; // Default to localhost for development
-            
-        const imageUrl = new URL(imagePath, baseUrl).toString();
+        // Correctly resolve the path to the public directory
+        const publicDir = path.join(process.cwd(), 'public');
+        const filePath = path.join(publicDir, imagePath);
+        
+        // Read the file directly from the filesystem
+        const fileBuffer = await fs.readFile(filePath);
 
-        const response = await fetch(imageUrl);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
-        }
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const fileExtension = imagePath.split('.').pop() || 'png';
-        return `data:image/${fileExtension};base64,${buffer.toString('base64')}`;
+        // Convert to base64
+        const fileExtension = path.extname(imagePath).slice(1) || 'png';
+        return `data:image/${fileExtension};base64,${fileBuffer.toString('base64')}`;
     } catch (error) {
-        console.error(`Error loading image file from URL: ${imagePath}`, error);
+        console.error(`Error loading image file from filesystem: ${imagePath}`, error);
         return null;
     }
 }
 
+
 const addHeader = async (doc: jsPDFWithAutoTable, title: string, subtitle?: string) => {
     const pageWidth = doc.internal.pageSize.getWidth();
     
-    // Load images using the robust fetch method
+    // Load images using the robust filesystem method
     const [prefLogo, nexusLogo, cafLogo] = await Promise.all([
         getImageAsBase64('/SMS-PREF.png'),
         getImageAsBase64('/NEXUSnv.png'),
@@ -587,6 +586,8 @@ export const generateOrderStatusReportPDF = async (
     return doc.output('datauristring');
 };
     
+    
+
     
 
     
