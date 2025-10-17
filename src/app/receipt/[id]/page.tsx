@@ -78,6 +78,13 @@ const ReceiptCopy = ({ order, showSignature, isFirstCopy }: { order: Order, show
           </div>
         </div>
 
+        {order.notes && (
+            <div className="my-4 text-xs">
+                <p className="font-bold">Justificativa:</p>
+                <p>{order.notes}</p>
+            </div>
+        )}
+
         <div className="space-y-4">
           {categoryOrder.map(category => {
             const items = groupedItems[category];

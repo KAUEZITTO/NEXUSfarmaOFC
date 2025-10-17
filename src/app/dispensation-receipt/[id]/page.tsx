@@ -27,7 +27,7 @@ const renderItemRows = (items: DispensationItem[]) => {
             <TableCell className="font-medium">{item.name}</TableCell>
             <TableCell className="text-center">{item.presentation || "--"}</TableCell>
             <TableCell className="text-center">{item.batch || "--"}</TableCell>
-            <TableCell className="text-center">{item.expiryDate || "--"}</TableCell>
+            <TableCell className="text-center">{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : "--"}</TableCell>
             <TableCell className="text-right">{item.quantity.toLocaleString('pt-BR')}</TableCell>
         </TableRow>
     ));
