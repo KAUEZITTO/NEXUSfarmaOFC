@@ -346,7 +346,8 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
         onDispensationSaved();
         setIsOpen(false);
         
-        router.push(`/dispensation-receipt/${newDispensation.id}?new=true`);
+        window.open(`/dispensation-receipt/${newDispensation.id}`, '_blank');
+
 
         setTimeout(() => {
             handleBack();
