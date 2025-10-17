@@ -1,24 +1,24 @@
 
 'use client';
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Printer, ArrowLeft } from 'lucide-react';
+import { useEffect } from 'react';
 
 export function PrintActions({ backOnly = false }: { backOnly?: boolean }) {
     const router = useRouter();
 
-    useEffect(() => {
-        // Automatically trigger print dialog when component mounts
-        if (!backOnly) {
-            const timer = setTimeout(() => {
-                window.print();
-            }, 100); // Small delay to ensure content is rendered
-
-            return () => clearTimeout(timer);
-        }
-    }, [backOnly]);
+    // The automatic print dialog was causing issues.
+    // It's better to let the user click the button.
+    // useEffect(() => {
+    //     if (!backOnly) {
+    //         const timer = setTimeout(() => {
+    //             window.print();
+    //         }, 100);
+    //         return () => clearTimeout(timer);
+    //     }
+    // }, [backOnly]);
 
     return (
         <div className="fixed bottom-4 right-4 flex gap-2 print:hidden">
