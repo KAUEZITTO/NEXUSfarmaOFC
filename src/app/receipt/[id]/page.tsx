@@ -24,7 +24,7 @@ const renderItemRows = (items: OrderItem[]) => {
             <TableCell className="font-medium py-1 px-2">{item.name}</TableCell>
             <TableCell className="text-center py-1 px-2">{item.presentation || "--"}</TableCell>
             <TableCell className="text-center py-1 px-2">{item.batch || "--"}</TableCell>
-            <TableCell className="text-center py-1 px-2">{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : "--"}</TableCell>
+            <TableCell className="text-center py-1 px-2">{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : "N/A"}</TableCell>
             <TableCell className="text-right py-1 px-2">{item.quantity.toLocaleString('pt-BR')}</TableCell>
         </TableRow>
     ));
@@ -38,26 +38,25 @@ const ReceiptCopy = ({ order, showSignature, isFirstCopy }: { order: Order, show
     }, {} as Record<string, OrderItem[]>);
 
     const categoryOrder: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)'];
-    const title = `GUIA DE ENTREGA - ${order.orderType.toUpperCase()}`;
-
+    
   return (
     <div className={`max-w-4xl mx-auto bg-white text-black my-4 print:my-0 flex flex-col justify-between min-h-screen ${isFirstCopy ? 'shadow-lg print:shadow-none page-break-after' : 'shadow-lg print:shadow-none'}`}>
       <div className="p-4 sm:p-6">
         <header className="mb-4">
           <div className="grid grid-cols-3 items-center text-center border-b pb-2 border-gray-400">
               <div className="flex flex-col items-center justify-center">
-                  <Image src="/SMS-PREF.png" alt="Logo Prefeitura" width={60} height={60} data-ai-hint="city hall government" />
+                  <Image src="/SMS-PREF.png" alt="Logo Prefeitura" width={80} height={80} data-ai-hint="city hall government" />
                   <p className="text-[6px] font-bold mt-1 max-w-32">PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU</p>
               </div>
 
               <div className="flex flex-col items-center justify-center">
                   <Logo className="w-28 h-8" />
-                  <p className="text-[8px] font-semibold">NEXUS FARMA</p>
-                  <p className="text-sm mt-1 font-semibold">{title}</p>
+                   <p className="text-[8px] font-semibold">NEXUS FARMA</p>
+                  <p className="text-sm mt-1 font-semibold">GUIA DE ENTREGA</p>
               </div>
 
               <div className="flex flex-col items-center justify-center">
-                    <Image src="/CAF.png" alt="Logo CAF" width={60} height={60} data-ai-hint="pharmacy cross" />
+                    <Image src="/CAF.png" alt="Logo CAF" width={80} height={80} data-ai-hint="pharmacy cross" />
                     <p className="text-[6px] font-bold mt-1">CAF - CENTRO DE ABASTÊCIMENTO FARMACÊUTICO</p>
               </div>
           </div>
@@ -75,6 +74,10 @@ const ReceiptCopy = ({ order, showSignature, isFirstCopy }: { order: Order, show
           <div>
             <p className="font-bold">ID do Pedido:</p>
             <p>{order.id}</p>
+          </div>
+          <div>
+            <p className="font-bold">Tipo do Pedido:</p>
+            <p>{order.orderType}</p>
           </div>
         </div>
 
