@@ -1,7 +1,6 @@
 
-'use client';
-
-import React, { useEffect, useState } from "react";
+import React from "react";
+import { notFound } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -138,44 +137,11 @@ const ReceiptCopy = ({ order, showSignature, isFirstCopy }: { order: Order, show
 };
 
 
-export default function ReceiptPage({ params }: { params: { id: string } }) {
-    const [orderData, setOrderData] = useState<Order | null>(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        async function fetchOrder() {
-            setLoading(true);
-            try {
-                const data = await getOrder(params.id);
-                if (data) {
-                    setOrderData(data);
-                }
-            } catch (error) {
-                console.error("Failed to fetch order", error);
-            } finally {
-                setLoading(false);
-            }
-        }
-        fetchOrder();
-    }, [params.id]);
-
-    if (loading) {
-        return (
-            <div className="flex h-screen w-full items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin" />
-                <p className="ml-4">Carregando recibo...</p>
-            </div>
-        );
-    }
+export default async function ReceiptPage({ params }: { params: { id: string } }) {
+    const orderData = await getOrder(params.id);
 
     if (!orderData) {
-        return (
-            <div className="flex h-screen w-full items-center justify-center flex-col gap-4">
-                <p>Recibo não encontrado.</p>
-                <p className="text-sm text-muted-foreground">O ID pode estar incorreto ou o recibo foi excluído.</p>
-                <PrintActions backOnly={true} />
-            </div>
-        );
+        return notFound();
     }
   
     return (
@@ -189,4 +155,3 @@ export default function ReceiptPage({ params }: { params: { id: string } }) {
         </>
     );
 }
-
