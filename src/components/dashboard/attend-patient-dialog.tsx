@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useEffect, useState, useTransition, useRef } from 'react';
@@ -99,65 +97,64 @@ const categories: {
 
 const insulinKeywords = ['insulina', 'lantus', 'apidra', 'nph', 'regular', 'agulha para caneta'];
 const stripKeywords = ['tira', 'lanceta'];
-const judicialKeywords = ['imunoglobulina'];
 
-const getProductsForCategory = (allProducts: Product[], category: Category, patient: Patient | null): Product[] => {
-    const categoryInfo = categories.find(c => c.name === category);
+const getProductsForCategory = (allProducts: Product[], categoryName: Category, patient: Patient | null): Product[] => {
+    const categoryInfo = categories.find(c => c.name === categoryName);
     if (!categoryInfo) return [];
 
-    let productList: Product[] = [];
+    let filteredProducts: Product[] = [];
 
-    // Keyword-based filtering for specific categories
-    if (category === 'Insulinas') {
+    // Special keyword-based filtering
+    if (categoryName === 'Insulinas') {
         return allProducts.filter(p => insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)));
     }
-    if (category === 'Tiras/Lancetas') {
+    if (categoryName === 'Tiras/Lancetas') {
         return allProducts.filter(p => stripKeywords.some(kw => p.name.toLowerCase().includes(kw)));
     }
-     if (category === 'Imunoglobulina') {
+    if (categoryName === 'Imunoglobulina') {
         return allProducts.filter(p => p.name.toLowerCase().includes('imunoglobulina'));
     }
-     if (category === 'Itens Judiciais') {
+    
+    // Logic for 'Itens Judiciais'
+    if (categoryName === 'Itens Judiciais') {
         const patientDemands = patient?.demandItems || [];
-        const judicialItems = patientDemands.filter(d => d === 'Itens Judiciais' || d === 'Imunoglobulina' || d === 'Medicamentos/Materiais Comprados');
-        if (judicialItems.length > 0) {
-            // This is broad, might need refinement. Let's show all non-standard and specific judicial items.
-            return allProducts.filter(p => p.category === 'Não Padronizado (Compra)' || p.name.toLowerCase().includes('imunoglobulina'));
+        if (patientDemands.includes('Itens Judiciais') || patientDemands.includes('Medicamentos/Materiais Comprados')) {
+            // Show products from 'Não Padronizado (Compra)' category for judicial patients
+            return allProducts.filter(p => p.category === 'Não Padronizado (Compra)');
         }
         return [];
     }
-
-    // Direct productCategory filtering
+    
+    // Direct product category mapping
     if (categoryInfo.productCategory) {
-        const productCategories = Array.isArray(categoryInfo.productCategory) ? categoryInfo.productCategory : [categoryInfo.productCategory];
-        productList = allProducts.filter(p => productCategories.includes(p.category));
+        const productCategories = Array.isArray(categoryInfo.productCategory)
+            ? categoryInfo.productCategory
+            : [categoryInfo.productCategory];
+        
+        filteredProducts = allProducts.filter(p => productCategories.includes(p.category));
 
-        // Special exclusion for 'Medicamentos' to avoid showing insulins/imuno here
-        if (category === 'Medicamentos') {
-            productList = productList.filter(p => 
+        // Exclude special items from the general 'Medicamentos' category
+        if (categoryName === 'Medicamentos') {
+             filteredProducts = filteredProducts.filter(p => 
                 !insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)) &&
                 !p.name.toLowerCase().includes('imunoglobulina')
             );
         }
-
-        return productList;
+    } else if (categoryName === 'Outros') {
+        // Find all products that don't fit into any other specific product category
+        const categorizedCategories = categories.map(c => c.productCategory).flat().filter(Boolean) as Product['category'][];
+        
+        filteredProducts = allProducts.filter(p => 
+            !categorizedCategories.includes(p.category) && 
+            !insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)) &&
+            !stripKeywords.some(kw => p.name.toLowerCase().includes(kw)) &&
+            !p.name.toLowerCase().includes('imunoglobulina')
+        );
     }
     
-    // 'Outros' category logic
-    if (category === 'Outros') {
-        const allCategorizedProductNames = new Set<string>();
-        categories.forEach(catInfo => {
-            if (catInfo.name !== 'Outros') {
-                const products = getProductsForCategory(allProducts, catInfo.name, patient);
-                products.forEach(p => allCategorizedProductNames.add(p.name));
-            }
-        });
-        // Return products that are not in any other specific category
-        return allProducts.filter(p => !allCategorizedProductNames.has(p.name));
-    }
+    return filteredProducts;
+};
 
-    return [];
-}
 
 interface AttendPatientDialogProps {
     onDispensationSaved: () => void;
@@ -288,11 +285,9 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
      const itemToUpdate = items.find(i => i.internalId === id);
      if (!itemToUpdate) return;
      
-     const productList = getProductsForCategory(allProducts, itemToUpdate.category as Category, selectedPatient);
-     const product = productList.find(p => p.id === productId);
+     const fullProduct = allProducts.find(p => p.id === productId);
      
-     if (product) {
-         const fullProduct = allProducts.find(p => p.id === productId);
+     if (fullProduct) {
          let formattedDate = 'N/A';
          if (fullProduct?.expiryDate) {
              const date = new Date(fullProduct.expiryDate);
@@ -304,10 +299,10 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
          setItems(items.map(item => item.internalId === id ? {
             ...item,
             productId: productId,
-            name: product.name!,
+            name: fullProduct.name!,
             batch: fullProduct?.batch || 'N/A',
             expiryDate: formattedDate,
-            presentation: product.presentation || '--'
+            presentation: fullProduct.presentation || '--'
          } : item));
      }
   }
@@ -381,8 +376,8 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
         <Select value={item.productId} onValueChange={(value) => handleProductSelect(item.internalId, value)}>
           <SelectTrigger><SelectValue placeholder="Selecione o item..." /></SelectTrigger>
           <SelectContent>
-            {productList.map(p => <SelectItem key={p.id} value={p.id!} disabled={allProducts.find(fp => fp.id === p.id)?.quantity === 0}>
-                {p.name} (Estoque: {allProducts.find(fp => fp.id === p.id)?.quantity || 0})
+            {productList.map(p => <SelectItem key={p.id} value={p.id!} disabled={p.quantity === 0}>
+                {p.name} ({p.presentation}) (Estoque: {p.quantity || 0})
             </SelectItem>)}
           </SelectContent>
         </Select>
