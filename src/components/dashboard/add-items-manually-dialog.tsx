@@ -11,14 +11,12 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ChevronLeft, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronLeft, ChevronDown, ChevronUp, Pill, Stethoscope, Beaker, Baby, Milk, FileText, ShoppingCart, Tooth, Package } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
 import { Badge } from '../ui/badge';
-import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 
 type AddItemsManuallyDialogProps = {
@@ -36,6 +34,16 @@ type GroupedProduct = {
   totalQuantity: number;
   batches: Product[];
 };
+
+const categoryConfig: { name: Product['category'], icon: React.ElementType }[] = [
+    { name: 'Medicamento', icon: Pill },
+    { name: 'Material Técnico', icon: Stethoscope },
+    { name: 'Odontológico', icon: Tooth },
+    { name: 'Laboratório', icon: Beaker },
+    { name: 'Fraldas', icon: Baby },
+    { name: 'Fórmulas', icon: Milk },
+    { name: 'Não Padronizado (Compra)', icon: ShoppingCart },
+]
 
 export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, selectedCategories }: AddItemsManuallyDialogProps) {
   const { toast } = useToast();
@@ -103,6 +111,8 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
       const group = map.get(key)!;
       group.totalQuantity += product.quantity;
       group.batches.push(product);
+      // Sort batches by expiry date, soonest first
+      group.batches.sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime());
     });
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   };
@@ -113,11 +123,19 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
 
   const renderContent = () => {
     if (step === 'category') {
+      const availableCategories = categoryConfig.filter(cc => selectedCategories.includes(cc.name));
+
       return (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {selectedCategories.map(cat => (
-            <Button key={cat} variant="outline" className="h-20" onClick={() => handleCategorySelect(cat)}>
-              {cat}
+          {availableCategories.map(({ name, icon: Icon }) => (
+            <Button
+              key={name}
+              variant="outline"
+              className="h-28 flex-col gap-2"
+              onClick={() => handleCategorySelect(name)}
+            >
+              <Icon className="h-8 w-8 text-primary" />
+              <span className="text-sm font-medium text-center">{name}</span>
             </Button>
           ))}
         </div>
@@ -176,10 +194,10 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-xl md:max-w-2xl">
         <DialogHeader>
           <div className="flex items-center">
-            {step !== 'category' && (
+            {step !== 'category' && selectedCategories.length > 1 && (
               <Button variant="ghost" size="icon" className="mr-2" onClick={handleBack}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
