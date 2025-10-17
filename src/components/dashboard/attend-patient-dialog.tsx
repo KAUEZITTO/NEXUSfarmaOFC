@@ -103,59 +103,47 @@ const getProductsForCategory = (allProducts: Product[], categoryName: Category, 
     const categoryInfo = categories.find(c => c.name === categoryName);
     if (!categoryInfo) return [];
 
-    // Special keyword-based filtering
+    // Keyword-based filters for special composite categories
     if (categoryName === 'Insulinas') {
         return allProducts.filter(p => insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)));
     }
     if (categoryName === 'Tiras/Lancetas') {
         return allProducts.filter(p => stripKeywords.some(kw => p.name.toLowerCase().includes(kw)));
     }
-    if (categoryName === 'Imunoglobulina') {
+     if (categoryName === 'Imunoglobulina') {
         return allProducts.filter(p => p.name.toLowerCase().includes('imunoglobulina'));
     }
 
-    // Logic for 'Itens Judiciais' - shows same as "Não Padronizado"
-    if (categoryName === 'Itens Judiciais') {
-        const patientDemands = patient?.demandItems || [];
-        if (patientDemands.includes('Itens Judiciais') || patientDemands.includes('Medicamentos/Materiais Comprados')) {
-            return allProducts.filter(p => p.category === 'Não Padronizado (Compra)');
-        }
-        return [];
-    }
-    
-    // Direct product category mapping
+    // Handle categories that map to a specific product.category
     if (categoryInfo.productCategory) {
         const productCategories = Array.isArray(categoryInfo.productCategory)
             ? categoryInfo.productCategory
             : [categoryInfo.productCategory];
-        
-        let products = allProducts.filter(p => productCategories.includes(p.category));
 
-        // Refined exclusion logic for general categories
-        if (categoryName === 'Medicamentos') {
-             products = products.filter(p => 
-                !insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)) &&
-                !p.name.toLowerCase().includes('imunoglobulina')
-            );
-        }
-
-        return products;
-    } 
+        return allProducts.filter(p => productCategories.includes(p.category));
+    }
+    
+    // 'Itens Judiciais' also maps to 'Não Padronizado (Compra)'
+    if (categoryName === 'Itens Judiciais') {
+        return allProducts.filter(p => p.category === 'Não Padronizado (Compra)');
+    }
     
     if (categoryName === 'Outros') {
-        const allSpecificProductCategories = categories
+        const allMappedProductCategories = categories
             .map(c => c.productCategory)
             .flat()
             .filter(Boolean) as Product['category'][];
             
         return allProducts.filter(p => 
-            !allSpecificProductCategories.includes(p.category) &&
+            !allMappedProductCategories.includes(p.category) &&
             !insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)) &&
             !stripKeywords.some(kw => p.name.toLowerCase().includes(kw)) &&
             !p.name.toLowerCase().includes('imunoglobulina')
         );
     }
     
+    // Fallback for categories without a specific productCategory mapping (like 'Medicamentos' before refinement)
+    // This part should ideally not be hit if the config is correct, but serves as a safeguard.
     return [];
 };
 
