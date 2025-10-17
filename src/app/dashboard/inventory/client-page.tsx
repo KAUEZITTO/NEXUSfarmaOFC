@@ -113,39 +113,49 @@ function BatchDetailsDialog({ isOpen, onOpenChange, product }: BatchDetailsDialo
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {batches.map(batch => (
-                  <TableRow key={batch.id}>
-                    <TableCell className="font-mono">{batch.batch || 'N/A'}</TableCell>
-                    <TableCell>{batch.expiryDate ? new Date(batch.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A'}</TableCell>
-                    <TableCell>{batch.commercialName || 'N/A'}</TableCell>
-                    <TableCell>{batch.manufacturer || 'N/A'}</TableCell>
-                    <TableCell className="text-right">{batch.quantity.toLocaleString('pt-BR')}</TableCell>
-                    <TableCell className="text-center">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Abrir menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                           <AddProductDialog productToEdit={batch} onProductSaved={handleProductSaved} trigger={
-                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  <span>Editar Lote</span>
+                {batches.map(batch => {
+                    let formattedDate = "N/A";
+                    if (batch.expiryDate) {
+                        const date = new Date(batch.expiryDate);
+                        if (!isNaN(date.getTime())) {
+                            formattedDate = date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                        }
+                    }
+
+                    return (
+                      <TableRow key={batch.id}>
+                        <TableCell className="font-mono">{batch.batch || 'N/A'}</TableCell>
+                        <TableCell>{formattedDate}</TableCell>
+                        <TableCell>{batch.commercialName || 'N/A'}</TableCell>
+                        <TableCell>{batch.manufacturer || 'N/A'}</TableCell>
+                        <TableCell className="text-right">{batch.quantity.toLocaleString('pt-BR')}</TableCell>
+                        <TableCell className="text-center">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Abrir menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                               <AddProductDialog productToEdit={batch} onProductSaved={handleProductSaved} trigger={
+                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                      <Edit className="mr-2 h-4 w-4" />
+                                      <span>Editar Lote</span>
+                                  </DropdownMenuItem>
+                              } />
+                              <DropdownMenuItem asChild>
+                                  <Link href={`/labels/${batch.id}`} target="_blank" className="w-full h-full flex items-center cursor-pointer">
+                                      <Printer className="mr-2 h-4 w-4" />
+                                      <span>Imprimir Etiquetas</span>
+                                  </Link>
                               </DropdownMenuItem>
-                          } />
-                          <DropdownMenuItem asChild>
-                              <Link href={`/labels/${batch.id}`} target="_blank" className="w-full h-full flex items-center cursor-pointer">
-                                  <Printer className="mr-2 h-4 w-4" />
-                                  <span>Imprimir Etiquetas</span>
-                              </Link>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    )
+                })}
               </TableBody>
             </Table>
           </div>

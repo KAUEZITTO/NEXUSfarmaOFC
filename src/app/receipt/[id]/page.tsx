@@ -19,15 +19,28 @@ import { PrintActions } from "./print-actions";
 
 const renderItemRows = (items: OrderItem[]) => {
     if (!items || items.length === 0) return null;
-    return items.map((item, index) => (
-        <TableRow key={item.productId + (item.batch || index)} className={`border-b print:even:bg-gray-50 text-xs ${index % 2 === 0 ? 'bg-white' : 'bg-muted/20'}`}>
-            <TableCell className="font-medium py-1 px-2">{item.name}</TableCell>
-            <TableCell className="text-center py-1 px-2">{item.presentation || "--"}</TableCell>
-            <TableCell className="text-center py-1 px-2">{item.batch || "--"}</TableCell>
-            <TableCell className="text-center py-1 px-2">{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : "N/A"}</TableCell>
-            <TableCell className="text-right py-1 px-2">{item.quantity.toLocaleString('pt-BR')}</TableCell>
-        </TableRow>
-    ));
+    return items.map((item, index) => {
+        let formattedDate = "N/A";
+        if (item.expiryDate) {
+            // Fix for dates stored as 'YYYY-MM-DD' strings.
+            // new Date('2025-12-31') creates a date at UTC midnight.
+            // Adding timeZone:'UTC' to toLocaleDateString prevents off-by-one day errors.
+            const date = new Date(item.expiryDate);
+            if (!isNaN(date.getTime())) {
+                formattedDate = date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+            }
+        }
+
+        return (
+            <TableRow key={item.productId + (item.batch || index)} className={`border-b print:even:bg-gray-50 text-xs ${index % 2 === 0 ? 'bg-white' : 'bg-muted/20'}`}>
+                <TableCell className="font-medium py-1 px-2">{item.name}</TableCell>
+                <TableCell className="text-center py-1 px-2">{item.presentation || "--"}</TableCell>
+                <TableCell className="text-center py-1 px-2">{item.batch || "--"}</TableCell>
+                <TableCell className="text-center py-1 px-2">{formattedDate}</TableCell>
+                <TableCell className="text-right py-1 px-2">{item.quantity.toLocaleString('pt-BR')}</TableCell>
+            </TableRow>
+        );
+    });
 }
 
 const ReceiptCopy = ({ order, showSignature, isFirstCopy }: { order: Order, showSignature: boolean, isFirstCopy: boolean }) => {

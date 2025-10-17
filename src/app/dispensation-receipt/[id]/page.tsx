@@ -22,15 +22,24 @@ import { PrintActions } from "@/app/receipt/[id]/print-actions";
 
 const renderItemRows = (items: DispensationItem[]) => {
     if (!items || items.length === 0) return null;
-    return items.map((item, index) => (
-        <TableRow key={item.productId + (item.batch || index)} className={`border-b print:even:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-muted/20'}`}>
-            <TableCell className="font-medium">{item.name}</TableCell>
-            <TableCell className="text-center">{item.presentation || "--"}</TableCell>
-            <TableCell className="text-center">{item.batch || "--"}</TableCell>
-            <TableCell className="text-center">{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : "--"}</TableCell>
-            <TableCell className="text-right">{item.quantity.toLocaleString('pt-BR')}</TableCell>
-        </TableRow>
-    ));
+    return items.map((item, index) => {
+        let formattedDate = "N/A";
+        if (item.expiryDate) {
+            const date = new Date(item.expiryDate);
+            if (!isNaN(date.getTime())) {
+                formattedDate = date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+            }
+        }
+        return (
+            <TableRow key={item.productId + (item.batch || index)} className={`border-b print:even:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-muted/20'}`}>
+                <TableCell className="font-medium">{item.name}</TableCell>
+                <TableCell className="text-center">{item.presentation || "--"}</TableCell>
+                <TableCell className="text-center">{item.batch || "--"}</TableCell>
+                <TableCell className="text-center">{formattedDate}</TableCell>
+                <TableCell className="text-right">{item.quantity.toLocaleString('pt-BR')}</TableCell>
+            </TableRow>
+        );
+    });
 }
 
 const getReturnDate = (dispensationDate: string) => {

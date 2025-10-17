@@ -293,12 +293,20 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
      
      if (product) {
          const fullProduct = allProducts.find(p => p.id === productId);
+         let formattedDate = 'N/A';
+         if (fullProduct?.expiryDate) {
+             const date = new Date(fullProduct.expiryDate);
+             if (!isNaN(date.getTime())) {
+                 formattedDate = date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+             }
+         }
+
          setItems(items.map(item => item.internalId === id ? {
             ...item,
             productId: productId,
             name: product.name!,
             batch: fullProduct?.batch || 'N/A',
-            expiryDate: fullProduct?.expiryDate ? new Date(fullProduct.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A',
+            expiryDate: formattedDate,
             presentation: product.presentation || '--'
          } : item));
      }
