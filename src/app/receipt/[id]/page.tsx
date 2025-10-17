@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Table,
@@ -62,11 +61,6 @@ const ReceiptCopy = ({ order, showSignature, isFirstCopy }: { order: Order, show
 
               <div className="flex flex-col items-center justify-center">
                    <h1 className="text-sm font-bold">GUIA DE ENTREGA</h1>
-                   <div className="text-xs space-y-0.5 mt-2 text-center">
-                        <p><span className="font-bold">ID do Pedido:</span> {order.id}</p>
-                        <p><span className="font-bold">Data:</span> {new Date(order.sentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</p>
-                        <p><span className="font-bold">Tipo:</span> {order.orderType}</p>
-                   </div>
               </div>
 
               <div className="flex flex-col items-center justify-center">
@@ -74,15 +68,23 @@ const ReceiptCopy = ({ order, showSignature, isFirstCopy }: { order: Order, show
                     <p className="text-[6px] font-bold mt-1">CAF - CENTRO DE ABASTÊCIMENTO FARMACÊUTICO</p>
               </div>
           </div>
-          <div className="text-center mt-2">
-                <p className="text-xs font-bold">Unidade de Destino: {order.unitName}</p>
-          </div>
-           {order.notes && (
-            <div className="mt-2 text-xs border-t border-b py-1">
-                <p><span className="font-bold">Justificativa:</span> {order.notes}</p>
-            </div>
-        )}
         </header>
+
+        <div className="text-xs border p-2 rounded-md mb-4 space-y-1">
+            <div className="grid grid-cols-3 gap-x-4">
+                <p><span className="font-bold">ID do Pedido:</span> {order.id}</p>
+                <p><span className="font-bold">Data:</span> {new Date(order.sentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</p>
+                <p><span className="font-bold">Tipo:</span> {order.orderType}</p>
+            </div>
+            <div className="border-t pt-1">
+                 <p><span className="font-bold">Unidade de Destino:</span> {order.unitName}</p>
+            </div>
+            {order.notes && (
+                <div className="border-t pt-1">
+                    <p><span className="font-bold">Justificativa:</span> {order.notes}</p>
+                </div>
+            )}
+        </div>
         
         <div className="space-y-4">
           {categoryOrder.map(category => {
