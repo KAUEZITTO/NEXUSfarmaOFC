@@ -15,7 +15,7 @@ interface jsPDFWithAutoTable extends jsPDF {
 // Helper function to get image as base64
 const getImageAsBase64 = async (imagePath: string): Promise<string | null> => {
     try {
-        const fullPath = path.join(process.cwd(), imagePath);
+        const fullPath = path.join(process.cwd(), 'public', imagePath);
         const file = await fs.readFile(fullPath);
         return file.toString('base64');
     } catch (error) {
@@ -29,9 +29,9 @@ const addHeader = async (doc: jsPDFWithAutoTable, title: string, subtitle?: stri
     const pageWidth = doc.internal.pageSize.getWidth();
     
     // Get logos as base64 strings
-    const prefLogoBase64 = await getImageAsBase64('public/SMS-PREF.png');
-    const nexusLogoBase64 = await getImageAsBase64('public/NEXUSnv.png');
-    const cafLogoBase64 = await getImageAsBase64('public/CAF.png');
+    const prefLogoBase64 = await getImageAsBase64('SMS-PREF.png');
+    const nexusLogoBase64 = await getImageAsBase64('NEXUSnv.png');
+    const cafLogoBase64 = await getImageAsBase64('CAF.png');
 
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(0, 0, 0);

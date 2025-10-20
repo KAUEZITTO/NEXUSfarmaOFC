@@ -76,7 +76,7 @@ type Category =
   | 'Fórmulas'
   | 'Itens Judiciais'
   | 'Imunoglobulina'
-  | 'Não Padronizado'
+  | 'Não Padronizado (Compra)'
   | 'Outros';
 
 const categories: {
@@ -90,8 +90,8 @@ const categories: {
   { name: 'Fraldas', icon: Baby, demandItem: 'Fraldas', productCategory: 'Fraldas' },
   { name: 'Fórmulas', icon: Milk, demandItem: 'Fórmulas', productCategory: 'Fórmulas' },
   { name: 'Itens Judiciais', icon: FileText, demandItem: 'Itens Judiciais', productCategory: 'Não Padronizado (Compra)' },
+  { name: 'Não Padronizado (Compra)', icon: ShoppingCart, demandItem: 'Medicamentos/Materiais Comprados', productCategory: 'Não Padronizado (Compra)' },
   { name: 'Imunoglobulina', icon: ShieldHalf, demandItem: 'Imunoglobulina'},
-  { name: 'Não Padronizado', icon: ShoppingCart, productCategory: 'Não Padronizado (Compra)' },
   { name: 'Material Técnico', icon: Stethoscope, productCategory: 'Material Técnico' },
   { name: 'Medicamentos', icon: Pill, productCategory: 'Medicamento' },
   { name: 'Outros', icon: Package },
