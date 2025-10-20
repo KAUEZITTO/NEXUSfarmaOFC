@@ -19,19 +19,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { X, Save, Trash2, Loader2, User, PackagePlus, ListPlus, CalendarClock, History, Layers } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { X, Save, Trash2, Loader2, User, PackagePlus, ListPlus, CalendarClock, History, Layers, Info } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { addDispensation } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import type { Patient, Product, DispensationItem as DispensationItemType } from '@/lib/types';
+import type { Patient, Product, DispensationItem as DispensationItemType, Dispensation } from '@/lib/types';
 import { AddItemsManuallyDialog } from '@/components/dashboard/add-items-manually-dialog';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -47,13 +41,15 @@ const itemCategories: Product['category'][] = ['Medicamento', 'Material Técnico
 interface NewDispensationClientPageProps {
   initialPatients: Patient[];
   initialProducts: Product[];
+  initialDispensations: Dispensation[];
 }
 
-export function NewDispensationClientPage({ initialPatients, initialProducts }: NewDispensationClientPageProps) {
+export function NewDispensationClientPage({ initialPatients, initialProducts, initialDispensations }: NewDispensationClientPageProps) {
   const router = useRouter();
   const { toast } = useToast();
 
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [lastDispensationInfo, setLastDispensationInfo] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [items, setItems] = useState<DispensationItem[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<Product['category'][]>([]);
@@ -185,6 +181,23 @@ export function NewDispensationClientPage({ initialPatients, initialProducts }: 
     router.back();
   };
 
+  const handlePatientSelect = (patient: Patient) => {
+    setSelectedPatient(patient);
+    setPopoverOpen(false);
+
+    const patientDispensations = initialDispensations
+      .filter(d => d.patientId === patient.id)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    if (patientDispensations.length > 0) {
+      const lastDate = new Date(patientDispensations[0].date).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+      setLastDispensationInfo(`Última retirada em: ${lastDate}`);
+    } else {
+      setLastDispensationInfo('Esta é a primeira dispensação para este paciente.');
+    }
+  };
+
+
   const groupedItems = useMemo(() => items.reduce((acc, item) => {
     (acc[item.category] = acc[item.category] || []).push(item);
     return acc;
@@ -243,10 +256,7 @@ export function NewDispensationClientPage({ initialPatients, initialProducts }: 
                                         <CommandItem
                                             key={patient.id}
                                             value={`${patient.name} ${patient.cpf} ${patient.cns}`}
-                                            onSelect={() => {
-                                                setSelectedPatient(patient);
-                                                setPopoverOpen(false);
-                                            }}
+                                            onSelect={() => handlePatientSelect(patient)}
                                         >
                                             <Check className={cn("mr-2 h-4 w-4", selectedPatient?.id === patient.id ? "opacity-100" : "opacity-0")} />
                                             <div className='flex flex-col'>
@@ -274,6 +284,17 @@ export function NewDispensationClientPage({ initialPatients, initialProducts }: 
                         <div><span className="font-semibold">CPF:</span> {selectedPatient.cpf}</div>
                         <div><span className="font-semibold">CNS:</span> {selectedPatient.cns}</div>
                         <div><span className="font-semibold">Demandas:</span> {selectedPatient.demandItems?.join(', ') || 'Nenhuma'}</div>
+                        {lastDispensationInfo && (
+                            <div className="col-span-full">
+                                <Alert>
+                                    <Info className="h-4 w-4" />
+                                    <AlertTitle>Histórico do Paciente</AlertTitle>
+                                    <AlertDescription>
+                                        {lastDispensationInfo}
+                                    </AlertDescription>
+                                </Alert>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
