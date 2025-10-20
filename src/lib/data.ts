@@ -99,11 +99,12 @@ export const getPatients = async (filter: PatientFilter = 'active', query: strin
     if (query) {
         const lowercasedQuery = query.toLowerCase();
         // Check if query could be an ID
-        const isIdQuery = query.startsWith('pat_');
+        if (query.startsWith('pat_')) {
+            const foundPatient = allPatients.find(p => p.id === query);
+            return foundPatient ? [foundPatient] : [];
+        }
         
         allPatients = allPatients.filter(patient => {
-            if (isIdQuery) return patient.id === query;
-
             const numericQuery = query.replace(/[^\d]/g, '');
             return (
                 patient.name.toLowerCase().includes(lowercasedQuery) ||

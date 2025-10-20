@@ -277,8 +277,10 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
     );
 }
 
-async function DashboardData() {
-    noStore(); // Garante que os dados são sempre frescos
+// This is now a fully dynamic component
+export default async function DashboardPage() {
+    noStore(); // Garante que os dados são sempre frescos e não cacheados durante o build
+    
     const [products, dispensations, users, activePatients, orders] = await Promise.all([
         getProducts(),
         getAllDispensations(),
@@ -287,21 +289,17 @@ async function DashboardData() {
         getOrders(),
     ]);
 
-    return <DashboardDataWrapper 
-        products={products}
-        dispensations={dispensations}
-        users={users}
-        activePatients={activePatients}
-        orders={orders}
-    />
-}
-
-export default async function DashboardPage() {
     return (
         <>
             <DashboardHeader />
             <Suspense fallback={<DashboardSkeleton />}>
-                <DashboardData />
+                <DashboardDataWrapper 
+                    products={products}
+                    dispensations={dispensations}
+                    users={users}
+                    activePatients={activePatients}
+                    orders={orders}
+                />
             </Suspense>
         </>
     );
