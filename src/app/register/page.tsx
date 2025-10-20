@@ -1,6 +1,4 @@
 
-'use server';
-
 import Image from 'next/image';
 import Link from 'next/link';
 import { RegisterForm } from '@/components/auth/register-form';
@@ -10,7 +8,6 @@ import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase/admin';
 import { getAllUsers, writeData } from '@/lib/data';
 import type { User, Role, SubRole } from '@/lib/types';
-
 
 const avatarColors = [
   'hsl(211 100% 50%)', // Blue
@@ -22,10 +19,12 @@ const avatarColors = [
   'hsl(198.8 93.4% 42%)' // Teal
 ];
 
-// --- A Server Action de registro agora vive aqui ---
-async function register({ name, email, password, role, subRole }: { name: string, email: string; password: string; role: Role; subRole?: SubRole; }) {
+// A Server Action de registro agora vive aqui, dentro da página do servidor
+async function register(data: { name: string, email: string; password: string; role: Role; subRole?: SubRole; }) {
     'use server';
     
+    const { name, email, password, role, subRole } = data;
+
     try {
         const adminAuth = getAuth(getAdminApp());
         const users = await getAllUsers();
@@ -79,8 +78,7 @@ async function register({ name, email, password, role, subRole }: { name: string
     }
 }
 
-
-export default async function RegisterPage() {
+export default function RegisterPage() {
   
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
