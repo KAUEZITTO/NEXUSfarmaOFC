@@ -17,7 +17,7 @@ const getImageAsBase64 = async (imagePath: string): Promise<string | null> => {
     try {
         const fullPath = path.join(process.cwd(), 'public', imagePath);
         const file = await fs.readFile(fullPath);
-        return file.toString('base64');
+        return `data:image/png;base64,${file.toString('base64')}`;
     } catch (error) {
         console.error(`Failed to read image at ${imagePath}:`, error);
         return null;
@@ -40,7 +40,7 @@ const addHeader = async (doc: jsPDFWithAutoTable, title: string, subtitle?: stri
 
     // Left Column: Prefeitura
     if (prefLogoBase64) {
-        doc.addImage(`data:image/png;base64,${prefLogoBase64}`, 'PNG', margin, 12, 25, 25);
+        doc.addImage(prefLogoBase64, 'PNG', margin, 12, 25, 25);
     }
     doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
@@ -49,12 +49,12 @@ const addHeader = async (doc: jsPDFWithAutoTable, title: string, subtitle?: stri
 
      // Center Column: NexusFarma
     if (nexusLogoBase64) {
-        doc.addImage(`data:image/png;base64,${nexusLogoBase64}`, 'PNG', pageWidth / 2 - 20, 12, 40, 15);
+        doc.addImage(nexusLogoBase64, 'PNG', pageWidth / 2 - 20, 12, 40, 15);
     }
 
     // Right Column: CAF
     if (cafLogoBase64) {
-        doc.addImage(`data:image/png;base64,${cafLogoBase64}`, 'PNG', pageWidth - margin - 25, 12, 25, 25);
+        doc.addImage(cafLogoBase64, 'PNG', pageWidth - margin - 25, 12, 25, 25);
     }
     doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');

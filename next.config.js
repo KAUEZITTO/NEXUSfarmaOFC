@@ -7,11 +7,6 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  experimental: {
-    // This is required for server-side file reading in some environments.
-    // However, the correct way to handle images for PDF generation is different.
-    // esmExternals: 'loose', // This was part of the previous incorrect fix.
-  },
   images: {
     remotePatterns: [
         {
@@ -21,10 +16,6 @@ const nextConfig = {
             pathname: '/**',
         },
     ],
-    // Allow local images
-    dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 };
 
