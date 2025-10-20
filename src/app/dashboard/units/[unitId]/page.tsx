@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import {
   Card,
   CardHeader,
+  CardContent,
 } from "@/components/ui/card";
 import { getUnit, getPatients, getOrdersForUnit } from "@/lib/data";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,8 +16,10 @@ async function UnitDetailsData({ unitId }: { unitId: string }) {
         notFound();
     }
     
+    // Otimização: A contagem de pacientes pode ser derivada da página de pacientes
+    // ou de uma busca mais específica, se necessário.
     const [allPatientsData, unitOrdersData] = await Promise.all([
-        getPatients(),
+        getPatients('all'), // Busca todos para filtrar
         getOrdersForUnit(unitId),
     ]);
 

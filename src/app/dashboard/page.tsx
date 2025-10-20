@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useSession } from "next-auth/react";
@@ -61,19 +60,19 @@ export default function DashboardPage() {
         const thirtyDaysFromNow = new Date();
         thirtyDaysFromNow.setDate(now.getDate() + 30);
 
-        const groupedProducts = new Map<string, { quantity: number; batches: Product[] }>();
+        const groupedProductsMap = new Map<string, { quantity: number; batches: Product[] }>();
         products.forEach(p => {
             const key = `${p.name}|${p.presentation}`;
-            if (!groupedProducts.has(key)) {
-                groupedProducts.set(key, { quantity: 0, batches: [] });
+            if (!groupedProductsMap.has(key)) {
+                groupedProductsMap.set(key, { quantity: 0, batches: [] });
             }
-            const group = groupedProducts.get(key)!;
+            const group = groupedProductsMap.get(key)!;
             group.quantity += p.quantity;
             group.batches.push(p);
         });
 
         let lowStockCount = 0;
-        groupedProducts.forEach(group => {
+        groupedProductsMap.forEach(group => {
             if (group.quantity > 0 && group.quantity < 20) {
                 lowStockCount++;
             }
