@@ -39,6 +39,7 @@ export function RegisterForm() {
     setErrorMessage(null);
 
     const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     const confirmPassword = formData.get('confirm-password') as string;
@@ -64,7 +65,7 @@ export function RegisterForm() {
     }
 
     try {
-      const result = await register({ email, password, role, subRole });
+      const result = await register({ name, email, password, role, subRole });
       if (result.success) {
         toast({
             title: "Conta Criada com Sucesso!",
@@ -84,6 +85,10 @@ export function RegisterForm() {
   
   return (
     <form onSubmit={handleSubmit} className="grid gap-4">
+       <div className="grid gap-2">
+        <Label htmlFor="name">Nome de Exibição</Label>
+        <Input id="name" name="name" type="text" placeholder="Seu nome completo" required />
+      </div>
        <div className="grid gap-2">
         <Label htmlFor="email">Email</Label>
         <Input id="email" name="email" type="email" placeholder="seu@email.com" required />

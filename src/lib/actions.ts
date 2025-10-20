@@ -532,7 +532,7 @@ export async function uploadFile(formData: FormData): Promise<{ success: boolean
 
 
 // --- REGISTER ---
-export async function register({ email, password, role, subRole }: { email: string; password: string; role: Role; subRole?: SubRole; }) {
+export async function register({ name, email, password, role, subRole }: { name: string, email: string; password: string; role: Role; subRole?: SubRole; }) {
     
     try {
         const adminAuth = initializeAdminApp().auth();
@@ -561,13 +561,14 @@ export async function register({ email, password, role, subRole }: { email: stri
         const userRecord = await adminAuth.createUser({
             email: email,
             password: password,
-            displayName: email.split('@')[0], // Nome padrão
+            displayName: name,
         });
         
         const isFirstUser = users.length === 0;
         const newUser: User = {
             id: userRecord.uid,
             email,
+            name,
             role,
             subRole: role === 'Farmacêutico' ? subRole : undefined,
             accessLevel: isFirstUser ? 'Admin' : 'User',
@@ -625,3 +626,4 @@ export async function updateUserLastSeen(userId: string) {
     }
     revalidatePath('/dashboard');
 }
+
