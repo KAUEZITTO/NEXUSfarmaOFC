@@ -4,13 +4,16 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, AlertTriangle, Package, CalendarDays, Clock, BarChart2, Users, UserRoundCheck } from "lucide-react";
-import { getProducts, getAllDispensations, getAllUsers, getPatients } from "@/lib/data";
-import type { Product, Dispensation, User, Patient } from "@/lib/types";
+import { Loader2, AlertTriangle, Package, CalendarDays, Clock, BarChart2, Users, UserRoundCheck, ShoppingCart, Activity } from "lucide-react";
+import { getProducts, getAllDispensations, getAllUsers, getPatients, getOrders } from "@/lib/data";
+import type { Product, Dispensation, User, Patient, Order } from "@/lib/types";
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 type UpcomingReturn = {
     patientId: string;
@@ -24,6 +27,7 @@ export default function DashboardPage() {
   const [currentTime, setCurrentTime] = useState<string | null>(null);
   const [stats, setStats] = useState({ lowStock: 0, expiringSoon: 0, onlineUsers: 0 });
   const [dispensations, setDispensations] = useState<Dispensation[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [upcomingReturns, setUpcomingReturns] = useState<UpcomingReturn[]>([]);
   const [loadingStats, setLoadingStats] = useState(true);
 
@@ -45,11 +49,12 @@ export default function DashboardPage() {
     async function fetchStats() {
       // Don't set loading to true here to avoid skeleton on every refresh
       try {
-        const [products, dispensationsData, users, activePatients] = await Promise.all([
+        const [products, dispensationsData, users, activePatients, ordersData] = await Promise.all([
           getProducts(),
           getAllDispensations(),
           getAllUsers(),
           getPatients('active'),
+          getOrders(),
         ]);
         
         const now = new Date();
@@ -131,6 +136,7 @@ export default function DashboardPage() {
           onlineUsers: onlineUsersCount,
         });
         setDispensations(dispensationsData);
+        setOrders(ordersData);
         setUpcomingReturns(returns.sort((a,b) => new Date(a.returnDate.split('/').reverse().join('-')).getTime() - new Date(b.returnDate.split('/').reverse().join('-')).getTime()));
 
       } catch (error) {
@@ -162,6 +168,15 @@ export default function DashboardPage() {
     if (hour < 18) return "Boa tarde";
     return "Boa noite";
   }
+  
+  const recentDispensations = [...dispensations]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
+
+  const recentOrders = [...orders]
+    .sort((a, b) => new Date(b.sentDate).getTime() - new Date(a.sentDate).getTime())
+    .slice(0, 5);
+
 
   return (
     <div className="space-y-6">
@@ -234,20 +249,84 @@ export default function DashboardPage() {
           </Card>
       </div>
 
-       <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart2 className="h-5 w-5" />
-              Consumo Mensal de Itens
-            </CardTitle>
-            <CardDescription>
-              Visualize a quantidade total de itens dispensados nos últimos 6 meses.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pl-2">
-             {loadingStats ? <Skeleton className="h-[350px] w-full" /> : <MonthlyConsumptionChart dispensations={dispensations} />}
-          </CardContent>
+       <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <BarChart2 className="h-5 w-5" />
+                    Consumo Mensal de Itens
+                </CardTitle>
+                <CardDescription>
+                    Visualize a quantidade total de itens dispensados nos últimos 6 meses.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="pl-2">
+                {loadingStats ? <Skeleton className="h-[350px] w-full" /> : <MonthlyConsumptionChart dispensations={dispensations} />}
+            </CardContent>
         </Card>
+        
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Atividades Recentes
+                </CardTitle>
+                <CardDescription>
+                    Últimas dispensações e remessas registradas no sistema.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Tabs defaultValue="dispensations">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="dispensations">Dispensações</TabsTrigger>
+                        <TabsTrigger value="orders">Remessas</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="dispensations" className="space-y-4 pt-4">
+                       {loadingStats ? <Skeleton className="h-40 w-full"/> : recentDispensations.length > 0 ? (
+                            recentDispensations.map(d => (
+                                <div key={d.id} className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <Avatar>
+                                            <AvatarFallback>{d.patient.name.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <p className="text-sm font-medium leading-none">{d.patient.name}</p>
+                                            <p className="text-sm text-muted-foreground">{new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}</p>
+                                        </div>
+                                    </div>
+                                    <Button asChild variant="outline" size="sm">
+                                        <Link href={`/dispensation-receipt/${d.id}`} target="_blank">Ver Recibo</Link>
+                                    </Button>
+                                </div>
+                            ))
+                       ) : <p className="text-sm text-center text-muted-foreground pt-10">Nenhuma dispensação recente.</p>}
+                    </TabsContent>
+                    <TabsContent value="orders" className="space-y-4 pt-4">
+                       {loadingStats ? <Skeleton className="h-40 w-full"/> : recentOrders.length > 0 ? (
+                           recentOrders.map(o => (
+                                <div key={o.id} className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <Avatar className="bg-muted">
+                                            <AvatarFallback>
+                                                <ShoppingCart className="h-4 w-4 text-muted-foreground"/>
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <p className="text-sm font-medium leading-none">{o.unitName}</p>
+                                            <p className="text-sm text-muted-foreground">{new Date(o.sentDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}</p>
+                                        </div>
+                                    </div>
+                                    <Button asChild variant="outline" size="sm">
+                                        <Link href="/dashboard/orders">Ver Pedidos</Link>
+                                    </Button>
+                                </div>
+                           ))
+                       ): <p className="text-sm text-center text-muted-foreground pt-10">Nenhuma remessa recente.</p>}
+                    </TabsContent>
+                </Tabs>
+            </CardContent>
+        </Card>
+       </div>
     </div>
   );
 }
