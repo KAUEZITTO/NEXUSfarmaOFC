@@ -92,7 +92,7 @@ const categories: {
   { name: 'Itens Judiciais', icon: FileText, demandItem: 'Itens Judiciais', productCategory: 'Não Padronizado (Compra)' },
   { name: 'Não Padronizado (Compra)', icon: ShoppingCart, demandItem: 'Medicamentos/Materiais Comprados', productCategory: 'Não Padronizado (Compra)' },
   { name: 'Imunoglobulina', icon: ShieldHalf, demandItem: 'Imunoglobulina'},
-  { name: 'Material Técnico', icon: Stethoscope, productCategory: 'Material Técnico' },
+  { name: 'Material Técnico', icon: Stethoscope, productCategory: 'Material Técnico', demandItem: 'Materiais Técnicos (Acamados)' },
   { name: 'Medicamentos', icon: Pill, productCategory: 'Medicamento' },
   { name: 'Outros', icon: Package },
 ];
@@ -102,53 +102,43 @@ const insulinKeywords = ['insulina', 'lantus', 'apidra', 'nph', 'regular', 'agul
 const getProductsForCategory = (allProducts: Product[], categoryName: Category): Product[] => {
     const categoryInfo = categories.find(c => c.name === categoryName);
 
-    if (!categoryInfo) {
-        return [];
-    }
-
-    // Direct mapping for simple categories
-    if (categoryInfo.productCategory) {
-        const productCategories = Array.isArray(categoryInfo.productCategory)
-            ? categoryInfo.productCategory
-            : [categoryInfo.productCategory];
-        return allProducts.filter(p => productCategories.includes(p.category));
-    }
-
-    // Special keyword-based filtering
     if (categoryName === 'Insulinas') {
         return allProducts.filter(p => insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)));
     }
+    
     if (categoryName === 'Imunoglobulina') {
         return allProducts.filter(p => p.name.toLowerCase().includes('imunoglobulina'));
     }
-    
-    // "Outros" category logic
-    if (categoryName === 'Outros') {
-        // Collect all categories that are explicitly handled elsewhere
-        const handledProductCategories = categories
-            .map(c => c.productCategory)
-            .flat()
-            .filter(Boolean) as Product['category'][];
-            
-        const handledKeywords = [
-            ...insulinKeywords,
-            'imunoglobulina'
-        ];
 
-        return allProducts.filter(p => 
-            // Must not belong to any explicitly handled product category
-            !handledProductCategories.includes(p.category) &&
-            // Must not match any special keyword
-            !handledKeywords.some(kw => p.name.toLowerCase().includes(kw))
-        );
+    if (categoryInfo?.productCategory) {
+        const productCategories = Array.isArray(categoryInfo.productCategory) ? categoryInfo.productCategory : [categoryInfo.productCategory];
+        return allProducts.filter(p => productCategories.includes(p.category));
     }
-    
-    // Fallback for categories without a direct productCategory mapping (like demandItem-only ones)
-    // This part might need adjustment if there are such categories that should show products
-    // For now, if it's not one of the above, and has no productCategory, it returns empty.
+
+    if (categoryName === 'Outros') {
+        // IDs of categories explicitly handled by other rules
+        const handledCategories: Product['category'][] = [
+            'Tiras de Glicemia/Lancetas',
+            'Fraldas',
+            'Fórmulas',
+            'Não Padronizado (Compra)',
+            'Material Técnico',
+            'Medicamento',
+        ];
+        const handledKeywords = [...insulinKeywords, 'imunoglobulina'];
+
+        return allProducts.filter(p => {
+            const productNameLower = p.name.toLowerCase();
+            const isHandledByCategory = handledCategories.includes(p.category);
+            const isHandledByKeyword = handledKeywords.some(kw => productNameLower.includes(kw));
+            // Return true only if it's not handled by any other category or keyword
+            return !isHandledByCategory && !isHandledByKeyword;
+        });
+    }
+
+    // Default to empty array if no specific logic matches
     return [];
 };
-
 
 
 interface AttendPatientDialogProps {
@@ -179,9 +169,10 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
         if (isOpen) {
             setLoading(true);
             try {
+                noStore();
                 const [patientsData, productsData] = await Promise.all([getPatients('all'), getProducts()]);
                 setAllPatients(patientsData);
-                setAllProducts(productsData); // Correctly update the state
+                setAllProducts(productsData); 
             } catch (error) {
                 console.error("Failed to load data for dialog:", error);
                 toast({
@@ -588,3 +579,4 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
     </Dialog>
   );
 }
+
