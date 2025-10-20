@@ -1,7 +1,4 @@
 
-
-'use server';
-
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
 import type { KnowledgeBaseItem } from './types';
 import { kv } from './kv';
@@ -139,7 +136,8 @@ export async function getOrder(orderId: string): Promise<Order | null> {
 export const getOrdersForUnit = async (unitId: string): Promise<Order[]> => {
     noStore();
     const allOrders = await readData<Order>('orders');
-    return allOrders.filter(o => o.unitId === unitId);
+    const unitOrders = allOrders.filter(o => o.unitId === unitId);
+    return unitOrders.sort((a,b) => new Date(b.sentDate).getTime() - new Date(a.sentDate).getTime());
 };
 
 export const getAllDispensations = async (): Promise<Dispensation[]> => {
