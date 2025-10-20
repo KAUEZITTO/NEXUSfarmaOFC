@@ -4,11 +4,19 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, AlertTriangle, Package, CalendarDays, Clock, BarChart2, Users } from "lucide-react";
-import { getProducts, getAllDispensations, getAllUsers } from "@/lib/data";
-import type { Product, Dispensation, User } from "@/lib/types";
+import { Loader2, AlertTriangle, Package, CalendarDays, Clock, BarChart2, Users, UserRoundCheck } from "lucide-react";
+import { getProducts, getAllDispensations, getAllUsers, getPatients } from "@/lib/data";
+import type { Product, Dispensation, User, Patient } from "@/lib/types";
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
 import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+
+type UpcomingReturn = {
+    patientId: string;
+    patientName: string;
+    returnDate: string; // Formatted date string
+};
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -16,6 +24,7 @@ export default function DashboardPage() {
   const [currentTime, setCurrentTime] = useState<string | null>(null);
   const [stats, setStats] = useState({ lowStock: 0, expiringSoon: 0, onlineUsers: 0 });
   const [dispensations, setDispensations] = useState<Dispensation[]>([]);
+  const [upcomingReturns, setUpcomingReturns] = useState<UpcomingReturn[]>([]);
   const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
@@ -36,10 +45,11 @@ export default function DashboardPage() {
     async function fetchStats() {
       // Don't set loading to true here to avoid skeleton on every refresh
       try {
-        const [products, dispensationsData, users] = await Promise.all([
+        const [products, dispensationsData, users, activePatients] = await Promise.all([
           getProducts(),
           getAllDispensations(),
           getAllUsers(),
+          getPatients('active'),
         ]);
         
         const now = new Date();
@@ -72,6 +82,48 @@ export default function DashboardPage() {
         
         const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
         const onlineUsersCount = users.filter(u => u.lastSeen && new Date(u.lastSeen) > fiveMinutesAgo).length;
+        
+        // Calculate upcoming returns
+        const lastDispensationMap = new Map<string, string>();
+        for (const disp of dispensationsData) {
+            if (!lastDispensationMap.has(disp.patientId) || new Date(disp.date) > new Date(lastDispensationMap.get(disp.patientId)!)) {
+                lastDispensationMap.set(disp.patientId, disp.date);
+            }
+        }
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const sevenDaysFromNow = new Date(today);
+        sevenDaysFromNow.setDate(today.getDate() + 7);
+        
+        const returns: UpcomingReturn[] = [];
+        const activePatientIds = new Set(activePatients.map(p => p.id));
+
+        for (const [patientId, lastDateStr] of lastDispensationMap.entries()) {
+            if (!activePatientIds.has(patientId)) continue;
+
+            const lastDate = new Date(lastDateStr);
+            let returnDate = new Date(lastDate);
+            returnDate.setDate(returnDate.getDate() + 30);
+            
+            const dayOfWeek = returnDate.getDay();
+            if (dayOfWeek === 6) { // Saturday
+                returnDate.setDate(returnDate.getDate() + 2);
+            } else if (dayOfWeek === 0) { // Sunday
+                returnDate.setDate(returnDate.getDate() + 1);
+            }
+
+            if (returnDate >= today && returnDate <= sevenDaysFromNow) {
+                const patient = activePatients.find(p => p.id === patientId);
+                if (patient) {
+                     returns.push({
+                        patientId: patient.id,
+                        patientName: patient.name,
+                        returnDate: returnDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+                    });
+                }
+            }
+        }
 
         setStats({
           lowStock: lowStockCount,
@@ -79,11 +131,11 @@ export default function DashboardPage() {
           onlineUsers: onlineUsersCount,
         });
         setDispensations(dispensationsData);
+        setUpcomingReturns(returns.sort((a,b) => new Date(a.returnDate.split('/').reverse().join('-')).getTime() - new Date(b.returnDate.split('/').reverse().join('-')).getTime()));
 
       } catch (error) {
         console.error("Failed to fetch dashboard stats:", error);
       } finally {
-        // Only set loading to false on the initial fetch
         if (loadingStats) {
             setLoadingStats(false);
         }
@@ -92,9 +144,8 @@ export default function DashboardPage() {
 
     if (status === 'authenticated') {
       fetchStats();
-      // No need for a separate interval here, as layout.tsx now handles periodic refresh
     }
-  }, [status, loadingStats]); // Depend on loadingStats to ensure it only runs the "finally" block once
+  }, [status, loadingStats]);
 
 
   if (status === "loading") {
@@ -152,15 +203,34 @@ export default function DashboardPage() {
               <p className="text-xs text-muted-foreground">Lotes vencendo nos próximos 30 dias.</p>
             </CardContent>
           </Card>
-           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Usuários Online</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {loadingStats ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold">{stats.onlineUsers}</div>}
-              <p className="text-xs text-muted-foreground">Usuários ativos nos últimos 5 minutos.</p>
-            </CardContent>
+           <Card className="lg:col-span-2">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Retornos Próximos</CardTitle>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center text-sm text-muted-foreground">
+                        <Users className="h-4 w-4 mr-1" />
+                        {stats.onlineUsers} Online
+                    </div>
+                    <UserRoundCheck className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loadingStats ? <Skeleton className="h-10 w-full" /> : 
+                upcomingReturns.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 text-xs">
+                    {upcomingReturns.map(r => (
+                      <Button key={r.patientId} variant="secondary" size="sm" asChild className="h-auto py-1 px-2 font-normal justify-start">
+                         <Link href={`/dashboard/patients/${r.patientId}`} className="flex flex-col items-start">
+                            <span className="font-semibold truncate">{r.patientName.split(' ')[0]}</span>
+                            <span className="text-xs text-muted-foreground">Retorno: {r.returnDate}</span>
+                        </Link>
+                      </Button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Nenhum retorno agendado para os próximos 7 dias.</p>
+                )}
+              </CardContent>
           </Card>
       </div>
 
