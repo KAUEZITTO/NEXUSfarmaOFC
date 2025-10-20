@@ -12,28 +12,30 @@ import { authOptions } from './auth';
 // This function initializes the Firebase Admin SDK. It's designed to be called
 // only when needed and ensures it only runs once.
 function initializeAdminApp() {
-    // If the app is already initialized, return the existing app.
     if (admin.apps.length > 0) {
         return admin.app();
     }
 
-    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
-    if (!serviceAccountString) {
-        throw new Error('A variável de ambiente FIREBASE_SERVICE_ACCOUNT não está definida ou está vazia.');
+    // Check for essential environment variables
+    if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+        console.error("Firebase Admin environment variables are not set.");
+        throw new Error("A configuração do servidor Firebase está incompleta. O registro de usuários não pode continuar.");
     }
+    
+    // The private key comes with literal `\n` characters from the environment variable.
+    // They need to be replaced with actual newlines.
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
 
     try {
-        // The service account is now expected to be a direct JSON string,
-        // which avoids file system and Buffer issues in different runtimes.
-        const serviceAccount = JSON.parse(serviceAccountString);
-
         return admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
+            credential: admin.credential.cert({
+                projectId: process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                privateKey: privateKey,
+            }),
         });
-
     } catch (error: any) {
         console.error("Falha Crítica ao Inicializar o Firebase Admin SDK:", error.message);
-        // Throw a more informative error.
         throw new Error(`Não foi possível inicializar o Firebase Admin. Causa: ${error.message}`);
     }
 }
@@ -637,5 +639,3 @@ export async function updateUserLastSeen(userId: string) {
     // Revalidate the entire dashboard layout to update all sub-pages
     revalidatePath('/dashboard', 'layout');
 }
-
-
