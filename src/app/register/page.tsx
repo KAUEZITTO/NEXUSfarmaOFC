@@ -24,6 +24,7 @@ const avatarColors = [
 
 // --- A Server Action de registro agora vive aqui ---
 async function register({ name, email, password, role, subRole }: { name: string, email: string; password: string; role: Role; subRole?: SubRole; }) {
+    'use server';
     
     try {
         const adminAuth = getAuth(getAdminApp());
