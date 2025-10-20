@@ -1,4 +1,5 @@
 
+
 import { Suspense } from 'react';
 import { getPatients } from '@/lib/data';
 import type { PatientFilter } from '@/lib/types';
@@ -47,7 +48,7 @@ export default async function PatientsPage({
     const filter = (searchParams?.filter as PatientFilter) || 'active';
     const query = (searchParams?.q as string) || '';
     
-    // The data fetching is now aware of the search query
+    // A busca de dados agora considera a consulta de pesquisa
     const initialPatients = await getPatients(filter, query);
 
     return (

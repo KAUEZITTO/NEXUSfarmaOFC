@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect, useState, useTransition, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,11 +10,11 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  UserCheck,
   Search,
   X,
   Save,
@@ -143,22 +143,16 @@ const getProductsForCategory = (allProducts: Product[], categoryName: Category):
 
 interface AttendPatientDialogProps {
     onDispensationSaved: () => void;
-    trigger?: React.ReactNode;
-    initialPatient?: Patient;
+    trigger: React.ReactNode;
+    initialPatient: Patient;
 }
 
 export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatient }: AttendPatientDialogProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [step, setStep] = useState<'selectPatient' | 'dispenseForm'>(
-    'selectPatient'
-  );
-  const [searchTerm, setSearchTerm] = useState('');
-  const [allPatients, setAllPatients] = useState<Patient[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [items, setItems] = useState<DispensationItem[]>([]);
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -171,15 +165,14 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
             try {
                 // Force dynamic data fetching every time the dialog opens
                 noStore();
-                const [patientsData, productsData] = await Promise.all([getPatients('all'), getProducts()]);
-                setAllPatients(patientsData);
+                const productsData = await getProducts();
                 setAllProducts(productsData); 
             } catch (error) {
                 console.error("Failed to load data for dialog:", error);
                 toast({
                     variant: 'destructive',
                     title: 'Erro ao carregar dados',
-                    description: 'Não foi possível buscar pacientes e produtos.'
+                    description: 'Não foi possível buscar produtos.'
                 });
             } finally {
                 setLoading(false);
@@ -191,17 +184,9 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
 
   useEffect(() => {
     if (initialPatient && isOpen) {
-        handleSelectPatient(initialPatient);
+        setupInitialItems(initialPatient);
     }
   }, [initialPatient, isOpen]);
-
-  const filteredPatients = searchTerm
-    ? allPatients.filter(
-        (patient) =>
-          patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          patient.cpf?.replace(/[^\d]/g, '').includes(searchTerm.replace(/[^\d]/g, ''))
-      )
-    : allPatients;
   
   const setupInitialItems = (patient: Patient) => {
     const initialItems: DispensationItem[] = [];
@@ -223,18 +208,6 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
     setItems(initialItems);
   };
 
-  const handleSelectPatient = (patient: Patient) => {
-    setSelectedPatient(patient);
-    setupInitialItems(patient);
-    setStep('dispenseForm');
-  };
-
-  const handleBack = () => {
-    setStep('selectPatient');
-    setSelectedPatient(null);
-    setItems([]);
-  };
-
   const handleAddItem = (category: Category) => {
     setItems([
       ...items,
@@ -248,7 +221,10 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
       },
     ]);
      setTimeout(() => {
-      scrollAreaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      if (scrollAreaRef.current) {
+        const lastTable = scrollAreaRef.current.querySelector('div.space-y-6 > div:last-child');
+        lastTable?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
     }, 100);
   };
 
@@ -294,7 +270,7 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
 
 
   const handleSaveDispensation = async () => {
-    if (!selectedPatient) return;
+    if (!initialPatient) return;
 
     const validItems = items.filter(item => item.productId && item.quantity > 0);
 
@@ -308,20 +284,20 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
     }
     
     setIsSaving(true);
-    const patientForDispensation = { ...selectedPatient };
+    const patientForDispensation = { ...initialPatient };
 
     const dispensationItems = validItems.map(({ internalId, ...rest }) => ({...rest}));
 
     try {
         const newDispensation = await addDispensation({
-            patientId: selectedPatient.id,
+            patientId: initialPatient.id,
             patient: patientForDispensation,
             items: dispensationItems
         });
         
         toast({
           title: 'Dispensação Registrada!',
-          description: `Gerando recibo para ${selectedPatient?.name}.`,
+          description: `Gerando recibo para ${initialPatient?.name}.`,
         });
         
         onDispensationSaved();
@@ -331,7 +307,7 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
 
 
         setTimeout(() => {
-            handleBack();
+            setItems([]);
         }, 300);
 
     } catch (error) {
@@ -345,14 +321,6 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
         setIsSaving(false);
     }
   };
-
-  const isNewlyRegistered = (patient: Patient): boolean => {
-    if (!patient.createdAt) return false;
-    const fiveMinutes = 5 * 60 * 1000;
-    const createdAtDate = new Date(patient.createdAt);
-    const now = new Date();
-    return now.getTime() - createdAtDate.getTime() < fiveMinutes;
-  }
   
   const renderItemInput = (item: DispensationItem) => {
     const productList = getProductsForCategory(allProducts, item.category as Category);
@@ -444,74 +412,19 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        {trigger ? trigger : (
-            <Button>
-                <UserCheck className="mr-2 h-4 w-4" />
-                Atender Paciente
-            </Button>
-        )}
+        {trigger}
       </DialogTrigger>
       <DialogContent className="max-w-4xl h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center">
-            {step === 'selectPatient' && !initialPatient ? (
-              'Atender Paciente'
-            ) : (
-              <>
-                {!initialPatient && <Button variant="ghost" size="icon" className="mr-2" onClick={handleBack}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>}
-                Dispensação para: {selectedPatient?.name}
-              </>
-            )}
+            Dispensação para: {initialPatient?.name}
           </DialogTitle>
         </DialogHeader>
 
         <div className="flex-grow overflow-hidden" ref={scrollAreaRef}>
-          {step === 'selectPatient' && !initialPatient && (
-            <div className="p-1">
-              <div className="relative mb-4">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Pesquisar por nome ou CPF..."
-                  className="pl-8"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <ScrollArea className="h-[calc(80vh-150px)]">
-                <div className="space-y-2">
-                  {loading ? <div className="flex justify-center items-center h-40"><Loader2 className="h-8 w-8 animate-spin" /></div> : filteredPatients.map((patient) => (
-                    <div
-                      key={patient.id}
-                      className="flex items-center justify-between p-3 rounded-md border hover:bg-muted cursor-pointer"
-                      onClick={() => handleSelectPatient(patient)}
-                    >
-                      <div>
-                        <p className="font-medium flex items-center gap-2">
-                          {patient.name}
-                           {isNewlyRegistered(patient) && <Badge variant="secondary">Recém-cadastrado</Badge>}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          CPF: {patient.cpf}
-                        </p>
-                      </div>
-                      <Button variant="outline" size="sm">
-                        Selecionar
-                      </Button>
-                    </div>
-                  ))}
-                   {!loading && filteredPatients.length === 0 && (
-                    <div className="text-center text-muted-foreground py-10">
-                      Nenhum paciente encontrado.
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </div>
-          )}
-
-          {step === 'dispenseForm' && selectedPatient && (
+          {loading ? (
+             <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin" /></div>
+          ) : (
             <ScrollArea className="h-[calc(90vh-150px)]">
               <div className="p-1 space-y-6">
                 <Card>
@@ -519,19 +432,19 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
                     <CardTitle>Dados do Paciente</CardTitle>
                   </CardHeader>
                   <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                    <div><span className="font-semibold">Nome:</span> {selectedPatient.name}</div>
-                    <div><span className="font-semibold">CPF:</span> {selectedPatient.cpf}</div>
-                    <div><span className="font-semibold">CNS:</span> {selectedPatient.cns}</div>
-                    <div><span className="font-semibold">Demandas:</span> {selectedPatient.demandItems?.join(', ') || 'Nenhuma'}</div>
-                    {selectedPatient.demandItems?.includes('Insulinas Análogas') && (
+                    <div><span className="font-semibold">Nome:</span> {initialPatient.name}</div>
+                    <div><span className="font-semibold">CPF:</span> {initialPatient.cpf}</div>
+                    <div><span className="font-semibold">CNS:</span> {initialPatient.cns}</div>
+                    <div><span className="font-semibold">Demandas:</span> {initialPatient.demandItems?.join(', ') || 'Nenhuma'}</div>
+                    {initialPatient.demandItems?.includes('Insulinas Análogas') && (
                         <>
-                           <div><span className="font-semibold">Tipo de Insulina:</span> {selectedPatient.analogInsulinType} ({selectedPatient.insulinPresentation})</div>
-                            <div className="col-span-1 sm:col-span-2"><span className="font-semibold">Posologia Insulina:</span> {selectedPatient.insulinDosages?.map(d => `${d.quantity} UI ${d.period}`).join(', ') || 'N/A'}</div>
+                           <div><span className="font-semibold">Tipo de Insulina:</span> {initialPatient.analogInsulinType} ({initialPatient.insulinPresentation})</div>
+                            <div className="col-span-1 sm:col-span-2"><span className="font-semibold">Posologia Insulina:</span> {initialPatient.insulinDosages?.map(d => `${d.quantity} UI ${d.period}`).join(', ') || 'N/A'}</div>
                         </>
                     )}
-                     {selectedPatient.demandItems?.includes('Tiras de Glicemia') && (
+                     {initialPatient.demandItems?.includes('Tiras de Glicemia') && (
                         <>
-                           <div className="col-span-1 sm:col-span-2"><span className="font-semibold">Posologia Tiras:</span> {selectedPatient.stripDosages?.map(d => `${d.quantity}x ${d.period}`).join(', ') || 'N/A'}</div>
+                           <div className="col-span-1 sm:col-span-2"><span className="font-semibold">Posologia Tiras:</span> {initialPatient.stripDosages?.map(d => `${d.quantity}x ${d.period}`).join(', ') || 'N/A'}</div>
                         </>
                     )}
                   </CardContent>
@@ -567,15 +480,15 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
           )}
         </div>
 
-        {step === 'dispenseForm' && (
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isSaving}>Cancelar</Button>
-            <Button onClick={handleSaveDispensation} disabled={items.filter(i => i.productId).length === 0 || isSaving}>
-              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-              {isSaving ? 'Salvando...' : 'Salvar e Gerar Recibo'}
-            </Button>
-          </DialogFooter>
-        )}
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline" disabled={isSaving}>Cancelar</Button>
+          </DialogClose>
+          <Button onClick={handleSaveDispensation} disabled={items.filter(i => i.productId).length === 0 || isSaving}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            {isSaving ? 'Salvando...' : 'Salvar e Gerar Recibo'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

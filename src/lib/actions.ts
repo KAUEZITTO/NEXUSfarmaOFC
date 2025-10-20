@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -287,6 +288,21 @@ export async function updatePatientStatus(patientId: string, status: PatientStat
     patients[patientIndex].status = status;
     await writeData('patients', patients);
     revalidatePath('/dashboard/patients');
+}
+
+export async function deletePatient(patientId: string): Promise<{ success: boolean; message?: string }> {
+    const patients = await readData<Patient>('patients');
+    const dispensations = await readData<Dispensation>('dispensations');
+
+    if (dispensations.some(d => d.patientId === patientId)) {
+        return { success: false, message: "Não é possível excluir pacientes com histórico de dispensação. Torne-o inativo." };
+    }
+
+    const updatedPatients = patients.filter(p => p.id !== patientId);
+    await writeData('patients', updatedPatients);
+    
+    revalidatePath('/dashboard/patients');
+    return { success: true };
 }
 
 

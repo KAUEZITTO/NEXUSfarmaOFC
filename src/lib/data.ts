@@ -1,4 +1,5 @@
 
+
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
 import type { KnowledgeBaseItem } from './types';
 import { kv } from './kv';
@@ -104,7 +105,8 @@ export const getPatients = async (filter: PatientFilter = 'active', query: strin
         const numericQuery = query.replace(/[^\d]/g, '');
         allPatients = allPatients.filter(patient => 
             patient.name.toLowerCase().includes(lowercasedQuery) ||
-            (patient.cpf && patient.cpf.replace(/[^\d]/g, '').includes(numericQuery))
+            (patient.cpf && patient.cpf.replace(/[^\d]/g, '').includes(numericQuery)) ||
+            (patient.cns && patient.cns.replace(/[^\d]/g, '').includes(numericQuery))
         );
     }
 
