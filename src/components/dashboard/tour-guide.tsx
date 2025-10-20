@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import 'intro.js/introjs.css';
@@ -30,43 +29,43 @@ const tourSteps = [
         element: '[data-tour-id="step-logo"]',
         intro: 'Bem-vindo ao <strong>NexusFarma</strong>! Este é seu painel de controle central. Clique aqui a qualquer momento para voltar à tela inicial do dashboard.',
     },
-    ...navItems.map(item => {
-        let intro = '';
-        switch(item.label) {
-            case 'Dashboard':
-                intro = 'Esta é a sua <strong>Visão Geral</strong>. Aqui você encontra atalhos, resumos de estoque, alertas importantes e gráficos sobre as operações.';
-                break;
-            case 'Pedidos':
-                intro = 'Na área de <strong>Pedidos</strong>, você pode criar novas remessas de itens para as unidades de saúde e consultar o histórico de envios de cada uma.';
-                break;
-            case 'Inventário':
-                intro = 'Gerencie todo o seu <strong>Inventário</strong> aqui. Adicione novos produtos, edite itens existentes e tenha uma visão completa do que está em estoque.';
-                break;
-            case 'Pacientes':
-                intro = 'A seção de <strong>Pacientes</strong> permite cadastrar novos pacientes, gerenciar seus dados, e o mais importante: registrar a dispensação de medicamentos e insumos.';
-                break;
-            case 'Unidades':
-                intro = 'Cadastre e gerencie as <strong>Unidades</strong> de saúde (UBS, Hospitais, etc.) que são abastecidas pelo CAF. Você pode ver detalhes e histórico de cada uma.';
-                break;
-            case 'Relatórios':
-                intro = 'A área de <strong>Relatórios</strong> é poderosa. Gere documentos PDF para auditoria e análise, como consumo mensal, estoque atual, validades e muito mais.';
-                break;
-             case 'Usuários':
-                intro = 'Como <strong>Administrador</strong>, você pode gerenciar os usuários do sistema, alterando seus níveis de acesso e cargos.';
-                break;
-            case 'Configurações':
-                intro = 'Em <strong>Configurações</strong>, você pode personalizar sua conta, alterar sua senha, e mudar a aparência do sistema entre os modos claro e escuro.';
-                break;
-            case 'Sobre':
-                intro = 'Na seção <strong>Sobre</strong>, você encontra informações de contato para suporte técnico, sugestões e detalhes sobre a versão do sistema.';
-                break;
-        }
-        return {
-            element: `[data-tour-id="${item.tourId}"]`,
-            intro: intro,
-        }
-    }),
+    {
+        element: '[data-tour-id="step-dashboard"]',
+        intro: 'Esta é a sua <strong>Visão Geral</strong>. Aqui você encontra atalhos, resumos de estoque, alertas importantes e gráficos sobre as operações.',
+    },
+    {
+        element: '[data-tour-id="step-orders"]',
+        intro: 'Na área de <strong>Pedidos</strong>, você pode criar novas remessas de itens para as unidades de saúde e consultar o histórico de envios de cada uma.',
+    },
+    {
+        element: '[data-tour-id="step-inventory"]',
+        intro: 'Gerencie todo o seu <strong>Inventário</strong> aqui. Adicione novos produtos, edite itens existentes e tenha uma visão completa do que está em estoque.',
+    },
+    {
+        element: '[data-tour-id="step-patients"]',
+        intro: 'A seção de <strong>Pacientes</strong> permite cadastrar novos pacientes, gerenciar seus dados e, o mais importante, registrar a dispensação de medicamentos e insumos.',
+    },
      {
+        element: '[data-tour-id="step-units"]',
+        intro: 'Cadastre e gerencie as <strong>Unidades</strong> de saúde (UBS, Hospitais, etc.) que são abastecidas pelo CAF. Você pode ver detalhes e histórico de cada uma.',
+    },
+    {
+        element: '[data-tour-id="step-reports"]',
+        intro: 'A área de <strong>Relatórios</strong> é poderosa. Gere documentos PDF para auditoria e análise, como consumo mensal, estoque atual, validades e muito mais.',
+    },
+    {
+        element: '[data-tour-id="step-users"]',
+        intro: 'Como <strong>Administrador</strong>, você pode gerenciar os usuários do sistema, alterando seus níveis de acesso e cargos.',
+    },
+    {
+        element: '[data-tour-id="step-settings"]',
+        intro: 'Em <strong>Configurações</strong>, você pode personalizar sua conta, alterar sua senha, e mudar a aparência do sistema entre os modos claro e escuro.',
+    },
+    {
+        element: '[data-tour-id="step-about"]',
+        intro: 'Na seção <strong>Sobre</strong>, você encontra informações de contato para suporte técnico, sugestões e detalhes sobre a versão do sistema.',
+    },
+    {
         element: '[data-tour-id="step-user-nav"]',
         intro: 'Por fim, aqui você pode acessar as <strong>Configurações</strong> da sua conta, refazer este tour, ou sair do sistema com segurança. Explore o NexusFarma!',
     }
