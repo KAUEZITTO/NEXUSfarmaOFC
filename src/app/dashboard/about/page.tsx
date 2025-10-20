@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 const changelog = [
+    { version: '3.6.0', changes: ['Implementado campo de observações na tela de dispensação e no recibo final para registrar informações adicionais.', 'Corrigidos múltiplos bugs críticos de cache que causavam inconsistências de dados, garantindo que o dashboard e as listas de pacientes/unidades estejam sempre sincronizados em tempo real.', 'Resolvidos problemas de configuração do servidor que impediam o cadastro de novos usuários e a exclusão de pacientes.', 'Aprimorado o tour guiado para ser interativo e navegar entre as páginas.', 'Ajustado o design e as informações do recibo de dispensação (Termo de Entrega) para incluir dados do paciente e gerar duas vias.'] },
     { version: '3.5.1', changes: ['Correção crítica na inicialização do Firebase Admin para resolver falhas no cadastro de novos usuários.', 'Garantida a sincronização de dados em tempo real em todo o sistema, corrigindo inconsistências no dashboard e status de usuários.', 'Otimizada a consulta de dados na página de detalhes da unidade para melhor performance.'] },
     { version: '3.5.0', changes: ['Dashboard agora exibe lembretes de retorno para pacientes próximos.', 'Adicionada seção "Atividades Recentes" ao dashboard com as últimas dispensações e remessas.', 'Campo "Nome de Exibição" adicionado ao formulário de cadastro de novos usuários.', 'Implementado banner de consentimento de cookies para conformidade e transparência.'] },
     { version: '3.4.0', changes: ['Desabilitado o cache de dados no servidor (`unstable_noStore`) para resolver erros de dados desatualizados e garantir a consistência em tempo real.'] },
@@ -46,7 +47,7 @@ const changelog = [
     { version: '0.9.2', changes: ['Migração completa do sistema de arquivos para o banco de dados Vercel KV, permitindo persistência de dados online.', 'Remoção de arquivos de dados JSON locais.'] },
 ];
 
-const CURRENT_VERSION = '3.5.1';
+const CURRENT_VERSION = '3.6.0';
 
 export default function AboutPage() {
   return (
