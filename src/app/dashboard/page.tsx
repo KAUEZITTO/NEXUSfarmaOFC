@@ -115,20 +115,19 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(now.getDate() + 30);
 
-    const groupedProductsMap = new Map<string, { quantity: number; batches: Product[] }>();
-    products.forEach(p => {
-        const key = `${p.name}|${p.presentation}`;
+    const groupedProductsMap = new Map<string, { totalQuantity: number }>();
+
+    products.forEach(product => {
+        const key = `${product.name}|${product.presentation}`;
         if (!groupedProductsMap.has(key)) {
-            groupedProductsMap.set(key, { quantity: 0, batches: [] });
+            groupedProductsMap.set(key, { totalQuantity: 0 });
         }
-        const group = groupedProductsMap.get(key)!;
-        group.quantity += p.quantity;
-        group.batches.push(p);
+        groupedProductsMap.get(key)!.totalQuantity += product.quantity;
     });
 
     let lowStockCount = 0;
     groupedProductsMap.forEach(group => {
-        if (group.quantity > 0 && group.quantity < 20) {
+        if (group.totalQuantity > 0 && group.totalQuantity < 20) {
             lowStockCount++;
         }
     });
