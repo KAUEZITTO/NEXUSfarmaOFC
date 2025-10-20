@@ -197,7 +197,7 @@ export type DispensationItem = {
   batch?: string;
   expiryDate?: string;
   presentation?: string;
-  category: string;
+  category: Product['category'];
 };
 
 export type Dispensation = {

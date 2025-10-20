@@ -1,7 +1,7 @@
 
 {
   "name": "nextn",
-  "version": "3.0.7",
+  "version": "3.5.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 9002",
@@ -35,8 +35,10 @@
     "@radix-ui/react-tooltip": "^1.1.2",
     "@tanstack/react-table": "^8.19.3",
     "@vercel/kv": "^2.0.0",
+    "@vercel/speed-insights": "^1.0.12",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.1.7",
     "firebase": "^10.14.1",

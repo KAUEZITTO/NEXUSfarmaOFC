@@ -12,20 +12,20 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { AttendPatientDialog } from "@/components/dashboard/attend-patient-dialog";
 import { AddPatientDialog } from "@/components/dashboard/add-patient-dialog";
 import { Button } from "@/components/ui/button";
 import type { Patient, PatientFilter, PatientStatus } from "@/lib/types";
 import { ColumnDef } from "@tanstack/react-table";
-import { PlusCircle, Loader2, Eye, Edit, UserCheck, UserX, CheckCircle, XCircle, HeartPulse, MoreHorizontal, ArrowUpDown, Search } from "lucide-react";
+import { PlusCircle, Loader2, Eye, Edit, UserCheck, UserX, CheckCircle, XCircle, HeartPulse, MoreHorizontal, ArrowUpDown, Search, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { updatePatientStatus } from "@/lib/actions";
+import { updatePatientStatus, deletePatient } from "@/lib/actions";
 import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { useDebounce } from 'use-debounce';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 
 const filterCategories: { label: string, value: PatientFilter }[] = [
@@ -98,6 +98,16 @@ export function PatientsClientPage({
       }
     });
   };
+  
+  const handleDeletePatient = async (patientId: string, patientName: string) => {
+    const result = await deletePatient(patientId);
+    if(result.success) {
+      toast({ title: 'Paciente Excluído', description: `O paciente ${patientName} foi removido.`});
+      router.refresh();
+    } else {
+      toast({ variant: 'destructive', title: 'Erro ao Excluir', description: result.message});
+    }
+  }
 
   const getColumns = (onUpdateStatus: (patientId: string, status: PatientStatus) => void): ColumnDef<Patient>[] => {
     return [
@@ -185,66 +195,79 @@ export function PatientsClientPage({
 
         return (
           <div className="flex items-center gap-2 justify-end">
-            <AttendPatientDialog
-                initialPatient={patient}
-                onDispensationSaved={handlePatientSaved}
-                trigger={
-                    <Button variant="outline" size="sm">
-                        <UserCheck className="mr-2 h-4 w-4" />
-                        Atender
+            <AlertDialog>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
                     </Button>
-                }
-            />
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                    <span className="sr-only">Open menu</span>
-                    <MoreHorizontal className="h-4 w-4" />
-                </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                <DropdownMenuItem asChild>
-                    <Link href={`/dashboard/patients/${patient.id}`} className="cursor-pointer">
-                    <Eye className="mr-2 h-4 w-4" />
-                    Ver Histórico
-                    </Link>
-                </DropdownMenuItem>
-                <AddPatientDialog patientToEdit={patient} onPatientSaved={handlePatientSaved} trigger={
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        <span>Editar Cadastro</span>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                    <DropdownMenuItem asChild>
+                        <Link href={`/dashboard/patients/${patient.id}`} className="cursor-pointer">
+                        <Eye className="mr-2 h-4 w-4" />
+                        Ver Histórico
+                        </Link>
                     </DropdownMenuItem>
-                } />
-                <DropdownMenuSeparator />
-                <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                        <HeartPulse className="mr-2 h-4 w-4" />
-                        <span>Alterar Status</span>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuPortal>
-                        <DropdownMenuSubContent>
-                            <DropdownMenuItem onClick={() => onUpdateStatus(patient.id, 'Ativo')} disabled={isPending}>
-                                <UserCheck className="mr-2 h-4 w-4" />
-                                <span>Ativo</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onUpdateStatus(patient.id, 'Tratamento Concluído')} disabled={isPending}>
-                                <CheckCircle className="mr-2 h-4 w-4" />
-                                <span>Tratamento Concluído</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onUpdateStatus(patient.id, 'Tratamento Interrompido')} disabled={isPending}>
-                                <XCircle className="mr-2 h-4 w-4" />
-                                <span>Tratamento Interrompido</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onUpdateStatus(patient.id, 'Óbito')} disabled={isPending}>
-                                <UserX className="mr-2 h-4 w-4" />
-                                <span>Óbito</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuSubContent>
-                    </DropdownMenuPortal>
-                </DropdownMenuSub>
-                </DropdownMenuContent>
-            </DropdownMenu>
+                    <AddPatientDialog patientToEdit={patient} onPatientSaved={handlePatientSaved} trigger={
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            <span>Editar Cadastro</span>
+                        </DropdownMenuItem>
+                    } />
+                    <DropdownMenuSeparator />
+                    <DropdownMenuSub>
+                        <DropdownMenuSubTrigger>
+                            <HeartPulse className="mr-2 h-4 w-4" />
+                            <span>Alterar Status</span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuPortal>
+                            <DropdownMenuSubContent>
+                                <DropdownMenuItem onClick={() => onUpdateStatus(patient.id, 'Ativo')} disabled={isPending}>
+                                    <UserCheck className="mr-2 h-4 w-4" />
+                                    <span>Ativo</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => onUpdateStatus(patient.id, 'Tratamento Concluído')} disabled={isPending}>
+                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                    <span>Tratamento Concluído</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => onUpdateStatus(patient.id, 'Tratamento Interrompido')} disabled={isPending}>
+                                    <XCircle className="mr-2 h-4 w-4" />
+                                    <span>Tratamento Interrompido</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => onUpdateStatus(patient.id, 'Óbito')} disabled={isPending}>
+                                    <UserX className="mr-2 h-4 w-4" />
+                                    <span>Óbito</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuSubContent>
+                        </DropdownMenuPortal>
+                    </DropdownMenuSub>
+                    <DropdownMenuSeparator />
+                     <AlertDialogTrigger asChild>
+                      <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onSelect={(e) => e.preventDefault()}>
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          <span>Excluir Paciente</span>
+                      </DropdownMenuItem>
+                    </AlertDialogTrigger>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir Paciente?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação não pode ser desfeita. Isso excluirá permanentemente o paciente <strong>{patient.name}</strong> e todo o seu histórico de dispensação.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleDeletePatient(patient.id, patient.name)} className="bg-destructive hover:bg-destructive/90">
+                      Sim, excluir paciente
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
           </div>
         )
       },
@@ -265,6 +288,12 @@ export function PatientsClientPage({
             </CardDescription>
           </div>
           <div className="flex gap-2">
+            <Button asChild>
+              <Link href="/dashboard/dispense/new">
+                <UserCheck className="mr-2 h-4 w-4" />
+                Atender Paciente
+              </Link>
+            </Button>
             <AddPatientDialog onPatientSaved={handlePatientSaved} trigger={
               <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />
@@ -289,7 +318,7 @@ export function PatientsClientPage({
          <div className="relative mt-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-                placeholder="Filtrar por nome ou CPF..."
+                placeholder="Filtrar por nome, CPF ou CNS..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 max-w-sm"
