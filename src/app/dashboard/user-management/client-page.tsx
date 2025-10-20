@@ -22,7 +22,7 @@ import type { User, AccessLevel } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const isUserOnline = (lastSeen?: string) => {
+const isUserOnline = (lastSeen?: string | null): boolean => {
     if (!lastSeen) return false;
     const lastSeenDate = new Date(lastSeen);
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);

@@ -2,7 +2,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { DataTable } from "@/components/ui/data-table";
 import {
   Card,
@@ -47,7 +47,6 @@ export function PatientsClientPage({
   searchParams?: { [key: string]: string | string[] | undefined }
 }) {
   const router = useRouter();
-  const currentSearchParams = useSearchParams();
   const { toast } = useToast();
   
   const activeFilter = (searchParams?.filter as PatientFilter) || 'active';
@@ -60,7 +59,9 @@ export function PatientsClientPage({
   const handleUrlChange = (key: 'filter' | 'q', value: string) => {
     startTransition(() => {
         const params = new URLSearchParams(window.location.search);
-        if (value) {
+        if (value && (key === 'filter' && value !== 'active')) {
+            params.set(key, value);
+        } else if (value && key === 'q') {
             params.set(key, value);
         } else {
             params.delete(key);
@@ -68,14 +69,12 @@ export function PatientsClientPage({
         router.push(`/dashboard/patients?${params.toString()}`);
     });
   };
+
+  useEffect(() => {
+      handleUrlChange('q', debouncedSearchTerm);
+  }, [debouncedSearchTerm]);
   
-  const filteredPatients = debouncedSearchTerm
-    ? initialPatients.filter(
-        (patient) =>
-          patient.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-          patient.cpf?.replace(/[^\d]/g, '').includes(debouncedSearchTerm.replace(/[^\d]/g, ''))
-      )
-    : initialPatients;
+  const filteredPatients = initialPatients; // Data is already filtered by the server based on URL params
 
   const handlePatientSaved = () => {
     router.refresh(); 
@@ -295,6 +294,7 @@ export function PatientsClientPage({
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 max-w-sm"
             />
+             {isPending && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
         </div>
       </CardHeader>
       <CardContent>
@@ -310,5 +310,3 @@ export function PatientsClientPage({
     </Card>
   );
 }
-
-    

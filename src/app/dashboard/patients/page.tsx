@@ -45,7 +45,10 @@ export default async function PatientsPage({
     searchParams?: { [key: string]: string | string[] | undefined };
 }) {
     const filter = (searchParams?.filter as PatientFilter) || 'active';
-    const initialPatients = await getPatients(filter);
+    const query = (searchParams?.q as string) || '';
+    
+    // The data fetching is now aware of the search query
+    const initialPatients = await getPatients(filter, query);
 
     return (
         <Suspense fallback={<PatientsSkeleton />}>

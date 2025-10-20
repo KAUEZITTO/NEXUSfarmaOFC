@@ -67,29 +67,50 @@ export async function getUnit(unitId: string): Promise<Unit | null> {
     return units.find(u => u.id === unitId) || null;
 }
 
-export const getPatients = async (filter: PatientFilter = 'active'): Promise<Patient[]> => {
+export const getPatients = async (filter: PatientFilter = 'active', query: string = ''): Promise<Patient[]> => {
     noStore();
-    const allPatients = await readData<Patient>('patients');
+    let allPatients = await readData<Patient>('patients');
     
+    // Apply primary filter first
     switch (filter) {
         case 'active':
-            return allPatients.filter(p => p.status === 'Ativo');
+            allPatients = allPatients.filter(p => p.status === 'Ativo');
+            break;
         case 'inactive':
-            return allPatients.filter(p => p.status !== 'Ativo');
+            allPatients = allPatients.filter(p => p.status !== 'Ativo');
+            break;
         case 'insulin':
-            return allPatients.filter(p => p.demandItems?.includes('Insulinas Análogas') && p.status === 'Ativo');
+            allPatients = allPatients.filter(p => p.demandItems?.includes('Insulinas Análogas') && p.status === 'Ativo');
+            break;
         case 'diapers':
-             return allPatients.filter(p => p.demandItems?.includes('Fraldas') && p.status === 'Ativo');
+             allPatients = allPatients.filter(p => p.demandItems?.includes('Fraldas') && p.status === 'Ativo');
+             break;
         case 'bedridden':
-            return allPatients.filter(p => p.isBedridden && p.status === 'Ativo');
+            allPatients = allPatients.filter(p => p.isBedridden && p.status === 'Ativo');
+            break;
         case 'legal':
-            return allPatients.filter(p => p.demandItems?.includes('Itens Judiciais') && p.status === 'Ativo');
+            allPatients = allPatients.filter(p => p.demandItems?.includes('Itens Judiciais') && p.status === 'Ativo');
+            break;
         case 'municipal':
-            return allPatients.filter(p => p.demandItems?.includes('Itens Judiciais') && p.status === 'Ativo'); // Assuming judicial covers this.
+            allPatients = allPatients.filter(p => p.demandItems?.includes('Itens Judiciais') && p.status === 'Ativo'); // Assuming judicial covers this.
+            break;
         case 'all':
         default:
-            return allPatients;
+            // No primary filter needed
+            break;
     }
+
+    // Apply search query on the already filtered list
+    if (query) {
+        const lowercasedQuery = query.toLowerCase();
+        const numericQuery = query.replace(/[^\d]/g, '');
+        allPatients = allPatients.filter(patient => 
+            patient.name.toLowerCase().includes(lowercasedQuery) ||
+            (patient.cpf && patient.cpf.replace(/[^\d]/g, '').includes(numericQuery))
+        );
+    }
+
+    return allPatients;
 };
 
 export const getAllPatients = async (): Promise<Patient[]> => {
