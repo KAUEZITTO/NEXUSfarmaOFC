@@ -1,7 +1,7 @@
 
 
 import { Suspense } from 'react';
-import { getPatients } from '@/lib/data';
+import { getPatients, getUnits } from '@/lib/data';
 import type { PatientFilter } from '@/lib/types';
 import { PatientsClientPage } from './client-page';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -48,12 +48,19 @@ export default async function PatientsPage({
     const filter = (searchParams?.filter as PatientFilter) || 'active';
     const query = (searchParams?.q as string) || '';
     
-    // A busca de dados agora considera a consulta de pesquisa
-    const initialPatients = await getPatients(filter, query);
+    // Fetch both patients and units at the page level
+    const [initialPatients, initialUnits] = await Promise.all([
+        getPatients(filter, query),
+        getUnits()
+    ]);
 
     return (
         <Suspense fallback={<PatientsSkeleton />}>
-            <PatientsClientPage initialPatients={initialPatients} searchParams={searchParams} />
+            <PatientsClientPage 
+                initialPatients={initialPatients} 
+                initialUnits={initialUnits}
+                searchParams={searchParams} 
+            />
         </Suspense>
     );
 }

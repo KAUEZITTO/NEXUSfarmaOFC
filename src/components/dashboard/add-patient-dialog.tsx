@@ -28,7 +28,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Save, Trash2, Loader2, AlertTriangle, Upload, File, X, Printer } from 'lucide-react';
 import { addPatient, updatePatient, uploadFile } from '@/lib/actions';
-import { getUnits } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import type { Patient, Dosage, Unit, PatientDemandItem, PatientFile } from '@/lib/types';
 import { Separator } from '../ui/separator';
@@ -87,9 +86,10 @@ type AddPatientDialogProps = {
     patientToEdit?: Patient;
     trigger: React.ReactNode;
     onPatientSaved?: () => void;
+    units: Unit[]; // Receive units as a prop
 }
 
-export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: AddPatientDialogProps) {
+export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved, units }: AddPatientDialogProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -126,20 +126,6 @@ export function AddPatientDialog({ patientToEdit, trigger, onPatientSaved }: Add
   const [bedriddenCid, setBedriddenCid] = useState('');
   const [bedriddenPathology, setBedriddenPathology] = useState('');
   const [bedriddenTreatmentDuration, setBedriddenTreatmentDuration] = useState('');
-
-
-  const [units, setUnits] = useState<Unit[]>([]);
-
-
-  useEffect(() => {
-    async function loadUnits() {
-        if (isOpen) {
-            const fetchedUnits = await getUnits();
-            setUnits(fetchedUnits);
-        }
-    }
-    loadUnits();
-  }, [isOpen]);
 
   const resetForm = () => {
     setName('');

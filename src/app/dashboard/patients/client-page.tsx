@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { AddPatientDialog } from "@/components/dashboard/add-patient-dialog";
 import { Button } from "@/components/ui/button";
-import type { Patient, PatientFilter, PatientStatus } from "@/lib/types";
+import type { Patient, PatientFilter, PatientStatus, Unit } from "@/lib/types";
 import { ColumnDef } from "@tanstack/react-table";
 import { PlusCircle, Loader2, Eye, Edit, UserCheck, UserX, CheckCircle, XCircle, HeartPulse, MoreHorizontal, ArrowUpDown, Search, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -41,9 +41,11 @@ const filterCategories: { label: string, value: PatientFilter }[] = [
 
 export function PatientsClientPage({
   initialPatients,
+  initialUnits,
   searchParams
 }: {
   initialPatients: Patient[],
+  initialUnits: Unit[],
   searchParams?: { [key: string]: string | string[] | undefined }
 }) {
   const router = useRouter();
@@ -195,6 +197,12 @@ export function PatientsClientPage({
 
         return (
           <div className="flex items-center gap-2 justify-end">
+            <Button asChild>
+              <Link href={`/dashboard/dispense/new?patientId=${patient.id}`}>
+                <UserCheck className="mr-2 h-4 w-4" />
+                Atender
+              </Link>
+            </Button>
             <AlertDialog>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -211,12 +219,17 @@ export function PatientsClientPage({
                         Ver Histórico
                         </Link>
                     </DropdownMenuItem>
-                    <AddPatientDialog patientToEdit={patient} onPatientSaved={handlePatientSaved} trigger={
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            <span>Editar Cadastro</span>
-                        </DropdownMenuItem>
-                    } />
+                    <AddPatientDialog 
+                        patientToEdit={patient} 
+                        onPatientSaved={handlePatientSaved}
+                        units={initialUnits}
+                        trigger={
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                <span>Editar Cadastro</span>
+                            </DropdownMenuItem>
+                        } 
+                    />
                     <DropdownMenuSeparator />
                     <DropdownMenuSub>
                         <DropdownMenuSubTrigger>
@@ -288,18 +301,16 @@ export function PatientsClientPage({
             </CardDescription>
           </div>
           <div className="flex gap-2">
-            <Button asChild>
-              <Link href="/dashboard/dispense/new">
-                <UserCheck className="mr-2 h-4 w-4" />
-                Atender Paciente
-              </Link>
-            </Button>
-            <AddPatientDialog onPatientSaved={handlePatientSaved} trigger={
-              <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Adicionar Paciente
-              </Button>
-            } />
+            <AddPatientDialog 
+              onPatientSaved={handlePatientSaved}
+              units={initialUnits} 
+              trigger={
+                <Button>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Adicionar Paciente
+                </Button>
+              } 
+            />
           </div>
         </div>
          <div className="flex items-center space-x-2 pt-4 overflow-x-auto pb-2">
