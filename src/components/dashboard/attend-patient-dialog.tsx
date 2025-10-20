@@ -169,6 +169,7 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
         if (isOpen) {
             setLoading(true);
             try {
+                // Force dynamic data fetching every time the dialog opens
                 noStore();
                 const [patientsData, productsData] = await Promise.all([getPatients('all'), getProducts()]);
                 setAllPatients(patientsData);
@@ -579,4 +580,5 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
     </Dialog>
   );
 }
+
 
