@@ -5,7 +5,8 @@ import './globals.css';
 import { cn } from '@/lib/utils';
 import { Inter } from 'next/font/google';
 import AuthProvider from '@/components/auth/auth-provider';
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { CookieConsentBanner } from '@/components/cookie-consent-banner';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -35,6 +36,7 @@ export default function RootLayout({
           {children}
         </AuthProvider>
         <Toaster />
+        <CookieConsentBanner />
         <SpeedInsights />
       </body>
     </html>
