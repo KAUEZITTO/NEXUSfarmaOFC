@@ -1,5 +1,3 @@
-'use server';
-
 import { Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -298,7 +296,7 @@ async function DashboardData() {
     />
 }
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
     return (
         <>
             <DashboardHeader />
