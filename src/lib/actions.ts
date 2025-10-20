@@ -1,12 +1,31 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { readData, writeData, getProducts, getKnowledgeBase, getAllUsers, getUserByEmailFromDb } from './data';
+import { readData, writeData, getProducts as getProductsFromDb, getKnowledgeBase, getAllUsers, getUserByEmailFromDb, getPatients as getPatientsFromDb } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus } from './types';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase/admin';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './auth';
+
+// --- ACTIONS EXPOSED TO CLIENT ---
+
+// We are creating wrappers for our data functions to mark them as 'use server'.
+// This allows client components to call them securely.
+
+export async function getPatients(filter: Patient['status'] | 'all' = 'Ativo', query: string = ''): Promise<Patient[]> {
+    return getPatientsFromDb(filter, query);
+}
+
+export async function getProducts(): Promise<Product[]> {
+    return getProductsFromDb();
+}
+
+export async function getAllDispensations(): Promise<Dispensation[]> {
+    const dispensations = await readData<Dispensation>('dispensations');
+    return dispensations;
+}
+
 
 // --- UTILITIES ---
 const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -50,7 +69,7 @@ const logStockMovement = async (
 
 // --- PRODUCT ACTIONS ---
 export async function addProduct(productData: Omit<Product, 'id' | 'status'>): Promise<Product> {
-    const products = await getProducts();
+    const products = await getProductsFromDb();
     const newProduct: Product = {
         ...productData,
         id: generateId('prod'),
@@ -63,7 +82,7 @@ export async function addProduct(productData: Omit<Product, 'id' | 'status'>): P
 }
 
 export async function updateProduct(productId: string, productData: Partial<Omit<Product, 'id' | 'status'>>): Promise<Product> {
-    const products = await getProducts();
+    const products = await getProductsFromDb();
     const productIndex = products.findIndex(p => p.id === productId);
     if (productIndex === -1) throw new Error('Produto não encontrado.');
 
@@ -90,7 +109,7 @@ export async function updateProduct(productId: string, productData: Partial<Omit
 export async function zeroStock(category?: Product['category']): Promise<{ success: boolean, message: string }> {
     const session = await getServerSession(authOptions);
     const userEmail = session?.user?.name || 'Sistema';
-    const products = await getProducts();
+    const products = await getProductsFromDb();
     const movements: StockMovement[] = [];
     const movementDate = new Date().toISOString();
     let count = 0;
@@ -140,7 +159,7 @@ export async function zeroStock(category?: Product['category']): Promise<{ succe
 }
 
 export async function deleteProducts(productIds: string[]): Promise<{ success: boolean; message: string }> {
-    const allProducts = await getProducts();
+    const allProducts = await getProductsFromDb();
     const productsToDelete = allProducts.filter(p => productIds.includes(p.id));
     const remainingProducts = allProducts.filter(p => !productIds.includes(p.id));
     
@@ -276,7 +295,7 @@ export async function deletePatient(patientId: string): Promise<{ success: boole
 export async function addOrder(orderData: { unitId: string; unitName: string; orderType: OrderType, items: OrderItem[]; notes?: string; sentDate?: string; }) {
     const session = await getServerSession(authOptions);
     const orders = await readData<Order>('orders');
-    const products = await getProducts();
+    const products = await getProductsFromDb();
 
     const sentDate = orderData.sentDate ? new Date(orderData.sentDate).toISOString() : new Date().toISOString();
 
@@ -315,7 +334,7 @@ export async function addOrder(orderData: { unitId: string; unitName: string; or
 
 export async function deleteOrder(orderId: string): Promise<{ success: boolean; message?: string }> {
     const allOrders = await readData<Order>('orders');
-    const allProducts = await getProducts();
+    const allProducts = await getProductsFromDb();
 
     const orderToDelete = allOrders.find(o => o.id === orderId);
     if (!orderToDelete) {
@@ -391,7 +410,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
 export async function addDispensation(dispensationData: { patientId: string; patient: Omit<Patient, 'files'>; items: DispensationItem[]; notes?: string; }): Promise<Dispensation> {
     const session = await getServerSession(authOptions);
     const dispensations = await readData<Dispensation>('dispensations');
-    const products = await getProducts();
+    const products = await getProductsFromDb();
     const dispensationDate = new Date().toISOString();
     
     const newDispensation: Dispensation = {

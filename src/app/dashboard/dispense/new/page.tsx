@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Suspense } from 'react';
-import { getPatients, getProducts, getAllDispensations } from '@/lib/data';
+import { getProducts, getAllDispensations } from '@/lib/actions';
 import { NewDispensationClientPage } from './client-page';
 import LoadingNewDispensationPage from './loading';
 import type { Dispensation } from '@/lib/types';
@@ -11,8 +10,9 @@ export const dynamic = 'force-dynamic';
 
 export default async function NewDispensationPageWrapper() {
     noStore();
-    const [patientsData, productsData, dispensationsData] = await Promise.all([
-        getPatients('active'),
+    // Patient data is now fetched on demand in the client component.
+    // We still fetch products and dispensations here.
+    const [productsData, dispensationsData] = await Promise.all([
         getProducts(),
         getAllDispensations()
     ]);
@@ -20,7 +20,6 @@ export default async function NewDispensationPageWrapper() {
     return (
         <Suspense fallback={<LoadingNewDispensationPage />}>
             <NewDispensationClientPage 
-                initialPatients={patientsData} 
                 initialProducts={productsData} 
                 initialDispensations={dispensationsData as Dispensation[]}
             />

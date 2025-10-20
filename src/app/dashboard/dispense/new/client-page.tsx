@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -22,7 +21,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { X, Save, Trash2, Loader2, User, PackagePlus, ListPlus, CalendarClock, History, Layers, Info, FileText } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
-import { addDispensation } from '@/lib/actions';
+import { addDispensation, getPatients, getProducts, getAllDispensations } from '@/lib/actions';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { Patient, Product, DispensationItem as DispensationItemType, Dispensation } from '@/lib/types';
@@ -32,6 +31,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
+import { useDebounce } from 'use-debounce';
 
 type DispensationItem = DispensationItemType & {
   internalId: string;
@@ -40,15 +40,20 @@ type DispensationItem = DispensationItemType & {
 const itemCategories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)', 'Tiras de Glicemia/Lancetas'];
 
 interface NewDispensationClientPageProps {
-  initialPatients: Patient[];
   initialProducts: Product[];
   initialDispensations: Dispensation[];
 }
 
-export function NewDispensationClientPage({ initialPatients, initialProducts, initialDispensations }: NewDispensationClientPageProps) {
+export function NewDispensationClientPage({ initialProducts, initialDispensations }: NewDispensationClientPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  
+  // Patient Search State
+  const [patientSearch, setPatientSearch] = useState('');
+  const [debouncedPatientSearch] = useDebounce(patientSearch, 300);
+  const [patientResults, setPatientResults] = useState<Patient[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [lastDispensationInfo, setLastDispensationInfo] = useState<string | null>(null);
@@ -58,16 +63,35 @@ export function NewDispensationClientPage({ initialPatients, initialProducts, in
   const [selectedCategories, setSelectedCategories] = useState<Product['category'][]>([]);
   
   const [popoverOpen, setPopoverOpen] = useState(false);
-
+  
+  // Patient search effect
   useEffect(() => {
-    const patientIdFromUrl = searchParams.get('patientId');
-    if (patientIdFromUrl && initialPatients.length > 0) {
-        const patientToSelect = initialPatients.find(p => p.id === patientIdFromUrl);
-        if (patientToSelect) {
-            handlePatientSelect(patientToSelect);
+    async function searchPatients() {
+        if (debouncedPatientSearch.length > 2) {
+            setIsSearching(true);
+            const patients = await getPatients('active', debouncedPatientSearch);
+            setPatientResults(patients);
+            setIsSearching(false);
+        } else {
+            setPatientResults([]);
         }
     }
-  }, [initialPatients, searchParams]);
+    searchPatients();
+  }, [debouncedPatientSearch]);
+
+  // Handle selecting a patient from URL param
+  useEffect(() => {
+    const selectPatientById = async (patientId: string) => {
+        const patientToSelect = await getPatients('all', patientId); // Search by ID
+        if (patientToSelect.length > 0) {
+            handlePatientSelect(patientToSelect[0]);
+        }
+    }
+    const patientIdFromUrl = searchParams.get('patientId');
+    if (patientIdFromUrl) {
+        selectPatientById(patientIdFromUrl);
+    }
+  }, [searchParams]);
 
 
   const handleCategoryToggle = (category: Product['category']) => {
@@ -201,6 +225,8 @@ export function NewDispensationClientPage({ initialPatients, initialProducts, in
   const handlePatientSelect = (patient: Patient) => {
     setSelectedPatient(patient);
     setPopoverOpen(false);
+    setPatientResults([]); // Clear search results
+    setPatientSearch(''); // Clear search input
 
     const patientDispensations = initialDispensations
       .filter(d => d.patientId === patient.id)
@@ -265,11 +291,17 @@ export function NewDispensationClientPage({ initialPatients, initialProducts, in
                     </PopoverTrigger>
                     <PopoverContent className="w-[400px] p-0">
                         <Command>
-                            <CommandInput placeholder="Buscar por nome, CPF ou CNS..." />
+                            <CommandInput 
+                                placeholder="Buscar por nome, CPF ou CNS..." 
+                                value={patientSearch}
+                                onValueChange={setPatientSearch}
+                            />
                             <CommandList>
-                                <CommandEmpty>Nenhum paciente encontrado.</CommandEmpty>
+                                {isSearching && <CommandItem disabled>Buscando...</CommandItem>}
+                                {!isSearching && debouncedPatientSearch.length > 2 && patientResults.length === 0 && <CommandEmpty>Nenhum paciente encontrado.</CommandEmpty>}
+                                {debouncedPatientSearch.length <= 2 && !isSearching && <CommandEmpty>Digite mais de 2 caracteres para buscar.</CommandEmpty>}
                                 <CommandGroup>
-                                    {initialPatients.map((patient) => (
+                                    {patientResults.map((patient) => (
                                         <CommandItem
                                             key={patient.id}
                                             value={`${patient.name} ${patient.cpf} ${patient.cns}`}
