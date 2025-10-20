@@ -125,7 +125,7 @@ export default function LandingPage() {
             </div>
             <div className="text-xs text-muted-foreground">
                 <p>&copy; {new Date().getFullYear()} NexusFarma. Todos os direitos reservados.</p>
-                <p>Desenvolvido com ❤️ por Kauê Moreira para a Prefeitura de Igarapé-Açu.</p>
+                <p>Desenvolvido por Kauê Moreira para a Prefeitura de Igarapé-Açu.</p>
             </div>
         </div>
       </footer>
