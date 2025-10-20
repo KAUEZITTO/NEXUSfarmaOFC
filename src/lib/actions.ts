@@ -2,7 +2,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { readData, writeData, getProducts as getProductsFromDb, getKnowledgeBase, getAllUsers, getUserByEmailFromDb, getPatients as getPatientsFromDb } from './data';
+import { readData, writeData, getKnowledgeBase, getAllUsers, getUserByEmailFromDb, getPatients as getPatientsFromDb, getProducts as getProductsFromDb } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus } from './types';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase/admin';
