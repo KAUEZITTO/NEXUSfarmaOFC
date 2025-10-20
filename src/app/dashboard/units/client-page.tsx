@@ -59,8 +59,11 @@ export function UnitsClientPage({ initialUnits }: { initialUnits: Unit[] }) {
         </Button>
       ),
       cell: ({ row }) => {
+        const unit = row.original;
         return (
-          <div className="capitalize font-medium">{row.getValue('name')}</div>
+          <Link href={`/dashboard/units/${unit.id}`} className="capitalize font-medium text-primary hover:underline">
+            {row.getValue('name')}
+          </Link>
         );
       },
     },
