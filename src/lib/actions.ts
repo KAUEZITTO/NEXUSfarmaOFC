@@ -399,7 +399,7 @@ export async function addDispensation(dispensationData: { patientId: string; pat
     const newDispensation: Dispensation = {
       id: generateNumericId(),
       patientId: dispensationData.patientId,
-      patient: dispensationData.patient,
+      patient: dispensationData.patient, // Already correct type
       items: dispensationData.items,
       date: dispensationDate,
       creatorName: session?.user?.name || 'Usuário Desconhecido',
@@ -423,6 +423,7 @@ export async function addDispensation(dispensationData: { patientId: string; pat
     revalidatePath(`/dashboard/patients/${dispensationData.patientId}`);
     revalidatePath('/dashboard/inventory');
     revalidatePath('/dashboard/reports');
+    revalidatePath('/dashboard/dispense/new');
     
     return newDispensation;
 }
@@ -625,3 +626,5 @@ export async function updateUserLastSeen(userId: string) {
     // Revalidate the entire dashboard layout to update all sub-pages
     revalidatePath('/dashboard', 'layout');
 }
+
+    

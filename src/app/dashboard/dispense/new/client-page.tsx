@@ -150,10 +150,13 @@ export function NewDispensationClientPage({ initialPatients, initialProducts, in
     setIsSaving(true);
     const dispensationItems = items.map(({ internalId, ...rest }) => rest);
 
+    // Create a version of the patient object without the files property
+    const { files, ...patientForDispensation } = selectedPatient;
+
     try {
         const newDispensation = await addDispensation({
             patientId: selectedPatient.id,
-            patient: selectedPatient,
+            patient: patientForDispensation,
             items: dispensationItems
         });
 
@@ -361,7 +364,7 @@ export function NewDispensationClientPage({ initialPatients, initialProducts, in
                                                         <TableRow key={item.internalId}>
                                                             <TableCell className="font-medium">{item.name}</TableCell>
                                                             <TableCell>{item.batch || '—'}</TableCell>
-                                                            <TableCell>{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('pt-BR', {month: '2-digit', year:'2-digit'}) : '—'}</TableCell>
+                                                            <TableCell>{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('pt-BR', {month: '2-digit', year:'2-digit', timeZone: 'UTC'}) : '—'}</TableCell>
                                                             <TableCell>
                                                                 <Input 
                                                                     type="number" 
@@ -405,3 +408,5 @@ export function NewDispensationClientPage({ initialPatients, initialProducts, in
     </div>
   );
 }
+
+    

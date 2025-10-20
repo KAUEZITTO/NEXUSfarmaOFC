@@ -24,16 +24,17 @@ const renderItemRows = (items: DispensationItem[]) => {
         if (item.expiryDate) {
             const date = new Date(item.expiryDate);
             if (!isNaN(date.getTime())) {
-                formattedDate = date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                // Formatar para MM/AA
+                formattedDate = date.toLocaleDateString('pt-BR', { month: '2-digit', year: '2-digit', timeZone: 'UTC' });
             }
         }
         return (
-            <TableRow key={item.productId + (item.batch || index)} className={`border-b print:even:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-muted/20'}`}>
-                <TableCell className="font-medium">{item.name}</TableCell>
-                <TableCell className="text-center">{item.presentation || "--"}</TableCell>
-                <TableCell className="text-center">{item.batch || "--"}</TableCell>
-                <TableCell className="text-center">{formattedDate}</TableCell>
-                <TableCell className="text-right">{item.quantity.toLocaleString('pt-BR')}</TableCell>
+            <TableRow key={item.productId + (item.batch || index)} className={`border-b print:even:bg-gray-50 text-xs ${index % 2 === 0 ? 'bg-white' : 'bg-muted/20'}`}>
+                <TableCell className="font-medium py-1 px-2">{item.name}</TableCell>
+                <TableCell className="text-center py-1 px-2">{item.presentation || "--"}</TableCell>
+                <TableCell className="text-center py-1 px-2">{item.batch || "--"}</TableCell>
+                <TableCell className="text-center py-1 px-2">{formattedDate}</TableCell>
+                <TableCell className="text-right py-1 px-2">{item.quantity.toLocaleString('pt-BR')}</TableCell>
             </TableRow>
         );
     });
@@ -64,10 +65,11 @@ const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensatio
     
     const returnDate = getReturnDate(dispensation.date);
     const formattedDispensationDate = new Date(dispensation.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-    const categoryOrder: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)'];
+    const categoryOrder: Product['category'][] = ['Medicamento', 'Material Técnico', 'Tiras de Glicemia/Lancetas', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)'];
+
 
   return (
-    <div className={`max-w-4xl mx-auto bg-white text-black my-8 print:my-0 flex flex-col justify-between min-h-screen ${isFirstCopy ? 'shadow-lg print:shadow-none page-break-after' : 'shadow-lg print:shadow-none'}`}>
+    <div className={`max-w-4xl mx-auto bg-white text-black my-8 print:my-0 flex flex-col justify-between min-h-[95vh] print:min-h-screen ${isFirstCopy ? 'shadow-lg print:shadow-none page-break-after' : 'shadow-lg print:shadow-none'}`}>
       <div className="p-8">
         <header className="mb-4">
             <div className="grid grid-cols-3 items-center text-center border-b pb-4 border-gray-400">
@@ -92,11 +94,10 @@ const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensatio
                 <div><span className="font-semibold">Nome:</span> {dispensation.patient.name}</div>
                 <div><span className="font-semibold">CPF:</span> {dispensation.patient.cpf}</div>
                 <div><span className="font-semibold">CNS:</span> {dispensation.patient.cns}</div>
-                {dispensation.patient.unitName && <div><span className="font-semibold">Unidade:</span> {dispensation.patient.unitName}</div>}
-                <div><span className="font-semibold">Mandado:</span> {dispensation.patient.mandateType || 'N/A'}</div>
-                <div><span className="font-semibold">Data:</span> {formattedDispensationDate}</div>
-                <div className="font-bold"><span className="font-semibold">Retorno:</span> {returnDate}</div>
-                <div><span className="font-semibold">ID da Dispensa:</span> {dispensation.id}</div>
+                <div><span className="font-semibold">Demandas:</span> {dispensation.patient.demandItems?.join(', ') || 'N/A'}</div>
+                <div><span className="font-semibold">Data da Dispensação:</span> {formattedDispensationDate}</div>
+                <div className="font-bold"><span className="font-semibold">Previsão de Retorno:</span> {returnDate}</div>
+                <div className="col-span-full"><span className="font-semibold">ID da Dispensa:</span> {dispensation.id}</div>
             </div>
         </div>
 
@@ -108,12 +109,12 @@ const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensatio
                   <h3 className="font-bold text-md text-slate-600 tracking-wide uppercase mb-2">{category}</h3>
                   <Table className="border-collapse border border-gray-300">
                     <TableHeader>
-                      <TableRow className="bg-gray-200 hover:bg-gray-200 print:bg-gray-200">
-                        <TableHead className="w-[40%] font-semibold text-slate-700 border border-gray-300">Item</TableHead>
-                        <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Apresentação</TableHead>
-                        <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Lote</TableHead>
-                        <TableHead className="text-center font-semibold text-slate-700 border border-gray-300">Validade</TableHead>
-                        <TableHead className="text-right font-semibold text-slate-700 border border-gray-300">Quantidade</TableHead>
+                      <TableRow className="bg-gray-200 hover:bg-gray-200 print:bg-gray-200 text-xs">
+                        <TableHead className="w-[40%] font-semibold text-slate-700 border border-gray-300 py-1 px-2">Item</TableHead>
+                        <TableHead className="text-center font-semibold text-slate-700 border border-gray-300 py-1 px-2">Apresentação</TableHead>
+                        <TableHead className="text-center font-semibold text-slate-700 border border-gray-300 py-1 px-2">Lote</TableHead>
+                        <TableHead className="text-center font-semibold text-slate-700 border border-gray-300 py-1 px-2">Validade</TableHead>
+                        <TableHead className="text-right font-semibold text-slate-700 border border-gray-300 py-1 px-2">Quantidade</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody className="border border-gray-300">
@@ -143,7 +144,7 @@ const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensatio
               {dispensation.creatorName && <p className="mt-2">Documento gerado por: {dispensation.creatorName}</p>}
           </div>
         <p className="text-xs text-center mt-4 text-gray-500">
-          {isFirstCopy ? "1ª VIA - CAF" : "2ª VIA - PACIENTE"}
+          {isFirstCopy ? "1ª VIA - ARQUIVO CAF" : "2ª VIA - PACIENTE"}
         </p>
       </footer>
     </div>
@@ -175,3 +176,5 @@ export default async function DispensationReceiptPage({ params }: { params: { id
     </>
   );
 }
+
+    
