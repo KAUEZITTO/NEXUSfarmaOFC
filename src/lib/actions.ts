@@ -459,8 +459,7 @@ export async function updateUserProfile(userId: string, data: { name?: string; b
     await writeData('users', users);
 
     // Revalidate the path to ensure the UI updates on navigation
-    revalidatePath('/dashboard/settings');
-    revalidatePath('/dashboard');
+    revalidatePath('/dashboard', 'layout');
     
     // Return the updated user data so the client can update the session
     return { success: true, user: users[userIndex] };
