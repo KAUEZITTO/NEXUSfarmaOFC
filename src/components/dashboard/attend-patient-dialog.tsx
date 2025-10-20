@@ -101,38 +101,54 @@ const insulinKeywords = ['insulina', 'lantus', 'apidra', 'nph', 'regular', 'agul
 
 const getProductsForCategory = (allProducts: Product[], categoryName: Category): Product[] => {
     const categoryInfo = categories.find(c => c.name === categoryName);
-    if (!categoryInfo) return [];
 
-    if (categoryName === 'Insulinas') {
-        return allProducts.filter(p => insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)));
-    }
-     if (categoryName === 'Imunoglobulina') {
-        return allProducts.filter(p => p.name.toLowerCase().includes('imunoglobulina'));
+    if (!categoryInfo) {
+        return [];
     }
 
+    // Direct mapping for simple categories
     if (categoryInfo.productCategory) {
         const productCategories = Array.isArray(categoryInfo.productCategory)
             ? categoryInfo.productCategory
             : [categoryInfo.productCategory];
-
         return allProducts.filter(p => productCategories.includes(p.category));
     }
+
+    // Special keyword-based filtering
+    if (categoryName === 'Insulinas') {
+        return allProducts.filter(p => insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)));
+    }
+    if (categoryName === 'Imunoglobulina') {
+        return allProducts.filter(p => p.name.toLowerCase().includes('imunoglobulina'));
+    }
     
+    // "Outros" category logic
     if (categoryName === 'Outros') {
-        const allMappedProductCategories = categories
+        // Collect all categories that are explicitly handled elsewhere
+        const handledProductCategories = categories
             .map(c => c.productCategory)
             .flat()
             .filter(Boolean) as Product['category'][];
             
+        const handledKeywords = [
+            ...insulinKeywords,
+            'imunoglobulina'
+        ];
+
         return allProducts.filter(p => 
-            !allMappedProductCategories.includes(p.category) &&
-            !insulinKeywords.some(kw => p.name.toLowerCase().includes(kw)) &&
-            !p.name.toLowerCase().includes('imunoglobulina')
+            // Must not belong to any explicitly handled product category
+            !handledProductCategories.includes(p.category) &&
+            // Must not match any special keyword
+            !handledKeywords.some(kw => p.name.toLowerCase().includes(kw))
         );
     }
     
+    // Fallback for categories without a direct productCategory mapping (like demandItem-only ones)
+    // This part might need adjustment if there are such categories that should show products
+    // For now, if it's not one of the above, and has no productCategory, it returns empty.
     return [];
 };
+
 
 
 interface AttendPatientDialogProps {
@@ -364,7 +380,7 @@ export function AttendPatientDialog({ onDispensationSaved, trigger, initialPatie
     
     return (
         <Input 
-            placeholder="Nenhum produto encontrado nesta categoria"
+            placeholder="Nenhum produto encontrado"
             value={item.name}
             disabled
         />
