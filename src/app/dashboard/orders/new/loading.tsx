@@ -2,7 +2,7 @@
 // garantir que não haja erros de pré-renderização durante o build do Next.js.
 export default function LoadingNewOrderPage() {
     return (
-        <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 animate-pulse">
+        <div className="grid flex-1 items-start gap-4 md:gap-8">
             <div className="mx-auto grid w-full max-w-6xl flex-1 auto-rows-max gap-6">
                 <div className="flex items-center gap-4">
                     <div className="h-8 w-48 rounded-md bg-muted" />
