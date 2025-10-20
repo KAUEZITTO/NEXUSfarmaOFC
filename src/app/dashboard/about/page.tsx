@@ -46,6 +46,8 @@ const changelog = [
     { version: '0.9.2', changes: ['Migração completa do sistema de arquivos para o banco de dados Vercel KV, permitindo persistência de dados online.', 'Remoção de arquivos de dados JSON locais.'] },
 ];
 
+const CURRENT_VERSION = '3.5.1';
+
 export default function AboutPage() {
   return (
     <div className="space-y-6">
@@ -80,7 +82,7 @@ export default function AboutPage() {
                     Versão do Sistema
                 </h3>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  NexusFarma v3.5.1
+                  NexusFarma v{CURRENT_VERSION}
                 </p>
               </div>
           </CardContent>
@@ -179,5 +181,7 @@ export default function AboutPage() {
     
 
 
+
+    
 
     
