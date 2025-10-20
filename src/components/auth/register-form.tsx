@@ -9,7 +9,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { register } from '@/lib/actions';
 import type { Role, SubRole } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
@@ -26,7 +25,11 @@ function RegisterButton({ isPending }: { isPending: boolean }) {
 const roles: Role[] = ['Farmacêutico', 'Coordenador', 'Enfermeiro(a)', 'Odontólogo(a)', 'Biomédico(a)', 'Técnico de Enfermagem', 'Auxiliar de Farmácia', 'Digitador'];
 const subRoles: SubRole[] = ['CAF', 'CAPS', 'Hospital', 'e-Multi', 'Outro'];
 
-export function RegisterForm() {
+interface RegisterFormProps {
+    registerAction: (data: { name: string, email: string; password: string; role: Role; subRole?: SubRole; }) => Promise<{ success: boolean; message: string; }>;
+}
+
+export function RegisterForm({ registerAction }: RegisterFormProps) {
   const { toast } = useToast();
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -65,7 +68,7 @@ export function RegisterForm() {
     }
 
     try {
-      const result = await register({ name, email, password, role, subRole });
+      const result = await registerAction({ name, email, password, role, subRole });
       if (result.success) {
         toast({
             title: "Conta Criada com Sucesso!",

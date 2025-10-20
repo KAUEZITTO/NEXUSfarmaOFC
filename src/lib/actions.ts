@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -515,78 +514,6 @@ export async function uploadFile(formData: FormData): Promise<{ success: boolean
     };
 
     return { success: true, file: newFile };
-}
-
-const avatarColors = [
-  'hsl(211 100% 50%)', // Blue
-  'hsl(39 100% 50%)', // Orange
-  'hsl(0 84.2% 60.2%)', // Red
-  'hsl(142.1 76.2% 36.3%)', // Green
-  'hsl(262.1 83.3% 57.8%)', // Purple
-  'hsl(314.5 72.4% 57.3%)', // Pink
-  'hsl(198.8 93.4% 42%)' // Teal
-];
-
-// --- REGISTER ---
-export async function register({ name, email, password, role, subRole }: { name: string, email: string; password: string; role: Role; subRole?: SubRole; }) {
-    
-    try {
-        const adminAuth = getAuth(getAdminApp());
-        const users = await getAllUsers();
-
-        // Check in our KV database first
-        if (users.some(u => u.email === email)) {
-            return { success: false, message: 'Este email já está em uso.' };
-        }
-        
-        // Check in Firebase Auth
-        try {
-            await adminAuth.getUserByEmail(email);
-            // If it doesn't throw, user exists in Firebase Auth
-            return { success: false, message: 'Este email já está registrado no sistema de autenticação.' };
-        } catch (error: any) {
-            if (error.code !== 'auth/user-not-found') {
-                // Another error occurred, propagate it
-                throw error;
-            }
-            // If user is not found, we can proceed with creation
-        }
-
-
-        // Usar o Firebase Admin SDK para criar o usuário
-        const userRecord = await adminAuth.createUser({
-            email: email,
-            password: password,
-            displayName: name,
-        });
-        
-        const isFirstUser = users.length === 0;
-        const newUser: User = {
-            id: userRecord.uid,
-            email,
-            name,
-            role,
-            subRole: role === 'Farmacêutico' ? subRole : undefined,
-            accessLevel: isFirstUser ? 'Admin' : 'User',
-            avatarColor: avatarColors[Math.floor(Math.random() * avatarColors.length)],
-        };
-
-        await writeData<User>('users', [...users, newUser]);
-        
-        revalidatePath('/dashboard/user-management');
-
-        return { success: true, message: 'Usuário registrado com sucesso.' };
-
-    } catch (error: any) {
-        console.error("Registration error:", error);
-        if (error.code === 'auth/email-already-exists') {
-            return { success: false, message: 'Este email já está em uso.' };
-        }
-        if (error.code === 'auth/weak-password') {
-            return { success: false, message: 'A senha deve ter pelo menos 6 caracteres.' };
-        }
-        return { success: false, message: `Ocorreu um erro desconhecido ao criar a conta: ${error.message}` };
-    }
 }
 
 export async function uploadImage(formData: FormData): Promise<{ success: boolean; filePath?: string; error?: string }> {
