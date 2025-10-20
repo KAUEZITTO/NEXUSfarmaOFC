@@ -12,7 +12,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import Image from "next/image";
 import type { Dispensation, DispensationItem, Product } from "@/lib/types";
@@ -45,6 +44,15 @@ const renderItemRows = (items: DispensationItem[]) => {
 const getReturnDate = (dispensationDate: string) => {
     const date = new Date(dispensationDate);
     date.setDate(date.getDate() + 30);
+    
+    // Adjust for weekends
+    const dayOfWeek = date.getUTCDay();
+    if (dayOfWeek === 6) { // Saturday
+        date.setDate(date.getDate() + 2);
+    } else if (dayOfWeek === 0) { // Sunday
+        date.setDate(date.getDate() + 1);
+    }
+
     return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 };
 

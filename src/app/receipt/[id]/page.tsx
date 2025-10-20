@@ -1,4 +1,6 @@
 
+'use server';
+
 import React from "react";
 import { notFound } from "next/navigation";
 import {
@@ -13,7 +15,6 @@ import Image from "next/image";
 import type { Order, OrderItem, Product } from "@/lib/types";
 import { getOrder } from "@/lib/data";
 import { PrintActions } from "./print-actions";
-import { Loader2 } from "lucide-react";
 import { Logo } from "@/components/logo";
 
 const renderItemRows = (items: OrderItem[]) => {
