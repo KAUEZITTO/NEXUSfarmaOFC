@@ -14,11 +14,10 @@ import BirthdayBalloons from '@/components/dashboard/birthday-balloons';
 import { updateUserLastSeen } from '@/lib/actions';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
-const CURRENT_VERSION = '3.5.1';
+const CURRENT_VERSION = '3.5.0';
 
 const changelog = [
-    { version: '3.5.1', changes: ['Corrigida a instabilidade na geração de recibos (erro de hidratação) ao forçar a renderização no servidor.'] },
-    { version: '3.5.0', changes: ['Correção definitiva da impressão de recibos, padronizando a renderização no servidor.', 'Resolução do bug de status online/offline inconsistente.', 'Adicionada barra de pesquisa e corrigido a exibição de status na página de pacientes.', 'Adicionada a categoria "Tiras de Glicemia/Lancetas" e corrigido o filtro de produtos no atendimento.'] },
+    { version: '3.5.0', changes: ['Dashboard agora exibe lembretes de retorno para pacientes próximos.', 'Adicionada seção "Atividades Recentes" ao dashboard com as últimas dispensações e remessas.', 'Campo "Nome de Exibição" adicionado ao formulário de cadastro de novos usuários.', 'Implementado banner de consentimento de cookies para conformidade e transparência.'] },
 ];
 
 function UserActivityTracker() {
