@@ -197,7 +197,7 @@ export function PatientsClientPage({
 
         return (
           <div className="flex items-center gap-2 justify-end">
-            <Button asChild>
+            <Button asChild variant="outline" size="sm">
               <Link href={`/dashboard/dispense/new?patientId=${patient.id}`}>
                 <UserCheck className="mr-2 h-4 w-4" />
                 Atender

@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -22,7 +23,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { X, Save, Trash2, Loader2, User, PackagePlus, ListPlus, CalendarClock, History, Layers, Info, FileText } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { addDispensation } from '@/lib/actions';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { Patient, Product, DispensationItem as DispensationItemType, Dispensation } from '@/lib/types';
 import { AddItemsManuallyDialog } from '@/components/dashboard/add-items-manually-dialog';
@@ -46,6 +47,7 @@ interface NewDispensationClientPageProps {
 
 export function NewDispensationClientPage({ initialPatients, initialProducts, initialDispensations }: NewDispensationClientPageProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
 
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
@@ -56,6 +58,16 @@ export function NewDispensationClientPage({ initialPatients, initialProducts, in
   const [selectedCategories, setSelectedCategories] = useState<Product['category'][]>([]);
   
   const [popoverOpen, setPopoverOpen] = useState(false);
+
+  useEffect(() => {
+    const patientIdFromUrl = searchParams.get('patientId');
+    if (patientIdFromUrl && initialPatients.length > 0) {
+        const patientToSelect = initialPatients.find(p => p.id === patientIdFromUrl);
+        if (patientToSelect) {
+            handlePatientSelect(patientToSelect);
+        }
+    }
+  }, [initialPatients, searchParams]);
 
 
   const handleCategoryToggle = (category: Product['category']) => {
