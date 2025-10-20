@@ -4,11 +4,13 @@ import { notFound } from 'next/navigation';
 import {
   Card,
   CardHeader,
-  CardContent,
+  CardContent
 } from "@/components/ui/card";
 import { getUnit, getPatients, getOrdersForUnit } from "@/lib/data";
 import { Skeleton } from '@/components/ui/skeleton';
 import { UnitDetailsClientPage } from './client-page';
+
+export const dynamic = 'force-dynamic';
 
 async function UnitDetailsData({ unitId }: { unitId: string }) {
     const unitData = await getUnit(unitId);
@@ -16,6 +18,8 @@ async function UnitDetailsData({ unitId }: { unitId: string }) {
         notFound();
     }
     
+    // Otimização: buscar apenas os pacientes da unidade específica, se a função `getPatients` permitir.
+    // Por enquanto, a lógica de filtragem no cliente ou aqui no servidor após buscar todos é mantida.
     const [allPatientsData, unitOrdersData] = await Promise.all([
         getPatients('all'),
         getOrdersForUnit(unitId),

@@ -79,13 +79,13 @@ export function UnitDetailsClientPage({ initialUnit, initialPatientCount, initia
                 <p className="text-muted-foreground">{initialUnit.address}</p>
             </div>
         </div>
-         <div className="flex gap-2">
+         <div className="flex gap-4">
             <p className="flex items-center text-sm text-muted-foreground gap-2">
-                {initialUnit.hasPharmacy ? <CheckCircle className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-red-500" />}
+                {initialUnit.hasPharmacy ? <CheckCircle className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-destructive" />}
                 Farmácia
             </p>
              <p className="flex items-center text-sm text-muted-foreground gap-2">
-                {initialUnit.hasDentalOffice ? <CheckCircle className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-red-500" />}
+                {initialUnit.hasDentalOffice ? <CheckCircle className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-destructive" />}
                 Odontologia
             </p>
          </div>
@@ -108,7 +108,7 @@ export function UnitDetailsClientPage({ initialUnit, initialPatientCount, initia
             <Pill className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalMedicationsSent}</div>
+            <div className="text-2xl font-bold">{totalMedicationsSent.toLocaleString('pt-BR')}</div>
              <p className="text-xs text-muted-foreground">Total de itens (todo o período)</p>
           </CardContent>
         </Card>
@@ -118,7 +118,7 @@ export function UnitDetailsClientPage({ initialUnit, initialPatientCount, initia
             <Stethoscope className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalMaterialsSent}</div>
+            <div className="text-2xl font-bold">{totalMaterialsSent.toLocaleString('pt-BR')}</div>
             <p className="text-xs text-muted-foreground">Total de itens (todo o período)</p>
           </CardContent>
         </Card>

@@ -1,4 +1,6 @@
 
+'use server';
+
 import React from 'react';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
@@ -7,6 +9,7 @@ import { getProduct } from '@/lib/data';
 import { Barcode } from './barcode';
 import { PrintActions } from './print-actions';
 
+export const dynamic = 'force-dynamic';
 
 const ProductLabel = ({ product }: { product: Product }) => {
     return (

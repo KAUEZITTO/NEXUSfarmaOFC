@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import React from "react";
@@ -18,6 +17,7 @@ import type { Dispensation, DispensationItem, Product } from "@/lib/types";
 import { getDispensation } from "@/lib/data";
 import { PrintActions } from "@/app/receipt/[id]/print-actions";
 
+export const dynamic = 'force-dynamic';
 
 const renderItemRows = (items: DispensationItem[]) => {
     if (!items || items.length === 0) return null;

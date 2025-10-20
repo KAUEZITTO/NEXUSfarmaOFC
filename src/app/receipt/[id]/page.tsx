@@ -17,6 +17,8 @@ import { getOrder } from "@/lib/data";
 import { PrintActions } from "./print-actions";
 import { Logo } from "@/components/logo";
 
+export const dynamic = 'force-dynamic';
+
 const renderItemRows = (items: OrderItem[]) => {
     if (!items || items.length === 0) return null;
     return items.map((item, index) => {
