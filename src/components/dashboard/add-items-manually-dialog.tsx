@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -14,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ChevronLeft, ChevronDown, ChevronUp, Pill, Stethoscope, Beaker, Baby, Milk, ShoppingCart, Tooth } from 'lucide-react';
+import { ChevronLeft, ChevronDown, ChevronUp, Pill, Stethoscope, Beaker, Baby, Milk, ShoppingCart } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
@@ -39,10 +40,19 @@ type GroupedProduct = {
   batches: Product[];
 };
 
+const ToothIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="M9.34 4.12a2 2 0 0 1 2.06-1.12h1.2a2 2 0 0 1 2.06 1.12l1.24 3.72a2 2 0 0 0 1.94 1.25h.56a2 2 0 0 1 2 2v2.24a2 2 0 0 1-.52 1.4L18 17.5a2 2 0 0 1-2.4 1.39l-4.1-1.39a2 2 0 0 0-1 0l-4.1 1.39a2 2 0 0 1-2.4-1.39L2.52 14.63a2 2 0 0 1-.52-1.4V10.99a2 2 0 0 1 2-2h.56a2 2 0 0 0 1.94-1.25l1.24-3.72Z" />
+        <path d="M12 18v2" />
+        <path d="M16.5 14h-9" />
+    </svg>
+);
+
+
 const categoryConfig: { name: Product['category'], icon: React.ElementType }[] = [
     { name: 'Medicamento', icon: Pill },
     { name: 'Material Técnico', icon: Stethoscope },
-    { name: 'Odontológico', icon: Tooth },
+    { name: 'Odontológico', icon: ToothIcon },
     { name: 'Laboratório', icon: Beaker },
     { name: 'Fraldas', icon: Baby },
     { name: 'Fórmulas', icon: Milk },
