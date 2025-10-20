@@ -14,7 +14,7 @@ import { authOptions } from './auth';
 // We are creating wrappers for our data functions to mark them as 'use server'.
 // This allows client components to call them securely.
 
-export async function getPatients(filter: Patient['status'] | 'all' | 'active', query?: string): Promise<Patient[]> {
+export async function getPatients(filter: 'all' | 'active', query?: string): Promise<Patient[]> {
     return getPatientsFromDb(filter, query);
 }
 
@@ -409,11 +409,13 @@ export async function addDispensation(dispensationData: { patientId: string; pat
     const dispensations = await readData<Dispensation>('dispensations');
     const products = await getProductsFromDb();
     const dispensationDate = new Date().toISOString();
+
+    const { files, ...patientForDispensation } = dispensationData.patient;
     
     const newDispensation: Dispensation = {
       id: generateNumericId(),
       patientId: dispensationData.patientId,
-      patient: dispensationData.patient,
+      patient: patientForDispensation,
       items: dispensationData.items,
       date: dispensationDate,
       creatorName: session?.user?.name || 'Usuário Desconhecido',
