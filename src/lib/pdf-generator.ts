@@ -4,8 +4,11 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import type { Product, Patient, Dispensation, Order, Unit, StockMovement, OrderStatus } from './types';
-import { promises as fs } from 'fs';
-import path from 'path';
+
+// Import images directly to get their base64 representation
+import prefLogo from 'public/SMS-PREF.png';
+import nexusLogo from 'public/NEXUSnv.png';
+import cafLogo from 'public/CAF.png';
 
 
 // Extend jsPDF with the autoTable plugin
@@ -13,34 +16,14 @@ interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
 }
 
-const getImageAsBase64 = async (imagePath: string): Promise<string | null> => {
-    try {
-        // Correctly resolve the path to the public directory
-        const publicDir = path.join(process.cwd(), 'public');
-        const filePath = path.join(publicDir, imagePath);
-        
-        // Read the file directly from the filesystem
-        const fileBuffer = await fs.readFile(filePath);
-
-        // Convert to base64
-        const fileExtension = path.extname(imagePath).slice(1) || 'png';
-        return `data:image/${fileExtension};base64,${fileBuffer.toString('base64')}`;
-    } catch (error) {
-        console.error(`Error loading image file from filesystem: ${imagePath}`, error);
-        return null;
-    }
-}
-
 
 const addHeader = async (doc: jsPDFWithAutoTable, title: string, subtitle?: string) => {
     const pageWidth = doc.internal.pageSize.getWidth();
     
-    // Load images using the robust filesystem method
-    const [prefLogo, nexusLogo, cafLogo] = await Promise.all([
-        getImageAsBase64('/SMS-PREF.png'),
-        getImageAsBase64('/NEXUSnv.png'),
-        getImageAsBase64('/CAF.png')
-    ]);
+    // Logos are now imported directly. Their 'src' property contains the base64 string.
+    const prefLogoBase64 = prefLogo.src;
+    const nexusLogoBase64 = nexusLogo.src;
+    const cafLogoBase64 = cafLogo.src;
 
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(0, 0, 0);
@@ -48,8 +31,8 @@ const addHeader = async (doc: jsPDFWithAutoTable, title: string, subtitle?: stri
     const margin = 15;
 
     // Left Column: Prefeitura
-    if (prefLogo) {
-        doc.addImage(prefLogo, 'PNG', margin, 12, 25, 25);
+    if (prefLogoBase64) {
+        doc.addImage(prefLogoBase64, 'PNG', margin, 12, 25, 25);
     }
     doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
@@ -57,13 +40,13 @@ const addHeader = async (doc: jsPDFWithAutoTable, title: string, subtitle?: stri
     doc.text('SECRETARIA MUNICIPAL DE SAÚDE', margin, 44);
 
      // Center Column: NexusFarma
-    if (nexusLogo) {
-        doc.addImage(nexusLogo, 'PNG', pageWidth / 2 - 20, 12, 40, 15);
+    if (nexusLogoBase64) {
+        doc.addImage(nexusLogoBase64, 'PNG', pageWidth / 2 - 20, 12, 40, 15);
     }
 
     // Right Column: CAF
-    if (cafLogo) {
-        doc.addImage(cafLogo, 'PNG', pageWidth - margin - 25, 12, 25, 25);
+    if (cafLogoBase64) {
+        doc.addImage(cafLogoBase64, 'PNG', pageWidth - margin - 25, 12, 25, 25);
     }
     doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');

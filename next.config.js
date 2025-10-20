@@ -7,6 +7,9 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    esmExternals: 'loose', // Required for direct image imports in server components
+  },
   images: {
     remotePatterns: [
         {
