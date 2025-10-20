@@ -1,6 +1,4 @@
 
-'use server';
-
 import { getPatient } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { PrintActions } from "@/app/receipt/[id]/print-actions";
@@ -73,12 +71,12 @@ export default async function PatientRecordPage({ params }: { params: { patientI
                             <CardTitle className="text-base">Informações Pessoais</CardTitle>
                         </CardHeader>
                         <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            <div className="col-span-2"><DetailItem label="Nome Completo" value={patient.name} /></div>
+                            <div className="col-span-2 md:col-span-3"><DetailItem label="Nome Completo" value={patient.name} /></div>
                             <DetailItem label="CPF" value={patient.cpf} />
                             <DetailItem label="Cartão do SUS (CNS)" value={patient.cns} />
                             <DetailItem label="RG" value={patient.rg} />
                             <DetailItem label="Telefone(s)" value={patient.phone} />
-                            <div className="col-span-full"><DetailItem label="Endereço" value={patient.address} /></div>
+                            <div className="col-span-2 md:col-span-3"><DetailItem label="Endereço" value={patient.address} /></div>
                         </CardContent>
                     </Card>
                     
