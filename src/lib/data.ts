@@ -65,7 +65,7 @@ export async function getUnit(unitId: string): Promise<Unit | null> {
     return units.find(u => u.id === unitId) || null;
 }
 
-export const getPatients = async (filter: PatientFilter = 'active', query: string = ''): Promise<Patient[]> => {
+export const getPatients = async (filter: PatientFilter = 'active', query: string = '', unitId?: string): Promise<Patient[]> => {
     noStore();
     let allPatients = await readData<Patient>('patients');
     
@@ -96,6 +96,11 @@ export const getPatients = async (filter: PatientFilter = 'active', query: strin
         default:
             // No primary filter needed
             break;
+    }
+    
+    // Filter by unit if unitId is provided
+    if (unitId) {
+        allPatients = allPatients.filter(p => p.unitId === unitId);
     }
 
     // Apply search query on the already filtered list

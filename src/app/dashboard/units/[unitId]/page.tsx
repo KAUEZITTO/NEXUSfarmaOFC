@@ -9,25 +9,22 @@ import {
 import { getUnit, getPatients, getOrdersForUnit } from "@/lib/data";
 import { Skeleton } from '@/components/ui/skeleton';
 import { UnitDetailsClientPage } from './client-page';
-
-export const dynamic = 'force-dynamic';
+import { unstable_noStore as noStore } from 'next/cache';
 
 async function UnitDetailsData({ unitId }: { unitId: string }) {
+    noStore(); // Garante que os dados da unidade e pedidos são sempre frescos.
     const unitData = await getUnit(unitId);
     if (!unitData) {
         notFound();
     }
     
-    // Otimização: buscar apenas os pacientes da unidade específica, se a função `getPatients` permitir.
-    // Por enquanto, a lógica de filtragem no cliente ou aqui no servidor após buscar todos é mantida.
-    const [allPatientsData, unitOrdersData] = await Promise.all([
-        getPatients('all'),
+    // Otimização: buscar apenas os pacientes da unidade específica.
+    const [unitPatients, unitOrdersData] = await Promise.all([
+        getPatients('all', '', unitId),
         getOrdersForUnit(unitId),
     ]);
 
-    const patientCount = allPatientsData.filter(p => p.unitId === unitId).length;
-
-    return <UnitDetailsClientPage initialUnit={unitData} initialPatientCount={patientCount} initialOrders={unitOrdersData} />;
+    return <UnitDetailsClientPage initialUnit={unitData} initialPatientCount={unitPatients.length} initialOrders={unitOrdersData} />;
 }
 
 function UnitDetailsSkeleton() {

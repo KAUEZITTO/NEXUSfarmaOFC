@@ -1,5 +1,6 @@
-'use client';
+'use server';
 
+import { Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, CalendarDays, Clock, BarChart2, Users, UserRoundCheck, ShoppingCart, Activity, AlertTriangle } from "lucide-react";
@@ -11,64 +12,15 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Suspense, useEffect, useState } from "react";
 import { unstable_noStore as noStore } from "next/cache";
+import DashboardHeader from "@/components/dashboard/dashboard-header";
 
-// --- Client Component for Greeting ---
-function DashboardHeader() {
-    const { data: session } = useSession();
-
-    const getGreeting = () => {
-        const hour = new Date().getHours();
-        if (hour < 12) return "Bom dia";
-        if (hour < 18) return "Boa tarde";
-        return "Boa noite";
-    };
-
-    return (
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight">{getGreeting()}! {session?.user?.name?.split(' ')[0] || 'Usuário'}</h1>
-                <p className="text-muted-foreground">Bem-vindo(a) de volta ao painel NexusFarma.</p>
-            </div>
-            <Suspense fallback={<Skeleton className="h-10 w-64" />}>
-                 <DateTimeDisplay />
-            </Suspense>
-        </div>
-    );
-}
 
 type UpcomingReturn = {
     patientId: string;
     patientName: string;
     returnDate: string; // Formatted date string
 };
-
-function DateTimeDisplay() {
-    // This is now a client component, so we use state and effect to avoid hydration mismatches
-    const [time, setTime] = useState(new Date());
-
-    useEffect(() => {
-        const timer = setInterval(() => setTime(new Date()), 1000);
-        return () => clearInterval(timer);
-    }, []);
-
-    const currentDate = time.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    const currentTime = time.toLocaleTimeString('pt-BR');
-
-    return (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-6 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-                <CalendarDays className="h-4 w-4" />
-                <span>{currentDate}</span>
-            </div>
-            <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                <span>{currentTime}</span>
-            </div>
-        </div>
-    )
-}
 
 function DashboardSkeleton() {
     return (
@@ -327,45 +279,31 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
     );
 }
 
+async function DashboardData() {
+    noStore(); // Garante que os dados são sempre frescos
+    const [products, dispensations, users, activePatients, orders] = await Promise.all([
+        getProducts(),
+        getAllDispensations(),
+        getAllUsers(),
+        getPatients('active'),
+        getOrders(),
+    ]);
+
+    return <DashboardDataWrapper 
+        products={products}
+        dispensations={dispensations}
+        users={users}
+        activePatients={activePatients}
+        orders={orders}
+    />
+}
+
 export default function DashboardPage() {
-    const [data, setData] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            noStore();
-            try {
-                const [products, dispensations, users, activePatients, orders] = await Promise.all([
-                    getProducts(),
-                    getAllDispensations(),
-                    getAllUsers(),
-                    getPatients('active'),
-                    getOrders(),
-                ]);
-                setData({ products, dispensations, users, activePatients, orders });
-            } catch (error) {
-                console.error("Failed to fetch dashboard data", error);
-            } finally {
-                setLoading(false);
-            }
-        }
-        fetchData();
-    }, []);
-
     return (
         <>
             <DashboardHeader />
             <Suspense fallback={<DashboardSkeleton />}>
-                {loading || !data ? <DashboardSkeleton /> : (
-                    <DashboardDataWrapper 
-                        products={data.products}
-                        dispensations={data.dispensations}
-                        users={data.users}
-                        activePatients={data.activePatients}
-                        orders={data.orders}
-                    />
-                )}
+                <DashboardData />
             </Suspense>
         </>
     );
