@@ -8,7 +8,9 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   experimental: {
-    esmExternals: 'loose', // Required for direct image imports in server components
+    // This is required for server-side file reading in some environments.
+    // However, the correct way to handle images for PDF generation is different.
+    // esmExternals: 'loose', // This was part of the previous incorrect fix.
   },
   images: {
     remotePatterns: [

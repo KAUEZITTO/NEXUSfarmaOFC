@@ -4,26 +4,34 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import type { Product, Patient, Dispensation, Order, Unit, StockMovement, OrderStatus } from './types';
-
-// Import images directly to get their base64 representation
-import prefLogo from 'public/SMS-PREF.png';
-import nexusLogo from 'public/NEXUSnv.png';
-import cafLogo from 'public/CAF.png';
-
+import { promises as fs } from 'fs';
+import path from 'path';
 
 // Extend jsPDF with the autoTable plugin
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
 }
 
+// Helper function to get image as base64
+const getImageAsBase64 = async (imagePath: string): Promise<string | null> => {
+    try {
+        const fullPath = path.join(process.cwd(), imagePath);
+        const file = await fs.readFile(fullPath);
+        return file.toString('base64');
+    } catch (error) {
+        console.error(`Failed to read image at ${imagePath}:`, error);
+        return null;
+    }
+};
+
 
 const addHeader = async (doc: jsPDFWithAutoTable, title: string, subtitle?: string) => {
     const pageWidth = doc.internal.pageSize.getWidth();
     
-    // Logos are now imported directly. Their 'src' property contains the base64 string.
-    const prefLogoBase64 = prefLogo.src;
-    const nexusLogoBase64 = nexusLogo.src;
-    const cafLogoBase64 = cafLogo.src;
+    // Get logos as base64 strings
+    const prefLogoBase64 = await getImageAsBase64('public/SMS-PREF.png');
+    const nexusLogoBase64 = await getImageAsBase64('public/NEXUSnv.png');
+    const cafLogoBase64 = await getImageAsBase64('public/CAF.png');
 
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(0, 0, 0);
@@ -32,7 +40,7 @@ const addHeader = async (doc: jsPDFWithAutoTable, title: string, subtitle?: stri
 
     // Left Column: Prefeitura
     if (prefLogoBase64) {
-        doc.addImage(prefLogoBase64, 'PNG', margin, 12, 25, 25);
+        doc.addImage(`data:image/png;base64,${prefLogoBase64}`, 'PNG', margin, 12, 25, 25);
     }
     doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
@@ -41,12 +49,12 @@ const addHeader = async (doc: jsPDFWithAutoTable, title: string, subtitle?: stri
 
      // Center Column: NexusFarma
     if (nexusLogoBase64) {
-        doc.addImage(nexusLogoBase64, 'PNG', pageWidth / 2 - 20, 12, 40, 15);
+        doc.addImage(`data:image/png;base64,${nexusLogoBase64}`, 'PNG', pageWidth / 2 - 20, 12, 40, 15);
     }
 
     // Right Column: CAF
     if (cafLogoBase64) {
-        doc.addImage(cafLogoBase64, 'PNG', pageWidth - margin - 25, 12, 25, 25);
+        doc.addImage(`data:image/png;base64,${cafLogoBase64}`, 'PNG', pageWidth - margin - 25, 12, 25, 25);
     }
     doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
