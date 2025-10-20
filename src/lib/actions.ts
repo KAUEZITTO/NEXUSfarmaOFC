@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { readData, writeData, getProducts, getKnowledgeBase, getAllUsers, getUserByEmailFromDb } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus } from './types';
 import { getAuth } from 'firebase-admin/auth';
-import { initializeAdminApp } from '@/lib/firebase/admin';
+import { getAdminApp } from '@/lib/firebase/admin';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './auth';
 
@@ -462,8 +462,7 @@ export async function updateUserAccessLevel(userId: string, accessLevel: AccessL
 }
 
 export async function deleteUser(userId: string) {
-    const adminApp = initializeAdminApp();
-    const adminAuth = getAuth(adminApp);
+    const adminAuth = getAuth(getAdminApp());
     const users = await readData<User>('users');
     const userToDelete = users.find(u => u.id === userId);
     if (!userToDelete) {
@@ -532,8 +531,7 @@ const avatarColors = [
 export async function register({ name, email, password, role, subRole }: { name: string, email: string; password: string; role: Role; subRole?: SubRole; }) {
     
     try {
-        const adminApp = initializeAdminApp();
-        const adminAuth = getAuth(adminApp);
+        const adminAuth = getAuth(getAdminApp());
         const users = await getAllUsers();
 
         // Check in our KV database first
@@ -626,5 +624,3 @@ export async function updateUserLastSeen(userId: string) {
     // Revalidate the entire dashboard layout to update all sub-pages
     revalidatePath('/dashboard', 'layout');
 }
-
-    
