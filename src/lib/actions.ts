@@ -344,7 +344,7 @@ export async function addOrder(orderData: { unitId: string; unitName: string; or
     revalidatePath('/dashboard/orders');
     revalidatePath('/dashboard/inventory');
     revalidatePath('/dashboard/reports');
-    revalidatePath(`/dashboard/orders/history/${orderData.unitId}`);
+    revalidatePath(`/dashboard/units/${orderData.unitId}`);
 }
 
 export async function deleteOrder(orderId: string): Promise<{ success: boolean; message?: string }> {
@@ -393,7 +393,7 @@ export async function deleteOrder(orderId: string): Promise<{ success: boolean; 
 
     // Revalidate paths
     revalidatePath('/dashboard/orders');
-    revalidatePath(`/dashboard/orders/history/${orderToDelete.unitId}`);
+    revalidatePath(`/dashboard/units/${orderToDelete.unitId}`);
     revalidatePath('/dashboard/inventory');
     revalidatePath('/dashboard/reports');
 
@@ -415,7 +415,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
     await writeData('orders', orders);
     
     revalidatePath('/dashboard/orders');
-    revalidatePath(`/dashboard/orders/history/${orders[orderIndex].unitId}`);
+    revalidatePath(`/dashboard/units/${orders[orderIndex].unitId}`);
     revalidatePath('/dashboard/units');
     revalidatePath('/dashboard/reports');
 }
