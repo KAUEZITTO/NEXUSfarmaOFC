@@ -3,44 +3,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { readData, writeData, getProducts, getKnowledgeBase } from './data';
+import { readData, writeData, getProducts, getKnowledgeBase, getAllUsers, getUserByEmailFromDb } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus } from './types';
-import * as admin from 'firebase-admin';
+import { getAuth } from 'firebase-admin/auth';
+import { initializeAdminApp } from '@/lib/firebase/admin';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './auth';
-
-// --- FIREBASE ADMIN INITIALIZATION (CORRECTED & CENTRALIZED) ---
-// This function initializes the Firebase Admin SDK. It's designed to be called
-// only when needed and ensures it only runs once.
-function initializeAdminApp() {
-    if (admin.apps.length > 0) {
-        return admin.app();
-    }
-
-    // Check for essential environment variables
-    if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
-        console.error("Firebase Admin environment variables are not set.");
-        throw new Error("A configuração do servidor Firebase está incompleta. O registro de usuários não pode continuar.");
-    }
-    
-    // The private key comes with literal `\n` characters from the environment variable.
-    // They need to be replaced with actual newlines.
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
-
-    try {
-        return admin.initializeApp({
-            credential: admin.credential.cert({
-                projectId: process.env.FIREBASE_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                privateKey: privateKey,
-            }),
-        });
-    } catch (error: any) {
-        console.error("Falha Crítica ao Inicializar o Firebase Admin SDK:", error.message);
-        throw new Error(`Não foi possível inicializar o Firebase Admin. Causa: ${error.message}`);
-    }
-}
-
 
 // --- UTILITIES ---
 const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -493,7 +461,8 @@ export async function updateUserAccessLevel(userId: string, accessLevel: AccessL
 }
 
 export async function deleteUser(userId: string) {
-    const adminAuth = initializeAdminApp().auth();
+    const adminApp = initializeAdminApp();
+    const adminAuth = getAuth(adminApp);
     const users = await readData<User>('users');
     const userToDelete = users.find(u => u.id === userId);
     if (!userToDelete) {
@@ -562,8 +531,9 @@ const avatarColors = [
 export async function register({ name, email, password, role, subRole }: { name: string, email: string; password: string; role: Role; subRole?: SubRole; }) {
     
     try {
-        const adminAuth = initializeAdminApp().auth();
-        const users = await readData<User>('users');
+        const adminApp = initializeAdminApp();
+        const adminAuth = getAuth(adminApp);
+        const users = await getAllUsers();
 
         // Check in our KV database first
         if (users.some(u => u.email === email)) {
@@ -616,7 +586,7 @@ export async function register({ name, email, password, role, subRole }: { name:
         if (error.code === 'auth/weak-password') {
             return { success: false, message: 'A senha deve ter pelo menos 6 caracteres.' };
         }
-        return { success: false, message: 'Ocorreu um erro desconhecido ao criar a conta.' };
+        return { success: false, message: `Ocorreu um erro desconhecido ao criar a conta: ${error.message}` };
     }
 }
 

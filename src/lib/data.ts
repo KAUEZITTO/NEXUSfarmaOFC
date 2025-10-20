@@ -1,8 +1,7 @@
 
-
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
 import type { KnowledgeBaseItem } from './types';
-import { kv } from './kv';
+import { kv } from '@/lib/server/kv.server';
 import path from 'path';
 import { promises as fs } from 'fs';
 import { unstable_noStore as noStore } from 'next/cache';
@@ -251,5 +250,3 @@ export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
     const data = JSON.parse(fileContents);
     return data;
 }
-
-    
