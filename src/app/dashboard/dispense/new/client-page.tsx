@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -20,7 +19,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { X, Save, Trash2, Loader2, User, PackagePlus, ListPlus, CalendarClock, History, Layers, Info } from 'lucide-react';
+import { X, Save, Trash2, Loader2, User, PackagePlus, ListPlus, CalendarClock, History, Layers, Info, FileText } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { addDispensation } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
@@ -31,6 +30,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
 
 type DispensationItem = DispensationItemType & {
   internalId: string;
@@ -52,6 +52,7 @@ export function NewDispensationClientPage({ initialPatients, initialProducts, in
   const [lastDispensationInfo, setLastDispensationInfo] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [items, setItems] = useState<DispensationItem[]>([]);
+  const [notes, setNotes] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<Product['category'][]>([]);
   
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -157,7 +158,8 @@ export function NewDispensationClientPage({ initialPatients, initialProducts, in
         const newDispensation = await addDispensation({
             patientId: selectedPatient.id,
             patient: patientForDispensation,
-            items: dispensationItems
+            items: dispensationItems,
+            notes,
         });
 
         toast({
@@ -395,6 +397,27 @@ export function NewDispensationClientPage({ initialPatients, initialProducts, in
             </div>
         )}
       </div>
+
+       {selectedPatient && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Observações (Opcional)
+            </CardTitle>
+            <CardDescription>
+              Adicione qualquer observação ou justificativa sobre a dispensação.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              placeholder="Ex: Itens retirados por um familiar com documento."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </CardContent>
+        </Card>
+      )}
       
       <div className="md:hidden sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 border-t -mx-4">
         <div className="flex items-center justify-end gap-2">
@@ -408,5 +431,3 @@ export function NewDispensationClientPage({ initialPatients, initialProducts, in
     </div>
   );
 }
-
-    

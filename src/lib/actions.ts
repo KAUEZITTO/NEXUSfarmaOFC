@@ -1,4 +1,3 @@
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -389,7 +388,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
 
 
 // --- DISPENSATION ACTIONS ---
-export async function addDispensation(dispensationData: { patientId: string; patient: Omit<Patient, 'files'>; items: DispensationItem[] }): Promise<Dispensation> {
+export async function addDispensation(dispensationData: { patientId: string; patient: Omit<Patient, 'files'>; items: DispensationItem[]; notes?: string; }): Promise<Dispensation> {
     const session = await getServerSession(authOptions);
     const dispensations = await readData<Dispensation>('dispensations');
     const products = await getProducts();
@@ -398,10 +397,11 @@ export async function addDispensation(dispensationData: { patientId: string; pat
     const newDispensation: Dispensation = {
       id: generateNumericId(),
       patientId: dispensationData.patientId,
-      patient: dispensationData.patient, // Already correct type
+      patient: dispensationData.patient,
       items: dispensationData.items,
       date: dispensationDate,
       creatorName: session?.user?.name || 'Usuário Desconhecido',
+      notes: dispensationData.notes,
     };
 
     // Update stock for each item

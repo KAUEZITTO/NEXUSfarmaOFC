@@ -1,4 +1,3 @@
-
 import React from "react";
 import { notFound } from 'next/navigation';
 import {
@@ -99,6 +98,11 @@ const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensatio
                 <div className="font-bold"><span className="font-semibold">Previsão de Retorno:</span> {returnDate}</div>
                 <div className="col-span-full"><span className="font-semibold">ID da Dispensa:</span> {dispensation.id}</div>
             </div>
+            {dispensation.notes && (
+                 <div className="mt-4 p-3 border rounded-md bg-yellow-50 border-yellow-200">
+                    <p><span className="font-semibold">Observações:</span> {dispensation.notes}</p>
+                </div>
+            )}
         </div>
 
         <div className="space-y-6">
@@ -176,5 +180,3 @@ export default async function DispensationReceiptPage({ params }: { params: { id
     </>
   );
 }
-
-    
