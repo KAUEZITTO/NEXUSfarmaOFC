@@ -17,12 +17,6 @@ const CURRENT_VERSION = '3.5.0';
 
 const changelog = [
     { version: '3.5.0', changes: ['Correção definitiva da impressão de recibos, padronizando a renderização no servidor.', 'Resolução do bug de status online/offline inconsistente.', 'Adicionada barra de pesquisa e corrigido a exibição de status na página de pacientes.', 'Adicionada a categoria "Tiras de Glicemia/Lancetas" e corrigido o filtro de produtos no atendimento.'] },
-    { version: '3.4.0', changes: ['Desabilitado o cache de dados no servidor (`unstable_noStore`) para resolver erros de dados desatualizados e garantir a consistência em tempo real.'] },
-    { version: '3.0.7', changes: ['Implementada correção arquitetural definitiva na página de Inventário, consolidando toda a lógica em um único componente cliente para resolver o erro de build `Failed to collect page data`.'] },
-    { version: '2.9.1', changes: ['Correção arquitetural definitiva para o erro de build `Failed to collect page data` na página de Inventário, utilizando `router.refresh()` para revalidação de dados.'] },
-    { version: '2.9.0', changes: ['Refatoração da página de Inventário para isolar componentes Server/Client, corrigindo erro de build.'] },
-    { version: '2.4.2', changes: ['Removido callback `jwt` desnecessário que causava o erro `REQUEST_HEADER_TOO_LARGE` mesmo com a estratégia de sessão `database`.'] },
-    { version: '2.4.1', changes: ['Implementada correção definitiva do erro "REQUEST_HEADER_TOO_LARGE" utilizando a estratégia de sessão no banco de dados, o que minimiza o tamanho do cookie de autenticação e garante a estabilidade do sistema.'] },
 ];
 
 function UserActivityTracker() {

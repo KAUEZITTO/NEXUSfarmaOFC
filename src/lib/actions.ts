@@ -622,7 +622,6 @@ export async function updateUserLastSeen(userId: string) {
     if (userIndex !== -1) {
         users[userIndex].lastSeen = new Date().toISOString();
         await writeData('users', users);
-        // We don't need to revalidate here, as it's a background task.
-        // The dashboard page will refetch on its own interval.
     }
+    revalidatePath('/dashboard');
 }
