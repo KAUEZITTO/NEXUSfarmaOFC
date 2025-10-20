@@ -1,3 +1,4 @@
+
 import { Suspense } from 'react';
 import { getPatients, getUnits } from '@/lib/data';
 import type { PatientFilter } from '@/lib/types';
@@ -5,7 +6,6 @@ import { PatientsClientPage } from './client-page';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2 } from 'lucide-react';
-import { unstable_noStore as noStore } from 'next/cache';
 
 function PatientsSkeleton() {
     return (
@@ -44,7 +44,6 @@ export default async function PatientsPage({
 }: {
     searchParams?: { [key: string]: string | string[] | undefined };
 }) {
-    noStore(); // Ensures data is always fresh, preventing 500 errors from stale function invocations
     const filter = (searchParams?.filter as PatientFilter) || 'active';
     const query = (searchParams?.q as string) || '';
     
@@ -64,5 +63,3 @@ export default async function PatientsPage({
         </Suspense>
     );
 }
-
-    

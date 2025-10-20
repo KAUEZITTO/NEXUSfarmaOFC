@@ -18,10 +18,6 @@ export async function getPatients(filter: Patient['status'] | 'all' | 'active', 
     return getPatientsFromDb(filter, query);
 }
 
-export async function getProducts(): Promise<Product[]> {
-    return getProductsFromDb();
-}
-
 export async function getAllDispensations(): Promise<Dispensation[]> {
     const dispensations = await readData<Dispensation>('dispensations');
     return dispensations;

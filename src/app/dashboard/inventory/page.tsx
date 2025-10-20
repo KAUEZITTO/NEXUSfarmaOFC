@@ -41,6 +41,9 @@ function InventorySkeleton() {
     );
 }
 
+// This component now acts as a Server Component wrapper.
+// It fetches the initial data and passes it down to the client component.
+// This is a robust pattern for complex pages with client-side interactivity.
 export default async function InventoryPageWrapper() {
     const initialProducts = await getProducts();
     
