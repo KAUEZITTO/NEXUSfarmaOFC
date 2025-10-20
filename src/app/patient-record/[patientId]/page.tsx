@@ -1,4 +1,5 @@
 
+
 import { getPatient } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { PrintActions } from "@/app/receipt/[id]/print-actions";
