@@ -10,9 +10,9 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, FileText, Loader2, BarChart2, Package, Users, AlertTriangle, Sparkles, Filter } from "lucide-react";
-import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF, generatePatientReportPDF, generateUnitDispensationReportPDF, generateBatchReportPDF, generateEntriesAndExitsReportPDF, generatePatientListReportPDF, generateOrderStatusReportPDF } from "@/lib/pdf-generator";
+import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF, generatePatientReportPDF, generateUnitDispensationReportPDF, generateBatchReportPDF, generateEntriesAndExitsReportPDF, generatePatientListReportPDF, generateOrderStatusReportPDF } from "@/lib/actions";
 import { useState } from "react";
-import type { Product, Patient, Dispensation, Unit, Order, StockMovement, PatientDemandItem, OrderStatus } from "@/lib/types";
+import type { Product, Patient, Dispensation, Unit, Order, StockMovement, PatientDemandItem } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";

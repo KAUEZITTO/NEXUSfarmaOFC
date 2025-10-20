@@ -1,10 +1,13 @@
 
+'use server';
+
 import { Suspense } from 'react';
 import { getProducts, getAllPatients, getAllDispensations, getUnits, getOrders, getStockMovements } from "@/lib/data";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ReportsClientPage } from "./client-page";
 
-export const runtime = 'edge'; // Força a execução no Vercel Edge Runtime para otimizar o tamanho do pacote.
+// Removida a diretiva de runtime para usar o ambiente padrão Node.js, que é mais flexível com as dependências.
+// export const runtime = 'edge'; 
 
 async function ReportsData() {
     const [products, patients, dispensations, units, orders, stockMovements] = await Promise.all([

@@ -98,480 +98,473 @@ const addFooter = (doc: jsPDFWithAutoTable) => {
     }
 };
 
-export const generateCompleteReportPDF = async (
-    products: Product[],
-    patients: Patient[],
-    dispensations: Dispensation[],
-    orders: Order[],
-    period: string
-): Promise<string> => {
-  const doc = new jsPDF() as jsPDFWithAutoTable;
-  const startY = 85;
+type PdfActionResult = Promise<{ success: boolean; data?: string; error?: string }>;
 
-  // --- Summary Page ---
-  await addHeader(doc, 'Relatório Gerencial Completo', period);
+export async function generateCompleteReportPDF(
+    { products, patients, dispensations, orders, period }: { products: Product[], patients: Patient[], dispensations: Dispensation[], orders: Order[], period: string }
+): PdfActionResult {
+  try {
+    const doc = new jsPDF() as jsPDFWithAutoTable;
+    const startY = 85;
 
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Resumo do Período', 15, 80);
+    await addHeader(doc, 'Relatório Gerencial Completo', period);
 
-  const summaryData = [
-    ['Total de Produtos em Inventário (Geral):', products.length.toString()],
-    ['Total de Itens em Estoque (Geral):', products.reduce((sum, p) => sum + p.quantity, 0).toLocaleString('pt-BR')],
-    ['Produtos com Baixo Estoque (Geral):', products.filter(p => p.status === 'Baixo Estoque').length.toString()],
-    ['Total de Pacientes Ativos (Geral):', patients.filter(p => p.status === 'Ativo').length.toString()],
-    ['Total de Dispensações no Período:', dispensations.length.toLocaleString('pt-BR')],
-    ['Total de Pedidos para Unidades no Período:', orders.length.toLocaleString('pt-BR')],
-  ];
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Resumo do Período', 15, 80);
 
-  doc.autoTable({
-    startY: 85,
-    head: [['Métrica', 'Valor']],
-    body: summaryData,
-    theme: 'striped',
-    headStyles: { fillColor: [22, 163, 74] },
-    didDrawPage: (data) => {}
-  });
+    const summaryData = [
+      ['Total de Produtos em Inventário (Geral):', products.length.toString()],
+      ['Total de Itens em Estoque (Geral):', products.reduce((sum, p) => sum + p.quantity, 0).toLocaleString('pt-BR')],
+      ['Produtos com Baixo Estoque (Geral):', products.filter(p => p.status === 'Baixo Estoque').length.toString()],
+      ['Total de Pacientes Ativos (Geral):', patients.filter(p => p.status === 'Ativo').length.toString()],
+      ['Total de Dispensações no Período:', dispensations.length.toLocaleString('pt-BR')],
+      ['Total de Pedidos para Unidades no Período:', orders.length.toLocaleString('pt-BR')],
+    ];
 
-  const addEmptySection = (title: string) => {
+    doc.autoTable({
+      startY: 85,
+      head: [['Métrica', 'Valor']],
+      body: summaryData,
+      theme: 'striped',
+      headStyles: { fillColor: [22, 163, 74] },
+      didDrawPage: (data) => {}
+    });
+
+    const drawTableOrEmpty = async (title: string, head: any[], body: any[][], options: any) => {
       doc.addPage();
-      addHeader(doc, title, period);
-      doc.text('Nenhum dado para exibir neste período.', 15, startY);
-  };
-  
-  const drawTableOrEmpty = async (title: string, head: any[], body: any[][], options: any) => {
-    doc.addPage();
-    await addHeader(doc, title, period);
-    if (body.length > 0) {
-        doc.autoTable({
-            startY: startY,
-            head: head,
-            body: body,
-            ...options
-        });
-    } else {
-        doc.text('Nenhum dado para exibir neste período.', 15, startY);
+      await addHeader(doc, title, period);
+      if (body.length > 0) {
+          doc.autoTable({
+              startY: startY,
+              head: head,
+              body: body,
+              ...options
+          });
+      } else {
+          doc.text('Nenhum dado para exibir neste período.', 15, startY);
+      }
     }
+
+    await drawTableOrEmpty(
+      'Relatório de Inventário (Estoque Atual)',
+      [['Nome', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote']],
+      products.map(p => [
+          p.name,
+          p.category,
+          p.quantity.toString(),
+          p.status,
+          p.expiryDate ? new Date(p.expiryDate).toLocaleDateString('pt-BR') : 'N/A',
+          p.batch || 'N/A'
+      ]),
+      { theme: 'grid', headStyles: { fillColor: [37, 99, 235] } }
+    );
+
+    await drawTableOrEmpty(
+      'Relatório de Dispensações no Período',
+      [['Data', 'Paciente', 'CPF', 'Nº de Itens']],
+       dispensations.map(d => [
+          new Date(d.date).toLocaleDateString('pt-BR', { timeZone: 'UTC'}),
+          d.patient.name,
+          d.patient.cpf,
+          d.items.reduce((sum, item) => sum + item.quantity, 0).toString()
+      ]),
+      { theme: 'grid', headStyles: { fillColor: [107, 33, 168] } }
+    );
+
+    await drawTableOrEmpty(
+      'Relatório de Pedidos no Período',
+      [['Data', 'Unidade', 'Tipo', 'Nº de Itens', 'Status']],
+       orders.map(o => [
+          new Date(o.sentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}),
+          o.unitName,
+          o.orderType,
+          o.itemCount.toString(),
+          o.status
+      ]),
+      { theme: 'grid', headStyles: { fillColor: [13, 148, 136] } }
+    );
+    
+    await drawTableOrEmpty(
+      'Relatório de Pacientes Ativos (Geral)',
+      [['Nome', 'CPF', 'CNS', 'Unidade', 'Demandas']],
+      patients.filter(p => p.status === 'Ativo').map(p => [
+          p.name,
+          p.cpf,
+          p.cns,
+          p.unitName || 'N/A',
+          p.demandItems?.join(', ') || 'N/A'
+      ]),
+      { theme: 'grid', headStyles: { fillColor: [192, 38, 211] } }
+    );
+
+    addFooter(doc);
+
+    return { success: true, data: doc.output('datauristring') };
+  } catch (error) {
+    console.error('Error generating complete PDF report:', error);
+    return { success: false, error: 'Falha ao gerar relatório completo.' };
   }
-
-
-  // --- Inventory Section (shows all current inventory, not period-dependent) ---
-  await drawTableOrEmpty(
-    'Relatório de Inventário (Estoque Atual)',
-    [['Nome', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote']],
-    products.map(p => [
-        p.name,
-        p.category,
-        p.quantity.toString(),
-        p.status,
-        p.expiryDate ? new Date(p.expiryDate).toLocaleDateString('pt-BR') : 'N/A',
-        p.batch || 'N/A'
-    ]),
-    { theme: 'grid', headStyles: { fillColor: [37, 99, 235] } }
-  );
-
-  // --- Dispensations Section ---
-  await drawTableOrEmpty(
-    'Relatório de Dispensações no Período',
-    [['Data', 'Paciente', 'CPF', 'Nº de Itens']],
-     dispensations.map(d => [
-        new Date(d.date).toLocaleDateString('pt-BR', { timeZone: 'UTC'}),
-        d.patient.name,
-        d.patient.cpf,
-        d.items.reduce((sum, item) => sum + item.quantity, 0).toString()
-    ]),
-    { theme: 'grid', headStyles: { fillColor: [107, 33, 168] } }
-  );
-
-  // --- Orders Section ---
-  await drawTableOrEmpty(
-    'Relatório de Pedidos no Período',
-    [['Data', 'Unidade', 'Tipo', 'Nº de Itens', 'Status']],
-     orders.map(o => [
-        new Date(o.sentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}),
-        o.unitName,
-        o.orderType,
-        o.itemCount.toString(),
-        o.status
-    ]),
-    { theme: 'grid', headStyles: { fillColor: [13, 148, 136] } }
-  );
-  
-  // --- Active Patients Section (shows all active patients, not period-dependent) ---
-  await drawTableOrEmpty(
-    'Relatório de Pacientes Ativos (Geral)',
-    [['Nome', 'CPF', 'CNS', 'Unidade', 'Demandas']],
-    patients.filter(p => p.status === 'Ativo').map(p => [
-        p.name,
-        p.cpf,
-        p.cns,
-        p.unitName || 'N/A',
-        p.demandItems?.join(', ') || 'N/A'
-    ]),
-    { theme: 'grid', headStyles: { fillColor: [192, 38, 211] } }
-  );
-
-  addFooter(doc);
-
-  // Return the PDF as a base64 encoded string (data URI)
-  return doc.output('datauristring');
 };
 
-export const generateStockReportPDF = async (allProducts: Product[], categoryFilter?: string): Promise<string> => {
-    const doc = new jsPDF('l') as jsPDFWithAutoTable; // 'l' for landscape
-    
-    const title = categoryFilter && categoryFilter !== 'all' 
-        ? `Relatório de Estoque - ${categoryFilter}` 
-        : 'Relatório de Estoque Geral';
-    await addHeader(doc, title);
+export async function generateStockReportPDF({ products, categoryFilter }: { products: Product[], categoryFilter?: string }): PdfActionResult {
+    try {
+        const doc = new jsPDF('l') as jsPDFWithAutoTable;
+        const title = categoryFilter && categoryFilter !== 'all' ? `Relatório de Estoque - ${categoryFilter}` : 'Relatório de Estoque Geral';
+        await addHeader(doc, title);
 
-    const productsToDisplay = categoryFilter && categoryFilter !== 'all' 
-        ? allProducts.filter(p => p.category === categoryFilter) 
-        : allProducts;
+        const productsToDisplay = categoryFilter && categoryFilter !== 'all' ? products.filter(p => p.category === categoryFilter) : products;
 
-    const inventoryBody = productsToDisplay.map(p => [
-        p.name,
-        p.commercialName || 'N/A',
-        p.presentation || 'N/A',
-        p.category,
-        p.quantity.toLocaleString('pt-BR'),
-        p.status,
-        p.expiryDate ? new Date(p.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : 'N/A',
-        p.batch || 'N/A',
-        p.manufacturer || 'N/A',
-        p.supplier || 'N/A',
-    ]);
-
-    doc.autoTable({
-        startY: 85,
-        head: [['Princípio Ativo', 'Nome Comercial', 'Apresentação', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote', 'Fabricante', 'Fornecedor']],
-        body: inventoryBody,
-        theme: 'grid',
-        headStyles: { fillColor: [37, 99, 235], fontSize: 8 },
-        styles: { fontSize: 8 },
-        didDrawPage: async (data) => {
-            if (data.pageNumber > 1) {
-                await addHeader(doc, title);
+        doc.autoTable({
+            startY: 85,
+            head: [['Princípio Ativo', 'Nome Comercial', 'Apresentação', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote', 'Fabricante', 'Fornecedor']],
+            body: productsToDisplay.map(p => [p.name, p.commercialName || 'N/A', p.presentation || 'N/A', p.category, p.quantity.toLocaleString('pt-BR'), p.status, p.expiryDate ? new Date(p.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : 'N/A', p.batch || 'N/A', p.manufacturer || 'N/A', p.supplier || 'N/A']),
+            theme: 'grid',
+            headStyles: { fillColor: [37, 99, 235], fontSize: 8 },
+            styles: { fontSize: 8 },
+            didDrawPage: async (data) => {
+                if (data.pageNumber > 1) {
+                    await addHeader(doc, title);
+                }
             }
-        }
-    });
+        });
 
-    addFooter(doc);
-    return doc.output('datauristring');
-};
-
-export const generateExpiryReportPDF = async (products: Product[]): Promise<string> => {
-    const doc = new jsPDF() as jsPDFWithAutoTable;
-
-    await addHeader(doc, 'Relatório de Produtos a Vencer');
-
-    const expiringProducts = products
-        .filter(p => p.expiryDate) // Only products with an expiry date
-        .sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime()); // Sort by soonest to expire
-
-    const body = expiringProducts.map(p => [
-        p.name,
-        p.batch || 'N/A',
-        new Date(p.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}),
-        p.quantity.toString(),
-    ]);
-
-    doc.autoTable({
-        startY: 85,
-        head: [['Nome do Produto', 'Lote', 'Data de Validade', 'Quantidade']],
-        body: body,
-        theme: 'grid',
-        headStyles: { fillColor: [217, 119, 6] }, // Orange color for warning
-        didDrawPage: async (data) => {
-            if (data.pageNumber > 1) {
-                await addHeader(doc, 'Relatório de Produtos a Vencer');
-            }
-        }
-    });
-
-    addFooter(doc);
-    return doc.output('datauristring');
-};
-
-export const generatePatientReportPDF = async (dispensations: Dispensation[], period: string): Promise<string> => {
-    const doc = new jsPDF() as jsPDFWithAutoTable;
-
-    await addHeader(doc, 'Relatório de Atendimento de Pacientes', period);
-
-    const body = dispensations.map(d => {
-        const totalItems = d.items.reduce((sum, item) => sum + item.quantity, 0);
-        return [
-            d.patient.name,
-            d.patient.cpf,
-            new Date(d.date).toLocaleDateString('pt-BR', { timeZone: 'UTC'}),
-            totalItems.toString()
-        ]
-    });
-
-    doc.autoTable({
-        startY: 85,
-        head: [['Paciente', 'CPF', 'Data da Dispensação', 'Nº de Itens']],
-        body: body,
-        theme: 'grid',
-        headStyles: { fillColor: [107, 33, 168] }, // Purple color for patients
-        didDrawPage: async (data) => {
-            if (data.pageNumber > 1) {
-                await addHeader(doc, 'Relatório de Atendimento de Pacientes', period);
-            }
-        }
-    });
-
-    addFooter(doc);
-    return doc.output('datauristring');
-};
-
-export const generatePatientListReportPDF = async (patients: Patient[]): Promise<string> => {
-    const doc = new jsPDF() as jsPDFWithAutoTable;
-    await addHeader(doc, 'Relatório de Pacientes Cadastrados');
-
-    const body = patients.map(p => [
-        p.name,
-        p.cpf,
-        p.cns,
-        p.status,
-        p.demandItems?.join(', ') || 'Nenhuma'
-    ]);
-    
-    doc.autoTable({
-        startY: 85,
-        head: [['Nome do Paciente', 'CPF', 'CNS', 'Status', 'Demandas']],
-        body: body,
-        theme: 'grid',
-        headStyles: { fillColor: [107, 33, 168] }, // Purple
-        columnStyles: {
-            4: { cellWidth: 50 } // Demandas column
-        },
-        didDrawPage: async (data) => {
-            if (data.pageNumber > 1) {
-                await addHeader(doc, 'Relatório de Pacientes Cadastrados');
-            }
-        }
-    });
-
-    addFooter(doc);
-    return doc.output('datauristring');
+        addFooter(doc);
+        return { success: true, data: doc.output('datauristring') };
+    } catch (error) {
+        console.error('Error generating stock PDF report:', error);
+        return { success: false, error: 'Falha ao gerar relatório de estoque.' };
+    }
 }
 
-export const generateUnitDispensationReportPDF = async (orders: Order[], units: Unit[], period: string): Promise<string> => {
-    const doc = new jsPDF() as jsPDFWithAutoTable;
-    await addHeader(doc, 'Relatório de Dispensação por Unidade', period);
+export async function generateExpiryReportPDF({ products }: { products: Product[] }): PdfActionResult {
+    try {
+        const doc = new jsPDF() as jsPDFWithAutoTable;
+        await addHeader(doc, 'Relatório de Produtos a Vencer');
 
-    const unitDataMap = new Map<string, { totalItems: number, orderCount: number, type: string, name: string }>();
-
-    units.forEach(u => {
-        unitDataMap.set(u.id, { totalItems: 0, orderCount: 0, type: u.type, name: u.name });
-    });
-
-    orders.forEach(order => {
-        const unit = unitDataMap.get(order.unitId);
-        if (unit) {
-            unit.totalItems += order.itemCount;
-            unit.orderCount += 1;
-        }
-    });
-
-    const body = Array.from(unitDataMap.values()).map(u => [
-        u.name,
-        u.type,
-        u.orderCount.toString(),
-        u.totalItems.toLocaleString('pt-BR')
-    ]);
-
-    doc.autoTable({
-        startY: 85,
-        head: [['Nome da Unidade', 'Tipo', 'Total de Pedidos', 'Total de Itens Recebidos']],
-        body: body,
-        theme: 'grid',
-        headStyles: { fillColor: [13, 148, 136] }, // Teal color for units
-        didDrawPage: async (data) => {
-            if (data.pageNumber > 1) {
-                await addHeader(doc, 'Relatório de Dispensação por Unidade', period);
-            }
-        }
-    });
-    
-    addFooter(doc);
-    return doc.output('datauristring');
-};
-
-export const generateBatchReportPDF = async (products: Product[]): Promise<string> => {
-    const doc = new jsPDF() as jsPDFWithAutoTable;
-    await addHeader(doc, 'Relatório de Lotes');
-
-    const body = products.map(p => [
-        p.name,
-        p.batch || 'N/A',
-        p.expiryDate ? new Date(p.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : 'N/A',
-        p.quantity.toString()
-    ]);
-    
-    doc.autoTable({
-        startY: 85,
-        head: [['Nome do Produto', 'Lote', 'Validade', 'Quantidade']],
-        body: body,
-        theme: 'grid',
-        headStyles: { fillColor: [19, 78, 74] }, // Dark Teal
-        didDrawPage: async (data) => {
-            if (data.pageNumber > 1) {
-                await addHeader(doc, 'Relatório de Lotes');
-            }
-        }
-    });
-
-    addFooter(doc);
-    return doc.output('datauristring');
-};
-
-
-export const generateEntriesAndExitsReportPDF = async (movements: StockMovement[], allProducts: Product[], period: string): Promise<string> => {
-    const doc = new jsPDF() as jsPDFWithAutoTable;
-    await addHeader(doc, 'Relatório de Entradas e Saídas', period);
-
-    const productMap = new Map(allProducts.map(p => [p.id, p]));
-
-    // 1. Summary by Category
-    const summary: Record<string, { entries: number, exits: number }> = {};
-    
-    movements.forEach(m => {
-        const product = productMap.get(m.productId);
-        const category = product?.category || 'Desconhecida';
-        if (!summary[category]) {
-            summary[category] = { entries: 0, exits: 0 };
-        }
-        if (m.type === 'Entrada') {
-            summary[category].entries += m.quantityChange;
-        } else if (m.type === 'Saída') {
-            summary[category].exits += Math.abs(m.quantityChange);
-        }
-    });
-
-    const summaryBody = Object.entries(summary).map(([category, data]) => [
-        category,
-        data.entries.toLocaleString('pt-BR'),
-        data.exits.toLocaleString('pt-BR')
-    ]);
-
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Resumo de Movimentações por Categoria', 20, 80);
-    doc.autoTable({
-        startY: 85,
-        head: [['Categoria', 'Total de Entradas (Itens)', 'Total de Saídas (Itens)']],
-        body: summaryBody,
-        theme: 'grid',
-        headStyles: { fillColor: [107, 114, 128] }, // Gray
-    });
-
-
-    let finalY = (doc as any).lastAutoTable.finalY || 80;
-    
-    const checkPageBreak = (yOffset: number) => {
-        if (finalY + yOffset > doc.internal.pageSize.height - 30) {
-            doc.addPage();
-            finalY = 85;
-        }
-    };
-    
-    // 2. Entries List
-    const entries = movements.filter(m => m.type === 'Entrada');
-    if (entries.length > 0) {
-        checkPageBreak(20);
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Detalhes de Entradas', 20, finalY + 15);
-
-        const entriesBody = entries.map(m => [
-            new Date(m.date).toLocaleString('pt-BR', { timeZone: 'UTC' }),
-            m.productName,
-            m.reason,
-            m.quantityChange.toLocaleString('pt-BR'),
-            m.user,
-        ]);
+        const expiringProducts = products
+            .filter(p => p.expiryDate)
+            .sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime());
 
         doc.autoTable({
-            startY: finalY + 20,
-            head: [['Data', 'Produto', 'Motivo', 'Quantidade', 'Usuário']],
-            body: entriesBody,
+            startY: 85,
+            head: [['Nome do Produto', 'Lote', 'Data de Validade', 'Quantidade']],
+            body: expiringProducts.map(p => [
+                p.name,
+                p.batch || 'N/A',
+                new Date(p.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}),
+                p.quantity.toString(),
+            ]),
             theme: 'grid',
-            headStyles: { fillColor: [22, 163, 74] }, // Green
-            didDrawPage: async () => await addHeader(doc, 'Relatório de Entradas e Saídas (Continuação)', period)
+            headStyles: { fillColor: [217, 119, 6] },
+            didDrawPage: async (data) => {
+                if (data.pageNumber > 1) {
+                    await addHeader(doc, 'Relatório de Produtos a Vencer');
+                }
+            }
         });
-        finalY = (doc as any).lastAutoTable.finalY;
+
+        addFooter(doc);
+        return { success: true, data: doc.output('datauristring') };
+    } catch (error) {
+        console.error('Error generating expiry PDF report:', error);
+        return { success: false, error: 'Falha ao gerar relatório de validade.' };
     }
+}
 
-    // 3. Exits List
-    const exits = movements.filter(m => m.type === 'Saída');
-    if (exits.length > 0) {
-        checkPageBreak(20);
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Detalhes de Saídas', 20, finalY + 15);
+export async function generatePatientReportPDF({ dispensations, period }: { dispensations: Dispensation[], period: string }): PdfActionResult {
+    try {
+        const doc = new jsPDF() as jsPDFWithAutoTable;
+        await addHeader(doc, 'Relatório de Atendimento de Pacientes', period);
 
-        const exitsBody = exits.map(m => [
-            new Date(m.date).toLocaleString('pt-BR', { timeZone: 'UTC' }),
-            m.productName,
-            m.reason,
-            Math.abs(m.quantityChange).toLocaleString('pt-BR'),
-            m.user,
+        const body = dispensations.map(d => {
+            const totalItems = d.items.reduce((sum, item) => sum + item.quantity, 0);
+            return [
+                d.patient.name,
+                d.patient.cpf,
+                new Date(d.date).toLocaleDateString('pt-BR', { timeZone: 'UTC'}),
+                totalItems.toString()
+            ]
+        });
+
+        doc.autoTable({
+            startY: 85,
+            head: [['Paciente', 'CPF', 'Data da Dispensação', 'Nº de Itens']],
+            body: body,
+            theme: 'grid',
+            headStyles: { fillColor: [107, 33, 168] },
+            didDrawPage: async (data) => {
+                if (data.pageNumber > 1) {
+                    await addHeader(doc, 'Relatório de Atendimento de Pacientes', period);
+                }
+            }
+        });
+
+        addFooter(doc);
+        return { success: true, data: doc.output('datauristring') };
+    } catch (error) {
+        console.error('Error generating patient PDF report:', error);
+        return { success: false, error: 'Falha ao gerar relatório de pacientes.' };
+    }
+}
+
+export async function generatePatientListReportPDF({ patients }: { patients: Patient[] }): PdfActionResult {
+    try {
+        const doc = new jsPDF() as jsPDFWithAutoTable;
+        await addHeader(doc, 'Relatório de Pacientes Cadastrados');
+
+        const body = patients.map(p => [
+            p.name,
+            p.cpf,
+            p.cns,
+            p.status,
+            p.demandItems?.join(', ') || 'Nenhuma'
         ]);
         
         doc.autoTable({
-            startY: finalY + 20,
-            head: [['Data', 'Produto', 'Motivo', 'Quantidade', 'Usuário']],
-            body: exitsBody,
+            startY: 85,
+            head: [['Nome do Paciente', 'CPF', 'CNS', 'Status', 'Demandas']],
+            body: body,
             theme: 'grid',
-            headStyles: { fillColor: [220, 38, 38] }, // Red
-            didDrawPage: async () => await addHeader(doc, 'Relatório de Entradas e Saídas (Continuação)', period)
-        });
-    }
-
-    addFooter(doc);
-    return doc.output('datauristring');
-};
-
-export const generateOrderStatusReportPDF = async (
-    units: Unit[],
-    lastOrdersMap: Map<string, Order>,
-    status: OrderStatus
-): Promise<string> => {
-    const doc = new jsPDF() as jsPDFWithAutoTable;
-    const title = `Relatório de Unidades: Status "${status}"`;
-
-    await addHeader(doc, title);
-
-    const filteredUnits = units.filter(unit => {
-        const lastOrder = lastOrdersMap.get(unit.id);
-        return lastOrder?.status === status;
-    });
-
-    const body = filteredUnits.map(unit => {
-        const lastOrder = lastOrdersMap.get(unit.id);
-        return [
-            unit.name,
-            unit.type,
-            lastOrder ? new Date(lastOrder.sentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : 'N/A',
-            lastOrder?.orderType || 'N/A'
-        ];
-    });
-
-    doc.autoTable({
-        startY: 85,
-        head: [['Nome da Unidade', 'Tipo', 'Data do Último Pedido', 'Tipo do Pedido']],
-        body: body,
-        theme: 'grid',
-        headStyles: { fillColor: [37, 99, 235] },
-        didDrawPage: async (data) => {
-            if (data.pageNumber > 1) {
-                await addHeader(doc, title);
+            headStyles: { fillColor: [107, 33, 168] },
+            columnStyles: {
+                4: { cellWidth: 50 }
+            },
+            didDrawPage: async (data) => {
+                if (data.pageNumber > 1) {
+                    await addHeader(doc, 'Relatório de Pacientes Cadastrados');
+                }
             }
-        },
-    });
+        });
 
-    addFooter(doc);
-    return doc.output('datauristring');
-};
+        addFooter(doc);
+        return { success: true, data: doc.output('datauristring') };
+    } catch (error) {
+        console.error('Error generating patient list PDF report:', error);
+        return { success: false, error: 'Falha ao gerar lista de pacientes.' };
+    }
+}
+
+export async function generateUnitDispensationReportPDF({ orders, units, period }: { orders: Order[], units: Unit[], period: string }): PdfActionResult {
+    try {
+        const doc = new jsPDF() as jsPDFWithAutoTable;
+        await addHeader(doc, 'Relatório de Dispensação por Unidade', period);
+
+        const unitDataMap = new Map<string, { totalItems: number, orderCount: number, type: string, name: string }>();
+        units.forEach(u => unitDataMap.set(u.id, { totalItems: 0, orderCount: 0, type: u.type, name: u.name }));
+        orders.forEach(order => {
+            const unit = unitDataMap.get(order.unitId);
+            if (unit) {
+                unit.totalItems += order.itemCount;
+                unit.orderCount += 1;
+            }
+        });
+
+        const body = Array.from(unitDataMap.values()).map(u => [
+            u.name,
+            u.type,
+            u.orderCount.toString(),
+            u.totalItems.toLocaleString('pt-BR')
+        ]);
+
+        doc.autoTable({
+            startY: 85,
+            head: [['Nome da Unidade', 'Tipo', 'Total de Pedidos', 'Total de Itens Recebidos']],
+            body: body,
+            theme: 'grid',
+            headStyles: { fillColor: [13, 148, 136] },
+            didDrawPage: async (data) => {
+                if (data.pageNumber > 1) {
+                    await addHeader(doc, 'Relatório de Dispensação por Unidade', period);
+                }
+            }
+        });
+        
+        addFooter(doc);
+        return { success: true, data: doc.output('datauristring') };
+    } catch (error) {
+        console.error('Error generating unit dispensation PDF report:', error);
+        return { success: false, error: 'Falha ao gerar relatório por unidade.' };
+    }
+}
+
+export async function generateBatchReportPDF({ products }: { products: Product[] }): PdfActionResult {
+    try {
+        const doc = new jsPDF() as jsPDFWithAutoTable;
+        await addHeader(doc, 'Relatório de Lotes');
+
+        const body = products.map(p => [
+            p.name,
+            p.batch || 'N/A',
+            p.expiryDate ? new Date(p.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : 'N/A',
+            p.quantity.toString()
+        ]);
+        
+        doc.autoTable({
+            startY: 85,
+            head: [['Nome do Produto', 'Lote', 'Validade', 'Quantidade']],
+            body: body,
+            theme: 'grid',
+            headStyles: { fillColor: [19, 78, 74] },
+            didDrawPage: async (data) => {
+                if (data.pageNumber > 1) {
+                    await addHeader(doc, 'Relatório de Lotes');
+                }
+            }
+        });
+
+        addFooter(doc);
+        return { success: true, data: doc.output('datauristring') };
+    } catch (error) {
+        console.error('Error generating batch PDF report:', error);
+        return { success: false, error: 'Falha ao gerar relatório de lotes.' };
+    }
+}
+
+
+export async function generateEntriesAndExitsReportPDF({ movements, allProducts, period }: { movements: StockMovement[], allProducts: Product[], period: string }): PdfActionResult {
+    try {
+        const doc = new jsPDF() as jsPDFWithAutoTable;
+        await addHeader(doc, 'Relatório de Entradas e Saídas', period);
+
+        const productMap = new Map(allProducts.map(p => [p.id, p]));
+
+        const summary: Record<string, { entries: number, exits: number }> = {};
+        
+        movements.forEach(m => {
+            const product = productMap.get(m.productId);
+            const category = product?.category || 'Desconhecida';
+            if (!summary[category]) {
+                summary[category] = { entries: 0, exits: 0 };
+            }
+            if (m.type === 'Entrada') {
+                summary[category].entries += m.quantityChange;
+            } else if (m.type === 'Saída') {
+                summary[category].exits += Math.abs(m.quantityChange);
+            }
+        });
+
+        const summaryBody = Object.entries(summary).map(([category, data]) => [
+            category,
+            data.entries.toLocaleString('pt-BR'),
+            data.exits.toLocaleString('pt-BR')
+        ]);
+
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Resumo de Movimentações por Categoria', 20, 80);
+        doc.autoTable({
+            startY: 85,
+            head: [['Categoria', 'Total de Entradas (Itens)', 'Total de Saídas (Itens)']],
+            body: summaryBody,
+            theme: 'grid',
+            headStyles: { fillColor: [107, 114, 128] }, // Gray
+        });
+
+        let finalY = (doc as any).lastAutoTable.finalY || 80;
+        
+        const checkPageBreak = (yOffset: number) => {
+            if (finalY + yOffset > doc.internal.pageSize.height - 30) {
+                doc.addPage();
+                finalY = 85;
+            }
+        };
+        
+        const entries = movements.filter(m => m.type === 'Entrada');
+        if (entries.length > 0) {
+            checkPageBreak(20);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Detalhes de Entradas', 20, finalY + 15);
+
+            const entriesBody = entries.map(m => [
+                new Date(m.date).toLocaleString('pt-BR', { timeZone: 'UTC' }),
+                m.productName,
+                m.reason,
+                m.quantityChange.toLocaleString('pt-BR'),
+                m.user,
+            ]);
+
+            doc.autoTable({
+                startY: finalY + 20,
+                head: [['Data', 'Produto', 'Motivo', 'Quantidade', 'Usuário']],
+                body: entriesBody,
+                theme: 'grid',
+                headStyles: { fillColor: [22, 163, 74] },
+                didDrawPage: async () => await addHeader(doc, 'Relatório de Entradas e Saídas (Continuação)', period)
+            });
+            finalY = (doc as any).lastAutoTable.finalY;
+        }
+
+        const exits = movements.filter(m => m.type === 'Saída');
+        if (exits.length > 0) {
+            checkPageBreak(20);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Detalhes de Saídas', 20, finalY + 15);
+
+            const exitsBody = exits.map(m => [
+                new Date(m.date).toLocaleString('pt-BR', { timeZone: 'UTC' }),
+                m.productName,
+                m.reason,
+                Math.abs(m.quantityChange).toLocaleString('pt-BR'),
+                m.user,
+            ]);
+            
+            doc.autoTable({
+                startY: finalY + 20,
+                head: [['Data', 'Produto', 'Motivo', 'Quantidade', 'Usuário']],
+                body: exitsBody,
+                theme: 'grid',
+                headStyles: { fillColor: [220, 38, 38] },
+                didDrawPage: async () => await addHeader(doc, 'Relatório de Entradas e Saídas (Continuação)', period)
+            });
+        }
+
+        addFooter(doc);
+        return { success: true, data: doc.output('datauristring') };
+    } catch (error) {
+        console.error('Error generating entries/exits PDF report:', error);
+        return { success: false, error: 'Falha ao gerar relatório de entradas e saídas.' };
+    }
+}
+
+export async function generateOrderStatusReportPDF({ units, lastOrdersMap, status }: { units: Unit[], lastOrdersMap: Map<string, Order>, status: OrderStatus }): PdfActionResult {
+    try {
+        const doc = new jsPDF() as jsPDFWithAutoTable;
+        const title = `Relatório de Unidades: Status "${status}"`;
+        await addHeader(doc, title);
+
+        const filteredUnits = units.filter(unit => {
+            const lastOrder = lastOrdersMap.get(unit.id);
+            return lastOrder?.status === status;
+        });
+
+        doc.autoTable({
+            startY: 85,
+            head: [['Nome da Unidade', 'Tipo', 'Data do Último Pedido', 'Tipo do Pedido']],
+            body: filteredUnits.map(unit => {
+                const lastOrder = lastOrdersMap.get(unit.id);
+                return [
+                    unit.name,
+                    unit.type,
+                    lastOrder ? new Date(lastOrder.sentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : 'N/A',
+                    lastOrder?.orderType || 'N/A'
+                ];
+            }),
+            theme: 'grid',
+            headStyles: { fillColor: [37, 99, 235] },
+            didDrawPage: async (data) => {
+                if (data.pageNumber > 1) {
+                    await addHeader(doc, title);
+                }
+            },
+        });
+
+        addFooter(doc);
+        return { success: true, data: doc.output('datauristring') };
+    } catch (error) {
+        console.error('Error generating order status PDF report:', error);
+        return { success: false, error: 'Falha ao gerar relatório de status de pedidos.' };
+    }
+}
