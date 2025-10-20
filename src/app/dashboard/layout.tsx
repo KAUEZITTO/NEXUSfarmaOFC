@@ -12,10 +12,12 @@ import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger
 import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guide';
 import BirthdayBalloons from '@/components/dashboard/birthday-balloons';
 import { updateUserLastSeen } from '@/lib/actions';
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
-const CURRENT_VERSION = '3.5.0';
+const CURRENT_VERSION = '3.5.1';
 
 const changelog = [
+    { version: '3.5.1', changes: ['Corrigida a instabilidade na geração de recibos (erro de hidratação) ao forçar a renderização no servidor.'] },
     { version: '3.5.0', changes: ['Correção definitiva da impressão de recibos, padronizando a renderização no servidor.', 'Resolução do bug de status online/offline inconsistente.', 'Adicionada barra de pesquisa e corrigido a exibição de status na página de pacientes.', 'Adicionada a categoria "Tiras de Glicemia/Lancetas" e corrigido o filtro de produtos no atendimento.'] },
 ];
 
@@ -79,7 +81,7 @@ export default function DashboardLayout({
             </div>
             
             <UpdateDialog currentVersion={CURRENT_VERSION} changelog={changelog.slice(0,1)} />
-
+            <SpeedInsights />
           </TourGuideWrapper>
         </SidebarProvider>
   );
