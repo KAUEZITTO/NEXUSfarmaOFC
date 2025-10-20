@@ -13,7 +13,7 @@ export default function LoadingNewOrderPage() {
                 </div>
                 
                 <div className="grid gap-6">
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {/* Card 1 */}
                         <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
                             <div className="flex flex-col space-y-1.5 p-6"><div className="h-6 w-40 rounded-md bg-muted" /></div>
@@ -36,16 +36,7 @@ export default function LoadingNewOrderPage() {
                                 <div className="h-9 w-24 rounded-full bg-muted" />
                                 <div className="h-9 w-24 rounded-full bg-muted" />
                               </div>
-                            </div>
-                        </div>
-                        {/* Card 4 */}
-                        <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
-                            <div className="flex flex-col space-y-1.5 p-6"><div className="h-6 w-40 rounded-md bg-muted" /></div>
-                            <div className="p-6 pt-0">
-                                <div className="space-y-2">
-                                  <div className="h-10 w-full rounded-md bg-muted" />
-                                  <div className="h-4 w-3/4 mt-1 rounded-md bg-muted" />
-                                </div>
+                               <div className="h-10 w-full rounded-md bg-muted mt-4" />
                             </div>
                         </div>
                     </div>

@@ -27,15 +27,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { X, Save, Trash2, Loader2, Barcode, Warehouse, PackagePlus, ListPlus, CalendarClock, History, Layers } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { X, Save, Trash2, Loader2, Warehouse, PackagePlus, ListPlus, CalendarClock, History, Layers } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { addOrder } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { Unit, Product, OrderType } from '@/lib/types';
 import { AddItemsManuallyDialog } from '@/components/dashboard/add-items-manually-dialog';
-import { cn } from '@/lib/utils';
-
 
 type RemessaItem = {
   internalId: string;
@@ -58,7 +56,6 @@ interface NewOrderClientPageProps {
 export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderClientPageProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const scannerInputRef = useRef<HTMLInputElement>(null);
   
   const [destinationUnitId, setDestinationUnitId] = useState('');
   const [orderType, setOrderType] = useState<OrderType>('Pedido Mensal');
@@ -67,15 +64,8 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
   const [selectedCategories, setSelectedCategories] = useState<Product['category'][]>([]);
   
   const [items, setItems] = useState<RemessaItem[]>([]);
-  const [scannerInput, setScannerInput] = useState('');
-  const [quantityMultiplier, setQuantityMultiplier] = useState(1);
   const [sentDate, setSentDate] = useState(new Date().toISOString().split('T')[0]);
 
-  useEffect(() => {
-    if (destinationUnitId && selectedCategories.length > 0) {
-        scannerInputRef.current?.focus();
-    }
-  }, [destinationUnitId, selectedCategories]);
 
    const handleCategoryToggle = (category: Product['category']) => {
     setSelectedCategories(prev => 
@@ -127,42 +117,6 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
     }
     return true;
   };
-
-  const handleScannerKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter') return;
-    
-    e.preventDefault();
-    const value = scannerInput.trim();
-
-    if (value.endsWith('*')) {
-        const qty = parseInt(value.slice(0, -1), 10);
-        if (!isNaN(qty) && qty > 0) {
-            setQuantityMultiplier(qty);
-            toast({
-                title: 'Quantidade Definida!',
-                description: `Próximos itens serão adicionados em grupos de ${qty}.`
-            });
-        }
-        setScannerInput('');
-        return;
-    }
-
-    const product = initialProducts.find(p => p.id === value && selectedCategories.includes(p.category));
-
-    if (product) {
-        addProductToRemessa(product, quantityMultiplier);
-    } else {
-        toast({
-            variant: 'destructive',
-            title: 'Produto não encontrado',
-            description: `Nenhum produto corresponde ao código "${value}" nas categorias selecionadas.`
-        });
-    }
-
-    setScannerInput('');
-    setQuantityMultiplier(1);
-  };
-
 
   const handleRemoveItem = (id: string) => {
     setItems(items.filter((item) => item.internalId !== id));
@@ -271,7 +225,7 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
         </div>
         
         <div className="grid gap-6">
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Warehouse className="h-5 w-5" /> Passo 1: Destino</CardTitle>
@@ -324,7 +278,7 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
                 
                  <Card className={!destinationUnitId ? 'opacity-50 pointer-events-none' : ''}>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Layers className="h-5 w-5" /> Passo 3: Categoria(s)</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><Layers className="h-5 w-5" /> Passo 3: Adicionar Itens</CardTitle>
                     </CardHeader>
                     <CardContent>
                          <Label className="mb-2 block">Selecione as Categorias dos Itens</Label>
@@ -341,42 +295,17 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
                                 </Button>
                             ))}
                          </div>
-                    </CardContent>
-                </Card>
-
-                <Card className={!destinationUnitId || selectedCategories.length === 0 ? 'opacity-50 pointer-events-none' : ''}>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Barcode className="h-5 w-5" /> Passo 4: Adicionar Itens</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                         <div className="space-y-4">
-                            <div>
-                                <Label htmlFor="scanner">Leitor de Código de Barras</Label>
-                                <Input
-                                    ref={scannerInputRef}
-                                    id="scanner"
-                                    placeholder="Use o leitor ou digite o código..."
-                                    value={scannerInput}
-                                    onChange={(e) => setScannerInput(e.target.value)}
-                                    onKeyDown={handleScannerKeyDown}
-                                    disabled={!destinationUnitId || selectedCategories.length === 0 || isSaving}
-                                />
-                                <p className="text-xs text-muted-foreground mt-2">
-                                Dica: Digite a quantidade e um asterisco (ex: <strong>4*</strong>) antes de escanear.
-                                </p>
-                            </div>
-                            <AddItemsManuallyDialog 
+                         <AddItemsManuallyDialog 
                                 allProducts={productsForManualAdd}
                                 selectedCategories={selectedCategories}
                                 onAddProduct={addProductToRemessa} 
                                 trigger={
-                                    <Button variant="outline" className="w-full">
+                                    <Button variant="outline" className="w-full mt-4" disabled={selectedCategories.length === 0}>
                                         <ListPlus className="mr-2 h-4 w-4" />
                                         Adicionar Manualmente
                                     </Button>
                                 }
                             />
-                        </div>
                     </CardContent>
                 </Card>
             </div>
