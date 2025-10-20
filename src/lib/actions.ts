@@ -530,6 +530,15 @@ export async function uploadFile(formData: FormData): Promise<{ success: boolean
     return { success: true, file: newFile };
 }
 
+const avatarColors = [
+  'hsl(211 100% 50%)', // Blue
+  'hsl(39 100% 50%)', // Orange
+  'hsl(0 84.2% 60.2%)', // Red
+  'hsl(142.1 76.2% 36.3%)', // Green
+  'hsl(262.1 83.3% 57.8%)', // Purple
+  'hsl(314.5 72.4% 57.3%)', // Pink
+  'hsl(198.8 93.4% 42%)' // Teal
+];
 
 // --- REGISTER ---
 export async function register({ name, email, password, role, subRole }: { name: string, email: string; password: string; role: Role; subRole?: SubRole; }) {
@@ -572,6 +581,7 @@ export async function register({ name, email, password, role, subRole }: { name:
             role,
             subRole: role === 'Farmacêutico' ? subRole : undefined,
             accessLevel: isFirstUser ? 'Admin' : 'User',
+            avatarColor: avatarColors[Math.floor(Math.random() * avatarColors.length)],
         };
 
         await writeData<User>('users', [...users, newUser]);
@@ -624,6 +634,8 @@ export async function updateUserLastSeen(userId: string) {
         users[userIndex].lastSeen = new Date().toISOString();
         await writeData('users', users);
     }
-    revalidatePath('/dashboard');
+    // Revalidate the entire dashboard layout to update all sub-pages
+    revalidatePath('/dashboard', 'layout');
 }
+
 
