@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useEffect } from 'react';
@@ -14,9 +15,10 @@ import BirthdayBalloons from '@/components/dashboard/birthday-balloons';
 import { updateUserLastSeen } from '@/lib/actions';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
-const CURRENT_VERSION = '3.5.0';
+const CURRENT_VERSION = '3.5.1';
 
 const changelog = [
+    { version: '3.5.1', changes: ['Correção crítica na inicialização do Firebase Admin para resolver falhas no cadastro de novos usuários.', 'Garantida a sincronização de dados em tempo real em todo o sistema, corrigindo inconsistências no dashboard e status de usuários.', 'Otimizada a consulta de dados na página de detalhes da unidade para melhor performance.'] },
     { version: '3.5.0', changes: ['Dashboard agora exibe lembretes de retorno para pacientes próximos.', 'Adicionada seção "Atividades Recentes" ao dashboard com as últimas dispensações e remessas.', 'Campo "Nome de Exibição" adicionado ao formulário de cadastro de novos usuários.', 'Implementado banner de consentimento de cookies para conformidade e transparência.'] },
 ];
 
@@ -87,3 +89,4 @@ export default function DashboardLayout({
 }
 
     
+

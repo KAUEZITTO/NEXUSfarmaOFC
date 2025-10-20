@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 const changelog = [
+    { version: '3.5.1', changes: ['Correção crítica na inicialização do Firebase Admin para resolver falhas no cadastro de novos usuários.', 'Garantida a sincronização de dados em tempo real em todo o sistema, corrigindo inconsistências no dashboard e status de usuários.', 'Otimizada a consulta de dados na página de detalhes da unidade para melhor performance.'] },
     { version: '3.5.0', changes: ['Dashboard agora exibe lembretes de retorno para pacientes próximos.', 'Adicionada seção "Atividades Recentes" ao dashboard com as últimas dispensações e remessas.', 'Campo "Nome de Exibição" adicionado ao formulário de cadastro de novos usuários.', 'Implementado banner de consentimento de cookies para conformidade e transparência.'] },
     { version: '3.4.0', changes: ['Desabilitado o cache de dados no servidor (`unstable_noStore`) para resolver erros de dados desatualizados e garantir a consistência em tempo real.'] },
     { version: '3.0.7', changes: ['Implementada correção arquitetural definitiva na página de Inventário, consolidando toda a lógica em um único componente cliente para resolver o erro de build `Failed to collect page data`.'] },
@@ -79,7 +80,7 @@ export default function AboutPage() {
                     Versão do Sistema
                 </h3>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  NexusFarma v3.5.0
+                  NexusFarma v3.5.1
                 </p>
               </div>
           </CardContent>
@@ -176,3 +177,4 @@ export default function AboutPage() {
     
 
     
+
