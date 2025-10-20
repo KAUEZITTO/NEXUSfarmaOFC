@@ -13,7 +13,7 @@ export const initializeAdminApp = () => {
 
     // Verifica se as variáveis de ambiente essenciais estão presentes.
     if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
-        throw new Error("As variáveis de ambiente do Firebase Admin não estão configuradas corretamente. Verifique seu arquivo .env ou as configurações da Vercel.");
+        throw new Error("As variáveis de ambiente do Firebase Admin (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY) não estão configuradas corretamente. Verifique seu arquivo .env ou as configurações da Vercel.");
     }
 
     // A chave privada das variáveis de ambiente precisa ter suas quebras de linha formatadas corretamente.

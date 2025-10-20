@@ -1,3 +1,4 @@
+
 import { createClient } from '@vercel/kv';
 
 // O Next.js carrega automaticamente as variáveis de ambiente do arquivo .env.local
