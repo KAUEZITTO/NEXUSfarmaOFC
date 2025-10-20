@@ -156,7 +156,7 @@ export default function AboutPage() {
                         {changelog.map(log => (
                             <div key={log.version}>
                                 <h4 className="font-semibold text-foreground flex items-center gap-2">
-                                   Versão <Badge>{log.version.replace(/_/g, '.')}</Badge>
+                                   Versão <Badge>{log.version}</Badge>
                                 </h4>
                                 <ul className="list-disc pl-5 space-y-1 mt-2 text-sm text-muted-foreground">
                                     {log.changes.map((change: string, index: number) => (
@@ -178,3 +178,6 @@ export default function AboutPage() {
 
     
 
+
+
+    
