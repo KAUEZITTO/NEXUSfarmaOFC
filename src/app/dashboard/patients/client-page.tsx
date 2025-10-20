@@ -16,7 +16,7 @@ import { AddPatientDialog } from "@/components/dashboard/add-patient-dialog";
 import { Button } from "@/components/ui/button";
 import type { Patient, PatientFilter, PatientStatus, Unit } from "@/lib/types";
 import { ColumnDef } from "@tanstack/react-table";
-import { PlusCircle, Loader2, Eye, Edit, UserCheck, UserX, CheckCircle, XCircle, HeartPulse, MoreHorizontal, ArrowUpDown, Search, Trash2 } from "lucide-react";
+import { PlusCircle, Loader2, Eye, Edit, UserCheck, UserX, CheckCircle, XCircle, HeartPulse, MoreHorizontal, ArrowUpDown, Search, Trash2, Printer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { updatePatientStatus, deletePatient } from "@/lib/actions";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -110,6 +110,11 @@ export function PatientsClientPage({
       toast({ variant: 'destructive', title: 'Erro ao Excluir', description: result.message});
     }
   }
+
+  const handlePrintRecord = (patientId: string) => {
+    window.open(`/patient-record/${patientId}`, '_blank');
+  };
+
 
   const getColumns = (onUpdateStatus: (patientId: string, status: PatientStatus) => void): ColumnDef<Patient>[] => {
     return [
@@ -212,7 +217,7 @@ export function PatientsClientPage({
                     </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                    <DropdownMenuLabel>Ações do Paciente</DropdownMenuLabel>
                     <DropdownMenuItem asChild>
                         <Link href={`/dashboard/patients/${patient.id}`} className="cursor-pointer">
                         <Eye className="mr-2 h-4 w-4" />
@@ -230,6 +235,10 @@ export function PatientsClientPage({
                             </DropdownMenuItem>
                         } 
                     />
+                    <DropdownMenuItem onClick={() => handlePrintRecord(patient.id)}>
+                        <Printer className="mr-2 h-4 w-4" />
+                        <span>Imprimir Cadastro</span>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuSub>
                         <DropdownMenuSubTrigger>
