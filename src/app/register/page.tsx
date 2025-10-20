@@ -26,24 +26,29 @@ async function register(data: { name: string, email: string; password: string; r
     const { name, email, password, role, subRole } = data;
 
     try {
-        const adminAuth = getAuth(getAdminApp());
         const users = await getAllUsers();
 
-        // Check in our KV database first
+        // 1. Check in our KV database first
         if (users.some(u => u.email === email)) {
             return { success: false, message: 'Este email já está em uso.' };
         }
         
-        // Check in Firebase Auth
+        // 2. Initialize Admin SDK *only when needed* and check Firebase Auth
+        const adminAuth = getAuth(getAdminApp());
         try {
             await adminAuth.getUserByEmail(email);
+            // If the above does not throw, user exists in Firebase Auth but not KV.
+            // This is an inconsistent state, but for registration purposes, it means the email is taken.
             return { success: false, message: 'Este email já está registrado no sistema de autenticação.' };
         } catch (error: any) {
+            // "auth/user-not-found" is the expected error if the user is new.
+            // Any other error should be thrown.
             if (error.code !== 'auth/user-not-found') {
                 throw error;
             }
         }
 
+        // 3. If all checks pass, create the user
         const userRecord = await adminAuth.createUser({
             email: email,
             password: password,
@@ -74,6 +79,7 @@ async function register(data: { name: string, email: string; password: string; r
         if (error.code === 'auth/weak-password') {
             return { success: false, message: 'A senha deve ter pelo menos 6 caracteres.' };
         }
+        // This will now correctly show the original error if Firebase Admin fails to initialize
         return { success: false, message: `Ocorreu um erro desconhecido ao criar a conta: ${error.message}` };
     }
 }
