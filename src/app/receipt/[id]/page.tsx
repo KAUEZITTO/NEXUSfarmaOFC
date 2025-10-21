@@ -22,7 +22,17 @@ const renderItemRows = (items: OrderItem[]) => {
     return items.map((item, index) => {
         let formattedDate = "N/A";
         if (item.expiryDate) {
-            const date = new Date(item.expiryDate);
+            // Check if the date is in 'dd/MM/yyyy' format and convert it
+            let date;
+            if (item.expiryDate.includes('/')) {
+                const parts = item.expiryDate.split('/');
+                // new Date(year, monthIndex, day)
+                date = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+            } else {
+                // Assume ISO format 'yyyy-MM-dd'
+                date = new Date(item.expiryDate);
+            }
+
             if (!isNaN(date.getTime())) {
                 formattedDate = date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
             }
@@ -144,7 +154,7 @@ export default async function ReceiptPage({ params }: { params: { id: string } }
     const orderData = await getOrder(params.id);
 
     if (!orderData) {
-        return notFound();
+        notFound();
     }
   
     return (

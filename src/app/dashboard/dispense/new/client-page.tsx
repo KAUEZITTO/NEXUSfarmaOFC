@@ -136,7 +136,7 @@ export function NewDispensationClientPage({ initialProducts, initialDispensation
             name: product.name,
             quantity: quantity,
             batch: product.batch || 'N/A',
-            expiryDate: product.expiryDate ? new Date(product.expiryDate).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A',
+            expiryDate: product.expiryDate, // Salva a data original
             presentation: product.presentation || 'N/A',
             category: product.category,
         };

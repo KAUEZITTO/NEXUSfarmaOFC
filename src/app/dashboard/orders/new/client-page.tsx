@@ -109,7 +109,7 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
             name: product.name,
             quantity: quantity,
             batch: product.batch || 'N/A',
-            expiryDate: product.expiryDate ? new Date(product.expiryDate).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A',
+            expiryDate: product.expiryDate, // Salva a data original
             presentation: product.presentation || 'N/A',
             category: product.category,
         };
@@ -342,7 +342,7 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
                                                     <TableRow key={item.internalId}>
                                                         <TableCell className="font-medium">{item.name}</TableCell>
                                                         <TableCell>{item.batch || '—'}</TableCell>
-                                                        <TableCell>{item.expiryDate || '—'}</TableCell>
+                                                        <TableCell>{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : '—'}</TableCell>
                                                         <TableCell>
                                                             <Input 
                                                                 type="number" 
