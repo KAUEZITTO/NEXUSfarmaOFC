@@ -2,11 +2,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { readData, writeData, getProducts as getProductsFromDb } from './data';
+import { readData, writeData, getProducts as getProductsFromDb, getPatients as getPatientsFromDb, getAllDispensations } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus } from './types';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase/admin';
-import { getCurrentUser } from '@/lib/session';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // --- UTILITIES ---
 const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -27,9 +28,9 @@ const logStockMovement = async (
   movementDate: string,
   relatedId?: string
 ) => {
-  const user = await getCurrentUser();
+  const session = await getServerSession(authOptions);
   const movements = await readData<StockMovement>('stockMovements');
-  const userName = user?.name || 'Sistema';
+  const userName = session?.user?.name || 'Sistema';
 
   const newMovement: StockMovement = {
     id: generateId('mov'),
@@ -88,8 +89,8 @@ export async function updateProduct(productId: string, productData: Partial<Omit
 }
 
 export async function zeroStock(category?: Product['category']): Promise<{ success: boolean, message: string }> {
-    const user = await getCurrentUser();
-    const userName = user?.name || 'Sistema';
+    const session = await getServerSession(authOptions);
+    const userName = session?.user?.name || 'Sistema';
     const products = await getProductsFromDb();
     const movements: StockMovement[] = [];
     const movementDate = new Date().toISOString();
@@ -148,10 +149,9 @@ export async function deleteProducts(productIds: string[]): Promise<{ success: b
         return { success: false, message: "Nenhum produto encontrado para exclusão." };
     }
 
-    // Opcional: registrar a exclusão como uma movimentação de estoque
     const movements: StockMovement[] = [];
-    const user = await getCurrentUser();
-    const userName = user?.name || 'Sistema';
+    const session = await getServerSession(authOptions);
+    const userName = session?.user?.name || 'Sistema';
     const movementDate = new Date().toISOString();
 
     for (const product of productsToDelete) {
@@ -274,7 +274,7 @@ export async function deletePatient(patientId: string): Promise<{ success: boole
 
 // --- ORDER ACTIONS ---
 export async function addOrder(orderData: { unitId: string; unitName: string; orderType: OrderType, items: OrderItem[]; notes?: string; sentDate?: string; }) {
-    const user = await getCurrentUser();
+    const session = await getServerSession(authOptions);
     const orders = await readData<Order>('orders');
     const products = await getProductsFromDb();
 
@@ -290,10 +290,9 @@ export async function addOrder(orderData: { unitId: string; unitName: string; or
         sentDate: sentDate,
         status: 'Em análise',
         itemCount: orderData.items.reduce((sum, item) => sum + item.quantity, 0),
-        creatorName: user?.name || 'Usuário Desconhecido',
+        creatorName: session?.user?.name || 'Usuário Desconhecido',
     };
 
-    // Update stock for each item
     for (const item of newOrder.items) {
         const productIndex = products.findIndex(p => p.id === item.productId);
         if (productIndex !== -1) {
@@ -324,7 +323,6 @@ export async function deleteOrder(orderId: string): Promise<{ success: boolean; 
 
     const reversalDate = new Date().toISOString();
 
-    // Return items to stock
     for (const item of orderToDelete.items) {
         const productIndex = allProducts.findIndex(p => p.id === item.productId);
         if (productIndex !== -1) {
@@ -333,7 +331,6 @@ export async function deleteOrder(orderId: string): Promise<{ success: boolean; 
             allProducts[productIndex].status = allProducts[productIndex].quantity <= 0 ? 'Sem Estoque' : allProducts[productIndex].quantity < 20 ? 'Baixo Estoque' : 'Em Estoque';
             await logStockMovement(item.productId, item.name, 'Entrada', 'Estorno de Remessa', item.quantity, originalQuantity, reversalDate, orderToDelete.id);
         } else {
-            // Product does not exist anymore, create it
             console.warn(`Produto com ID ${item.productId} não encontrado durante estorno. Criando novo produto.`);
             const newProduct: Product = {
                 id: item.productId,
@@ -350,14 +347,10 @@ export async function deleteOrder(orderId: string): Promise<{ success: boolean; 
         }
     }
 
-    // Filter out the deleted order
     const updatedOrders = allOrders.filter(o => o.id !== orderId);
-
-    // Save updated data
     await writeData('products', allProducts);
     await writeData('orders', updatedOrders);
 
-    // Revalidate paths
     revalidatePath('/dashboard/orders');
     revalidatePath(`/dashboard/units/${orderToDelete.unitId}`);
     revalidatePath('/dashboard/inventory');
@@ -389,7 +382,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
 
 // --- DISPENSATION ACTIONS ---
 export async function addDispensation(dispensationData: { patientId: string; patient: Omit<Patient, 'files'>; items: DispensationItem[]; notes?: string; }): Promise<Dispensation> {
-    const user = await getCurrentUser();
+    const session = await getServerSession(authOptions);
     const dispensations = await readData<Dispensation>('dispensations');
     const products = await getProductsFromDb();
     const dispensationDate = new Date().toISOString();
@@ -402,11 +395,10 @@ export async function addDispensation(dispensationData: { patientId: string; pat
       patient: patientForDispensation,
       items: dispensationData.items,
       date: dispensationDate,
-      creatorName: user?.name || 'Usuário Desconhecido',
+      creatorName: session?.user?.name || 'Usuário Desconhecido',
       notes: dispensationData.notes,
     };
 
-    // Update stock for each item
     for (const item of newDispensation.items) {
         const productIndex = products.findIndex(p => p.id === item.productId);
         if (productIndex !== -1) {
@@ -424,7 +416,7 @@ export async function addDispensation(dispensationData: { patientId: string; pat
     revalidatePath(`/dashboard/patients/${dispensationData.patientId}`);
     revalidatePath('/dashboard/inventory');
     revalidatePath('/dashboard/reports');
-    revalidatePath('/dashboard/dispense/new');
+    revalidatePath('/dashboard');
     
     return newDispensation;
 }
@@ -438,14 +430,10 @@ export async function updateUserProfile(userId: string, data: { name?: string; b
         throw new Error('Usuário não encontrado.');
     }
 
-    // Update the user data in our database (Vercel KV)
     users[userIndex] = { ...users[userIndex], ...data };
     await writeData('users', users);
-
-    // Revalidate the path to ensure the UI updates on navigation
     revalidatePath('/dashboard', 'layout');
     
-    // Return the updated user data so the client can update the session
     return { success: true, user: users[userIndex] };
 }
 
@@ -469,21 +457,17 @@ export async function deleteUser(userId: string) {
          throw new Error('Usuário não encontrado para exclusão.');
     }
 
-    // Excluir do Firebase Auth
     try {
         await adminAuth.deleteUser(userId);
     } catch (error: any) {
-        // Se o usuário não for encontrado no Firebase, podemos continuar para removê-lo do nosso DB
         if (error.code !== 'auth/user-not-found') {
             console.error("Erro ao excluir usuário do Firebase Auth:", error);
             throw new Error('Erro ao excluir usuário do sistema de autenticação.');
         }
     }
 
-    // Excluir do Vercel KV
     const updatedUsers = users.filter(u => u.id !== userId);
     await writeData('users', updatedUsers);
-
     revalidatePath('/dashboard/user-management');
 }
 
@@ -499,8 +483,6 @@ export async function uploadFile(formData: FormData): Promise<{ success: boolean
         return { success: false, error: 'O arquivo é muito grande (limite de 5MB).' };
     }
 
-    // Convert the file to a Base64 data URL to store in KV.
-    // This is not ideal for large files but works for a self-contained solution without external storage.
     const arrayBuffer = await file.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString('base64');
     const mimeType = file.type;
@@ -533,8 +515,6 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
         const mimeType = file.type;
         const dataUrl = `data:${mimeType};base64,${base64}`;
 
-        // In a real app, you'd upload to a service and get a URL.
-        // For this self-contained example, the data URL is the "path".
         return { success: true, filePath: dataUrl };
     } catch (e) {
         return { success: false, error: 'Falha ao processar a imagem.' };
@@ -549,6 +529,5 @@ export async function updateUserLastSeen(userId: string) {
         users[userIndex].lastSeen = new Date().toISOString();
         await writeData('users', users);
     }
-    // Revalidate the entire dashboard layout to update all sub-pages
     revalidatePath('/dashboard', 'layout');
 }
