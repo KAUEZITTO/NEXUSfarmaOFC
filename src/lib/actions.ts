@@ -7,6 +7,8 @@ import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, Disp
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { generatePdf } from '@/lib/pdf-generator';
+import { getAuth } from 'firebase-admin/auth';
+import { getAdminApp } from '@/lib/firebase/admin';
 
 // --- UTILITIES ---
 const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -420,7 +422,70 @@ export async function addDispensation(dispensationData: { patientId: string; pat
     return newDispensation;
 }
 
-// --- USER PROFILE ACTIONS ---
+// --- USER PROFILE & MANAGEMENT ACTIONS ---
+const avatarColors = [
+  'hsl(211 100% 50%)', // Blue
+  'hsl(39 100% 50%)', // Orange
+  'hsl(0 84.2% 60.2%)', // Red
+  'hsl(142.1 76.2% 36.3%)', // Green
+  'hsl(262.1 83.3% 57.8%)', // Purple
+  'hsl(314.5 72.4% 57.3%)', // Pink
+  'hsl(198.8 93.4% 42%)' // Teal
+];
+
+export async function register(data: { name: string, email: string; password: string; role: Role; subRole?: SubRole; }) {
+    const { name, email, password, role, subRole } = data;
+
+    try {
+        const users = await getAllUsers();
+
+        if (users.some(u => u.email === email)) {
+            return { success: false, message: 'Este email já está em uso.' };
+        }
+        
+        const adminAuth = getAuth(getAdminApp());
+        try {
+            await adminAuth.getUserByEmail(email);
+            return { success: false, message: 'Este email já está registrado no sistema de autenticação.' };
+        } catch (error: any) {
+            if (error.code !== 'auth/user-not-found') {
+                throw error;
+            }
+        }
+
+        const userRecord = await adminAuth.createUser({
+            email: email,
+            password: password,
+            displayName: name,
+        });
+        
+        const isFirstUser = users.length === 0;
+        const newUser: User = {
+            id: userRecord.uid,
+            email,
+            name,
+            role,
+            subRole: role === 'Farmacêutico' ? subRole : undefined,
+            accessLevel: isFirstUser ? 'Admin' : 'User',
+            avatarColor: avatarColors[Math.floor(Math.random() * avatarColors.length)],
+        };
+
+        await writeData<User>('users', [...users, newUser]);
+        revalidatePath('/dashboard/user-management');
+
+        return { success: true, message: 'Usuário registrado com sucesso.' };
+
+    } catch (error: any) {
+        console.error("Registration error:", error);
+        if (error.code === 'auth/email-already-exists') {
+            return { success: false, message: 'Este email já está em uso.' };
+        }
+        if (error.code === 'auth/weak-password') {
+            return { success: false, message: 'A senha deve ter pelo menos 6 caracteres.' };
+        }
+        return { success: false, message: `Ocorreu um erro desconhecido ao criar a conta: ${error.message}` };
+    }
+}
 
 export async function updateUserProfile(userId: string, data: { name?: string; birthdate?: string; avatarColor?: string }) {
     const users = await readData<User>('users');
@@ -434,6 +499,50 @@ export async function updateUserProfile(userId: string, data: { name?: string; b
     revalidatePath('/dashboard', 'layout');
     
     return { success: true, user: users[userIndex] };
+}
+
+export async function updateUserLastSeen(userId: string) {
+    const users = await readData<User>('users');
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex !== -1) {
+        users[userIndex].lastSeen = new Date().toISOString();
+        await writeData('users', users);
+    }
+    revalidatePath('/dashboard', 'layout');
+}
+
+export async function updateUserAccessLevel(userId: string, accessLevel: AccessLevel) {
+    const users = await getAllUsers();
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex === -1) {
+        throw new Error('Usuário não encontrado.');
+    }
+    users[userIndex].accessLevel = accessLevel;
+    await writeData('users', users);
+    revalidatePath('/dashboard/user-management');
+}
+
+export async function deleteUser(userId: string) {
+    const adminAuth = getAuth(getAdminApp());
+    const users = await getAllUsers();
+    const userToDelete = users.find(u => u.id === userId);
+
+    if (!userToDelete) {
+        throw new Error('Usuário não encontrado para exclusão.');
+    }
+
+    try {
+        await adminAuth.deleteUser(userId);
+    } catch (error: any) {
+        if (error.code !== 'auth/user-not-found') {
+            console.error("Erro ao excluir usuário do Firebase Auth:", error);
+            throw new Error('Erro ao excluir usuário do sistema de autenticação.');
+        }
+    }
+
+    const updatedUsers = users.filter(u => u.id !== userId);
+    await writeData('users', updatedUsers);
+    revalidatePath('/dashboard/user-management');
 }
 
 
@@ -484,56 +593,6 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
     } catch (e) {
         return { success: false, error: 'Falha ao processar a imagem.' };
     }
-}
-
-
-export async function updateUserLastSeen(userId: string) {
-    const users = await readData<User>('users');
-    const userIndex = users.findIndex(u => u.id === userId);
-    if (userIndex !== -1) {
-        users[userIndex].lastSeen = new Date().toISOString();
-        await writeData('users', users);
-    }
-    revalidatePath('/dashboard', 'layout');
-}
-
-
-// --- USER MANAGEMENT ACTIONS ---
-export async function updateUserAccessLevel(userId: string, accessLevel: AccessLevel) {
-    const users = await getAllUsers();
-    const userIndex = users.findIndex(u => u.id === userId);
-    if (userIndex === -1) {
-        throw new Error('Usuário não encontrado.');
-    }
-    users[userIndex].accessLevel = accessLevel;
-    await writeData('users', users);
-    revalidatePath('/dashboard/user-management');
-}
-
-export async function deleteUser(userId: string) {
-    const { getAuth } = await import('firebase-admin/auth');
-    const { getAdminApp } = await import('@/lib/firebase/admin');
-
-    const adminAuth = getAuth(getAdminApp());
-    const users = await getAllUsers();
-    const userToDelete = users.find(u => u.id === userId);
-
-    if (!userToDelete) {
-        throw new Error('Usuário não encontrado para exclusão.');
-    }
-
-    try {
-        await adminAuth.deleteUser(userId);
-    } catch (error: any) {
-        if (error.code !== 'auth/user-not-found') {
-            console.error("Erro ao excluir usuário do Firebase Auth:", error);
-            throw new Error('Erro ao excluir usuário do sistema de autenticação.');
-        }
-    }
-
-    const updatedUsers = users.filter(u => u.id !== userId);
-    await writeData('users', updatedUsers);
-    revalidatePath('/dashboard/user-management');
 }
 
 
@@ -819,5 +878,3 @@ export async function generateOrderStatusReportPDF({ units, lastOrdersMap, statu
         }
     );
 }
-
-    

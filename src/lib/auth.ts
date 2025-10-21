@@ -1,7 +1,7 @@
 
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import type { User as AppUser, AccessLevel } from '@/lib/types';
+import type { User as AppUser } from '@/lib/types';
 import { readData } from '@/lib/data';
 
 /**
