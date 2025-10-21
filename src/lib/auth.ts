@@ -2,14 +2,17 @@
 
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import type { User as AppUser } from '@/lib/types';
+import type { User as AppUser, AccessLevel, User } from '@/lib/types';
 import { readData, writeData } from '@/lib/data';
+import { getAuth } from 'firebase-admin/auth';
+import { getAdminApp } from '@/lib/firebase/admin';
+import { revalidatePath } from 'next/cache';
 
 /**
  * Busca um usuário no nosso banco de dados (Vercel KV) pelo email.
- * Centraliza a lógica de leitura e tratamento de erros.
+ * Esta função agora vive em `auth.ts` para quebrar ciclos de dependência.
  */
-export async function getUserByEmailFromDb(email: string): Promise<AppUser | null> {
+async function getUserByEmailFromDb(email: string): Promise<AppUser | null> {
   if (!email) return null;
   try {
     const users = await readData<AppUser>('users');
@@ -17,7 +20,6 @@ export async function getUserByEmailFromDb(email: string): Promise<AppUser | nul
     return user || null;
   } catch (error) {
     console.error("CRITICAL: Falha ao ler dados do usuário do Vercel KV.", error);
-    // Em caso de falha de leitura do banco, o login deve ser impedido.
     return null;
   }
 }
@@ -41,7 +43,7 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials: any) {
         if (!credentials?.uid || !credentials?.email) {
           console.error("[NextAuth][Authorize] Error: UID ou email ausente nas credenciais.");
-          return null; // Retorna nulo se as credenciais essenciais não forem fornecidas.
+          return null;
         }
         
         const userFromDb = await getUserByEmailFromDb(credentials.email);
@@ -106,3 +108,38 @@ export const authOptions: NextAuthOptions = {
     error: '/login',
   },
 };
+
+
+// --- USER MANAGEMENT ACTIONS ---
+export async function updateUserAccessLevel(userId: string, accessLevel: AccessLevel) {
+    const users = await readData<User>('users');
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex === -1) {
+        throw new Error('Usuário não encontrado.');
+    }
+    users[userIndex].accessLevel = accessLevel;
+    await writeData('users', users);
+    revalidatePath('/dashboard/user-management');
+}
+
+export async function deleteUser(userId: string) {
+    const adminAuth = getAuth(getAdminApp());
+    const users = await readData<User>('users');
+    const userToDelete = users.find(u => u.id === userId);
+    if (!userToDelete) {
+         throw new Error('Usuário não encontrado para exclusão.');
+    }
+
+    try {
+        await adminAuth.deleteUser(userId);
+    } catch (error: any) {
+        if (error.code !== 'auth/user-not-found') {
+            console.error("Erro ao excluir usuário do Firebase Auth:", error);
+            throw new Error('Erro ao excluir usuário do sistema de autenticação.');
+        }
+    }
+
+    const updatedUsers = users.filter(u => u.id !== userId);
+    await writeData('users', updatedUsers);
+    revalidatePath('/dashboard/user-management');
+}

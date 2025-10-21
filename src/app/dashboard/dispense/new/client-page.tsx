@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -21,7 +22,8 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { X, Save, Trash2, Loader2, User, PackagePlus, ListPlus, CalendarClock, History, Layers, Info, FileText } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
-import { addDispensation, getPatients, getProducts, getAllDispensations } from '@/lib/actions';
+import { addDispensation } from '@/lib/actions';
+import { getPatients, getProducts, getAllDispensations } from '@/lib/data';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { Patient, Product, DispensationItem as DispensationItemType, Dispensation } from '@/lib/types';
