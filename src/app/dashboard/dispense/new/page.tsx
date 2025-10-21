@@ -12,8 +12,6 @@ export const dynamic = 'force-dynamic';
 
 export default async function NewDispensationPageWrapper() {
     noStore();
-    // Patient data is now fetched on demand in the client component.
-    // We still fetch products and dispensations here.
     const [productsData, dispensationsData] = await Promise.all([
         getProducts(),
         getAllDispensations()

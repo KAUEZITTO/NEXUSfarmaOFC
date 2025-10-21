@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, FileText, Loader2, BarChart2, Package, Users, AlertTriangle, Sparkles, Filter } from "lucide-react";
-import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF, generatePatientReportPDF, generateUnitDispensationReportPDF, generateBatchReportPDF, generateEntriesAndExitsReportPDF, generatePatientListReportPDF, generateOrderStatusReportPDF } from "@/lib/pdf-generator";
+import { generateCompleteReportPDF, generateStockReportPDF, generateExpiryReportPDF, generatePatientReportPDF, generateUnitDispensationReportPDF, generateBatchReportPDF, generateEntriesAndExitsReportPDF, generatePatientListReportPDF, generateOrderStatusReportPDF } from "@/lib/actions";
 import { useState } from "react";
 import type { Product, Patient, Dispensation, Unit, Order, StockMovement, PatientDemandItem, OrderStatus } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -210,10 +210,10 @@ export function ReportsClientPage({
     window.open(blobUrl, '_blank');
   }
 
-  const generatePdf = async (type: keyof GeneratingState, generatorFn: () => Promise<{success: boolean; data?: string; error?: string}>) => {
+  const handlePdfAction = async (type: keyof GeneratingState, action: () => Promise<{success: boolean; data?: string; error?: string}>) => {
     setIsGenerating(prev => ({ ...prev, [type]: true }));
     try {
-        const result = await generatorFn();
+        const result = await action();
         if (result.success && result.data) {
           openPdfInNewTab(result.data);
         } else {
@@ -238,23 +238,23 @@ export function ReportsClientPage({
   });
 
 
-  const handleExportComplete = () => generatePdf('complete', () => generateCompleteReportPDF({products: initialProducts, patients: initialPatients, dispensations: filteredDispensations, orders: filteredOrders, period: periodString}));
-  const handleExportStock = () => generatePdf('stock', () => generateStockReportPDF({products: initialProducts, categoryFilter: stockCategoryFilter}));
-  const handleExportExpiry = () => generatePdf('expiry', () => generateExpiryReportPDF({products: initialProducts}));
+  const handleExportComplete = () => handlePdfAction('complete', () => generateCompleteReportPDF({products: initialProducts, patients: initialPatients, dispensations: filteredDispensations, orders: filteredOrders, period: periodString}));
+  const handleExportStock = () => handlePdfAction('stock', () => generateStockReportPDF({products: initialProducts, categoryFilter: stockCategoryFilter}));
+  const handleExportExpiry = () => handlePdfAction('expiry', () => generateExpiryReportPDF({products: initialProducts}));
   const handleExportPatient = () => {
     const dispensationsForReport = patientCategoryFilter === 'all'
         ? filteredDispensations
         : filteredDispensations.filter(d => d.patient.demandItems?.includes(patientCategoryFilter as PatientDemandItem));
     
-    generatePdf('patient', () => generatePatientReportPDF({dispensations: dispensationsForReport, period: periodString}));
+    handlePdfAction('patient', () => generatePatientReportPDF({dispensations: dispensationsForReport, period: periodString}));
   };
-  const handleExportPatientList = () => generatePdf('patientList', () => generatePatientListReportPDF({patients: initialPatients}));
-  const handleExportUnitDispensation = () => generatePdf('unitDispensation', () => generateUnitDispensationReportPDF({orders: filteredOrders, units: initialUnits, period: periodString}));
-  const handleExportBatch = () => generatePdf('batch', () => generateBatchReportPDF({products: initialProducts}));
-  const handleExportEntriesAndExits = () => generatePdf('entriesAndExits', () => generateEntriesAndExitsReportPDF({movements: filteredMovements, allProducts: initialProducts, period: periodString}));
-  const handleExportOrderStatusAttended = () => generatePdf('orderStatusAttended', () => generateOrderStatusReportPDF({units: initialUnits, lastOrdersMap, status: 'Atendido'}));
-  const handleExportOrderStatusNotAttended = () => generatePdf('orderStatusNotAttended', () => generateOrderStatusReportPDF({units: initialUnits, lastOrdersMap, status: 'Não atendido'}));
-  const handleExportOrderStatusInAnalysis = () => generatePdf('orderStatusInAnalysis', () => generateOrderStatusReportPDF({units: initialUnits, lastOrdersMap, status: 'Em análise'}));
+  const handleExportPatientList = () => handlePdfAction('patientList', () => generatePatientListReportPDF({patients: initialPatients}));
+  const handleExportUnitDispensation = () => handlePdfAction('unitDispensation', () => generateUnitDispensationReportPDF({orders: filteredOrders, units: initialUnits, period: periodString}));
+  const handleExportBatch = () => handlePdfAction('batch', () => generateBatchReportPDF({products: initialProducts}));
+  const handleExportEntriesAndExits = () => handlePdfAction('entriesAndExits', () => generateEntriesAndExitsReportPDF({movements: filteredMovements, allProducts: initialProducts, period: periodString}));
+  const handleExportOrderStatusAttended = () => handlePdfAction('orderStatusAttended', () => generateOrderStatusReportPDF({units: initialUnits, lastOrdersMap, status: 'Atendido'}));
+  const handleExportOrderStatusNotAttended = () => handlePdfAction('orderStatusNotAttended', () => generateOrderStatusReportPDF({units: initialUnits, lastOrdersMap, status: 'Não atendido'}));
+  const handleExportOrderStatusInAnalysis = () => handlePdfAction('orderStatusInAnalysis', () => generateOrderStatusReportPDF({units: initialUnits, lastOrdersMap, status: 'Em análise'}));
   
   const reportHandlers: { name: string; handler: () => void; key: keyof GeneratingState, filter?: React.ReactNode, colSpan?: 'sm:col-span-2' | 'sm:col-span-3' }[] = [
     { name: "Dispensação por Unidade", handler: handleExportUnitDispensation, key: 'unitDispensation' },

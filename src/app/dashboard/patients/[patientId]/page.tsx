@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { getPatient, getDispensationsForPatient } from "@/lib/data";
 import { Skeleton } from '@/components/ui/skeleton';
 import { PatientHistoryClientPage } from './client-page';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 
 function PatientHistorySkeleton() {
   return (

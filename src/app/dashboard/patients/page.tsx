@@ -1,5 +1,4 @@
 
-
 import { Suspense } from 'react';
 import { getPatients, getUnits } from '@/lib/data';
 import type { PatientFilter } from '@/lib/types';

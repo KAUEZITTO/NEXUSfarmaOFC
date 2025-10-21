@@ -1,5 +1,4 @@
 
-
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
 import type { KnowledgeBaseItem } from './types';
 import { kv } from '@/lib/server/kv.server';
@@ -30,85 +29,13 @@ export async function writeData<T>(key: string, data: T[]): Promise<void> {
 
 // --- SPECIFIC DATA ACCESSORS ---
 
-export async function getPatients(filter: PatientFilter = 'active', query?: string, unitId?: string): Promise<Patient[]> {
-    const allPatients = await readData<Patient>('patients');
-    
-    let filteredPatients = allPatients;
-
-    // Apply primary filter first
-    switch (filter) {
-        case 'active':
-            filteredPatients = allPatients.filter(p => p.status === 'Ativo');
-            break;
-        case 'inactive':
-            filteredPatients = allPatients.filter(p => p.status !== 'Ativo');
-            break;
-        case 'insulin':
-            filteredPatients = allPatients.filter(p => p.demandItems?.includes('Insulinas Análogas') && p.status === 'Ativo');
-            break;
-        case 'diapers':
-             filteredPatients = allPatients.filter(p => p.demandItems?.includes('Fraldas') && p.status === 'Ativo');
-             break;
-        case 'bedridden':
-            filteredPatients = allPatients.filter(p => p.isBedridden && p.status === 'Ativo');
-            break;
-        case 'legal':
-            filteredPatients = allPatients.filter(p => p.demandItems?.includes('Itens Judiciais') && p.status === 'Ativo');
-            break;
-        case 'municipal':
-            filteredPatients = allPatients.filter(p => p.demandItems?.includes('Itens Judiciais') && p.status === 'Ativo'); // Assuming judicial covers this.
-            break;
-        case 'all':
-        default:
-            // No primary filter needed
-            break;
-    }
-    
-    // Filter by unit if unitId is provided
-    if (unitId) {
-        filteredPatients = filteredPatients.filter(p => p.unitId === unitId);
-    }
-
-    // Apply search query on the already filtered list
-    if (query) {
-        const lowercasedQuery = query.toLowerCase();
-        // Check if query could be an ID
-        if (query.startsWith('pat_')) {
-            const foundPatient = filteredPatients.find(p => p.id === query);
-            return foundPatient ? [foundPatient] : [];
-        }
-        
-        filteredPatients = filteredPatients.filter(patient => {
-            const numericQuery = query.replace(/[^\d]/g, '');
-            return (
-                patient.name.toLowerCase().includes(lowercasedQuery) ||
-                (patient.cpf && patient.cpf.replace(/[^\d]/g, '').includes(numericQuery)) ||
-                (patient.cns && patient.cns.replace(/[^\d]/g, '').includes(numericQuery))
-            );
-        });
-    }
-
-    return filteredPatients.sort((a, b) => a.name.localeCompare(b.name));
-}
-
-export async function getAllDispensations(): Promise<Dispensation[]> {
-    const dispensations = await readData<Dispensation>('dispensations');
-    return dispensations;
-}
-
-
-/**
- * Fetches all products from the data source.
- * This is a standard data-fetching function.
- * @returns A promise that resolves to an array of products.
- */
 export async function getProducts(): Promise<Product[]> {
     try {
         const products = await readData<Product>('products');
         return products;
     } catch (error) {
         console.error("Falha ao buscar produtos no KV:", error);
-        return []; // Retorna um array vazio em caso de erro.
+        return [];
     }
 }
 
@@ -125,15 +52,6 @@ export const getUnits = async (): Promise<Unit[]> => {
 export async function getUnit(unitId: string): Promise<Unit | null> {
     const units = await getUnits();
     return units.find(u => u.id === unitId) || null;
-}
-
-export const getAllPatients = async (): Promise<Patient[]> => {
-    return await readData<Patient>('patients');
-};
-
-export async function getPatient(patientId: string): Promise<Patient | null> {
-    const patients = await getAllPatients();
-    return patients.find(p => p.id === patientId) || null;
 }
 
 export const getOrders = async (): Promise<Order[]> => {
@@ -167,7 +85,6 @@ export const getStockMovements = async (): Promise<StockMovement[]> => {
 
 export async function getAllUsers(): Promise<User[]> {
     const users = await readData<User>('users');
-    // Remove o campo 'password' de cada usuário antes de retornar
     return users.map(u => {
         const { password, ...userWithoutPassword } = u;
         return userWithoutPassword as User;
@@ -175,9 +92,75 @@ export async function getAllUsers(): Promise<User[]> {
 }
 
 export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
-    // Read the file from the filesystem instead of importing it to avoid Next.js build errors.
     const jsonPath = path.join(process.cwd(), 'src', 'data', 'knowledge-base.json');
     const fileContents = await fs.readFile(jsonPath, 'utf8');
     const data = JSON.parse(fileContents);
     return data;
 }
+
+// --- Functions that were Server Actions and now are regular data fetching functions ---
+
+export async function getPatients(filter: PatientFilter = 'active', query?: string, unitId?: string): Promise<Patient[]> {
+    const allPatients = await readData<Patient>('patients');
+    
+    let filteredPatients = allPatients;
+
+    switch (filter) {
+        case 'active':
+            filteredPatients = allPatients.filter(p => p.status === 'Ativo');
+            break;
+        case 'inactive':
+            filteredPatients = allPatients.filter(p => p.status !== 'Ativo');
+            break;
+        case 'insulin':
+            filteredPatients = allPatients.filter(p => p.demandItems?.includes('Insulinas Análogas') && p.status === 'Ativo');
+            break;
+        case 'diapers':
+             filteredPatients = allPatients.filter(p => p.demandItems?.includes('Fraldas') && p.status === 'Ativo');
+             break;
+        case 'bedridden':
+            filteredPatients = allPatients.filter(p => p.isBedridden && p.status === 'Ativo');
+            break;
+        case 'legal':
+            filteredPatients = allPatients.filter(p => p.demandItems?.includes('Itens Judiciais') && p.status === 'Ativo');
+            break;
+        case 'municipal':
+            filteredPatients = allPatients.filter(p => p.demandItems?.includes('Itens Judiciais') && p.status === 'Ativo');
+            break;
+        case 'all':
+        default:
+            break;
+    }
+    
+    if (unitId) {
+        filteredPatients = filteredPatients.filter(p => p.unitId === unitId);
+    }
+
+    if (query) {
+        const lowercasedQuery = query.toLowerCase();
+        if (query.startsWith('pat_')) {
+            const foundPatient = filteredPatients.find(p => p.id === query);
+            return foundPatient ? [foundPatient] : [];
+        }
+        
+        filteredPatients = filteredPatients.filter(patient => {
+            const numericQuery = query.replace(/[^\d]/g, '');
+            return (
+                patient.name.toLowerCase().includes(lowercasedQuery) ||
+                (patient.cpf && patient.cpf.replace(/[^\d]/g, '').includes(numericQuery)) ||
+                (patient.cns && patient.cns.replace(/[^\d]/g, '').includes(numericQuery))
+            );
+        });
+    }
+
+    return filteredPatients.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function getAllDispensations(): Promise<Dispensation[]> {
+    const dispensations = await readData<Dispensation>('dispensations');
+    return dispensations;
+}
+
+export async function getAllPatients(): Promise<Patient[]> {
+    return await readData<Patient>('patients');
+};

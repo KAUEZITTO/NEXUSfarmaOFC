@@ -6,7 +6,7 @@ import { getProducts, getAllPatients, getAllDispensations, getUnits, getOrders, 
 import { Skeleton } from "@/components/ui/skeleton";
 import { ReportsClientPage } from "./client-page";
 
-export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
 
 async function ReportsData() {
     const [products, patients, dispensations, units, orders, stockMovements] = await Promise.all([

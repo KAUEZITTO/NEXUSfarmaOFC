@@ -1,16 +1,11 @@
 
-
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import type { User as AppUser, AccessLevel, User } from '@/lib/types';
-import { readData, writeData } from '@/lib/data';
-import { getAuth } from 'firebase-admin/auth';
-import { getAdminApp } from '@/lib/firebase/admin';
-import { revalidatePath } from 'next/cache';
+import type { User as AppUser, AccessLevel } from '@/lib/types';
+import { readData } from '@/lib/data';
 
 /**
  * Busca um usuário no nosso banco de dados (Vercel KV) pelo email.
- * Esta função agora vive em `auth.ts` para quebrar ciclos de dependência.
  */
 async function getUserByEmailFromDb(email: string): Promise<AppUser | null> {
   if (!email) return null;
@@ -108,40 +103,3 @@ export const authOptions: NextAuthOptions = {
     error: '/login',
   },
 };
-
-
-// --- USER MANAGEMENT ACTIONS ---
-export async function updateUserAccessLevel(userId: string, accessLevel: AccessLevel) {
-    'use server';
-    const users = await readData<User>('users');
-    const userIndex = users.findIndex(u => u.id === userId);
-    if (userIndex === -1) {
-        throw new Error('Usuário não encontrado.');
-    }
-    users[userIndex].accessLevel = accessLevel;
-    await writeData('users', users);
-    revalidatePath('/dashboard/user-management');
-}
-
-export async function deleteUser(userId: string) {
-    'use server';
-    const adminAuth = getAuth(getAdminApp());
-    const users = await readData<User>('users');
-    const userToDelete = users.find(u => u.id === userId);
-    if (!userToDelete) {
-         throw new Error('Usuário não encontrado para exclusão.');
-    }
-
-    try {
-        await adminAuth.deleteUser(userId);
-    } catch (error: any) {
-        if (error.code !== 'auth/user-not-found') {
-            console.error("Erro ao excluir usuário do Firebase Auth:", error);
-            throw new Error('Erro ao excluir usuário do sistema de autenticação.');
-        }
-    }
-
-    const updatedUsers = users.filter(u => u.id !== userId);
-    await writeData('users', updatedUsers);
-    revalidatePath('/dashboard/user-management');
-}

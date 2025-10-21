@@ -12,13 +12,12 @@ import { UnitDetailsClientPage } from './client-page';
 import { unstable_noStore as noStore } from 'next/cache';
 
 async function UnitDetailsData({ unitId }: { unitId: string }) {
-    noStore(); // Garante que os dados da unidade e pedidos são sempre frescos.
+    noStore(); 
     const unitData = await getUnit(unitId);
     if (!unitData) {
         notFound();
     }
     
-    // Otimização: buscar apenas os pacientes da unidade específica.
     const [unitPatients, unitOrdersData] = await Promise.all([
         getPatients('all', '', unitData.id),
         getOrdersForUnit(unitId),
