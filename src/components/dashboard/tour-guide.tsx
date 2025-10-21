@@ -220,6 +220,7 @@ export const TourGuideWrapper: React.FC<TourGuideWrapperProps> = ({ children }) 
 export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boolean, setIsTourActive: (isActive: boolean) => void }) {
     const router = useRouter();
     const pathname = usePathname();
+    const [intro, setIntro] = useState<any>(null);
 
     const onExit = () => {
         setIsTourActive(false);
@@ -227,27 +228,28 @@ export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boo
     };
 
     const onBeforeChange = (nextStepIndex: number) => {
-        if (nextStepIndex < 0 || nextStepIndex >= tourSteps.length) {
+        const step = tourSteps[nextStepIndex];
+        
+        if (!step?.element) {
             onExit();
             return false;
         }
 
-        const step = tourSteps[nextStepIndex];
-        if (!step || !step.element) {
-             return false;
-        }
-
         const targetElement = document.querySelector(step.element);
-         if (!targetElement) {
+
+        if (!targetElement) {
             const tourId = step.element.replace(/\[data-tour-id="|"\]/g, '');
             const navItem = navItems.find(item => item.tourId === tourId);
 
             if (navItem && navItem.href !== pathname) {
                 router.push(navItem.href);
+                // Schedule the next step after navigation
+                setTimeout(() => {
+                    if (intro) intro.goToStep(nextStepIndex + 1); // intro.js steps are 1-based
+                }, 500); // Delay to allow page to load
+                return false; // Prevent intro.js from auto-advancing
             }
-            return false;
         }
-
         return true;
     };
 
@@ -273,6 +275,7 @@ export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boo
                 exitOnOverlayClick: false,
                 showBullets: false,
             }}
+             ref={intro => setIntro(intro)}
         />
     );
 }
