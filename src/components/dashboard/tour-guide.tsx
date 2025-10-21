@@ -3,7 +3,7 @@
 
 import 'intro.js/introjs.css';
 import { Steps } from 'intro.js-react';
-import React, { useEffect, useState, useContext, createContext } from 'react';
+import React, { useEffect, useState, useContext, createContext, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { navItems } from './dashboard-nav';
 import { useSidebar } from '../ui/sidebar';
@@ -220,7 +220,7 @@ export const TourGuideWrapper: React.FC<TourGuideWrapperProps> = ({ children }) 
 export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boolean, setIsTourActive: (isActive: boolean) => void }) {
     const router = useRouter();
     const pathname = usePathname();
-    const [intro, setIntro] = useState<any>(null);
+    const introRef = useRef<any>(null);
 
     const onExit = () => {
         setIsTourActive(false);
@@ -232,7 +232,7 @@ export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boo
         
         if (!step?.element) {
             onExit();
-            return false;
+            return; 
         }
 
         const targetElement = document.querySelector(step.element);
@@ -242,16 +242,30 @@ export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boo
             const navItem = navItems.find(item => item.tourId === tourId);
 
             if (navItem && navItem.href !== pathname) {
+                // Store the next step index and navigate
+                sessionStorage.setItem('tour-next-step', String(nextStepIndex));
                 router.push(navItem.href);
-                // Schedule the next step after navigation
-                setTimeout(() => {
-                    if (intro) intro.goToStep(nextStepIndex + 1); // intro.js steps are 1-based
-                }, 500); // Delay to allow page to load
-                return false; // Prevent intro.js from auto-advancing
+                 // We stop introjs from proceeding. The useEffect below will handle resuming.
+                return false;
             }
         }
         return true;
     };
+    
+    // This effect runs after a page navigation to resume the tour
+    useEffect(() => {
+        const nextStep = sessionStorage.getItem('tour-next-step');
+        if (nextStep && isTourActive && introRef.current) {
+            const stepIndex = parseInt(nextStep, 10);
+            // Clear the stored step
+            sessionStorage.removeItem('tour-next-step');
+
+            // Wait a bit for the page to render, then go to the correct step
+            setTimeout(() => {
+                introRef.current?.goToStep(stepIndex);
+            }, 500);
+        }
+    }, [pathname, isTourActive]);
 
 
     if (!isTourActive) {
@@ -264,7 +278,7 @@ export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boo
             steps={tourSteps}
             initialStep={0}
             onExit={onExit}
-            onBeforeChange={onBeforeChange}
+            onBeforeChange={onBeforeChange as any}
             options={{
                 nextLabel: 'Próximo',
                 prevLabel: 'Anterior',
@@ -275,7 +289,9 @@ export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boo
                 exitOnOverlayClick: false,
                 showBullets: false,
             }}
-             ref={intro => setIntro(intro)}
+             ref={(intro) => (introRef.current = intro)}
         />
     );
 }
+
+    
