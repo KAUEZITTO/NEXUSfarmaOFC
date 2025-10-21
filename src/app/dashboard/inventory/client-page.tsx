@@ -329,7 +329,7 @@ export function InventoryClientPage({ initialProducts }: { initialProducts: Prod
       setIsProcessing(false);
   };
 
-  const capitalizeFirstLetter = (string: string) => {
+  const capitalizeFirstLetter = (string: string | undefined) => {
       if (!string) return 'N/A';
       return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
   }

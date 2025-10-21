@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -25,10 +23,8 @@ import {
 import { Save, Loader2, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { addProduct, updateProduct, uploadImage } from '@/lib/actions';
-import { getKnowledgeBase } from '@/lib/data';
-import type { Product, KnowledgeBaseItem } from '@/lib/types';
+import type { Product } from '@/lib/types';
 import { ProductSavedDialog } from './product-saved-dialog';
-import { useDebounce } from 'use-debounce';
 import Image from 'next/image';
 
 type AddProductDialogProps = {
@@ -52,9 +48,9 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
   const [savedProduct, setSavedProduct] = useState<Product | null>(null);
   const [showSavedDialog, setShowSavedDialog] = useState(false);
 
-  // Form state - 'name' is now commercialName, 'activeIngredient' is the generic name
-  const [name, setName] = useState(''); // This is now the Commercial Name
-  const [activeIngredient, setActiveIngredient] = useState(''); // This is the old 'name'
+  // Form state
+  const [name, setName] = useState('');
+  const [activeIngredient, setActiveIngredient] = useState('');
   const [manufacturer, setManufacturer] = useState('');
   const [category, setCategory] = useState<Product['category']>('Medicamento');
   const [subCategory, setSubCategory] = useState<Product['subCategory'] | undefined>(undefined);
@@ -67,39 +63,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
   const [mainFunction, setMainFunction] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   
-  const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeBaseItem[]>([]);
-  const [debouncedActiveIngredient] = useDebounce(activeIngredient, 300);
-
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    async function loadKnowledgeBase() {
-        if(isOpen) {
-            const kb = await getKnowledgeBase();
-            setKnowledgeBase(kb);
-        }
-    }
-    loadKnowledgeBase();
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (debouncedActiveIngredient && knowledgeBase.length > 0 && !isEditing) {
-      const searchTerm = debouncedActiveIngredient.toLowerCase();
-      const match = knowledgeBase.find(item => {
-        const kbName = item.name.toLowerCase();
-        return searchTerm.includes(kbName) || kbName.includes(searchTerm);
-      });
-      
-      if (match) {
-        setTherapeuticClass(match.therapeuticClass);
-        setMainFunction(match.mainFunction);
-      } else {
-        setTherapeuticClass('');
-        setMainFunction('');
-      }
-    }
-  }, [debouncedActiveIngredient, knowledgeBase, isEditing]);
-
 
   const resetForm = () => {
     setName('');
@@ -119,7 +83,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
 
   useEffect(() => {
     if (productToEdit && isOpen) {
-        setName(productToEdit.name); // Commercial name is now primary
+        setName(productToEdit.name);
         setActiveIngredient(productToEdit.activeIngredient || '');
         setManufacturer(productToEdit.manufacturer || '');
         setCategory(productToEdit.category);
@@ -221,7 +185,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
     }
   };
 
-  const showActiveIngredient = category === 'Medicamento' || (category === 'Não Padronizado (Compra)' && subCategory === 'Medicamento');
+  const isMedicamento = category === 'Medicamento' || (category === 'Não Padronizado (Compra)' && subCategory === 'Medicamento');
 
 
   return (
@@ -240,9 +204,9 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
                 <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
 
-               {showActiveIngredient && (
+               {isMedicamento && (
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="activeIngredient">Princípio Ativo/Descrição (Opcional)</Label>
+                  <Label htmlFor="activeIngredient">Princípio Ativo (Opcional)</Label>
                   <Input id="activeIngredient" value={activeIngredient} onChange={(e) => setActiveIngredient(e.target.value)} />
                 </div>
               )}
@@ -310,14 +274,24 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
                   </SelectContent>
                 </Select>
               </div>
-               <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="therapeuticClass">Classe Terapêutica</Label>
-                  <Input id="therapeuticClass" value={therapeuticClass} placeholder="Preenchido automaticamente..." readOnly className="bg-muted/50" />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="mainFunction">Função Principal</Label>
-                  <Input id="mainFunction" value={mainFunction} placeholder="Preenchido automaticamente..." readOnly className="bg-muted/50" />
-              </div>
+                
+                {isMedicamento ? (
+                    <>
+                        <div className="space-y-2">
+                            <Label htmlFor="therapeuticClass">Classe Terapêutica</Label>
+                            <Input id="therapeuticClass" value={therapeuticClass} onChange={(e) => setTherapeuticClass(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="mainFunction">Função Principal</Label>
+                            <Input id="mainFunction" value={mainFunction} onChange={(e) => setMainFunction(e.target.value)} />
+                        </div>
+                    </>
+                ) : (
+                    <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="mainFunction">Função/Descrição do Produto</Label>
+                        <Input id="mainFunction" value={mainFunction} onChange={(e) => setMainFunction(e.target.value)} placeholder="Ex: Cobertura de feridas, fixação de curativos..." />
+                    </div>
+                )}
             </div>
             
             {/* Coluna 3: Upload de Imagem */}
