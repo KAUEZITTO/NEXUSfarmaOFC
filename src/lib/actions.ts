@@ -7,7 +7,7 @@ import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, Disp
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase/admin';
 import { getServerSession } from 'next-auth';
-import { authOptions } from './auth';
+import { authOptions } from '@/lib/auth';
 
 // --- ACTIONS EXPOSED TO CLIENT ---
 
