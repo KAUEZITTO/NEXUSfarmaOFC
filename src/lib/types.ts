@@ -103,6 +103,10 @@ export type Unit = {
   coordinatorName?: string;
   hasDentalOffice?: boolean;
   hasPharmacy?: boolean;
+  isMobileUnit?: boolean;
+  isHomeCare?: boolean;
+  hasLaboratory?: boolean;
+  isRescueVehicle?: boolean;
 };
 
 export type PatientStatus = 'Ativo' | 'Tratamento Concluído' | 'Tratamento Interrompido' | 'Óbito';
@@ -214,7 +218,7 @@ export type StockMovement = {
   productId: string;
   productName: string;
   type: 'Entrada' | 'Saída' | 'Ajuste';
-  reason: 'Entrada por Compra' | 'Saída por Remessa' | 'Saída por Dispensação' | 'Ajuste de Inventário' | 'Entrada Inicial' | 'Estorno de Remessa' | 'Exclusão de Produto';
+  reason: 'Entrada por Compra' | 'Saída por Remessa' | 'Saída por Dispensação' | 'Ajuste de Inventário' | 'Entrada Inicial' | 'Estorno de Remessa' | 'Exclusão de Produto' | 'Estorno de Dispensação';
   quantityChange: number;
   quantityBefore: number;
   quantityAfter: number;

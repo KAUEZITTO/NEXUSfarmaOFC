@@ -38,6 +38,11 @@ export function AddUnitDialog({ trigger, unitToEdit, onUnitSaved }: AddUnitDialo
   const [coordinatorName, setCoordinatorName] = useState('');
   const [hasDentalOffice, setHasDentalOffice] = useState(false);
   const [hasPharmacy, setHasPharmacy] = useState(false);
+  const [isMobileUnit, setIsMobileUnit] = useState(false);
+  const [isHomeCare, setIsHomeCare] = useState(false);
+  const [hasLaboratory, setHasLaboratory] = useState(false);
+  const [isRescueVehicle, setIsRescueVehicle] = useState(false);
+
 
   const resetForm = () => {
     setName('');
@@ -45,6 +50,10 @@ export function AddUnitDialog({ trigger, unitToEdit, onUnitSaved }: AddUnitDialo
     setCoordinatorName('');
     setHasDentalOffice(false);
     setHasPharmacy(false);
+    setIsMobileUnit(false);
+    setIsHomeCare(false);
+    setHasLaboratory(false);
+    setIsRescueVehicle(false);
   }
 
   useEffect(() => {
@@ -54,6 +63,10 @@ export function AddUnitDialog({ trigger, unitToEdit, onUnitSaved }: AddUnitDialo
         setCoordinatorName(unitToEdit.coordinatorName || '');
         setHasDentalOffice(unitToEdit.hasDentalOffice || false);
         setHasPharmacy(unitToEdit.hasPharmacy || false);
+        setIsMobileUnit(unitToEdit.isMobileUnit || false);
+        setIsHomeCare(unitToEdit.isHomeCare || false);
+        setHasLaboratory(unitToEdit.hasLaboratory || false);
+        setIsRescueVehicle(unitToEdit.isRescueVehicle || false);
     } else if (!isEditing && isOpen) {
         resetForm();
     }
@@ -70,26 +83,28 @@ export function AddUnitDialog({ trigger, unitToEdit, onUnitSaved }: AddUnitDialo
     }
     setIsSaving(true);
 
+    const unitData = {
+      name,
+      address,
+      coordinatorName,
+      hasDentalOffice,
+      hasPharmacy,
+      isMobileUnit,
+      isHomeCare,
+      hasLaboratory,
+      isRescueVehicle,
+    };
+
     try {
         if (isEditing && unitToEdit) {
-            await updateUnit(unitToEdit.id, {
-                name,
-                address,
-                coordinatorName,
-                hasDentalOffice,
-                hasPharmacy,
-            });
+            await updateUnit(unitToEdit.id, unitData);
             toast({
               title: 'Unidade Atualizada!',
               description: `A unidade ${name} foi atualizada com sucesso.`,
             });
         } else {
             await addUnit({
-                name,
-                address,
-                coordinatorName,
-                hasDentalOffice,
-                hasPharmacy,
+                ...unitData,
                 type: 'UBS' // default type for new units
             });
             toast({
@@ -137,13 +152,31 @@ export function AddUnitDialog({ trigger, unitToEdit, onUnitSaved }: AddUnitDialo
             <Label htmlFor="coordinatorName">Nome do Coordenador(a) (Opcional)</Label>
             <Input id="coordinatorName" value={coordinatorName} onChange={(e) => setCoordinatorName(e.target.value)} />
           </div>
-          <div className="flex items-center justify-between">
-            <Label htmlFor="hasPharmacy" className="flex-grow">Possui Farmácia?</Label>
-            <Switch id="hasPharmacy" checked={hasPharmacy} onCheckedChange={setHasPharmacy} />
-          </div>
-          <div className="flex items-center justify-between">
-            <Label htmlFor="hasDentalOffice" className="flex-grow">Possui Consultório Odontológico?</Label>
-            <Switch id="hasDentalOffice" checked={hasDentalOffice} onCheckedChange={setHasDentalOffice} />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <Label htmlFor="hasPharmacy" className="flex-grow text-sm">Possui Farmácia?</Label>
+              <Switch id="hasPharmacy" checked={hasPharmacy} onCheckedChange={setHasPharmacy} />
+            </div>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <Label htmlFor="hasDentalOffice" className="flex-grow text-sm">Possui Odonto?</Label>
+              <Switch id="hasDentalOffice" checked={hasDentalOffice} onCheckedChange={setHasDentalOffice} />
+            </div>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <Label htmlFor="isMobileUnit" className="flex-grow text-sm">É Unidade Móvel?</Label>
+              <Switch id="isMobileUnit" checked={isMobileUnit} onCheckedChange={setIsMobileUnit} />
+            </div>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <Label htmlFor="isHomeCare" className="flex-grow text-sm">É Atend. Domiciliar?</Label>
+              <Switch id="isHomeCare" checked={isHomeCare} onCheckedChange={setIsHomeCare} />
+            </div>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <Label htmlFor="hasLaboratory" className="flex-grow text-sm">Possui Laboratório?</Label>
+              <Switch id="hasLaboratory" checked={hasLaboratory} onCheckedChange={setHasLaboratory} />
+            </div>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <Label htmlFor="isRescueVehicle" className="flex-grow text-sm">É Veíc. de Resgate?</Label>
+              <Switch id="isRescueVehicle" checked={isRescueVehicle} onCheckedChange={setIsRescueVehicle} />
+            </div>
           </div>
         </div>
         <DialogFooter>
