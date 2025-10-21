@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { AddPatientDialog } from "@/components/dashboard/add-patient-dialog";
 import { Button } from "@/components/ui/button";
-import type { Patient, PatientFilter, PatientStatus, Unit } from "@/lib/types";
+import type { Patient, PatientFilter, PatientStatus, Unit, Dispensation } from "@/lib/types";
 import { ColumnDef } from "@tanstack/react-table";
 import { PlusCircle, Loader2, Eye, Edit, UserCheck, UserX, CheckCircle, XCircle, HeartPulse, MoreHorizontal, ArrowUpDown, Search, Trash2, Printer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { useDebounce } from 'use-debounce';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 const filterCategories: { label: string, value: PatientFilter }[] = [
@@ -36,16 +37,56 @@ const filterCategories: { label: string, value: PatientFilter }[] = [
     { label: 'Acamados', value: 'bedridden' },
     { label: 'Judicial', value: 'legal' },
     { label: 'Municipal', value: 'municipal' },
+    { label: 'Tiras de Glicemia', value: 'strips'},
+    { label: 'Fórmulas', value: 'formulas'},
+    { label: 'Imunoglobulina', value: 'immunoglobulin'},
     { label: 'Todos', value: 'all' },
+];
+
+const dispensationColumns: ColumnDef<Dispensation>[] = [
+    {
+      accessorKey: "date",
+      header: "Data",
+      cell: ({ row }) => new Date(row.getValue("date")).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
+    },
+    {
+      accessorKey: "patient.name",
+      header: "Paciente",
+    },
+    {
+      accessorKey: "items",
+      header: "Nº de Itens",
+      cell: ({ row }) => {
+        const items = row.getValue("items") as any[];
+        return <div className="text-center">{items.length}</div>;
+      },
+    },
+    {
+      accessorKey: "creatorName",
+      header: "Dispensado por",
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => (
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/dispensation-receipt/${row.original.id}`} target="_blank">
+            <Eye className="mr-2 h-4 w-4" />
+            Ver Recibo
+          </Link>
+        </Button>
+      )
+    }
 ];
 
 export function PatientsClientPage({
   initialPatients,
   initialUnits,
+  initialDispensations,
   searchParams
 }: {
   initialPatients: Patient[],
   initialUnits: Unit[],
+  initialDispensations: Dispensation[],
   searchParams?: { [key: string]: string | string[] | undefined }
 }) {
   const router = useRouter();
@@ -298,9 +339,9 @@ export function PatientsClientPage({
       <CardHeader>
         <div className="flex justify-between items-start flex-wrap gap-4">
           <div>
-            <CardTitle>Registro de Pacientes</CardTitle>
+            <CardTitle>Gerenciamento de Pacientes e Dispensações</CardTitle>
             <CardDescription>
-              Visualize e gerencie as informações dos pacientes.
+              Visualize pacientes e o histórico completo de dispensações.
             </CardDescription>
           </div>
           <div className="flex gap-2">
@@ -322,42 +363,53 @@ export function PatientsClientPage({
             />
           </div>
         </div>
-         <div className="flex items-center space-x-2 pt-4 overflow-x-auto pb-2">
-            {filterCategories.map(filter => (
-                 <Button 
-                    key={filter.value}
-                    variant={activeFilter === filter.value ? "default" : "outline"}
-                    onClick={() => handleUrlChange('filter', filter.value)}
-                    className="rounded-full flex-shrink-0"
-                    disabled={isPending}
-                >
-                    {isPending && activeFilter === filter.value ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : filter.label}
-                </Button>
-            ))}
-        </div>
-         <div className="relative mt-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-                placeholder="Filtrar por nome, CPF ou CNS..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 max-w-sm"
-            />
-             {isPending && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
-        </div>
       </CardHeader>
       <CardContent>
-         {isPending ? (
-            <div className="text-center py-10">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto" />
-                <p className="mt-2 text-muted-foreground">Carregando pacientes...</p>
+        <Tabs defaultValue="patients">
+          <TabsList>
+            <TabsTrigger value="patients">Pacientes</TabsTrigger>
+            <TabsTrigger value="dispensations">Histórico de Dispensações</TabsTrigger>
+          </TabsList>
+          <TabsContent value="patients" className="mt-4">
+            <div className="flex items-center space-x-2 pt-4 overflow-x-auto pb-2">
+                {filterCategories.map(filter => (
+                    <Button 
+                        key={filter.value}
+                        variant={activeFilter === filter.value ? "default" : "outline"}
+                        onClick={() => handleUrlChange('filter', filter.value)}
+                        className="rounded-full flex-shrink-0"
+                        disabled={isPending}
+                    >
+                        {isPending && activeFilter === filter.value ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : filter.label}
+                    </Button>
+                ))}
             </div>
-        ) : (
-          <DataTable columns={columns} data={filteredPatients} />
-        )}
+            <div className="relative mt-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Filtrar por nome, CPF ou CNS..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 max-w-sm"
+                />
+                {isPending && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
+            </div>
+            <div className="mt-4">
+              {isPending ? (
+                  <div className="text-center py-10">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto" />
+                      <p className="mt-2 text-muted-foreground">Carregando pacientes...</p>
+                  </div>
+              ) : (
+                <DataTable columns={columns} data={filteredPatients} />
+              )}
+            </div>
+          </TabsContent>
+          <TabsContent value="dispensations" className="mt-4">
+             <DataTable columns={dispensationColumns} data={initialDispensations} />
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
 }
-
-    

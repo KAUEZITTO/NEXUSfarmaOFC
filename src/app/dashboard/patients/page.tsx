@@ -1,6 +1,6 @@
 
 import { Suspense } from 'react';
-import { getPatients, getUnits } from '@/lib/data';
+import { getPatients, getUnits, getAllDispensations } from '@/lib/data';
 import type { PatientFilter } from '@/lib/types';
 import { PatientsClientPage } from './client-page';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -47,17 +47,20 @@ export default async function PatientsPage({
     const filter = (searchParams?.filter as PatientFilter) || 'active';
     const query = (searchParams?.q as string) || '';
     
-    // Fetch both patients and units at the page level
-    const [initialPatients, initialUnits] = await Promise.all([
+    const [initialPatients, initialUnits, initialDispensations] = await Promise.all([
         getPatients(filter, query),
-        getUnits()
+        getUnits(),
+        getAllDispensations()
     ]);
+    
+    const sortedDispensations = initialDispensations.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return (
         <Suspense fallback={<PatientsSkeleton />}>
             <PatientsClientPage 
                 initialPatients={initialPatients} 
                 initialUnits={initialUnits}
+                initialDispensations={sortedDispensations}
                 searchParams={searchParams} 
             />
         </Suspense>
