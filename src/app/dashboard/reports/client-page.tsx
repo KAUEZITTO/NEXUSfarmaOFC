@@ -62,8 +62,8 @@ const patientDemandItems: PatientDemandItem[] = ['Fraldas', 'Insulinas Análogas
 
 function calculateStats(products: Product[], patients: Patient[], dispensations: Dispensation[]): ReportStats {
     const now = new Date();
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(now.getDate() + 30);
+    const oneHundredTwentyDaysFromNow = new Date();
+    oneHundredTwentyDaysFromNow.setDate(now.getDate() + 120);
 
     const groupedProductsMap = new Map<string, { quantity: number }>();
     products.forEach(p => {
@@ -84,7 +84,7 @@ function calculateStats(products: Product[], patients: Patient[], dispensations:
     const expiringSoonItemsCount = products.filter(p => {
         if (!p.expiryDate) return false;
         const expiry = new Date(p.expiryDate);
-        return expiry > now && expiry <= thirtyDaysFromNow;
+        return expiry > now && expiry <= oneHundredTwentyDaysFromNow;
     }).length;
 
     const totalStockAlerts = lowStockItemsCount + expiringSoonItemsCount;
@@ -375,7 +375,7 @@ export function ReportsClientPage({
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold">{reportStats.totalStockAlerts}</div>
-                <p className="text-xs text-muted-foreground">{reportStats.lowStockItems} baixo estoque, {reportStats.expiringSoonItems} perto do vencimento</p>
+                <p className="text-xs text-muted-foreground">{reportStats.lowStockItems} baixo estoque, {reportStats.expiringSoonItems} perto do vencimento (120 dias)</p>
             </CardContent>
             </Card>
         </div>

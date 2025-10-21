@@ -63,8 +63,8 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
     orders: Order[]
 }) {
     const now = new Date();
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(now.getDate() + 30);
+    const oneHundredTwentyDaysFromNow = new Date();
+    oneHundredTwentyDaysFromNow.setDate(now.getDate() + 120);
 
     const groupedProductsMap = new Map<string, { totalQuantity: number }>();
 
@@ -86,7 +86,7 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
     const expiringSoonItems = products.filter(p => {
         if (!p.expiryDate) return false;
         const expiry = new Date(p.expiryDate);
-        return expiry > now && expiry <= thirtyDaysFromNow;
+        return expiry > now && expiry <= oneHundredTwentyDaysFromNow;
     }).length;
 
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
@@ -163,7 +163,7 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{expiringSoonItems}</div>
-                        <p className="text-xs text-muted-foreground">Lotes vencendo nos próximos 30 dias.</p>
+                        <p className="text-xs text-muted-foreground">Lotes vencendo nos próximos 120 dias.</p>
                     </CardContent>
                 </Card>
                 <Card className="lg:col-span-2">
