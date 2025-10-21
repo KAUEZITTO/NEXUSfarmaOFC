@@ -498,7 +498,7 @@ export async function updateUserLastSeen(userId: string) {
 }
 
 
-// --- USER MANAGEMENT ACTIONS --- (Moved from auth.ts)
+// --- USER MANAGEMENT ACTIONS ---
 export async function updateUserAccessLevel(userId: string, accessLevel: AccessLevel) {
     const users = await getAllUsers();
     const userIndex = users.findIndex(u => u.id === userId);
