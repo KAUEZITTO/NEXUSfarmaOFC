@@ -3,7 +3,24 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { User as AppUser } from '@/lib/types';
-import { getUserByEmailFromDb } from '@/lib/data';
+import { readData, writeData } from '@/lib/data';
+
+/**
+ * Busca um usuário no nosso banco de dados (Vercel KV) pelo email.
+ * Centraliza a lógica de leitura e tratamento de erros.
+ */
+export async function getUserByEmailFromDb(email: string): Promise<AppUser | null> {
+  if (!email) return null;
+  try {
+    const users = await readData<AppUser>('users');
+    const user = users.find(u => u.email === email);
+    return user || null;
+  } catch (error) {
+    console.error("CRITICAL: Falha ao ler dados do usuário do Vercel KV.", error);
+    // Em caso de falha de leitura do banco, o login deve ser impedido.
+    return null;
+  }
+}
 
 /**
  * Options for NextAuth.js configuration.

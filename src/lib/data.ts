@@ -29,7 +29,7 @@ export async function writeData<T>(key: string, data: T[]): Promise<void> {
 
 // --- SPECIFIC DATA ACCESSORS ---
 
-export async function getPatients(filter: 'all' | 'active', query?: string): Promise<Patient[]> {
+export async function getPatients(filter: PatientFilter = 'active', query?: string, unitId?: string): Promise<Patient[]> {
     const allPatients = await readData<Patient>('patients');
     
     let filteredPatients = allPatients;
@@ -61,6 +61,11 @@ export async function getPatients(filter: 'all' | 'active', query?: string): Pro
         default:
             // No primary filter needed
             break;
+    }
+    
+    // Filter by unit if unitId is provided
+    if (unitId) {
+        filteredPatients = filteredPatients.filter(p => p.unitId === unitId);
     }
 
     // Apply search query on the already filtered list
@@ -166,73 +171,6 @@ export async function getAllUsers(): Promise<User[]> {
         const { password, ...userWithoutPassword } = u;
         return userWithoutPassword as User;
     });
-}
-
-/**
- * Busca um usuário no nosso banco de dados (Vercel KV) pelo email.
- * Centraliza a lógica de leitura e tratamento de erros.
- */
-export async function getUserByEmailFromDb(email: string): Promise<User | null> {
-  if (!email) return null;
-  try {
-    const users = await readData<User>('users');
-    const user = users.find(u => u.email === email);
-    return user || null;
-  } catch (error) {
-    console.error("CRITICAL: Falha ao ler dados do usuário do Vercel KV.", error);
-    // Em caso de falha de leitura do banco, o login deve ser impedido.
-    return null;
-  }
-}
-
-/**
- * Busca um usuário no banco de dados. Se não encontrar, cria um novo com base nos dados do provedor.
- * Esta função é robusta, buscando primeiro por ID e depois por email.
- */
-export async function getOrCreateUser(userData: { id: string; email: string; name?: string | null; image?: string | null; }): Promise<User | null> {
-    const allUsers = await readData<User>('users');
-    
-    // 1. Tenta encontrar pelo ID (método mais confiável)
-    let existingUser = allUsers.find(u => u.id === userData.id);
-    if (existingUser) {
-        return existingUser;
-    }
-
-    // 2. Se não encontrou pelo ID, tenta pelo email (fallback para consistência)
-    const userByEmail = allUsers.find(u => u.email === userData.email);
-    if (userByEmail) {
-         // Opcional: corrigir o ID se estiver inconsistente
-        if (userByEmail.id !== userData.id) {
-            console.warn(`Inconsistência de ID encontrada para ${userData.email}. Atualizando para o ID correto do Firebase.`);
-            userByEmail.id = userData.id;
-            const userIndex = allUsers.findIndex(u => u.email === userData.email);
-            if (userIndex !== -1) {
-                allUsers[userIndex] = userByEmail;
-                await writeData('users', allUsers);
-            }
-        }
-        return userByEmail;
-    }
-
-    // 3. Se não existe de forma alguma, cria um novo perfil.
-    console.log(`Nenhum perfil encontrado para ${userData.email}. Criando um novo...`);
-    const newUser: User = {
-        id: userData.id,
-        email: userData.email,
-        name: userData.name || userData.email.split('@')[0],
-        image: userData.image || undefined,
-        role: 'Farmacêutico', // Role padrão
-        accessLevel: allUsers.length === 0 ? 'Admin' : 'User', // O primeiro usuário é sempre Admin.
-    };
-
-    try {
-        await writeData('users', [...allUsers, newUser]);
-        console.log(`Novo perfil criado com sucesso para ${userData.email}.`);
-        return newUser;
-    } catch (error) {
-        console.error(`Falha ao criar o perfil para ${userData.email}:`, error);
-        return null;
-    }
 }
 
 export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {

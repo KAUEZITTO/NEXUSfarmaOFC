@@ -49,7 +49,7 @@ export default async function PatientsPage({
     
     // Fetch both patients and units at the page level
     const [initialPatients, initialUnits] = await Promise.all([
-        getPatients('all', query), // We now fetch 'all' patients and let the client-side handle the filtering display
+        getPatients(filter, query),
         getUnits()
     ]);
 
