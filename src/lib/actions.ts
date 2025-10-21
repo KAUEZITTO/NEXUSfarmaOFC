@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -694,8 +695,8 @@ export async function generateStockReportPDF({ products, categoryFilter }: { pro
         undefined,
         (doc) => {
             doc.autoTable({
-                head: [['Princípio Ativo', 'Nome Comercial', 'Apresentação', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote', 'Fabricante', 'Fornecedor']],
-                body: productsToDisplay.map(p => [p.name, p.commercialName || 'N/A', p.presentation || 'N/A', p.category, p.quantity.toLocaleString('pt-BR'), p.status, p.expiryDate ? new Date(p.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : 'N/A', p.batch || 'N/A', p.manufacturer || 'N/A', p.supplier || 'N/A']),
+                head: [['Nome Comercial', 'Princípio Ativo', 'Apresentação', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote', 'Fabricante', 'Fornecedor']],
+                body: productsToDisplay.map(p => [p.name, p.activeIngredient || 'N/A', p.presentation || 'N/A', p.category, p.quantity.toLocaleString('pt-BR'), p.status, p.expiryDate ? new Date(p.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : 'N/A', p.batch || 'N/A', p.manufacturer || 'N/A', p.supplier || 'N/A']),
                 theme: 'grid',
                 headStyles: { fillColor: [37, 99, 235], fontSize: 8 },
                 styles: { fontSize: 8 },

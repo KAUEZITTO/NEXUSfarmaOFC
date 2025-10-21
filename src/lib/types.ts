@@ -74,8 +74,8 @@ export type User = {
 
 export type Product = {
   id: string;
-  name: string;
-  commercialName?: string;
+  name: string; // This is now the commercial name
+  activeIngredient?: string; // This is the old 'name'
   manufacturer?: string;
   category: 'Medicamento' | 'Material Técnico' | 'Tiras de Glicemia/Lancetas' | 'Odontológico' | 'Laboratório' | 'Fraldas' | 'Fórmulas' | 'Não Padronizado (Compra)';
   subCategory?: 'Medicamento' | 'Material';

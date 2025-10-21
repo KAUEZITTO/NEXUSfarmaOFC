@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useTransition, useMemo, useEffect } from 'react';
@@ -103,7 +104,7 @@ function BatchDetailsDialog({ isOpen, onOpenChange, product }: BatchDetailsDialo
                 <TableRow>
                   <TableHead>Lote</TableHead>
                   <TableHead>Validade</TableHead>
-                  <TableHead>Nome Comercial</TableHead>
+                  <TableHead>Princípio Ativo</TableHead>
                   <TableHead>Fabricante</TableHead>
                   <TableHead className="text-right">Quantidade</TableHead>
                   <TableHead className="text-center">Ações</TableHead>
@@ -123,7 +124,7 @@ function BatchDetailsDialog({ isOpen, onOpenChange, product }: BatchDetailsDialo
                       <TableRow key={batch.id}>
                         <TableCell className="font-mono">{batch.batch || 'N/A'}</TableCell>
                         <TableCell>{formattedDate}</TableCell>
-                        <TableCell>{batch.commercialName || 'N/A'}</TableCell>
+                        <TableCell>{batch.activeIngredient || 'N/A'}</TableCell>
                         <TableCell>{batch.manufacturer || 'N/A'}</TableCell>
                         <TableCell className="text-right">{batch.quantity.toLocaleString('pt-BR')}</TableCell>
                         <TableCell className="text-center">
@@ -174,6 +175,7 @@ const groupAndFilterProducts = (products: Product[], filter: FilterCategory, sea
     const groupedProductsMap = new Map<string, GroupedProduct>();
 
     products.forEach(product => {
+        // Group by commercial name and presentation
         const key = `${product.name}|${product.presentation}`;
         const existing = groupedProductsMap.get(key);
 
@@ -206,8 +208,10 @@ const groupAndFilterProducts = (products: Product[], filter: FilterCategory, sea
     }
     
     if (searchTerm) {
+        const lowerCaseSearchTerm = searchTerm.toLowerCase();
         groupedProducts = groupedProducts.filter(p => 
-            p.name.toLowerCase().includes(searchTerm.toLowerCase())
+            p.name.toLowerCase().includes(lowerCaseSearchTerm) ||
+            (p.activeIngredient && p.activeIngredient.toLowerCase().includes(lowerCaseSearchTerm))
         );
     }
 
@@ -355,7 +359,7 @@ export function InventoryClientPage({ initialProducts }: { initialProducts: Prod
         accessorKey: "name",
         header: ({ column }) => (
           <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-            Nome <ArrowUpDown className="ml-2 h-4 w-4" />
+            Nome Comercial <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
         cell: ({ row }) => <div className="capitalize font-medium text-primary hover:underline cursor-pointer">{row.getValue("name")}</div>,
@@ -528,7 +532,7 @@ export function InventoryClientPage({ initialProducts }: { initialProducts: Prod
             <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                    placeholder="Filtrar por nome..."
+                    placeholder="Filtrar por nome comercial ou princípio ativo..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 max-w-sm"

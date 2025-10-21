@@ -52,9 +52,9 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
   const [savedProduct, setSavedProduct] = useState<Product | null>(null);
   const [showSavedDialog, setShowSavedDialog] = useState(false);
 
-  // Form state
-  const [name, setName] = useState('');
-  const [commercialName, setCommercialName] = useState('');
+  // Form state - 'name' is now commercialName, 'activeIngredient' is the generic name
+  const [name, setName] = useState(''); // This is now the Commercial Name
+  const [activeIngredient, setActiveIngredient] = useState(''); // This is the old 'name'
   const [manufacturer, setManufacturer] = useState('');
   const [category, setCategory] = useState<Product['category']>('Medicamento');
   const [subCategory, setSubCategory] = useState<Product['subCategory'] | undefined>(undefined);
@@ -68,7 +68,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
   const [imageUrl, setImageUrl] = useState('');
   
   const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeBaseItem[]>([]);
-  const [debouncedName] = useDebounce(name, 300);
+  const [debouncedActiveIngredient] = useDebounce(activeIngredient, 300);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -83,9 +83,8 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
   }, [isOpen]);
 
   useEffect(() => {
-    if (debouncedName && knowledgeBase.length > 0 && !isEditing) {
-      const searchTerm = debouncedName.toLowerCase();
-      // Improved search: check if searchTerm includes kb.name OR kb.name includes searchTerm
+    if (debouncedActiveIngredient && knowledgeBase.length > 0 && !isEditing) {
+      const searchTerm = debouncedActiveIngredient.toLowerCase();
       const match = knowledgeBase.find(item => {
         const kbName = item.name.toLowerCase();
         return searchTerm.includes(kbName) || kbName.includes(searchTerm);
@@ -99,12 +98,12 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
         setMainFunction('');
       }
     }
-  }, [debouncedName, knowledgeBase, isEditing]);
+  }, [debouncedActiveIngredient, knowledgeBase, isEditing]);
 
 
   const resetForm = () => {
     setName('');
-    setCommercialName('');
+    setActiveIngredient('');
     setManufacturer('');
     setCategory('Medicamento');
     setSubCategory(undefined);
@@ -120,8 +119,8 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
 
   useEffect(() => {
     if (productToEdit && isOpen) {
-        setName(productToEdit.name);
-        setCommercialName(productToEdit.commercialName || '');
+        setName(productToEdit.name); // Commercial name is now primary
+        setActiveIngredient(productToEdit.activeIngredient || '');
         setManufacturer(productToEdit.manufacturer || '');
         setCategory(productToEdit.category);
         setSubCategory(productToEdit.subCategory);
@@ -167,7 +166,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
       toast({
         variant: 'destructive',
         title: 'Campos Obrigatórios',
-        description: 'Nome, Categoria e Quantidade são obrigatórios.',
+        description: 'Nome Comercial, Categoria e Quantidade são obrigatórios.',
       });
       return;
     }
@@ -175,47 +174,33 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
 
     try {
         let resultProduct: Product;
+        const productData = {
+            name,
+            activeIngredient,
+            manufacturer,
+            category,
+            subCategory: category === 'Não Padronizado (Compra)' ? subCategory : undefined,
+            therapeuticClass,
+            mainFunction,
+            quantity,
+            batch,
+            expiryDate,
+            supplier,
+            presentation,
+            imageUrl,
+        };
+
         if (isEditing && productToEdit) {
-            const productDataToUpdate = {
-                name,
-                commercialName,
-                manufacturer,
-                category,
-                subCategory: category === 'Não Padronizado (Compra)' ? subCategory : undefined,
-                therapeuticClass,
-                mainFunction,
-                quantity,
-                batch,
-                expiryDate,
-                supplier,
-                presentation,
-                imageUrl,
-            };
-            resultProduct = await updateProduct(productToEdit.id, productDataToUpdate);
+            resultProduct = await updateProduct(productToEdit.id, productData);
             toast({
               title: 'Produto Atualizado!',
               description: `${name} foi atualizado com sucesso.`,
             });
         } else {
-            const newProductData: Omit<Product, 'id' | 'status'> = {
-                name,
-                commercialName,
-                manufacturer: manufacturer,
-                category,
-                subCategory: category === 'Não Padronizado (Compra)' ? subCategory : undefined,
-                therapeuticClass,
-                mainFunction,
-                quantity,
-                batch,
-                expiryDate,
-                supplier,
-                presentation,
-                imageUrl,
-            };
-            resultProduct = await addProduct(newProductData);
+            resultProduct = await addProduct(productData);
             toast({
                 title: 'Produto Adicionado!',
-                description: `${newProductData.name} foi adicionado ao inventário com sucesso.`,
+                description: `${productData.name} foi adicionado ao inventário com sucesso.`,
             });
         }
         
@@ -236,7 +221,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
     }
   };
 
-  const showCommercialName = category === 'Medicamento' || (category === 'Não Padronizado (Compra)' && subCategory === 'Medicamento');
+  const showActiveIngredient = category === 'Medicamento' || (category === 'Não Padronizado (Compra)' && subCategory === 'Medicamento');
 
 
   return (
@@ -251,14 +236,14 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
             {/* Coluna 1 e 2: Campos de texto */}
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="name">Nome do Produto (Princípio Ativo/Descrição)</Label>
+                <Label htmlFor="name">Nome Comercial</Label>
                 <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
 
-               {showCommercialName && (
+               {showActiveIngredient && (
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="commercialName">Nome Comercial (Opcional)</Label>
-                  <Input id="commercialName" value={commercialName} onChange={(e) => setCommercialName(e.target.value)} />
+                  <Label htmlFor="activeIngredient">Princípio Ativo/Descrição (Opcional)</Label>
+                  <Input id="activeIngredient" value={activeIngredient} onChange={(e) => setActiveIngredient(e.target.value)} />
                 </div>
               )}
 
