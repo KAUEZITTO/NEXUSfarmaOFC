@@ -71,7 +71,8 @@ export function NewDispensationClientPage({ initialProducts, initialDispensation
     async function searchPatients() {
         if (debouncedPatientSearch.length > 2) {
             setIsSearching(true);
-            const patients = await getPatients('active', debouncedPatientSearch);
+            // Changed from 'active' to 'all' to include all patients in search
+            const patients = await getPatients('all', debouncedPatientSearch);
             setPatientResults(patients);
             setIsSearching(false);
         } else {
