@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -203,12 +202,6 @@ export function PatientsClientPage({
 
         return (
           <div className="flex items-center gap-2 justify-end">
-             <Button asChild variant="outline" size="sm">
-                <Link href={`/dashboard/dispense/new?patientId=${patient.id}`}>
-                    <UserCheck className="mr-2 h-4 w-4" />
-                    Atender
-                </Link>
-            </Button>
             <AlertDialog>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -311,7 +304,7 @@ export function PatientsClientPage({
             </CardDescription>
           </div>
           <div className="flex gap-2">
-             <Button asChild>
+            <Button asChild>
                 <Link href="/dashboard/dispense/new">
                     <UserCheck className="mr-2 h-4 w-4" />
                     Nova Dispensação
@@ -366,3 +359,5 @@ export function PatientsClientPage({
     </Card>
   );
 }
+
+    
