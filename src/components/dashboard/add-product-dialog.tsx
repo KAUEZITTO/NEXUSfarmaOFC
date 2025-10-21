@@ -38,6 +38,7 @@ type AddProductDialogProps = {
 };
 
 const categories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Tiras de Glicemia/Lancetas', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)'];
+const subCategories: Exclude<Product['subCategory'], undefined>[] = ['Medicamento', 'Material'];
 const presentations: Exclude<Product['presentation'], undefined>[] = ['Comprimido', 'Unidade', 'Caixa c/ 100', 'Seringa 4g', 'Frasco 10ml', 'Caixa c/ 50', 'Caneta 3ml', 'Pacote', 'Bolsa', 'Outro'];
 const suppliers: Exclude<Product['supplier'], undefined>[] = ['Casmed', 'Mednutri', 'Doação', 'Outro'];
 
@@ -56,6 +57,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
   const [commercialName, setCommercialName] = useState('');
   const [manufacturer, setManufacturer] = useState('');
   const [category, setCategory] = useState<Product['category']>('Medicamento');
+  const [subCategory, setSubCategory] = useState<Product['subCategory'] | undefined>(undefined);
   const [batch, setBatch] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [supplier, setSupplier] = useState<Product['supplier']>('Casmed');
@@ -105,6 +107,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
     setCommercialName('');
     setManufacturer('');
     setCategory('Medicamento');
+    setSubCategory(undefined);
     setBatch('');
     setExpiryDate('');
     setSupplier('Casmed');
@@ -121,6 +124,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
         setCommercialName(productToEdit.commercialName || '');
         setManufacturer(productToEdit.manufacturer || '');
         setCategory(productToEdit.category);
+        setSubCategory(productToEdit.subCategory);
         setTherapeuticClass(productToEdit.therapeuticClass || '');
         setMainFunction(productToEdit.mainFunction || '');
         setBatch(productToEdit.batch || '');
@@ -174,9 +178,10 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
         if (isEditing && productToEdit) {
             const productDataToUpdate = {
                 name,
-                commercialName: category === 'Medicamento' ? commercialName : undefined,
+                commercialName,
                 manufacturer,
                 category,
+                subCategory: category === 'Não Padronizado (Compra)' ? subCategory : undefined,
                 therapeuticClass,
                 mainFunction,
                 quantity,
@@ -194,9 +199,10 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
         } else {
             const newProductData: Omit<Product, 'id' | 'status'> = {
                 name,
-                commercialName: category === 'Medicamento' ? commercialName : undefined,
+                commercialName,
                 manufacturer: manufacturer,
                 category,
+                subCategory: category === 'Não Padronizado (Compra)' ? subCategory : undefined,
                 therapeuticClass,
                 mainFunction,
                 quantity,
@@ -230,6 +236,9 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
     }
   };
 
+  const showCommercialName = category === 'Medicamento' || (category === 'Não Padronizado (Compra)' && subCategory === 'Medicamento');
+
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -245,25 +254,47 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
                 <Label htmlFor="name">Nome do Produto (Princípio Ativo/Descrição)</Label>
                 <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
+
+               {showCommercialName && (
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="commercialName">Nome Comercial (Opcional)</Label>
+                  <Input id="commercialName" value={commercialName} onChange={(e) => setCommercialName(e.target.value)} />
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="category">Categoria</Label>
-                <Select onValueChange={(v) => setCategory(v as any)} value={category}>
+                <Select onValueChange={(v) => {
+                    const newCategory = v as Product['category'];
+                    setCategory(newCategory);
+                    if (newCategory !== 'Não Padronizado (Compra)') {
+                        setSubCategory(undefined);
+                    }
+                }} value={category}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {categories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              {category === 'Medicamento' && (
+
+             {category === 'Não Padronizado (Compra)' && (
                 <div className="space-y-2">
-                  <Label htmlFor="commercialName">Nome Comercial (Opcional)</Label>
-                  <Input id="commercialName" value={commercialName} onChange={(e) => setCommercialName(e.target.value)} />
+                    <Label htmlFor="subCategory">Subcategoria</Label>
+                    <Select onValueChange={(v) => setSubCategory(v as Product['subCategory'])} value={subCategory}>
+                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectContent>
+                            {subCategories.map(sub => <SelectItem key={sub} value={sub}>{sub}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
                 </div>
               )}
+
               <div className="space-y-2">
                   <Label htmlFor="manufacturer">Laboratório/Indústria (Opcional)</Label>
                   <Input id="manufacturer" value={manufacturer} onChange={(e) => setManufacturer(e.target.value)} />
-                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="batch">Lote</Label>
                 <Input id="batch" value={batch} onChange={(e) => setBatch(e.target.value)} />

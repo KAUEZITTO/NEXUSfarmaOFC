@@ -78,6 +78,7 @@ export type Product = {
   commercialName?: string;
   manufacturer?: string;
   category: 'Medicamento' | 'Material Técnico' | 'Tiras de Glicemia/Lancetas' | 'Odontológico' | 'Laboratório' | 'Fraldas' | 'Fórmulas' | 'Não Padronizado (Compra)';
+  subCategory?: 'Medicamento' | 'Material';
   therapeuticClass?: string; 
   mainFunction?: string; 
   quantity: number;
