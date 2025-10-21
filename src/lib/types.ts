@@ -163,7 +163,7 @@ export type Patient = {
     bedriddenTreatmentDuration?: string;
 };
 
-export type PatientFilter = 'active' | 'inactive' | 'insulin' | 'diapers' | 'bedridden' | 'legal' | 'municipal' | 'all';
+export type PatientFilter = 'active' | 'inactive' | 'insulin' | 'diapers' | 'bedridden' | 'legal' | 'municipal' | 'all' | 'strips' | 'formulas' | 'immunoglobulin';
 
 export type OrderItem = {
     productId: string;

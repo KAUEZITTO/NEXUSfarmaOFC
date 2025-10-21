@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -32,6 +31,9 @@ const filterCategories: { label: string, value: PatientFilter }[] = [
     { label: 'Ativos', value: 'active' },
     { label: 'Inativos', value: 'inactive' },
     { label: 'Insulinas', value: 'insulin' },
+    { label: 'Tiras Glicemia', value: 'strips'},
+    { label: 'Fórmulas', value: 'formulas'},
+    { label: 'Imunoglobulina', value: 'immunoglobulin'},
     { label: 'Fraldas', value: 'diapers' },
     { label: 'Acamados', value: 'bedridden' },
     { label: 'Judicial', value: 'legal' },
@@ -305,10 +307,10 @@ export function PatientsClientPage({
           </div>
           <div className="flex gap-2">
             <Button asChild>
-                <Link href="/dashboard/dispense/new">
-                    <UserCheck className="mr-2 h-4 w-4" />
-                    Nova Dispensação
-                </Link>
+              <Link href="/dashboard/dispense/new">
+                <UserCheck className="mr-2 h-4 w-4" />
+                Nova Dispensação
+              </Link>
             </Button>
             <AddPatientDialog 
               onPatientSaved={handlePatientSaved}
@@ -359,5 +361,3 @@ export function PatientsClientPage({
     </Card>
   );
 }
-
-    

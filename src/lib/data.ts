@@ -1,4 +1,3 @@
-
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
 import type { KnowledgeBaseItem } from './types';
 import { kv } from '@/lib/server/kv.server';
@@ -118,6 +117,15 @@ export async function getPatients(filter: PatientFilter = 'active', query?: stri
         case 'diapers':
              filteredPatients = allPatients.filter(p => p.demandItems?.includes('Fraldas') && p.status === 'Ativo');
              break;
+        case 'strips':
+            filteredPatients = allPatients.filter(p => p.demandItems?.includes('Tiras de Glicemia') && p.status === 'Ativo');
+            break;
+        case 'formulas':
+            filteredPatients = allPatients.filter(p => p.demandItems?.includes('Fórmulas') && p.status === 'Ativo');
+            break;
+        case 'immunoglobulin':
+            filteredPatients = allPatients.filter(p => p.demandItems?.includes('Imunoglobulina') && p.status === 'Ativo');
+            break;
         case 'bedridden':
             filteredPatients = allPatients.filter(p => p.isBedridden && p.status === 'Ativo');
             break;
