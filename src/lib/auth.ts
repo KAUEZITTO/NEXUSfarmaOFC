@@ -112,6 +112,7 @@ export const authOptions: NextAuthOptions = {
 
 // --- USER MANAGEMENT ACTIONS ---
 export async function updateUserAccessLevel(userId: string, accessLevel: AccessLevel) {
+    'use server';
     const users = await readData<User>('users');
     const userIndex = users.findIndex(u => u.id === userId);
     if (userIndex === -1) {
@@ -123,6 +124,7 @@ export async function updateUserAccessLevel(userId: string, accessLevel: AccessL
 }
 
 export async function deleteUser(userId: string) {
+    'use server';
     const adminAuth = getAuth(getAdminApp());
     const users = await readData<User>('users');
     const userToDelete = users.find(u => u.id === userId);
