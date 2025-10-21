@@ -4,8 +4,6 @@
 import 'intro.js/introjs.css';
 import { Steps } from 'intro.js-react';
 import React, { useEffect, useState, useContext, createContext, useRef } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import { navItems } from './dashboard-nav';
 import { useSidebar } from '../ui/sidebar';
 
 const TOUR_STORAGE_KEY = 'nexusfarma-tour-completed-v1';
@@ -35,41 +33,77 @@ const tourSteps = [
     },
     {
         element: '[data-tour-id="step-orders"]',
+        intro: 'Agora, vamos para a seção de <strong>Pedidos</strong>. Por favor, clique no ícone de Pedidos na barra lateral e, em seguida, clique em "Próximo".',
+    },
+    {
+        element: '[data-tour-id="step-orders"]',
         intro: 'Na área de <strong>Pedidos</strong>, você pode criar novas remessas de itens para as unidades de saúde e consultar o histórico de envios de cada uma.',
+        position: 'right',
+    },
+    {
+        element: '[data-tour-id="step-inventory"]',
+        intro: 'Ótimo! Agora, clique em <strong>Inventário</strong> na barra lateral para continuar o tour.',
     },
     {
         element: '[data-tour-id="step-inventory"]',
         intro: 'Gerencie todo o seu <strong>Inventário</strong> aqui. Adicione novos produtos, edite itens existentes e tenha uma visão completa do que está em estoque.',
+        position: 'right',
+    },
+    {
+        element: '[data-tour-id="step-patients"]',
+        intro: 'Vamos para <strong>Pacientes</strong>. Clique no item de menu e depois em "Próximo".',
     },
     {
         element: '[data-tour-id="step-patients"]',
         intro: 'A seção de <strong>Pacientes</strong> permite cadastrar novos pacientes, gerenciar seus dados e, o mais importante, registrar a dispensação de medicamentos e insumos.',
+         position: 'right',
     },
      {
         element: '[data-tour-id="step-units"]',
+        intro: 'Clique em <strong>Unidades</strong> para ver como gerenciá-las.',
+    },
+    {
+        element: '[data-tour-id="step-units"]',
         intro: 'Cadastre e gerencie as <strong>Unidades</strong> de saúde (UBS, Hospitais, etc.) que são abastecidas pelo CAF. Você pode ver detalhes e histórico de cada uma.',
+         position: 'right',
+    },
+    {
+        element: '[data-tour-id="step-reports"]',
+        intro: 'A seguir, os <strong>Relatórios</strong>. Clique no menu para continuar.',
     },
     {
         element: '[data-tour-id="step-reports"]',
         intro: 'A área de <strong>Relatórios</strong> é poderosa. Gere documentos PDF para auditoria e análise, como consumo mensal, estoque atual, validades e muito mais.',
+        position: 'right',
     },
     {
-        element: '[data-tour-id="step-users"]',
-        intro: 'Como <strong>Administrador</strong>, você pode gerenciar os usuários do sistema, alterando seus níveis de acesso e cargos.',
+        element: '[data-tour-id="step-settings"]',
+        intro: 'Clique em <strong>Configurações</strong> para ver as opções de personalização.',
     },
     {
         element: '[data-tour-id="step-settings"]',
         intro: 'Em <strong>Configurações</strong>, você pode personalizar sua conta, alterar sua senha, e mudar a aparência do sistema entre os modos claro e escuro.',
+         position: 'right',
+    },
+    {
+        element: '[data-tour-id="step-about"]',
+        intro: 'Quase lá! Clique em <strong>Sobre</strong>.',
     },
     {
         element: '[data-tour-id="step-about"]',
         intro: 'Na seção <strong>Sobre</strong>, você encontra informações de contato para suporte técnico, sugestões e detalhes sobre a versão do sistema.',
+         position: 'right',
+    },
+    {
+        element: '[data-tour-id="step-dashboard"]',
+        intro: 'Para finalizar, clique no ícone do <strong>Dashboard</strong> para voltar à tela inicial.',
     },
     {
         element: '[data-tour-id="step-user-nav"]',
         intro: 'Por fim, aqui você pode acessar as <strong>Configurações</strong> da sua conta, refazer este tour, ou sair do sistema com segurança. Explore o NexusFarma!',
+        position: 'left',
     }
-].filter(Boolean); // Filter out any undefined steps (like admin route for non-admin)
+].filter(Boolean); // Filter out any undefined steps
 
 interface TourGuideWrapperProps {
   children: React.ReactNode;
@@ -218,55 +252,11 @@ export const TourGuideWrapper: React.FC<TourGuideWrapperProps> = ({ children }) 
 
 
 export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boolean, setIsTourActive: (isActive: boolean) => void }) {
-    const router = useRouter();
-    const pathname = usePathname();
-    const introRef = useRef<any>(null);
 
     const onExit = () => {
         setIsTourActive(false);
         localStorage.setItem(TOUR_STORAGE_KEY, 'true');
     };
-
-    const onBeforeChange = (nextStepIndex: number) => {
-        const step = tourSteps[nextStepIndex];
-        
-        if (!step?.element) {
-            onExit();
-            return; 
-        }
-
-        const targetElement = document.querySelector(step.element);
-
-        if (!targetElement) {
-            const tourId = step.element.replace(/\[data-tour-id="|"\]/g, '');
-            const navItem = navItems.find(item => item.tourId === tourId);
-
-            if (navItem && navItem.href !== pathname) {
-                // Store the next step index and navigate
-                sessionStorage.setItem('tour-next-step', String(nextStepIndex));
-                router.push(navItem.href);
-                 // We stop introjs from proceeding. The useEffect below will handle resuming.
-                return false;
-            }
-        }
-        return true;
-    };
-    
-    // This effect runs after a page navigation to resume the tour
-    useEffect(() => {
-        const nextStep = sessionStorage.getItem('tour-next-step');
-        if (nextStep && isTourActive && introRef.current) {
-            const stepIndex = parseInt(nextStep, 10);
-            // Clear the stored step
-            sessionStorage.removeItem('tour-next-step');
-
-            // Wait a bit for the page to render, then go to the correct step
-            setTimeout(() => {
-                introRef.current?.goToStep(stepIndex);
-            }, 500);
-        }
-    }, [pathname, isTourActive]);
-
 
     if (!isTourActive) {
         return null;
@@ -278,7 +268,6 @@ export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boo
             steps={tourSteps}
             initialStep={0}
             onExit={onExit}
-            onBeforeChange={onBeforeChange as any}
             options={{
                 nextLabel: 'Próximo',
                 prevLabel: 'Anterior',
@@ -289,9 +278,6 @@ export function TourGuide({ isTourActive, setIsTourActive }: { isTourActive: boo
                 exitOnOverlayClick: false,
                 showBullets: false,
             }}
-             ref={(intro) => (introRef.current = intro)}
         />
     );
 }
-
-    
