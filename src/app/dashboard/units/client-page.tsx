@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/card';
 import { AddUnitDialog } from '@/components/dashboard/add-unit-dialog';
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown, MoreHorizontal, Check, X, Edit, Eye, PlusCircle, Trash2 } from 'lucide-react';
+import { ArrowUpDown, MoreHorizontal, Check, X, Edit, Eye, PlusCircle, Trash2, Truck, FlaskConical } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -100,6 +100,30 @@ export function UnitsClientPage({ initialUnits }: { initialUnits: Unit[] }) {
         );
       },
     },
+     {
+      accessorKey: 'isMobileUnit',
+      header: 'Un. Móvel',
+      cell: ({ row }) => {
+        const isMobile = row.getValue('isMobileUnit');
+        return isMobile ? (
+          <Truck className="h-4 w-4 text-blue-500" />
+        ) : (
+          <X className="h-4 w-4 text-muted-foreground/50" />
+        );
+      },
+    },
+    {
+      accessorKey: 'hasLaboratory',
+      header: 'Lab',
+      cell: ({ row }) => {
+        const hasLab = row.getValue('hasLaboratory');
+        return hasLab ? (
+          <FlaskConical className="h-4 w-4 text-purple-500" />
+        ) : (
+          <X className="h-4 w-4 text-muted-foreground/50" />
+        );
+      },
+    },
     {
       id: 'actions',
       cell: ({ row }) => {
@@ -137,7 +161,7 @@ export function UnitsClientPage({ initialUnits }: { initialUnits: Unit[] }) {
                   }
                 />
                  <AlertDialogTrigger asChild>
-                  <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                  <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={(e) => e.preventDefault()}>
                     <Trash2 className="mr-2 h-4 w-4" />
                     <span>Excluir Unidade</span>
                   </DropdownMenuItem>
@@ -170,9 +194,9 @@ export function UnitsClientPage({ initialUnits }: { initialUnits: Unit[] }) {
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>Unidades</CardTitle>
+            <CardTitle>Unidades de Saúde</CardTitle>
             <CardDescription>
-              Cadastre e gerencie as unidades que recebem os produtos.
+              Cadastre e gerencie as unidades (UBS, Hospitais, etc.) que recebem os produtos.
             </CardDescription>
           </div>
           <AddUnitDialog

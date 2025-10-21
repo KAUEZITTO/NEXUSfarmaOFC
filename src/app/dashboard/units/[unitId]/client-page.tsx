@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Users, Pill, Stethoscope, ArrowLeft, FileText, CheckCircle, XCircle } from "lucide-react";
+import { Building2, Users, Pill, Stethoscope, ArrowLeft, FileText, CheckCircle, XCircle, Home, Truck, FlaskConical, Ambulance } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { Order, Unit as UnitType, OrderStatus } from "@/lib/types";
@@ -45,6 +45,14 @@ interface UnitDetailsClientPageProps {
     initialPatientCount: number;
     initialOrders: Order[];
 }
+
+const ServiceIndicator = ({ name, available, icon: Icon }: { name: string, available?: boolean, icon: React.ElementType }) => (
+    <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
+        <Icon className={cn("h-5 w-5", available ? 'text-primary' : 'text-muted-foreground/60')} />
+        <span className="flex-1 text-sm font-medium">{name}</span>
+        {available ? <CheckCircle className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-destructive/50" />}
+    </div>
+)
 
 export function UnitDetailsClientPage({ initialUnit, initialPatientCount, initialOrders }: UnitDetailsClientPageProps) {
   
@@ -79,19 +87,9 @@ export function UnitDetailsClientPage({ initialUnit, initialPatientCount, initia
                 <p className="text-muted-foreground">{initialUnit.address}</p>
             </div>
         </div>
-         <div className="flex gap-4">
-            <p className="flex items-center text-sm text-muted-foreground gap-2">
-                {initialUnit.hasPharmacy ? <CheckCircle className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-destructive" />}
-                Farmácia
-            </p>
-             <p className="flex items-center text-sm text-muted-foreground gap-2">
-                {initialUnit.hasDentalOffice ? <CheckCircle className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-destructive" />}
-                Odontologia
-            </p>
-         </div>
       </div>
 
-       <div className="grid gap-4 md:grid-cols-3">
+       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pacientes Vinculados</CardTitle>
@@ -99,7 +97,7 @@ export function UnitDetailsClientPage({ initialUnit, initialPatientCount, initia
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{initialPatientCount}</div>
-            <p className="text-xs text-muted-foreground">Total de pacientes cadastrados nesta unidade</p>
+            <p className="text-xs text-muted-foreground">Total de pacientes cadastrados</p>
           </CardContent>
         </Card>
          <Card>
@@ -121,6 +119,19 @@ export function UnitDetailsClientPage({ initialUnit, initialPatientCount, initia
             <div className="text-2xl font-bold">{totalMaterialsSent.toLocaleString('pt-BR')}</div>
             <p className="text-xs text-muted-foreground">Total de itens (todo o período)</p>
           </CardContent>
+        </Card>
+        <Card>
+            <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Serviços Oferecidos</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-2 text-sm">
+                <ServiceIndicator name="Farmácia" available={initialUnit.hasPharmacy} icon={Pill} />
+                <ServiceIndicator name="Odonto" available={initialUnit.hasDentalOffice} icon={Stethoscope} />
+                <ServiceIndicator name="Un. Móvel" available={initialUnit.isMobileUnit} icon={Truck} />
+                <ServiceIndicator name="Domiciliar" available={initialUnit.isHomeCare} icon={Home} />
+                <ServiceIndicator name="Laboratório" available={initialUnit.hasLaboratory} icon={FlaskConical} />
+                <ServiceIndicator name="Resgate" available={initialUnit.isRescueVehicle} icon={Ambulance} />
+            </CardContent>
         </Card>
       </div>
 
