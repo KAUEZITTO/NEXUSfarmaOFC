@@ -6,13 +6,9 @@ import { readData, writeData, getKnowledgeBase, getAllUsers, getUserByEmailFromD
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus } from './types';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase/admin';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/session';
 
 // --- ACTIONS EXPOSED TO CLIENT ---
-
-// We are creating wrappers for our data functions to mark them as 'use server'.
-// This allows client components to call them securely.
 
 export async function getPatients(filter: 'all' | 'active', query?: string): Promise<Patient[]> {
     return getPatientsFromDb(filter, query);
@@ -43,9 +39,9 @@ const logStockMovement = async (
   movementDate: string,
   relatedId?: string
 ) => {
-  const session = await getServerSession(authOptions);
+  const user = await getCurrentUser();
   const movements = await readData<StockMovement>('stockMovements');
-  const userEmail = session?.user?.name || 'Sistema';
+  const userName = user?.name || 'Sistema';
 
   const newMovement: StockMovement = {
     id: generateId('mov'),
@@ -57,7 +53,7 @@ const logStockMovement = async (
     quantityBefore,
     quantityAfter: quantityBefore + quantityChange,
     date: movementDate,
-    user: userEmail,
+    user: userName,
     relatedId
   };
   await writeData('stockMovements', [newMovement, ...movements]);
@@ -104,8 +100,8 @@ export async function updateProduct(productId: string, productData: Partial<Omit
 }
 
 export async function zeroStock(category?: Product['category']): Promise<{ success: boolean, message: string }> {
-    const session = await getServerSession(authOptions);
-    const userEmail = session?.user?.name || 'Sistema';
+    const user = await getCurrentUser();
+    const userName = user?.name || 'Sistema';
     const products = await getProductsFromDb();
     const movements: StockMovement[] = [];
     const movementDate = new Date().toISOString();
@@ -136,7 +132,7 @@ export async function zeroStock(category?: Product['category']): Promise<{ succe
                 quantityBefore: originalQuantity,
                 quantityAfter: 0,
                 date: movementDate,
-                user: userEmail,
+                user: userName,
                 relatedId: `zero_stock_${category || 'all'}`
             };
             movements.push(newMovement);
@@ -166,8 +162,8 @@ export async function deleteProducts(productIds: string[]): Promise<{ success: b
 
     // Opcional: registrar a exclusão como uma movimentação de estoque
     const movements: StockMovement[] = [];
-    const session = await getServerSession(authOptions);
-    const userEmail = session?.user?.name || 'Sistema';
+    const user = await getCurrentUser();
+    const userName = user?.name || 'Sistema';
     const movementDate = new Date().toISOString();
 
     for (const product of productsToDelete) {
@@ -181,7 +177,7 @@ export async function deleteProducts(productIds: string[]): Promise<{ success: b
             quantityBefore: product.quantity,
             quantityAfter: 0,
             date: movementDate,
-            user: userEmail,
+            user: userName,
             relatedId: `delete_prod_${product.id}`
         });
     }
@@ -290,7 +286,7 @@ export async function deletePatient(patientId: string): Promise<{ success: boole
 
 // --- ORDER ACTIONS ---
 export async function addOrder(orderData: { unitId: string; unitName: string; orderType: OrderType, items: OrderItem[]; notes?: string; sentDate?: string; }) {
-    const session = await getServerSession(authOptions);
+    const user = await getCurrentUser();
     const orders = await readData<Order>('orders');
     const products = await getProductsFromDb();
 
@@ -306,7 +302,7 @@ export async function addOrder(orderData: { unitId: string; unitName: string; or
         sentDate: sentDate,
         status: 'Em análise',
         itemCount: orderData.items.reduce((sum, item) => sum + item.quantity, 0),
-        creatorName: session?.user?.name || 'Usuário Desconhecido',
+        creatorName: user?.name || 'Usuário Desconhecido',
     };
 
     // Update stock for each item
@@ -405,7 +401,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
 
 // --- DISPENSATION ACTIONS ---
 export async function addDispensation(dispensationData: { patientId: string; patient: Omit<Patient, 'files'>; items: DispensationItem[]; notes?: string; }): Promise<Dispensation> {
-    const session = await getServerSession(authOptions);
+    const user = await getCurrentUser();
     const dispensations = await readData<Dispensation>('dispensations');
     const products = await getProductsFromDb();
     const dispensationDate = new Date().toISOString();
@@ -418,7 +414,7 @@ export async function addDispensation(dispensationData: { patientId: string; pat
       patient: patientForDispensation,
       items: dispensationData.items,
       date: dispensationDate,
-      creatorName: session?.user?.name || 'Usuário Desconhecido',
+      creatorName: user?.name || 'Usuário Desconhecido',
       notes: dispensationData.notes,
     };
 
