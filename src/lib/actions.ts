@@ -422,6 +422,43 @@ export async function addDispensation(dispensationData: { patientId: string; pat
     return newDispensation;
 }
 
+export async function deleteDispensation(dispensationId: string): Promise<{ success: boolean; message?: string }> {
+    const allDispensations = await readData<Dispensation>('dispensations');
+    const allProducts = await getProductsFromDb();
+
+    const dispensationToDelete = allDispensations.find(d => d.id === dispensationId);
+    if (!dispensationToDelete) {
+        return { success: false, message: 'Dispensação não encontrada.' };
+    }
+
+    const reversalDate = new Date().toISOString();
+
+    for (const item of dispensationToDelete.items) {
+        const productIndex = allProducts.findIndex(p => p.id === item.productId);
+        if (productIndex !== -1) {
+            const originalQuantity = allProducts[productIndex].quantity;
+            allProducts[productIndex].quantity += item.quantity;
+            allProducts[productIndex].status = allProducts[productIndex].quantity > 0 ? (allProducts[productIndex].quantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque';
+            await logStockMovement(item.productId, item.name, 'Entrada', 'Estorno de Dispensação', item.quantity, originalQuantity, reversalDate, dispensationToDelete.id);
+        } else {
+             console.warn(`Produto com ID ${item.productId} não encontrado durante estorno de dispensação.`);
+        }
+    }
+
+    const updatedDispensations = allDispensations.filter(d => d.id !== dispensationId);
+    await writeData('products', allProducts);
+    await writeData('dispensations', updatedDispensations);
+
+    revalidatePath('/dashboard/patients');
+    revalidatePath(`/dashboard/patients/${dispensationToDelete.patientId}`);
+    revalidatePath('/dashboard/inventory');
+    revalidatePath('/dashboard/reports');
+    revalidatePath('/dashboard');
+
+    return { success: true };
+}
+
+
 // --- USER PROFILE & MANAGEMENT ACTIONS ---
 const avatarColors = [
   'hsl(211 100% 50%)', // Blue

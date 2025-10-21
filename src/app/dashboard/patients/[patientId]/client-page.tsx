@@ -13,63 +13,14 @@ import { Dispensation, PatientFile } from "@/lib/types";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import type { Patient } from "@/lib/types";
-import { updatePatient } from "@/lib/actions";
+import { updatePatient, deleteDispensation } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-
-const getColumns = (): ColumnDef<Dispensation>[] => [
-  {
-    accessorKey: "id",
-    header: "ID da Dispensação",
-  },
-  {
-    accessorKey: "date",
-    header: "Data",
-    cell: ({ row }) => {
-        const date = new Date(row.getValue("date"));
-        return <div>{date.toLocaleDateString('pt-BR')}</div>
-    }
-  },
-  {
-    accessorKey: "items",
-    header: "Nº de Itens",
-    cell: ({ row }) => {
-      const items = row.getValue("items") as any[];
-      return <div className="text-center">{items.length}</div>;
-    },
-  },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      const dispensation = row.original
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Ações</DropdownMenuLabel>
-            <DropdownMenuItem asChild>
-              <Link href={`/dispensation-receipt/${dispensation.id}`} target="_blank" className="w-full h-full flex items-center cursor-pointer">
-                <Eye className="mr-2 h-4 w-4" />
-                Visualizar Recibo
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
-    },
-  },
-];
 
 interface PatientHistoryClientPageProps {
   initialPatient: Patient;
@@ -81,8 +32,6 @@ export function PatientHistoryClientPage({ initialPatient, initialDispensations 
   const { toast } = useToast();
   const [patient, setPatient] = useState(initialPatient);
   
-  const columns = getColumns();
-
   const handleRemoveFile = async (fileId: string) => {
     const updatedFiles = patient.files?.filter(f => f.id !== fileId);
     
@@ -101,6 +50,98 @@ export function PatientHistoryClientPage({ initialPatient, initialDispensations 
       });
     }
   }
+
+  const handleDeleteDispensation = async (dispensation: Dispensation) => {
+    const result = await deleteDispensation(dispensation.id);
+    if (result.success) {
+        toast({
+            title: 'Dispensação Excluída!',
+            description: `O registro de ${new Date(dispensation.date).toLocaleDateString()} foi excluído e os itens estornados.`,
+        });
+        router.refresh();
+    } else {
+        toast({
+            variant: 'destructive',
+            title: 'Erro ao Excluir',
+            description: result.message || 'Não foi possível excluir a dispensação.',
+        });
+    }
+  };
+
+
+  const getColumns = (): ColumnDef<Dispensation>[] => [
+    {
+      accessorKey: "id",
+      header: "ID da Dispensação",
+    },
+    {
+      accessorKey: "date",
+      header: "Data",
+      cell: ({ row }) => {
+          const date = new Date(row.getValue("date"));
+          return <div>{date.toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</div>
+      }
+    },
+    {
+      accessorKey: "items",
+      header: "Nº de Itens",
+      cell: ({ row }) => {
+        const items = row.getValue("items") as any[];
+        return <div className="text-center">{items.length}</div>;
+      },
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const dispensation = row.original;
+  
+        return (
+          <AlertDialog>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                <DropdownMenuItem asChild>
+                  <Link href={`/dispensation-receipt/${dispensation.id}`} target="_blank" className="w-full h-full flex items-center cursor-pointer">
+                    <Eye className="mr-2 h-4 w-4" />
+                    Visualizar Recibo
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onSelect={(e) => e.preventDefault()}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span>Excluir e Estornar</span>
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro de dispensação de <strong>{new Date(dispensation.date).toLocaleDateString('pt-BR')}</strong> e estornará todos os itens de volta para o inventário.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => handleDeleteDispensation(dispensation)} className="bg-destructive hover:bg-destructive/90">
+                      Sim, excluir dispensação
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )
+      },
+    },
+  ];
+
+  const columns = getColumns();
 
   return (
     <div className="space-y-6">
