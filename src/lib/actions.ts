@@ -2,23 +2,11 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { readData, writeData, getKnowledgeBase, getAllUsers, getUserByEmailFromDb, getPatients as getPatientsFromDb, getProducts as getProductsFromDb } from './data';
+import { readData, writeData, getProducts as getProductsFromDb } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus } from './types';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase/admin';
 import { getCurrentUser } from '@/lib/session';
-
-// --- ACTIONS EXPOSED TO CLIENT ---
-
-export async function getPatients(filter: 'all' | 'active', query?: string): Promise<Patient[]> {
-    return getPatientsFromDb(filter, query);
-}
-
-export async function getAllDispensations(): Promise<Dispensation[]> {
-    const dispensations = await readData<Dispensation>('dispensations');
-    return dispensations;
-}
-
 
 // --- UTILITIES ---
 const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;

@@ -20,7 +20,7 @@ async function UnitDetailsData({ unitId }: { unitId: string }) {
     
     // Otimização: buscar apenas os pacientes da unidade específica.
     const [unitPatients, unitOrdersData] = await Promise.all([
-        getPatients('all', '', unitId),
+        getPatients('all', '', unitData.id),
         getOrdersForUnit(unitId),
     ]);
 

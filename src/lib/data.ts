@@ -1,3 +1,4 @@
+
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
 import type { KnowledgeBaseItem } from './types';
 import { kv } from '@/lib/server/kv.server';
@@ -27,6 +28,68 @@ export async function writeData<T>(key: string, data: T[]): Promise<void> {
 }
 
 // --- SPECIFIC DATA ACCESSORS ---
+
+export async function getPatients(filter: 'all' | 'active', query?: string): Promise<Patient[]> {
+    const allPatients = await readData<Patient>('patients');
+    
+    let filteredPatients = allPatients;
+
+    // Apply primary filter first
+    switch (filter) {
+        case 'active':
+            filteredPatients = allPatients.filter(p => p.status === 'Ativo');
+            break;
+        case 'inactive':
+            filteredPatients = allPatients.filter(p => p.status !== 'Ativo');
+            break;
+        case 'insulin':
+            filteredPatients = allPatients.filter(p => p.demandItems?.includes('Insulinas Análogas') && p.status === 'Ativo');
+            break;
+        case 'diapers':
+             filteredPatients = allPatients.filter(p => p.demandItems?.includes('Fraldas') && p.status === 'Ativo');
+             break;
+        case 'bedridden':
+            filteredPatients = allPatients.filter(p => p.isBedridden && p.status === 'Ativo');
+            break;
+        case 'legal':
+            filteredPatients = allPatients.filter(p => p.demandItems?.includes('Itens Judiciais') && p.status === 'Ativo');
+            break;
+        case 'municipal':
+            filteredPatients = allPatients.filter(p => p.demandItems?.includes('Itens Judiciais') && p.status === 'Ativo'); // Assuming judicial covers this.
+            break;
+        case 'all':
+        default:
+            // No primary filter needed
+            break;
+    }
+
+    // Apply search query on the already filtered list
+    if (query) {
+        const lowercasedQuery = query.toLowerCase();
+        // Check if query could be an ID
+        if (query.startsWith('pat_')) {
+            const foundPatient = filteredPatients.find(p => p.id === query);
+            return foundPatient ? [foundPatient] : [];
+        }
+        
+        filteredPatients = filteredPatients.filter(patient => {
+            const numericQuery = query.replace(/[^\d]/g, '');
+            return (
+                patient.name.toLowerCase().includes(lowercasedQuery) ||
+                (patient.cpf && patient.cpf.replace(/[^\d]/g, '').includes(numericQuery)) ||
+                (patient.cns && patient.cns.replace(/[^\d]/g, '').includes(numericQuery))
+            );
+        });
+    }
+
+    return filteredPatients.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function getAllDispensations(): Promise<Dispensation[]> {
+    const dispensations = await readData<Dispensation>('dispensations');
+    return dispensations;
+}
+
 
 /**
  * Fetches all products from the data source.
@@ -58,65 +121,6 @@ export async function getUnit(unitId: string): Promise<Unit | null> {
     return units.find(u => u.id === unitId) || null;
 }
 
-export const getPatients = async (filter: PatientFilter = 'active', query: string = '', unitId?: string): Promise<Patient[]> => {
-    let allPatients = await readData<Patient>('patients');
-    
-    // Apply primary filter first
-    switch (filter) {
-        case 'active':
-            allPatients = allPatients.filter(p => p.status === 'Ativo');
-            break;
-        case 'inactive':
-            allPatients = allPatients.filter(p => p.status !== 'Ativo');
-            break;
-        case 'insulin':
-            allPatients = allPatients.filter(p => p.demandItems?.includes('Insulinas Análogas') && p.status === 'Ativo');
-            break;
-        case 'diapers':
-             allPatients = allPatients.filter(p => p.demandItems?.includes('Fraldas') && p.status === 'Ativo');
-             break;
-        case 'bedridden':
-            allPatients = allPatients.filter(p => p.isBedridden && p.status === 'Ativo');
-            break;
-        case 'legal':
-            allPatients = allPatients.filter(p => p.demandItems?.includes('Itens Judiciais') && p.status === 'Ativo');
-            break;
-        case 'municipal':
-            allPatients = allPatients.filter(p => p.demandItems?.includes('Itens Judiciais') && p.status === 'Ativo'); // Assuming judicial covers this.
-            break;
-        case 'all':
-        default:
-            // No primary filter needed
-            break;
-    }
-    
-    // Filter by unit if unitId is provided
-    if (unitId) {
-        allPatients = allPatients.filter(p => p.unitId === unitId);
-    }
-
-    // Apply search query on the already filtered list
-    if (query) {
-        const lowercasedQuery = query.toLowerCase();
-        // Check if query could be an ID
-        if (query.startsWith('pat_')) {
-            const foundPatient = allPatients.find(p => p.id === query);
-            return foundPatient ? [foundPatient] : [];
-        }
-        
-        allPatients = allPatients.filter(patient => {
-            const numericQuery = query.replace(/[^\d]/g, '');
-            return (
-                patient.name.toLowerCase().includes(lowercasedQuery) ||
-                (patient.cpf && patient.cpf.replace(/[^\d]/g, '').includes(numericQuery)) ||
-                (patient.cns && patient.cns.replace(/[^\d]/g, '').includes(numericQuery))
-            );
-        });
-    }
-
-    return allPatients.sort((a, b) => a.name.localeCompare(b.name));
-};
-
 export const getAllPatients = async (): Promise<Patient[]> => {
     return await readData<Patient>('patients');
 };
@@ -139,10 +143,6 @@ export const getOrdersForUnit = async (unitId: string): Promise<Order[]> => {
     const allOrders = await readData<Order>('orders');
     const unitOrders = allOrders.filter(o => o.unitId === unitId);
     return unitOrders.sort((a,b) => new Date(b.sentDate).getTime() - new Date(a.sentDate).getTime());
-};
-
-export const getAllDispensations = async (): Promise<Dispensation[]> => {
-    return await readData<Dispensation>('dispensations');
 };
 
 export async function getDispensation(dispensationId: string): Promise<Dispensation | null> {

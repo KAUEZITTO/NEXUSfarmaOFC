@@ -1,3 +1,4 @@
+
 import { Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -297,7 +298,7 @@ export default async function DashboardPage() {
                     products={products}
                     dispensations={dispensations}
                     users={users}
-                    activePatients={activePatients}
+                    activePatients={activePatients as Patient[]}
                     orders={orders}
                 />
             </Suspense>

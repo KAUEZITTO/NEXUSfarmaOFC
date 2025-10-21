@@ -1,7 +1,7 @@
+
 import React from 'react';
 import { Suspense } from 'react';
-import { getProducts } from '@/lib/data';
-import { getAllDispensations } from '@/lib/actions';
+import { getProducts, getAllDispensations, getPatients } from '@/lib/data';
 import { NewDispensationClientPage } from './client-page';
 import LoadingNewDispensationPage from './loading';
 import type { Dispensation } from '@/lib/types';
