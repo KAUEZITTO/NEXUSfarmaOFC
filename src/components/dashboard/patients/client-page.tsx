@@ -13,12 +13,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { AttendPatientDialog } from "@/components/dashboard/attend-patient-dialog";
 import { AddPatientDialog } from "@/components/dashboard/add-patient-dialog";
 import { Button } from "@/components/ui/button";
-import type { Patient, PatientFilter, PatientStatus } from "@/lib/types";
+import type { Patient, PatientFilter, PatientStatus, Unit } from "@/lib/types";
 import { ColumnDef } from "@tanstack/react-table";
-import { PlusCircle, Loader2, Eye, Edit, UserCheck, UserX, CheckCircle, XCircle, HeartPulse, MoreHorizontal, ArrowUpDown, Search, Trash2 } from "lucide-react";
+import { PlusCircle, Loader2, Eye, Edit, UserCheck, UserX, CheckCircle, XCircle, HeartPulse, MoreHorizontal, ArrowUpDown, Search, Trash2, Printer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { updatePatientStatus, deletePatient } from "@/lib/actions";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -43,9 +42,11 @@ const filterCategories: { label: string, value: PatientFilter }[] = [
 
 export function PatientsClientPage({
   initialPatients,
+  initialUnits,
   searchParams
 }: {
   initialPatients: Patient[],
+  initialUnits: Unit[],
   searchParams?: { [key: string]: string | string[] | undefined }
 }) {
   const router = useRouter();
@@ -110,6 +111,11 @@ export function PatientsClientPage({
       toast({ variant: 'destructive', title: 'Erro ao Excluir', description: result.message});
     }
   }
+
+  const handlePrintRecord = (patientId: string) => {
+    window.open(`/patient-record/${patientId}`, '_blank');
+  };
+
 
   const getColumns = (onUpdateStatus: (patientId: string, status: PatientStatus) => void): ColumnDef<Patient>[] => {
     return [
@@ -197,16 +203,12 @@ export function PatientsClientPage({
 
         return (
           <div className="flex items-center gap-2 justify-end">
-            <AttendPatientDialog
-                initialPatient={patient}
-                onDispensationSaved={handlePatientSaved}
-                trigger={
-                    <Button variant="outline" size="sm">
-                        <UserCheck className="mr-2 h-4 w-4" />
-                        Atender
-                    </Button>
-                }
-            />
+             <Button asChild variant="outline" size="sm">
+                <Link href={`/dashboard/dispense/new?patientId=${patient.id}`}>
+                    <UserCheck className="mr-2 h-4 w-4" />
+                    Atender
+                </Link>
+            </Button>
             <AlertDialog>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -216,19 +218,28 @@ export function PatientsClientPage({
                     </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                    <DropdownMenuLabel>Ações do Paciente</DropdownMenuLabel>
                     <DropdownMenuItem asChild>
                         <Link href={`/dashboard/patients/${patient.id}`} className="cursor-pointer">
                         <Eye className="mr-2 h-4 w-4" />
                         Ver Histórico
                         </Link>
                     </DropdownMenuItem>
-                    <AddPatientDialog patientToEdit={patient} onPatientSaved={handlePatientSaved} trigger={
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            <span>Editar Cadastro</span>
-                        </DropdownMenuItem>
-                    } />
+                    <AddPatientDialog 
+                        patientToEdit={patient} 
+                        onPatientSaved={handlePatientSaved}
+                        units={initialUnits}
+                        trigger={
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                <span>Editar Cadastro</span>
+                            </DropdownMenuItem>
+                        } 
+                    />
+                    <DropdownMenuItem onClick={() => handlePrintRecord(patient.id)}>
+                        <Printer className="mr-2 h-4 w-4" />
+                        <span>Imprimir Cadastro</span>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuSub>
                         <DropdownMenuSubTrigger>
@@ -300,12 +311,22 @@ export function PatientsClientPage({
             </CardDescription>
           </div>
           <div className="flex gap-2">
-            <AddPatientDialog onPatientSaved={handlePatientSaved} trigger={
-              <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Adicionar Paciente
-              </Button>
-            } />
+             <Button asChild>
+                <Link href="/dashboard/dispense/new">
+                    <UserCheck className="mr-2 h-4 w-4" />
+                    Nova Dispensação
+                </Link>
+            </Button>
+            <AddPatientDialog 
+              onPatientSaved={handlePatientSaved}
+              units={initialUnits} 
+              trigger={
+                <Button variant="outline">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Adicionar Paciente
+                </Button>
+              } 
+            />
           </div>
         </div>
          <div className="flex items-center space-x-2 pt-4 overflow-x-auto pb-2">
