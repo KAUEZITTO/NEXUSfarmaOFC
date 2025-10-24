@@ -5,7 +5,7 @@ import { FileText, Package, Users, BarChart2, ShieldCheck, HeartPulse, Pill, Cli
 import Image from 'next/image';
 import Link from 'next/link';
 import { Logo } from '@/components/logo';
-import imageData from '@/lib/placeholder-images.json';
+import imageData from '@/app/lib/placeholder-images.json';
 
 const features = [
   {
