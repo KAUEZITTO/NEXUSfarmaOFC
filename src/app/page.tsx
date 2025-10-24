@@ -1,7 +1,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Package, Users, BarChart2, ShieldCheck, HeartPulse, Pill, ClipboardList, Stethoscope, ArrowRight, GitBranch, Share2, Truck } from 'lucide-react';
+import { FileText, Package, Users, BarChart2, ShieldCheck, HeartPulse, Pill, ClipboardList, Stethoscope, ArrowRight, GitBranch, Share2, Truck, ExternalLink } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Logo } from '@/components/logo';
@@ -156,13 +156,31 @@ export default function LandingPage() {
               </div>
           </div>
         </section>
+
+        <section className="w-full py-12 md:py-24 bg-background">
+          <div className="container px-4 md:px-6">
+            <Link href="https://www.instagram.com/prefeitura_iga" target="_blank" rel="noopener noreferrer" className="block group">
+              <Image 
+                src="/banner-prefeitura.png" 
+                alt="Banner da Prefeitura de Igarapé-Açu - Siga nosso instagram @prefeitura_iga"
+                width={1200}
+                height={200}
+                className="rounded-lg object-cover w-full transition-transform duration-300 group-hover:scale-[1.02]"
+                data-ai-hint="city hall banner"
+              />
+            </Link>
+          </div>
+        </section>
+
       </main>
       <footer className="border-t bg-background py-8">
         <div className="container flex flex-col items-center justify-center gap-6 text-center">
             <div className="flex flex-col items-center gap-2">
                 <span className="text-sm text-muted-foreground font-semibold">Apoio Institucional</span>
                 <div className="flex items-center justify-center gap-6 opacity-80">
-                    <Image src="/SMS-PREF.png" alt="Logo Prefeitura" width={120} height={60} className="object-contain" data-ai-hint="city hall government" />
+                    <a href="https://prefeituradeigarapeacu.pa.gov.br/" target="_blank" rel="noopener noreferrer" className="transition-opacity hover:opacity-100">
+                      <Image src="/SMS-PREF.png" alt="Logo Prefeitura" width={120} height={60} className="object-contain" data-ai-hint="city hall government" />
+                    </a>
                     <Image src="/CAF.png" alt="Logo CAF" width={100} height={60} className="object-contain" data-ai-hint="pharmacy cross" />
                 </div>
             </div>
