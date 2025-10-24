@@ -1,10 +1,11 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Package, Users, BarChart2, ShieldCheck, HeartPulse, Pill, ClipboardList, Stethoscope, ArrowRight, GitBranch, Share2, Truck, ExternalLink } from 'lucide-react';
+import { FileText, Package, Users, BarChart2, ShieldCheck, HeartPulse, Pill, ClipboardList, Stethoscope, ArrowRight, GitBranch, Share2, Truck, ExternalLink, Hospital, FlaskConical, Home, Ambulance } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Logo } from '@/components/logo';
+import imageData from '@/lib/placeholder-images.json';
 
 const features = [
   {
@@ -32,12 +33,43 @@ const features = [
     title: 'Relatórios Estratégicos',
     description: 'Visualize dados consolidados de consumo, estoque e atendimentos para decisões informadas.',
   },
-    {
+  {
     icon: <ShieldCheck className="h-8 w-8 text-primary" />,
     title: 'Segurança e Rastreio',
     description: 'Rastreabilidade total de cada item, com controle de acesso por níveis de permissão.',
   },
 ];
+
+const howItWorks = [
+    {
+      title: 'Gestão de Estoque (CAF)',
+      description: 'Centralize o controle de medicamentos e materiais. Monitore lotes, validades e quantidades em tempo real para tomar decisões rápidas e evitar desperdícios.',
+      image: imageData.stock_management,
+      icon: Package,
+    },
+    {
+      title: 'Atendimento ao Paciente',
+      description: 'Realize a dispensação de itens diretamente para os pacientes, com registro automático no histórico de cada um e geração de recibos detalhados.',
+      image: imageData.patient_dispensing,
+      icon: Users,
+    },
+    {
+      title: 'Abastecimento de Unidades',
+      description: 'Envie remessas de produtos para hospitais, postos de saúde e outras unidades, garantindo que os suprimentos cheguem onde são mais necessários.',
+      image: imageData.unit_supply,
+      icon: Truck,
+    },
+];
+
+const unitTypes = [
+    { name: 'Hospitais', image: imageData.unit_hospital, icon: Hospital },
+    { name: 'Laboratórios', image: imageData.unit_laboratory, icon: FlaskConical },
+    { name: 'Atend. Domiciliar (SAD)', image: imageData.unit_home_care, icon: Home },
+    { name: 'Unid. Odontológicas (UOM)', image: imageData.unit_dental, icon: Stethoscope },
+    { name: 'Unidades Básicas', image: imageData.unit_basic, icon: Stethoscope },
+    { name: 'Veículos de Resgate', image: imageData.unit_mobile, icon: Ambulance },
+];
+
 
 export default function LandingPage() {
   return (
@@ -124,49 +156,68 @@ export default function LandingPage() {
           <div className="container px-4 md:px-6">
               <div className="flex flex-col items-center justify-center space-y-4 text-center">
                   <div className="space-y-2">
-                      <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary font-semibold dark:bg-primary/20">Como Funciona</div>
-                      <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Um Fluxo de Trabalho Simplificado</h2>
+                      <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary font-semibold dark:bg-primary/20">Fluxo de Operação</div>
+                      <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Simplicidade e Poder em Cada Etapa</h2>
                       <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                          Organize sua operação em três passos simples e integrados.
+                          O NexusFarma organiza o ciclo de vida dos seus produtos farmacêuticos em um fluxo claro e integrado, do recebimento à entrega final.
                       </p>
                   </div>
               </div>
-              <div className="mx-auto grid items-center gap-8 md:grid-cols-3 md:gap-12 mt-12">
-                  <div className="flex flex-col items-center text-center gap-4">
-                      <div className="bg-background p-6 rounded-full border shadow-sm">
-                          <GitBranch className="h-10 w-10 text-primary" />
-                      </div>
-                      <h3 className="text-xl font-bold">1. Cadastrar e Gerenciar</h3>
-                      <p className="text-muted-foreground">Adicione produtos ao inventário, cadastre pacientes e configure as unidades de saúde que sua farmácia atende.</p>
-                  </div>
-                  <div className="flex flex-col items-center text-center gap-4">
-                      <div className="bg-background p-6 rounded-full border shadow-sm">
-                          <Share2 className="h-10 w-10 text-primary" />
-                      </div>
-                      <h3 className="text-xl font-bold">2. Distribuir e Dispensar</h3>
-                      <p className="text-muted-foreground">Crie remessas para abastecer as unidades ou registre a dispensação de itens diretamente para os pacientes no balcão.</p>
-                  </div>
-                   <div className="flex flex-col items-center text-center gap-4">
-                      <div className="bg-background p-6 rounded-full border shadow-sm">
-                           <BarChart2 className="h-10 w-10 text-primary" />
-                      </div>
-                      <h3 className="text-xl font-bold">3. Analisar e Otimizar</h3>
-                      <p className="text-muted-foreground">Gere relatórios completos para entender o consumo, prever demandas, monitorar validades e otimizar todo o ciclo.</p>
-                  </div>
+              <div className="grid md:grid-cols-3 gap-8 mt-12">
+                {howItWorks.map((item) => (
+                    <Card key={item.title} className="overflow-hidden group">
+                        <div className="relative overflow-hidden h-48">
+                            <Image src={item.image.src} alt={item.title} fill className="object-cover transition-transform duration-300 group-hover:scale-105" data-ai-hint={item.image.hint} />
+                        </div>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <item.icon className="h-6 w-6 text-primary" />
+                                {item.title}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-muted-foreground">{item.description}</p>
+                        </CardContent>
+                    </Card>
+                ))}
               </div>
           </div>
         </section>
 
-        <section className="w-full py-12 md:py-24 bg-background">
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-background">
+            <div className="container px-4 md:px-6">
+                <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
+                    <div className="space-y-2">
+                        <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary font-semibold dark:bg-primary/20">Ecossistema Integrado</div>
+                        <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Atendendo a Toda a Rede de Saúde</h2>
+                        <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                            O sistema foi projetado para conectar o CAF a todas as frentes de atendimento do município.
+                        </p>
+                    </div>
+                </div>
+                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    {unitTypes.map(unit => (
+                        <div key={unit.name} className="relative group flex flex-col items-center justify-center gap-4 p-4 border rounded-lg hover:shadow-lg transition-shadow bg-card">
+                            <div className="bg-primary/10 p-3 rounded-full">
+                                <unit.icon className="h-8 w-8 text-primary" />
+                            </div>
+                            <h3 className="text-sm font-semibold text-center">{unit.name}</h3>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </section>
+
+        <section className="w-full py-12 md:py-24 bg-muted/40">
           <div className="container px-4 md:px-6">
             <Link href="https://www.instagram.com/prefeitura_iga" target="_blank" rel="noopener noreferrer" className="block group">
               <Image 
-                src="/banner-prefeitura.png" 
+                src={imageData.prefeitura_banner.src} 
                 alt="Banner da Prefeitura de Igarapé-Açu - Siga nosso instagram @prefeitura_iga"
                 width={1200}
                 height={200}
                 className="rounded-lg object-cover w-full transition-transform duration-300 group-hover:scale-[1.02]"
-                data-ai-hint="city hall banner"
+                data-ai-hint={imageData.prefeitura_banner.hint}
               />
             </Link>
           </div>

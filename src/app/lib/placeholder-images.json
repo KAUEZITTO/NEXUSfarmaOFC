@@ -1,0 +1,46 @@
+{
+  "hero": {
+    "src": "https://picsum.photos/seed/hero1/1200/600",
+    "hint": "pharmacist computer"
+  },
+  "stock_management": {
+    "src": "https://picsum.photos/seed/stock1/600/400",
+    "hint": "warehouse shelves"
+  },
+  "patient_dispensing": {
+    "src": "https://picsum.photos/seed/patient1/600/400",
+    "hint": "pharmacist patient"
+  },
+  "unit_supply": {
+    "src": "https://picsum.photos/seed/supply1/600/400",
+    "hint": "medical supplies"
+  },
+  "unit_hospital": {
+    "src": "https://picsum.photos/seed/hospital1/600/400",
+    "hint": "hospital building"
+  },
+  "unit_laboratory": {
+    "src": "https://picsum.photos/seed/lab1/600/400",
+    "hint": "laboratory tubes"
+  },
+  "unit_home_care": {
+    "src": "https://picsum.photos/seed/sad1/600/400",
+    "hint": "home caregiver"
+  },
+  "unit_dental": {
+    "src": "https://picsum.photos/seed/dental1/600/400",
+    "hint": "dentist chair"
+  },
+  "unit_basic": {
+    "src": "https://picsum.photos/seed/ubs1/600/400",
+    "hint": "clinic reception"
+  },
+  "unit_mobile": {
+    "src": "https://picsum.photos/seed/mobile1/600/400",
+    "hint": "medical van"
+  },
+  "prefeitura_banner": {
+    "src": "/banner-prefeitura.png",
+    "hint": "city hall banner"
+  }
+}
