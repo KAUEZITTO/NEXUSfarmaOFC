@@ -14,7 +14,8 @@ interface jsPDFWithAutoTable extends jsPDF {
 // Helper function to get image as base64
 const getImageAsBase64 = async (imagePath: string): Promise<string | null> => {
     try {
-        const fullPath = path.join(process.cwd(), 'public', imagePath);
+        // Correctly resolves the path from the project root, works in Vercel.
+        const fullPath = path.resolve(process.cwd(), 'public', imagePath.startsWith('/') ? imagePath.substring(1) : imagePath);
         const file = await fs.readFile(fullPath);
         return `data:image/png;base64,${file.toString('base64')}`;
     } catch (error) {
@@ -95,24 +96,26 @@ export async function generatePdf(
     subtitle: string | undefined,
     bodyFn: (doc: jsPDFWithAutoTable) => void,
     isLandscape: boolean = false
-): Promise<{ success: boolean, data?: string, error?: string }> {
+): Promise<{ success: boolean; data?: string; error?: string }> {
     try {
         const doc = new jsPDF({ orientation: isLandscape ? 'landscape' : 'portrait' }) as jsPDFWithAutoTable;
         
         // This is a proxy for didDrawPage in autoTable, to add headers to every page
-        const originalAddPage = doc.addPage;
-        doc.addPage = function (...args) {
-            const result = originalAddPage.apply(this, args);
-            addHeader(doc, title, subtitle);
-            return result;
-        };
-        
-        await addHeader(doc, title, subtitle);
-        bodyFn(doc);
-        addFooter(doc);
+        const addHeaderAndFooterToAllPages = async (doc: jsPDFWithAutoTable) => {
+            const pageCount = (doc.internal as any).getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                await addHeader(doc, title, subtitle);
+            }
+            addFooter(doc); // Add footer after all pages and headers are drawn
+        }
 
-        // Restore original addPage function
-        doc.addPage = originalAddPage;
+        // Execute the body function to generate tables and content
+        bodyFn(doc);
+
+        // After the content is generated, apply header and footer to all pages
+        await addHeaderAndFooterToAllPages(doc);
+        
 
         return { success: true, data: doc.output('datauristring') };
     } catch (error) {

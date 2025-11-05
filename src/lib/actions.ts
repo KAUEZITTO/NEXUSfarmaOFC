@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -647,10 +646,6 @@ export async function generateCompleteReportPDF(
     'Relatório Gerencial Completo',
     period,
     (doc) => {
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Resumo do Período', 15, 80);
-
         const summaryData = [
           ['Total de Produtos em Inventário (Geral):', products.length.toString()],
           ['Total de Itens em Estoque (Geral):', products.reduce((sum, p) => sum + p.quantity, 0).toLocaleString('pt-BR')],
@@ -670,14 +665,7 @@ export async function generateCompleteReportPDF(
 
         const drawTableOrEmpty = (title: string, head: any[], body: any[][], options: any) => {
           doc.addPage();
-          doc.setFontSize(14);
-          doc.setFont('helvetica', 'bold');
-          doc.text(title, doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
-          if (body.length > 0) {
-              doc.autoTable({ startY: 30, head, body, ...options });
-          } else {
-              doc.text('Nenhum dado para exibir neste período.', 15, 30);
-          }
+          doc.autoTable({ startY: 85, head, body, ...options });
         }
 
         drawTableOrEmpty( 'Relatório de Inventário (Estoque Atual)', [['Nome', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote']], products.map(p => [ p.name, p.category, p.quantity.toString(), p.status, p.expiryDate ? new Date(p.expiryDate).toLocaleDateString('pt-BR') : 'N/A', p.batch || 'N/A' ]), { theme: 'grid', headStyles: { fillColor: [37, 99, 235] } });
@@ -862,30 +850,28 @@ export async function generateEntriesAndExitsReportPDF({ movements, allProducts,
                 data.exits.toLocaleString('pt-BR')
             ]);
             let finalY = 80;
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Resumo de Movimentações por Categoria', 15, finalY);
+            
             doc.autoTable({
-                startY: finalY + 5,
+                startY: 85,
                 head: [['Categoria', 'Total de Entradas (Itens)', 'Total de Saídas (Itens)']],
                 body: summaryBody,
+                didDrawPage: (data) => {
+                    if(data.pageNumber === 1) finalY = data.cursor?.y ?? 85;
+                },
                 theme: 'grid',
                 headStyles: { fillColor: [107, 114, 128] }, // Gray
             });
-            finalY = (doc as any).lastAutoTable.finalY;
 
             const entries = movements.filter(m => m.type === 'Entrada');
             if (entries.length > 0) {
                 doc.addPage();
-                doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.text('Detalhes de Entradas', 15, 20);
-                doc.autoTable({ startY: 25, head: [['Data', 'Produto', 'Motivo', 'Quantidade', 'Usuário']], body: entries.map(m => [ new Date(m.date).toLocaleString('pt-BR', { timeZone: 'UTC' }), m.productName, m.reason, m.quantityChange.toLocaleString('pt-BR'), m.user ]), theme: 'grid', headStyles: { fillColor: [22, 163, 74] } });
+                doc.autoTable({ startY: 85, head: [['Data', 'Produto', 'Motivo', 'Quantidade', 'Usuário']], body: entries.map(m => [ new Date(m.date).toLocaleString('pt-BR', { timeZone: 'UTC' }), m.productName, m.reason, m.quantityChange.toLocaleString('pt-BR'), m.user ]), theme: 'grid', headStyles: { fillColor: [22, 163, 74] } });
             }
 
             const exits = movements.filter(m => m.type === 'Saída');
             if (exits.length > 0) {
                 doc.addPage();
-                doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.text('Detalhes de Saídas', 15, 20);
-                doc.autoTable({ startY: 25, head: [['Data', 'Produto', 'Motivo', 'Quantidade', 'Usuário']], body: exits.map(m => [ new Date(m.date).toLocaleString('pt-BR', { timeZone: 'UTC' }), m.productName, m.reason, Math.abs(m.quantityChange).toLocaleString('pt-BR'), m.user ]), theme: 'grid', headStyles: { fillColor: [220, 38, 38] } });
+                doc.autoTable({ startY: 85, head: [['Data', 'Produto', 'Motivo', 'Quantidade', 'Usuário']], body: exits.map(m => [ new Date(m.date).toLocaleString('pt-BR', { timeZone: 'UTC' }), m.productName, m.reason, Math.abs(m.quantityChange).toLocaleString('pt-BR'), m.user ]), theme: 'grid', headStyles: { fillColor: [220, 38, 38] } });
             }
         }
     );
@@ -902,6 +888,7 @@ export async function generateOrderStatusReportPDF({ units, lastOrdersMap, statu
                 return lastOrder?.status === status;
             });
             doc.autoTable({
+                startY: 85,
                 head: [['Nome da Unidade', 'Tipo', 'Data do Último Pedido', 'Tipo do Pedido']],
                 body: filteredUnits.map(unit => {
                     const lastOrder = lastOrdersMap.get(unit.id);
