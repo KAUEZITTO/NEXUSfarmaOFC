@@ -42,6 +42,10 @@ const addHeader = async (doc: jsPDFWithAutoTable, title: string, subtitle?: stri
 
     // Coluna Central (NexusFarma)
     if (nexusLogoBase64) doc.addImage(nexusLogoBase64, 'PNG', pageWidth / 2 - 20, 12, 40, 15);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('NexusFarma', pageWidth / 2, 32, { align: 'center' });
+
 
     // Coluna da Direita (CAF)
     if (cafLogoBase64) doc.addImage(cafLogoBase64, 'PNG', pageWidth - margin - 25, 12, 25, 25);
