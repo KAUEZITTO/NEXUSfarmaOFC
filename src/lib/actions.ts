@@ -275,7 +275,7 @@ export async function deletePatient(patientId: string): Promise<{ success: boole
 
 
 // --- ORDER ACTIONS ---
-export async function addOrder(orderData: { unitId: string; unitName: string; orderType: OrderType, items: OrderItem[]; notes?: string; sentDate?: string; }) {
+export async function addOrder(orderData: { unitId: string; unitName: string; orderType: OrderType, items: OrderItem[]; notes?: string; sentDate?: string; }): Promise<Order> {
     const session = await getServerSession(authOptions);
     const orders = await readData<Order>('orders');
     const products = await getProductsFromDb();
@@ -312,6 +312,8 @@ export async function addOrder(orderData: { unitId: string; unitName: string; or
     revalidatePath('/dashboard/inventory');
     revalidatePath('/dashboard/reports');
     revalidatePath(`/dashboard/units/${orderData.unitId}`);
+    
+    return newOrder;
 }
 
 export async function deleteOrder(orderId: string): Promise<{ success: boolean; message?: string }> {

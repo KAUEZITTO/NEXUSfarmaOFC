@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -27,12 +28,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { X, Save, Trash2, Loader2, Warehouse, PackagePlus, ListPlus, CalendarClock, History, Layers } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { X, Save, Trash2, Loader2, Warehouse, PackagePlus, ListPlus, CalendarClock, History, Layers, Printer, Hourglass, CheckCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { addOrder } from '@/lib/actions';
+import { addOrder, updateOrderStatus } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import type { Unit, Product, OrderType } from '@/lib/types';
+import type { Unit, Product, OrderType, Order } from '@/lib/types';
 import { AddItemsManuallyDialog } from '@/components/dashboard/add-items-manually-dialog';
 
 type RemessaItem = {
@@ -65,6 +67,9 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
   
   const [items, setItems] = useState<RemessaItem[]>([]);
   const [sentDate, setSentDate] = useState(new Date().toISOString().split('T')[0]);
+
+  const [showStatusDialog, setShowStatusDialog] = useState(false);
+  const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
 
 
    const handleCategoryToggle = (category: Product['category']) => {
@@ -164,7 +169,7 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
     const orderItems = items.map(({ internalId, ...rest }) => rest);
 
     try {
-        await addOrder({
+        const newOrder = await addOrder({
             unitId: destinationUnitId,
             unitName: unitName,
             items: orderItems,
@@ -175,9 +180,10 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
 
         toast({
             title: 'Remessa Salva!',
-            description: 'A nova remessa foi criada com sucesso.',
+            description: 'Defina o status do pedido para continuar.',
         });
-        router.push('/dashboard/orders');
+        setCreatedOrder(newOrder);
+        setShowStatusDialog(true);
     } catch(error) {
         console.error("Error saving order: ", error);
         toast({
@@ -187,6 +193,33 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
         })
     } finally {
         setIsSaving(false);
+    }
+  };
+
+  const handleStatusDecision = async (status: Order['status']) => {
+    if (!createdOrder) return;
+
+    setShowStatusDialog(false);
+    
+    try {
+        await updateOrderStatus(createdOrder.id, status);
+        toast({
+          title: "Status do Pedido Atualizado!",
+          description: `O status do pedido foi alterado para ${status}.`,
+        });
+
+        if (status === 'Atendido') {
+            window.open(`/receipt/${createdOrder.id}`, '_blank');
+        }
+
+        router.push('/dashboard/orders');
+
+    } catch (error) {
+         toast({
+            variant: 'destructive',
+            title: 'Erro ao Atualizar Status',
+            description: 'Não foi possível atualizar o status do pedido.'
+        });
     }
   };
 
@@ -206,6 +239,7 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
     : [];
 
   return (
+    <>
     <div className="grid flex-1 items-start gap-4 md:gap-8">
       <div className="mx-auto grid w-full max-w-6xl flex-1 auto-rows-max gap-6">
         <div className="flex items-center gap-4">
@@ -394,5 +428,43 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
         </div>
       </div>
     </div>
+    
+    <AlertDialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Remessa Salva!</AlertDialogTitle>
+                <AlertDialogDescription>
+                    A remessa para {createdOrder?.unitName} foi registrada. O que você deseja fazer agora?
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="sm:justify-around gap-2">
+                <Button 
+                    className="w-full sm:w-auto"
+                    onClick={() => handleStatusDecision('Atendido')}
+                >
+                    <Printer className="mr-2 h-4 w-4" />
+                    Atender e Imprimir
+                </Button>
+                <Button 
+                    variant="destructive" 
+                    className="w-full sm:w-auto mt-2 sm:mt-0"
+                    onClick={() => handleStatusDecision('Não atendido')}
+                >
+                    <X className="mr-2 h-4 w-4" />
+                    Marcar como Não Atendido
+                </Button>
+                <Button 
+                    variant="outline" 
+                    className="w-full sm:w-auto mt-2 sm:mt-0"
+                    onClick={() => handleStatusDecision('Em análise')}
+                >
+                    <Hourglass className="mr-2 h-4 w-4" />
+                    Manter em Análise
+                </Button>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+
+    </>
   );
 }
