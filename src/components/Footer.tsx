@@ -1,14 +1,13 @@
 import Image from 'next/image';
-import { Separator } from './ui/separator';
-import { Logo } from './logo';
 import Link from 'next/link';
+import { Logo } from './logo';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="border-t bg-muted/40 py-8">
-      <div className="container mx-auto px-4 md:px-6">
+    <footer className="border-t bg-background">
+      <div className="container mx-auto px-4 md:px-6 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center text-center md:text-left">
           <div className="flex flex-col items-center md:items-start gap-2">
             <Logo />
@@ -21,9 +20,9 @@ export function Footer() {
               <span className="text-sm font-semibold text-muted-foreground">Apoio Institucional</span>
               <div className="flex items-center justify-center gap-6">
                 <Link href="https://prefeituradeigarapeacu.pa.gov.br/" target="_blank" rel="noopener noreferrer">
-                  <Image src="/SMS-PREF.png" alt="Logo Prefeitura" width={120} height={60} className="object-contain" data-ai-hint="city hall government" />
+                  <Image src="/SMS-PREF.png" alt="Logo Prefeitura" width={100} height={50} className="object-contain" data-ai-hint="city hall government" />
                 </Link>
-                <Image src="/CAF.png" alt="Logo CAF" width={100} height={60} className="object-contain" data-ai-hint="pharmacy cross" />
+                <Image src="/CAF.png" alt="Logo CAF" width={80} height={50} className="object-contain" data-ai-hint="pharmacy cross" />
               </div>
           </div>
           

@@ -11,54 +11,53 @@ import {
   ClipboardList,
   Package,
   ShieldCheck,
-  HeartPulse,
+  Building2,
   Users,
-  Pill,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const featuresData = [
   {
     icon: <Package className="h-10 w-10 text-primary" />,
-    title: 'Controle de Estoque Inteligente',
+    title: 'Controle de Estoque',
     description:
-      'Gestão completa de lotes, validades e inventário em tempo real para evitar perdas e rupturas.',
+      'Gestão completa de lotes, validades e inventário em tempo real para evitar perdas.',
+  },
+  {
+    icon: <Users className="h-10 w-10 text-primary" />,
+    title: 'Gestão de Pacientes',
+    description:
+      'Cadastro detalhado de pacientes e histórico completo de todas as dispensações realizadas.',
   },
   {
     icon: <ClipboardList className="h-10 w-10 text-primary" />,
-    title: 'Gestão de Pacientes',
-    description:
-      'Cadastro detalhado de pacientes, histórico de dispensação e acompanhamento de mandados judiciais e municipais.',
-  },
-  {
-    icon: <Pill className="h-10 w-10 text-primary" />,
     title: 'Dispensação e Remessas',
     description:
-      'Gere guias de remessa para unidades e registre a dispensação de itens para pacientes com agilidade.',
+      'Registre a saída de itens para pacientes e gere guias de remessa para as unidades de saúde.',
   },
   {
     icon: <BarChart2 className="h-10 w-10 text-primary" />,
     title: 'Relatórios Gerenciais',
     description:
-      'Visualize dados consolidados sobre consumo, atendimentos e níveis de estoque para tomar decisões estratégicas.',
+      'Dados consolidados sobre consumo, atendimentos e estoque para decisões estratégicas.',
   },
   {
     icon: <ShieldCheck className="h-10 w-10 text-primary" />,
     title: 'Segurança e Rastreabilidade',
     description:
-      'Processos seguros com controle de acesso e rastreabilidade total de cada item, do recebimento à entrega.',
+      'Controle de acesso e rastreabilidade total de cada item, do recebimento à entrega final.',
   },
   {
-    icon: <HeartPulse className="h-10 w-10 text-primary" />,
-    title: 'Cuidado Integrado',
+    icon: <Building2 className="h-10 w-10 text-primary" />,
+    title: 'Gestão de Unidades',
     description:
-      'Vincule pacientes às suas unidades de saúde, garantindo um acompanhamento completo e contínuo.',
+      'Cadastre e gerencie as informações das unidades de saúde (UBS, hospitais, etc).',
   },
 ];
 
 export function Features() {
   return (
-    <section id="features" className="w-full py-20 md:py-32">
+    <section id="features" className="w-full py-20 md:py-32 bg-background">
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
           <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm text-primary font-semibold">
