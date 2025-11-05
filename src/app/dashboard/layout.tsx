@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect } from 'react';
@@ -57,25 +56,25 @@ export default function DashboardLayout({
             <UserActivityTracker />
             <BirthdayBalloons />
             <div className="grid min-h-screen w-full md:grid-cols-[var(--sidebar-width)_1fr] peer-data-[state=collapsed]:md:grid-cols-[var(--sidebar-width-icon)_1fr] transition-[grid-template-columns] duration-300 ease-in-out">
-              <Sidebar>
-                  <SidebarHeader>
+              <Sidebar className="bg-primary text-primary-foreground">
+                  <SidebarHeader className="border-b border-primary-foreground/20">
                       <Link href="/dashboard" className="flex items-center gap-2 font-semibold" data-tour-id="step-logo">
                           <Logo />
                       </Link>
                   </SidebarHeader>
-                  <SidebarContent>
+                  <SidebarContent className="p-2">
                       <DashboardNav />
                   </SidebarContent>
               </Sidebar>
               <div className="flex flex-col">
-                <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+                <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30 shadow-sm">
                   <SidebarTrigger className="md:hidden" />
                   <div className="w-full flex-1">
                     {/* Can add a search bar here if needed */}
                   </div>
                   <UserNav />
                 </header>
-                <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background">
+                <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-muted/40">
                   {children}
                 </main>
               </div>

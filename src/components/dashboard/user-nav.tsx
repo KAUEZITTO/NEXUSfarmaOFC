@@ -1,11 +1,8 @@
-
-
 'use client';
 
 import {
   Avatar,
   AvatarFallback,
-  AvatarImage,
 } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,12 +17,11 @@ import {
 import { LogOut, HelpCircle, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTour } from './tour-guide';
-import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
-import { User as UserIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '../ThemeToggle';
 
 export function UserNav() {
   const { startTour } = useTour();
@@ -50,13 +46,14 @@ export function UserNav() {
   const fallbackInitial = user.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? '?';
 
   return (
-    <div data-tour-id="step-user-nav">
+    <div data-tour-id="step-user-nav" className="flex items-center gap-2">
+      <ThemeToggle />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-             <Avatar className="h-8 w-8">
+          <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+             <Avatar className="h-10 w-10">
                 <AvatarFallback
-                    className={cn('text-white font-bold')}
+                    className={cn('text-white font-bold text-lg')}
                     style={{ backgroundColor: user.avatarColor || 'hsl(var(--primary))' }}
                 >
                     {fallbackInitial}

@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,48 +8,48 @@ body {
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 29.4%;
+    --background: 220 20% 97%;
+    --foreground: 220 15% 20%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 29.4%;
+    --card-foreground: 220 15% 20%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 29.4%;
-    --primary: 203 100% 23.5%;
+    --popover-foreground: 220 15% 20%;
+    --primary: 206 100% 23%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 41 100% 48%;
+    --secondary: 38 100% 48%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 0 0% 95%;
-    --muted-foreground: 0 0% 70.2%;
-    --accent: 196 77% 56%;
-    --accent-foreground: 203 100% 23.5%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 203 100% 23.5%;
+    --muted: 220 15% 90%;
+    --muted-foreground: 220 10% 40%;
+    --accent: 202 81% 57%;
+    --accent-foreground: 206 100% 23%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 15% 85%;
+    --input: 220 15% 85%;
+    --ring: 206 100% 23%;
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 220 15% 10%;
-    --foreground: 0 0% 95%;
-    --card: 220 15% 15%;
-    --card-foreground: 0 0% 95%;
-    --popover: 220 15% 10%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 203 100% 23.5%;
+    --background: 210 20% 13%;
+    --foreground: 210 20% 95%;
+    --card: 210 20% 18%;
+    --card-foreground: 210 20% 95%;
+    --popover: 210 20% 13%;
+    --popover-foreground: 210 20% 95%;
+    --primary: 206 100% 23%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 41 100% 48%;
+    --secondary: 38 100% 48%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 220 15% 20%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 196 77% 56%;
+    --muted: 210 20% 22%;
+    --muted-foreground: 210 15% 65%;
+    --accent: 202 81% 57%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 220 15% 25%;
-    --input: 220 15% 25%;
-    --ring: 196 77% 56%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 210 20% 25%;
+    --input: 210 20% 25%;
+    --ring: 202 81% 57%;
   }
 }
 
@@ -59,10 +58,79 @@ body {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-300 ease-in-out;
     font-family: 'Inter', sans-serif;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold;
   }
+}
+
+/* Custom styles for Intro.js */
+.custom-tooltip-class {
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--card-foreground));
+    border-radius: var(--radius);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    max-width: 350px !important;
+}
+
+.introjs-button {
+    background-color: hsl(var(--primary)) !important;
+    color: hsl(var(--primary-foreground)) !important;
+    text-shadow: none !important;
+    border-radius: var(--radius) !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    transition: background-color 0.2s;
+}
+
+.introjs-button:hover {
+    background-color: hsl(var(--primary) / 0.9) !important;
+}
+
+.introjs-prevbutton {
+    background-color: hsl(var(--muted)) !important;
+    color: hsl(var(--muted-foreground)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+}
+.introjs-prevbutton:hover {
+    background-color: hsl(var(--muted) / 0.9) !important;
+}
+
+.introjs-skipbutton {
+    color: hsl(var(--muted-foreground)) !important;
+}
+.introjs-skipbutton:hover {
+    color: hsl(var(--foreground)) !important;
+}
+
+.introjs-tooltiptext {
+    line-height: 1.7;
+    padding: 0.5rem;
+}
+
+.introjs-arrow.top {
+    border-bottom-color: hsl(var(--card)) !important;
+}
+.introjs-arrow.bottom {
+    border-top-color: hsl(var(--card)) !important;
+}
+.introjs-arrow.left {
+    border-right-color: hsl(var(--card)) !important;
+}
+.introjs-arrow.right {
+    border-left-color: hsl(var(--card)) !important;
+}
+
+.introjs-overlay {
+    position: fixed;
+    box-sizing: border-box;
+    z-index: 999999;
+    background-color: #000;
+    opacity: 0;
+    background: hsla(0,0%,0%,.3);
+    transition: all .3s ease-out;
 }

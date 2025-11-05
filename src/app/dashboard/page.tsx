@@ -1,8 +1,6 @@
-
 import { Suspense } from "react";
-import { useSession } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, CalendarDays, Clock, BarChart2, Users, UserRoundCheck, ShoppingCart, Activity, AlertTriangle } from "lucide-react";
+import { Package, Users, UserRoundCheck, Activity, AlertTriangle } from "lucide-react";
 import { getProducts, getAllDispensations, getAllUsers, getPatients, getOrders } from "@/lib/data";
 import type { Product, Dispensation, Patient, Order, User } from "@/lib/types";
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
@@ -13,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { unstable_noStore as noStore } from "next/cache";
 import DashboardHeader from "@/components/dashboard/dashboard-header";
-
+import { ShoppingCart } from "lucide-react";
 
 type UpcomingReturn = {
     patientId: string;
@@ -145,46 +143,46 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
 
     return (
          <div className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <Card className="hover:shadow-lg transition-shadow duration-300">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Baixo Estoque</CardTitle>
-                        <Package className="h-4 w-4 text-muted-foreground" />
+                        <Package className="h-5 w-5 text-primary" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{lowStockCount}</div>
+                        <div className="text-3xl font-bold text-foreground">{lowStockCount}</div>
                         <p className="text-xs text-muted-foreground">Grupos de itens que precisam de reposição.</p>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className="hover:shadow-lg transition-shadow duration-300">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Próximos do Vencimento</CardTitle>
-                        <AlertTriangle className="h-4 w-4 text-destructive" />
+                        <AlertTriangle className="h-5 w-5 text-destructive" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{expiringSoonItems}</div>
+                        <div className="text-3xl font-bold text-destructive">{expiringSoonItems}</div>
                         <p className="text-xs text-muted-foreground">Lotes vencendo nos próximos 120 dias.</p>
                     </CardContent>
                 </Card>
-                <Card className="lg:col-span-2">
+                <Card className="lg:col-span-2 hover:shadow-lg transition-shadow duration-300">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Retornos Próximos</CardTitle>
                         <div className="flex items-center gap-4">
                             <div className="flex items-center text-sm text-muted-foreground">
-                                <Users className="h-4 w-4 mr-1" />
+                                <Users className="h-4 w-4 mr-1 text-green-500" />
                                 {onlineUsersCount} Online
                             </div>
-                            <UserRoundCheck className="h-4 w-4 text-muted-foreground" />
+                            <UserRoundCheck className="h-5 w-5 text-primary" />
                         </div>
                     </CardHeader>
                     <CardContent>
                         {sortedReturns.length > 0 ? (
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 text-xs">
                                 {sortedReturns.map(r => (
-                                    <Button key={r.patientId} variant="secondary" size="sm" asChild className="h-auto py-1 px-2 font-normal justify-start">
+                                    <Button key={r.patientId} variant="secondary" size="sm" asChild className="h-auto py-1 px-2 font-normal justify-start hover:scale-105 transition-transform">
                                         <Link href={`/dashboard/patients/${r.patientId}`} className="flex flex-col items-start">
                                             <span className="font-semibold truncate">{r.patientName.split(' ')[0]}</span>
-                                            <span className="text-xs text-muted-foreground">Retorno: {r.returnDate}</span>
+                                            <span className="text-xs text-secondary-foreground/80">Retorno: {r.returnDate}</span>
                                         </Link>
                                     </Button>
                                 ))}
@@ -196,8 +194,8 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
                 </Card>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-2">
-                <Card>
+            <div className="grid gap-6 lg:grid-cols-5">
+                <Card className="lg:col-span-3 hover:shadow-lg transition-shadow duration-300">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <BarChart2 className="h-5 w-5" />
@@ -212,14 +210,14 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="lg:col-span-2 hover:shadow-lg transition-shadow duration-300">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Activity className="h-5 w-5" />
                             Atividades Recentes
                         </CardTitle>
                         <CardDescription>
-                            Últimas dispensações e remessas registradas no sistema.
+                            Últimas dispensações e remessas registradas.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -231,7 +229,7 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
                             <TabsContent value="dispensations" className="space-y-4 pt-4">
                                 {recentDispensations.length > 0 ? (
                                     recentDispensations.map(d => (
-                                        <div key={d.id} className="flex items-center justify-between">
+                                        <div key={d.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors">
                                             <div className="flex items-center gap-3">
                                                 <Avatar>
                                                     <AvatarFallback>{d.patient.name.charAt(0)}</AvatarFallback>
@@ -251,7 +249,7 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
                             <TabsContent value="orders" className="space-y-4 pt-4">
                                 {recentOrders.length > 0 ? (
                                     recentOrders.map(o => (
-                                        <div key={o.id} className="flex items-center justify-between">
+                                        <div key={o.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors">
                                             <div className="flex items-center gap-3">
                                                 <Avatar className="bg-muted">
                                                     <AvatarFallback>

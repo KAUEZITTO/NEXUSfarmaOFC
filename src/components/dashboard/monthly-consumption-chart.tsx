@@ -1,10 +1,10 @@
-
 "use client"
 
 import { useEffect, useState } from "react";
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from "recharts"
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid, BarProps } from "recharts"
 import type { Dispensation } from "@/lib/types";
 import { Skeleton } from "../ui/skeleton";
+import { ChartTooltip, ChartTooltipContent } from "../ui/chart";
 
 const getChartData = (dispensations: Dispensation[]) => {
   const data: { month: string; total: number }[] = [];
@@ -45,28 +45,28 @@ export function MonthlyConsumptionChart({ dispensations }: { dispensations: Disp
   return (
     <ResponsiveContainer width="100%" height={350}>
       <BarChart data={chartData}>
+        <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
         <XAxis
           dataKey="month"
-          stroke="#888888"
+          stroke="hsl(var(--muted-foreground))"
           fontSize={12}
           tickLine={false}
           axisLine={false}
         />
         <YAxis
-          stroke="#888888"
+          stroke="hsl(var(--muted-foreground))"
           fontSize={12}
           tickLine={false}
           axisLine={false}
           tickFormatter={(value) => `${value}`}
         />
-        <Tooltip
+        <ChartTooltip
           cursor={{ fill: 'hsl(var(--muted))' }}
-          contentStyle={{ 
-            backgroundColor: 'hsl(var(--background))',
-            borderColor: 'hsl(var(--border))'
-          }}
+          content={<ChartTooltipContent 
+            labelFormatter={(label) => `Mês: ${label}`}
+            formatter={(value) => [`${value} itens`, 'Total Dispensado']}
+          />}
         />
-        <Legend wrapperStyle={{fontSize: "12px"}}/>
         <Bar dataKey="total" name="Itens Dispensados" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
