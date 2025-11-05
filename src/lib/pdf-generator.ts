@@ -25,32 +25,37 @@ const getImageAsBase64 = async (imagePath: string): Promise<string | null> => {
 
 const addHeader = async (doc: jsPDFWithAutoTable, title: string, subtitle?: string) => {
     const pageWidth = doc.internal.pageSize.getWidth();
-    const prefLogoBase64 = await getImageAsBase64('SMS-PREF.png');
-    const nexusLogoBase64 = await getImageAsBase64('NEXUSnv.png');
-    const cafLogoBase64 = await getImageAsBase64('CAF.png');
+    const prefLogoBase64 = await getImageAsBase64('/SMS-PREF.png');
+    const nexusLogoBase64 = await getImageAsBase64('/NEXUSnv.png');
+    const cafLogoBase64 = await getImageAsBase64('/CAF.png');
     const margin = 15;
 
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(0, 0, 0);
 
+    // Coluna da Esquerda (Prefeitura)
     if (prefLogoBase64) doc.addImage(prefLogoBase64, 'PNG', margin, 12, 25, 25);
     doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
     doc.text('PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU', margin, 40);
     doc.text('SECRETARIA MUNICIPAL DE SAÚDE', margin, 44);
 
+    // Coluna Central (NexusFarma)
     if (nexusLogoBase64) doc.addImage(nexusLogoBase64, 'PNG', pageWidth / 2 - 20, 12, 40, 15);
 
+    // Coluna da Direita (CAF)
     if (cafLogoBase64) doc.addImage(cafLogoBase64, 'PNG', pageWidth - margin - 25, 12, 25, 25);
     doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
     doc.text('CAF - CENTRO DE ABASTECIMENTO', pageWidth - margin, 40, { align: 'right' });
     doc.text('FARMACÊUTICO', pageWidth - margin, 44, { align: 'right' });
     
+    // Título Principal do Relatório
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text(title, pageWidth / 2, 58, { align: 'center' });
     
+    // Informações de Geração e Período
     doc.setFontSize(9);
     doc.setTextColor(100);
     doc.setFont('helvetica', 'normal');
