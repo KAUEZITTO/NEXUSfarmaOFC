@@ -685,6 +685,7 @@ export async function generateStockReportPDF({ products, categoryFilter }: { pro
         undefined,
         (doc) => {
             doc.autoTable({
+                startY: 85,
                 head: [['Nome Comercial', 'Princípio Ativo', 'Apresentação', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote', 'Fabricante', 'Fornecedor']],
                 body: productsToDisplay.map(p => [p.name, p.activeIngredient || 'N/A', p.presentation || 'N/A', p.category, p.quantity.toLocaleString('pt-BR'), p.status, p.expiryDate ? new Date(p.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : 'N/A', p.batch || 'N/A', p.manufacturer || 'N/A', p.supplier || 'N/A']),
                 theme: 'grid',
@@ -706,6 +707,7 @@ export async function generateExpiryReportPDF({ products }: { products: Product[
         undefined,
         (doc) => {
              doc.autoTable({
+                startY: 85,
                 head: [['Nome do Produto', 'Lote', 'Data de Validade', 'Quantidade']],
                 body: expiringProducts.map(p => [
                     p.name,
@@ -736,6 +738,7 @@ export async function generatePatientReportPDF({ dispensations, period }: { disp
             });
 
             doc.autoTable({
+                startY: 85,
                 head: [['Paciente', 'CPF', 'Data da Dispensação', 'Nº de Itens']],
                 body: body,
                 theme: 'grid',
@@ -759,6 +762,7 @@ export async function generatePatientListReportPDF({ patients }: { patients: Pat
             ]);
             
             doc.autoTable({
+                startY: 85,
                 head: [['Nome do Paciente', 'CPF', 'CNS', 'Status', 'Demandas']],
                 body: body,
                 theme: 'grid',
@@ -792,6 +796,7 @@ export async function generateUnitDispensationReportPDF({ orders, units, period 
             ]);
 
             doc.autoTable({
+                startY: 85,
                 head: [['Nome da Unidade', 'Tipo', 'Total de Pedidos', 'Total de Itens Recebidos']],
                 body: body,
                 theme: 'grid',
@@ -814,6 +819,7 @@ export async function generateBatchReportPDF({ products }: { products: Product[]
             ]);
             
             doc.autoTable({
+                startY: 85,
                 head: [['Nome do Produto', 'Lote', 'Validade', 'Quantidade']],
                 body: body,
                 theme: 'grid',
