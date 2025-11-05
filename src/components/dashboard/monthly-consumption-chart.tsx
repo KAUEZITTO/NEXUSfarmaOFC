@@ -1,10 +1,11 @@
+
 "use client"
 
 import { useEffect, useState } from "react";
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid, BarProps } from "recharts"
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Legend, CartesianGrid } from "recharts"
 import type { Dispensation } from "@/lib/types";
 import { Skeleton } from "../ui/skeleton";
-import { ChartTooltip, ChartTooltipContent } from "../ui/chart";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "../ui/chart";
 
 const getChartData = (dispensations: Dispensation[]) => {
   const data: { month: string; total: number }[] = [];
@@ -27,6 +28,13 @@ const getChartData = (dispensations: Dispensation[]) => {
   return data;
 };
 
+const chartConfig = {
+  total: {
+    label: "Itens Dispensados",
+    color: "hsl(var(--primary))",
+  },
+} satisfies ChartConfig;
+
 export function MonthlyConsumptionChart({ dispensations }: { dispensations: Dispensation[] }) {
     const [chartData, setChartData] = useState<{ month: string; total: number }[]>([]);
     const [isClient, setIsClient] = useState(false);
@@ -43,32 +51,34 @@ export function MonthlyConsumptionChart({ dispensations }: { dispensations: Disp
     }
 
   return (
-    <ResponsiveContainer width="100%" height={350}>
-      <BarChart data={chartData}>
-        <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
-        <XAxis
-          dataKey="month"
-          stroke="hsl(var(--muted-foreground))"
-          fontSize={12}
-          tickLine={false}
-          axisLine={false}
-        />
-        <YAxis
-          stroke="hsl(var(--muted-foreground))"
-          fontSize={12}
-          tickLine={false}
-          axisLine={false}
-          tickFormatter={(value) => `${value}`}
-        />
-        <ChartTooltip
-          cursor={{ fill: 'hsl(var(--muted))' }}
-          content={<ChartTooltipContent 
-            labelFormatter={(label) => `Mês: ${label}`}
-            formatter={(value) => [`${value} itens`, 'Total Dispensado']}
-          />}
-        />
-        <Bar dataKey="total" name="Itens Dispensados" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-      </BarChart>
-    </ResponsiveContainer>
+    <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
+      <ResponsiveContainer width="100%" height={350}>
+        <BarChart data={chartData} accessibilityLayer>
+          <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
+          <XAxis
+            dataKey="month"
+            stroke="hsl(var(--muted-foreground))"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+          />
+          <YAxis
+            stroke="hsl(var(--muted-foreground))"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(value) => `${value}`}
+          />
+          <ChartTooltip
+            cursor={{ fill: 'hsl(var(--muted))' }}
+            content={<ChartTooltipContent 
+              labelFormatter={(label) => `Mês: ${label}`}
+              formatter={(value) => [`${value} itens`, 'Total Dispensado']}
+            />}
+          />
+          <Bar dataKey="total" name="Itens Dispensados" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </ChartContainer>
   )
 }
