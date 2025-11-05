@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, Users, UserRoundCheck, Activity, AlertTriangle } from "lucide-react";
+import { Package, Users, UserRoundCheck, Activity, AlertTriangle, BarChartHorizontal } from "lucide-react";
 import { getProducts, getAllDispensations, getAllUsers, getPatients, getOrders } from "@/lib/data";
 import type { Product, Dispensation, Patient, Order, User } from "@/lib/types";
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
@@ -198,7 +198,7 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
                 <Card className="lg:col-span-3 hover:shadow-lg transition-shadow duration-300">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <BarChart2 className="h-5 w-5" />
+                            <BarChartHorizontal className="h-5 w-5" />
                             Consumo Mensal de Itens
                         </CardTitle>
                         <CardDescription>
