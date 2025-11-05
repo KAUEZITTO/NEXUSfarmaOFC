@@ -1,3 +1,4 @@
+
 import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
 import type { KnowledgeBaseItem } from './types';
 import { kv } from '@/lib/server/kv.server';
@@ -104,40 +105,42 @@ export async function getPatients(filter: PatientFilter = 'active', query?: stri
     
     let filteredPatients = allPatients;
 
-    switch (filter) {
-        case 'active':
-            filteredPatients = allPatients.filter(p => p.status === 'Ativo');
-            break;
-        case 'inactive':
-            filteredPatients = allPatients.filter(p => p.status !== 'Ativo');
-            break;
-        case 'insulin':
-            filteredPatients = allPatients.filter(p => p.demandItems?.includes('Insulinas Análogas') && p.status === 'Ativo');
-            break;
-        case 'diapers':
-             filteredPatients = allPatients.filter(p => p.demandItems?.includes('Fraldas') && p.status === 'Ativo');
-             break;
-        case 'strips':
-            filteredPatients = allPatients.filter(p => p.demandItems?.includes('Tiras de Glicemia') && p.status === 'Ativo');
-            break;
-        case 'formulas':
-            filteredPatients = allPatients.filter(p => p.demandItems?.includes('Fórmulas') && p.status === 'Ativo');
-            break;
-        case 'immunoglobulin':
-            filteredPatients = allPatients.filter(p => p.demandItems?.includes('Imunoglobulina') && p.status === 'Ativo');
-            break;
-        case 'bedridden':
-            filteredPatients = allPatients.filter(p => p.isBedridden && p.status === 'Ativo');
-            break;
-        case 'legal':
-            filteredPatients = allPatients.filter(p => p.demandItems?.includes('Itens Judiciais') && p.status === 'Ativo');
-            break;
-        case 'municipal':
-            filteredPatients = allPatients.filter(p => p.demandItems?.includes('Itens Judiciais') && p.status === 'Ativo');
-            break;
-        case 'all':
-        default:
-            break;
+    // Apply main filter only if it's not 'all'
+    if (filter !== 'all') {
+        switch (filter) {
+            case 'active':
+                filteredPatients = allPatients.filter(p => p.status === 'Ativo');
+                break;
+            case 'inactive':
+                filteredPatients = allPatients.filter(p => p.status !== 'Ativo');
+                break;
+            case 'insulin':
+                filteredPatients = allPatients.filter(p => p.demandItems?.includes('Insulinas Análogas') && p.status === 'Ativo');
+                break;
+            case 'diapers':
+                filteredPatients = allPatients.filter(p => p.demandItems?.includes('Fraldas') && p.status === 'Ativo');
+                break;
+            case 'strips':
+                filteredPatients = allPatients.filter(p => p.demandItems?.includes('Tiras de Glicemia') && p.status === 'Ativo');
+                break;
+            case 'formulas':
+                filteredPatients = allPatients.filter(p => p.demandItems?.includes('Fórmulas') && p.status === 'Ativo');
+                break;
+            case 'immunoglobulin':
+                filteredPatients = allPatients.filter(p => p.demandItems?.includes('Imunoglobulina') && p.status === 'Ativo');
+                break;
+            case 'bedridden':
+                filteredPatients = allPatients.filter(p => p.isBedridden && p.status === 'Ativo');
+                break;
+            case 'legal':
+                filteredPatients = allPatients.filter(p => p.demandItems?.includes('Itens Judiciais') && p.status === 'Ativo');
+                break;
+            case 'municipal':
+                filteredPatients = allPatients.filter(p => p.demandItems?.includes('Itens Judiciais') && p.status === 'Ativo');
+                break;
+            default:
+                break;
+        }
     }
     
     if (unitId) {

@@ -69,9 +69,8 @@ export function NewDispensationClientPage({ initialProducts, initialDispensation
   // Patient search effect
   useEffect(() => {
     async function searchPatients() {
-        if (debouncedPatientSearch.length > 2) {
+        if (debouncedPatientSearch.length > 1) {
             setIsSearching(true);
-            // Changed from 'active' to 'all' to include all patients in search
             const patients = await getPatients('all', debouncedPatientSearch);
             setPatientResults(patients);
             setIsSearching(false);
@@ -301,8 +300,8 @@ export function NewDispensationClientPage({ initialProducts, initialDispensation
                             />
                             <CommandList>
                                 {isSearching && <CommandItem disabled>Buscando...</CommandItem>}
-                                {!isSearching && debouncedPatientSearch.length > 2 && patientResults.length === 0 && <CommandEmpty>Nenhum paciente encontrado.</CommandEmpty>}
-                                {debouncedPatientSearch.length <= 2 && !isSearching && <CommandEmpty>Digite mais de 2 caracteres para buscar.</CommandEmpty>}
+                                {!isSearching && debouncedPatientSearch.length > 1 && patientResults.length === 0 && <CommandEmpty>Nenhum paciente encontrado.</CommandEmpty>}
+                                {debouncedPatientSearch.length <= 1 && !isSearching && <CommandEmpty>Digite 2 ou mais caracteres para buscar.</CommandEmpty>}
                                 <CommandGroup>
                                     {patientResults.map((patient) => (
                                         <CommandItem
