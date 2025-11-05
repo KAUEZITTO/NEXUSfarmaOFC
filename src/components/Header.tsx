@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -16,11 +15,6 @@ import { ThemeToggle } from './ThemeToggle';
 import { Menu, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-const navLinks = [
-  { href: '#features', label: 'Recursos' },
-  { href: '#contact', label: 'Contato' },
-];
-
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
@@ -30,19 +24,7 @@ export function Header() {
         <Link href="/" className="flex items-center gap-2">
           <Logo />
         </Link>
-        <NavigationMenu className="hidden md:flex">
-          <NavigationMenuList>
-            {navLinks.map((link) => (
-              <NavigationMenuItem key={link.label}>
-                <Link href={link.href} legacyBehavior passHref>
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    {link.label}
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
-            ))}
-          </NavigationMenuList>
-        </NavigationMenu>
+        
         <div className="hidden md:flex items-center gap-4">
           <ThemeToggle />
           <Button asChild>
@@ -70,16 +52,13 @@ export function Header() {
             className="md:hidden overflow-hidden"
           >
             <div className="flex flex-col items-center gap-4 p-4 border-t">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className="text-lg font-medium hover:text-primary"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              <Link
+                href="#features"
+                className="text-lg font-medium hover:text-primary"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Recursos
+              </Link>
               <Button asChild className="w-full mt-4">
                 <Link href="/login">Acessar Sistema</Link>
               </Button>

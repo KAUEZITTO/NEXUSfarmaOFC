@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -12,47 +11,48 @@ import {
   ClipboardList,
   Package,
   ShieldCheck,
-  Truck,
+  HeartPulse,
   Users,
+  Pill,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const featuresData = [
   {
     icon: <Package className="h-10 w-10 text-primary" />,
-    title: 'Gestão de Estoque',
+    title: 'Controle de Estoque Inteligente',
     description:
-      'Controle de lotes, validades e inventário em tempo real para evitar perdas e rupturas.',
+      'Gestão completa de lotes, validades e inventário em tempo real para evitar perdas e rupturas.',
   },
   {
     icon: <ClipboardList className="h-10 w-10 text-primary" />,
-    title: 'Dispensação Segura',
+    title: 'Gestão de Pacientes',
     description:
-      'Registro ágil da entrega de itens a pacientes, com geração de recibos e baixa automática no estoque.',
+      'Cadastro detalhado de pacientes, histórico de dispensação e acompanhamento de mandados judiciais e municipais.',
   },
   {
-    icon: <Users className="h-10 w-10 text-primary" />,
-    title: 'Cadastro de Pacientes',
+    icon: <Pill className="h-10 w-10 text-primary" />,
+    title: 'Dispensação e Remessas',
     description:
-      'Histórico completo de dispensações e acompanhamento de demandas judiciais e municipais.',
+      'Gere guias de remessa para unidades e registre a dispensação de itens para pacientes com agilidade.',
   },
   {
     icon: <BarChart2 className="h-10 w-10 text-primary" />,
     title: 'Relatórios Gerenciais',
     description:
-      'Dados consolidados sobre consumo, atendimentos e níveis de estoque para decisões estratégicas.',
-  },
-  {
-    icon: <Truck className="h-10 w-10 text-primary" />,
-    title: 'Abastecimento de Unidades',
-    description:
-      'Crie e gerencie guias de remessa para abastecer as unidades de saúde da sua rede de forma eficiente.',
+      'Visualize dados consolidados sobre consumo, atendimentos e níveis de estoque para tomar decisões estratégicas.',
   },
   {
     icon: <ShieldCheck className="h-10 w-10 text-primary" />,
     title: 'Segurança e Rastreabilidade',
     description:
-      'Rastreabilidade total de cada item, com controle de acesso por níveis de permissão de usuário.',
+      'Processos seguros com controle de acesso e rastreabilidade total de cada item, do recebimento à entrega.',
+  },
+  {
+    icon: <HeartPulse className="h-10 w-10 text-primary" />,
+    title: 'Cuidado Integrado',
+    description:
+      'Vincule pacientes às suas unidades de saúde, garantindo um acompanhamento completo e contínuo.',
   },
 ];
 
@@ -65,12 +65,10 @@ export function Features() {
             Recursos Principais
           </div>
           <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-foreground">
-            Tudo o que você precisa em um só lugar
+            Tudo que você precisa em um só lugar
           </h2>
           <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-            O NexusFarma foi desenhado para simplificar a complexa rotina do
-            Centro de Abastecimento Farmacêutico (CAF), integrando todas as
-            operações em uma plataforma robusta e intuitiva.
+            O NexusFarma foi desenhado para simplificar a complexa rotina do Centro de Abastecimento Farmacêutico (CAF), integrando todas as operações em uma plataforma robusta e intuitiva.
           </p>
         </div>
         <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 lg:grid-cols-3">
