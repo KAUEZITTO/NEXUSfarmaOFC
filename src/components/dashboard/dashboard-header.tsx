@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useSession } from "next-auth/react";
@@ -35,18 +36,23 @@ function DateTimeDisplay() {
 
 export default function DashboardHeader() {
     const { data: session } = useSession();
+    const [greeting, setGreeting] = useState('');
 
-    const getGreeting = () => {
-        const hour = new Date().getHours();
-        if (hour < 12) return "Bom dia";
-        if (hour < 18) return "Boa tarde";
-        return "Boa noite";
-    };
+    useEffect(() => {
+        const getGreeting = () => {
+            const hour = new Date().getHours();
+            if (hour < 12) return "Bom dia";
+            if (hour < 18) return "Boa tarde";
+            return "Boa noite";
+        };
+        setGreeting(getGreeting());
+    }, []);
+
 
     return (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
-                <h1 className="text-2xl font-bold tracking-tight">{getGreeting()}, {session?.user?.name?.split(' ')[0] || 'Usuário'}!</h1>
+                <h1 className="text-2xl font-bold tracking-tight">{greeting}, {session?.user?.name?.split(' ')[0] || 'Usuário'}!</h1>
                 <p className="text-muted-foreground">Bem-vindo(a) de volta ao painel NexusFarma.</p>
             </div>
             <Suspense fallback={<Skeleton className="h-10 w-64" />}>
