@@ -1,13 +1,32 @@
+import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
 
-// A maneira mais simples e recomendada de proteger rotas com NextAuth.js
-// é usar o middleware "withAuth". Ele cuidará automaticamente da verificação
-// do token JWT no cookie e redirecionará usuários não autenticados.
-// Documentação: https://next-auth.js.org/configuration/nextjs#middleware
+export default withAuth(
+  function middleware(req) {
+    const token = req.nextauth.token;
+    const { pathname } = req.nextUrl;
 
-export { default } from "next-auth/middleware";
+    const isHospitalUser = token?.location === 'Hospital';
 
-// O objeto `config` especifica quais rotas devem ser protegidas pelo middleware.
-// O matcher abaixo protege todas as rotas aninhadas sob /dashboard.
+    // Redireciona usuários do Hospital que tentam acessar a raiz do dashboard ou outras páginas do CAF
+    if (isHospitalUser && !pathname.startsWith('/dashboard/hospital') && pathname !== '/dashboard/inventory' && pathname !== '/dashboard/settings' && pathname !== '/dashboard/about') {
+      return NextResponse.redirect(new URL('/dashboard/hospital', req.url));
+    }
+
+    // Redireciona usuários do CAF que tentam acessar as páginas do hospital
+    if (!isHospitalUser && pathname.startsWith('/dashboard/hospital')) {
+      return NextResponse.redirect(new URL('/dashboard', req.url));
+    }
+
+    return NextResponse.next();
+  },
+  {
+    callbacks: {
+      authorized: ({ token }) => !!token,
+    },
+  }
+);
+
 export const config = { 
   matcher: [
     "/dashboard/:path*",

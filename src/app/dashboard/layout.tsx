@@ -1,17 +1,20 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { UserNav } from '@/components/dashboard/user-nav';
 import { DashboardNav } from '@/components/dashboard/dashboard-nav';
 import { Logo } from '@/components/logo';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guide';
-import BirthdayBalloons from '@/components/dashboard/birthday-balloons';
-import { updateUserLastSeen } from '@/lib/actions';
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { HospitalNav } from '@/components/dashboard/hospital/hospital-nav';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { PageLoader } from '@/components/ui/page-loader';
+
 
 const CURRENT_VERSION = '3.6.2';
 
@@ -21,40 +24,36 @@ const changelog = [
     { version: '3.6.0', changes: ['Implementado campo de observações na tela de dispensação e no recibo final para registrar informações adicionais.', 'Corrigidos múltiplos bugs críticos de cache que causavam inconsistências de dados, garantindo que o dashboard e as listas de pacientes/unidades estejam sempre sincronizados em tempo real.', 'Resolvidos problemas de configuração do servidor que impediam o cadastro de novos usuários e a exclusão de pacientes.', 'Aprimorado o tour guiado para ser interativo e navegar entre as páginas.', 'Ajustado o design e as informações do recibo de dispensação (Termo de Entrega) para incluir dados do paciente e gerar duas vias.'] },
 ];
 
-function UserActivityTracker() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (status === 'authenticated' && session?.user?.id) {
-      const updateActivity = async () => {
-        await updateUserLastSeen(session.user!.id);
-        // Força a revalidação dos dados da página atual
-        router.refresh(); 
-      };
-      
-      updateActivity(); // Executa imediatamente ao carregar
-      
-      // Continua a atualizar a atividade e os dados da página a cada 30 segundos
-      const intervalId = setInterval(updateActivity, 30000); 
-      
-      return () => clearInterval(intervalId);
-    }
-  }, [status, session, router]);
-
-  return null; // Este componente não renderiza nada
-}
-
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+    const { data: session, status } = useSession();
+    const router = useRouter();
+    const pathname = usePathname();
+    const isHospitalUser = session?.user?.location === 'Hospital';
+
+    useEffect(() => {
+        if (status === 'authenticated') {
+            if (isHospitalUser && !pathname.startsWith('/dashboard/hospital')) {
+                router.replace('/dashboard/hospital');
+            } else if (!isHospitalUser && pathname.startsWith('/dashboard/hospital')) {
+                router.replace('/dashboard');
+            }
+        }
+    }, [status, isHospitalUser, pathname, router]);
+
+    if (status === 'loading' || (status === 'authenticated' && (
+        (isHospitalUser && !pathname.startsWith('/dashboard/hospital')) ||
+        (!isHospitalUser && pathname.startsWith('/dashboard/hospital'))
+    ))) {
+        return <PageLoader isLoading={true} />;
+    }
+
   return (
         <SidebarProvider>
           <TourGuideWrapper>
-            <UserActivityTracker />
-            <BirthdayBalloons />
             <div className="grid min-h-screen w-full md:grid-cols-[var(--sidebar-width)_1fr] peer-data-[state=collapsed]:md:grid-cols-[var(--sidebar-width-icon)_1fr] transition-[grid-template-columns] duration-300 ease-in-out">
               <Sidebar className="bg-primary text-primary-foreground">
                   <SidebarHeader className="border-b border-primary-foreground/20">
@@ -63,8 +62,11 @@ export default function DashboardLayout({
                       </Link>
                   </SidebarHeader>
                   <SidebarContent className="p-2">
-                      <DashboardNav />
+                      {isHospitalUser ? <HospitalNav /> : <DashboardNav />}
                   </SidebarContent>
+                  <div className="mt-auto flex flex-col items-center gap-2 border-t border-primary-foreground/20 p-4">
+                        <ThemeToggle />
+                  </div>
               </Sidebar>
               <div className="flex flex-col">
                 <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30 shadow-sm">

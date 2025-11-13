@@ -42,7 +42,7 @@ export function DashboardNav({ isMobile = false }: { isMobile?: boolean }) {
                 return null;
             }
 
-            const isActive = pathname === href || (pathname.startsWith(href) && href !== '/dashboard');
+            const isActive = pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
 
             return (
                 <SidebarMenuItem key={label} data-tour-id={tourId}>
@@ -55,7 +55,7 @@ export function DashboardNav({ isMobile = false }: { isMobile?: boolean }) {
                             }
                         }}
                         tooltip={label}
-                        className={`transition-colors duration-200 hover:bg-secondary hover:text-secondary-foreground hover:scale-105 ${isActive ? 'bg-primary text-primary-foreground' : 'text-primary-foreground/80'}`}
+                        className={`transition-colors duration-200 hover:bg-secondary hover:text-secondary-foreground hover:scale-105`}
                     >
                       <Link href={href}>
                         <Icon className="h-5 w-5" />

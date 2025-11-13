@@ -206,7 +206,9 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="pl-2">
-                        <MonthlyConsumptionChart dispensations={dispensations} />
+                        <Suspense fallback={<Skeleton className="h-[350px] w-full" />}>
+                            <MonthlyConsumptionChart dispensations={dispensations} />
+                        </Suspense>
                     </CardContent>
                 </Card>
 

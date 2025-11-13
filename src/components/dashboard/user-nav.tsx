@@ -47,7 +47,6 @@ export function UserNav() {
 
   return (
     <div data-tour-id="step-user-nav" className="flex items-center gap-2">
-      <ThemeToggle />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-10 w-10 rounded-full">

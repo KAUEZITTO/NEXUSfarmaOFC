@@ -1,4 +1,3 @@
-
 // Adicionando tipos do NextAuth para extender o objeto de sessão
 import type { DefaultUser, DefaultSession } from 'next-auth';
 import { ColumnDef } from '@tanstack/react-table';
@@ -223,7 +222,7 @@ export type StockMovement = {
   productId: string;
   productName: string;
   type: 'Entrada' | 'Saída' | 'Ajuste';
-  reason: 'Entrada por Compra' | 'Saída por Remessa' | 'Saída por Dispensação' | 'Ajuste de Inventário' | 'Entrada Inicial' | 'Estorno de Remessa' | 'Exclusão de Produto' | 'Estorno de Dispensação';
+  reason: 'Entrada por Compra' | 'Saída por Remessa' | 'Saída por Dispensação' | 'Ajuste de Inventário' | 'Entrada Inicial' | 'Estorno de Remessa' | 'Exclusão de Produto' | 'Estorno de Dispensação' | 'Saída por Dispensação (Setor)' | 'Saída por Dispensação (Paciente Internado)';
   quantityChange: number;
   quantityBefore: number;
   quantityAfter: number;
@@ -237,5 +236,36 @@ export type KnowledgeBaseItem = {
     therapeuticClass: string;
     mainFunction: string;
 }
+
+// --- HOSPITAL SPECIFIC TYPES ---
+export type Sector = 'Enfermaria' | 'UTI' | 'Centro Cirúrgico' | 'Pronto Socorro' | 'Ambulatório';
+
+export type SectorDispensation = {
+    id: string;
+    sector: Sector;
+    date: string;
+    items: DispensationItem[];
+    dispensedBy: string; // User name
+};
+
+export type HospitalPatientStatus = 'Internado' | 'Alta' | 'Transferido' | 'Óbito';
+
+export type HospitalPatient = {
+    id: string;
+    name: string;
+    bedNumber: string;
+    admissionDate: string;
+    status: HospitalPatientStatus;
+    prescriptions?: string; // Simple text for now
+};
+
+export type HospitalPatientDispensation = {
+    id: string;
+    hospitalPatientId: string;
+    date: string;
+    items: DispensationItem[];
+    dispensedBy: string;
+};
+
 
 export { ColumnDef };
