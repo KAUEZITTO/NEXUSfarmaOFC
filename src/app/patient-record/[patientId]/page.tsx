@@ -1,4 +1,5 @@
 
+'use server';
 
 import { getPatient } from "@/lib/data";
 import { notFound } from "next/navigation";
@@ -7,8 +8,6 @@ import { Logo } from "@/components/logo";
 import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-
-export const dynamic = 'force-dynamic';
 
 const DetailItem = ({ label, value }: { label: string; value: string | undefined | null }) => {
     if (!value) return null;

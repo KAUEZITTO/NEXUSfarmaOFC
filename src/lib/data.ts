@@ -1,10 +1,10 @@
 
-import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter, SectorDispensation } from './types';
-import type { KnowledgeBaseItem } from './types';
-import { kv } from '@/lib/server/kv.server';
+'use server';
+
+import { kv } from './server/kv.server';
 import path from 'path';
 import { promises as fs } from 'fs';
-
+import type { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter, SectorDispensation, KnowledgeBaseItem } from './types';
 
 // --- GENERIC DATA ACCESS ---
 
@@ -30,58 +30,52 @@ export async function writeData<T>(key: string, data: T[]): Promise<void> {
 // --- SPECIFIC DATA ACCESSORS ---
 
 export async function getProducts(): Promise<Product[]> {
-    try {
-        const products = await readData<Product>('products');
-        return products;
-    } catch (error) {
-        console.error("Falha ao buscar produtos no KV:", error);
-        return [];
-    }
+    return await readData<Product>('products');
 }
 
 export async function getProduct(productId: string): Promise<Product | null> {
-    const products = await readData<Product>('products');
+    const products = await getProducts();
     return products.find(p => p.id === productId) || null;
 }
 
-export const getUnits = async (): Promise<Unit[]> => {
+export async function getUnits(): Promise<Unit[]> {
     const units = await readData<Unit>('units');
     return units.sort((a, b) => a.name.localeCompare(b.name));
-};
+}
 
 export async function getUnit(unitId: string): Promise<Unit | null> {
     const units = await getUnits();
     return units.find(u => u.id === unitId) || null;
 }
 
-export const getOrders = async (): Promise<Order[]> => {
+export async function getOrders(): Promise<Order[]> {
     return await readData<Order>('orders');
-};
+}
 
 export async function getOrder(orderId: string): Promise<Order | null> {
     const orders = await getOrders();
     return orders.find(o => o.id === orderId) || null;
 }
 
-export const getOrdersForUnit = async (unitId: string): Promise<Order[]> => {
+export async function getOrdersForUnit(unitId: string): Promise<Order[]> {
     const allOrders = await readData<Order>('orders');
     const unitOrders = allOrders.filter(o => o.unitId === unitId);
     return unitOrders.sort((a,b) => new Date(b.sentDate).getTime() - new Date(a.sentDate).getTime());
-};
+}
 
 export async function getDispensation(dispensationId: string): Promise<Dispensation | null> {
     const dispensations = await getAllDispensations();
     return dispensations.find(d => d.id === dispensationId) || null;
 }
 
-export const getDispensationsForPatient = async (patientId: string): Promise<Dispensation[]> => {
+export async function getDispensationsForPatient(patientId: string): Promise<Dispensation[]> {
     const allDispensations = await readData<Dispensation>('dispensations');
     return allDispensations.filter(d => d.patientId === patientId);
-};
+}
 
-export const getStockMovements = async (): Promise<StockMovement[]> => {
+export async function getStockMovements(): Promise<StockMovement[]> {
     return await readData<StockMovement>('stockMovements');
-};
+}
 
 export async function getAllUsers(): Promise<User[]> {
     const users = await readData<User>('users');
@@ -98,17 +92,14 @@ export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
     return data;
 }
 
-// --- Functions that were Server Actions and now are regular data fetching functions ---
-
 export async function getPatients(filter: PatientFilter = 'active', query?: string, unitId?: string): Promise<Patient[]> {
     const allPatients = await readData<Patient>('patients');
     
     let filteredPatients = allPatients;
 
-    // Se uma query de busca é fornecida, ela tem prioridade e busca em todos os pacientes.
     if (query) {
         const lowercasedQuery = query.toLowerCase();
-        if (query.startsWith('pat_')) { // Busca por ID exato
+        if (query.startsWith('pat_')) {
             const foundPatient = allPatients.find(p => p.id === query);
             return foundPatient ? [foundPatient] : [];
         }
@@ -122,7 +113,6 @@ export async function getPatients(filter: PatientFilter = 'active', query?: stri
             );
         });
     } else {
-        // Se não há query, aplica os filtros de categoria.
         if (filter !== 'all') {
             switch (filter) {
                 case 'active':
@@ -161,7 +151,6 @@ export async function getPatients(filter: PatientFilter = 'active', query?: stri
         }
     }
     
-    // Filtro adicional por unidade, se fornecido.
     if (unitId) {
         filteredPatients = filteredPatients.filter(p => p.unitId === unitId);
     }
@@ -169,9 +158,13 @@ export async function getPatients(filter: PatientFilter = 'active', query?: stri
     return filteredPatients.sort((a, b) => a.name.localeCompare(b.name));
 }
 
+export async function getPatient(patientId: string): Promise<Patient | null> {
+    const patients = await readData<Patient>('patients');
+    return patients.find(p => p.id === patientId) || null;
+}
+
 export async function getAllDispensations(): Promise<Dispensation[]> {
-    const dispensations = await readData<Dispensation>('dispensations');
-    return dispensations;
+    return await readData<Dispensation>('dispensations');
 }
 
 export async function getAllPatients(): Promise<Patient[]> {
