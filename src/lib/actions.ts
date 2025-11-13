@@ -1,4 +1,3 @@
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -396,8 +395,8 @@ export async function addDispensation(dispensationData: { patientId: string; pat
       id: generateNumericId(),
       patientId: dispensationData.patientId,
       patient: patientForDispensation,
-      items: dispensationData.items,
       date: dispensationDate,
+      items: dispensationData.items,
       creatorName: session?.user?.name || 'Usuário Desconhecido',
       notes: dispensationData.notes,
     };

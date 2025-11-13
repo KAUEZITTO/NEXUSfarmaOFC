@@ -1,4 +1,3 @@
-
 import { Suspense } from 'react';
 import { getProducts, getAllPatients, getAllDispensations, getUnits, getOrders, getStockMovements } from "@/lib/data";
 import { Skeleton } from "@/components/ui/skeleton";
