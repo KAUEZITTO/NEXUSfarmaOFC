@@ -331,7 +331,7 @@ export async function deleteOrder(orderId: string): Promise<{ success: boolean; 
         if (productIndex !== -1) {
             const originalQuantity = allProducts[productIndex].quantity;
             allProducts[productIndex].quantity += item.quantity;
-            allProducts[productIndex].status = allProducts[productIndex].quantity <= 0 ? 'Sem Estoque' : allProducts[productIndex].quantity < 20 ? 'Baixo Estoque' : 'Em Estoque';
+            allProducts[productIndex].status = allProducts[productIndex].quantity > 0 ? (allProducts[productIndex].quantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque';
             await logStockMovement(item.productId, item.name, 'Entrada', 'Estorno de Remessa', item.quantity, originalQuantity, reversalDate, orderToDelete.id);
         } else {
             console.warn(`Produto com ID ${item.productId} não encontrado durante estorno. Criando novo produto.`);

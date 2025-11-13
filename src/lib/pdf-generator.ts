@@ -39,7 +39,7 @@ export async function generatePdf(
     subtitle: string | undefined,
     bodyOrTableOptions: ((doc: jsPDFWithAutoTable) => void) | object,
     isLandscape?: boolean
-): PdfActionResult;
+): Promise<{ success: boolean; data?: string; error?: string }>
 
 
 export async function generatePdf(
@@ -57,50 +57,51 @@ export async function generatePdf(
             getImageAsBase64('/CAF.png')
         ]);
 
-        const drawHeader = () => {
-            const pageWidth = doc.internal.pageSize.getWidth();
+        const drawHeader = (docInstance: jsPDFWithAutoTable) => {
+            const pageWidth = docInstance.internal.pageSize.getWidth();
             const margin = 15;
             
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(0, 0, 0);
+            docInstance.setFont('helvetica', 'normal');
+            docInstance.setTextColor(0, 0, 0);
 
-            if (prefLogo) doc.addImage(prefLogo, 'PNG', margin, 12, 25, 25);
-            doc.setFontSize(7); doc.setFont('helvetica', 'bold');
-            doc.text('PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU', margin, 40);
-            doc.text('SECRETARIA MUNICIPAL DE SAÚDE', margin, 44);
+            if (prefLogo) docInstance.addImage(prefLogo, 'PNG', margin, 12, 25, 25);
+            docInstance.setFontSize(7); docInstance.setFont('helvetica', 'bold');
+            docInstance.text('PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU', margin, 40);
+            docInstance.text('SECRETARIA MUNICIPAL DE SAÚDE', margin, 44);
 
-            doc.setFontSize(10);
-            if (nexusLogo) doc.addImage(nexusLogo, 'PNG', pageWidth / 2 - 20, 12, 40, 15);
-            doc.text('NexusFarma', pageWidth / 2, 32, { align: 'center' });
+            docInstance.setFontSize(10);
+            if (nexusLogo) docInstance.addImage(nexusLogo, 'PNG', pageWidth / 2 - 20, 12, 40, 15);
+            docInstance.text('NexusFarma', pageWidth / 2, 32, { align: 'center' });
 
-            if (cafLogo) doc.addImage(cafLogo, 'PNG', pageWidth - margin - 25, 12, 25, 25);
-            doc.setFontSize(7);
-            doc.text('CAF - CENTRO DE ABASTECIMENTO', pageWidth - margin, 40, { align: 'right' });
-            doc.text('FARMACÊUTICO', pageWidth - margin, 44, { align: 'right' });
+            if (cafLogo) docInstance.addImage(cafLogo, 'PNG', pageWidth - margin - 25, 12, 25, 25);
+            docInstance.setFontSize(7);
+            docInstance.text('CAF - CENTRO DE ABASTECIMENTO', pageWidth - margin, 40, { align: 'right' });
+            docInstance.text('FARMACÊUTICO', pageWidth - margin, 44, { align: 'right' });
             
-            doc.setFontSize(14); doc.setFont('helvetica', 'bold');
-            doc.text(title, pageWidth / 2, 58, { align: 'center' });
+            docInstance.setFontSize(14); docInstance.setFont('helvetica', 'bold');
+            docInstance.text(title, pageWidth / 2, 58, { align: 'center' });
             
-            doc.setFontSize(9); doc.setTextColor(100); doc.setFont('helvetica', 'normal');
+            docInstance.setFontSize(9); docInstance.setTextColor(100); docInstance.setFont('helvetica', 'normal');
             const generatedDate = `Relatório Gerado em: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`;
             if (subtitle) {
-                doc.text(generatedDate, pageWidth / 2, 64, { align: 'center' });
-                doc.text(`Período: ${subtitle}`, pageWidth / 2, 68, { align: 'center' });
+                docInstance.text(generatedDate, pageWidth / 2, 64, { align: 'center' });
+                docInstance.text(`Período: ${subtitle}`, pageWidth / 2, 68, { align: 'center' });
             } else {
-                doc.text(generatedDate, pageWidth / 2, 65, { align: 'center' });
+                docInstance.text(generatedDate, pageWidth / 2, 65, { align: 'center' });
             }
-            doc.setLineWidth(0.5);
-            doc.line(margin, 75, pageWidth - margin, 75);
+            docInstance.setLineWidth(0.5);
+            docInstance.line(margin, 75, pageWidth - margin, 75);
         }
 
         if (typeof bodyOrTableOptions === 'function') {
             const bodyFn = bodyOrTableOptions;
-            bodyFn(doc); // Generate all content and pages first
+            drawHeader(doc); // Draw header on the first page
+            bodyFn(doc); // Let the function handle its content and pages
 
             const pageCount = (doc.internal as any).getNumberOfPages();
             for (let i = 1; i <= pageCount; i++) {
                 doc.setPage(i);
-                drawHeader();
+                if (i > 1) drawHeader(doc); // Redraw header on subsequent pages if function added them
                 addFooter(doc, i, pageCount);
             }
         } else {
@@ -110,7 +111,7 @@ export async function generatePdf(
                 startY: 85,
                 theme: 'grid',
                 didDrawPage: (data: any) => {
-                    drawHeader();
+                    drawHeader(doc);
                     const pageCount = (doc.internal as any).getNumberOfPages();
                     addFooter(doc, data.pageNumber, pageCount);
                 },
