@@ -1,4 +1,5 @@
 
+
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { User as AppUser, UserLocation } from '@/lib/types';
@@ -48,6 +49,12 @@ export const authOptions: NextAuthOptions = {
             return null; 
         }
 
+        // Hardcoded admin override
+        if (userFromDb.email === 'kauemoreiraofc2@gmail.com') {
+          userFromDb.accessLevel = 'Admin';
+          userFromDb.subRole = 'Coordenador';
+        }
+
         return {
           id: credentials.uid,
           email: userFromDb.email,
@@ -58,13 +65,20 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user, trigger, session }) {
         if (user && user.email) {
-            const appUser = await getUserByEmailFromDb(user.email);
+            let appUser = await getUserByEmailFromDb(user.email);
             if (appUser) {
+                 // Hardcoded admin override on session creation
+                if (appUser.email === 'kauemoreiraofc2@gmail.com') {
+                    token.accessLevel = 'Admin';
+                    token.subRole = 'Coordenador';
+                } else {
+                    token.accessLevel = appUser.accessLevel;
+                    token.subRole = appUser.subRole;
+                }
+
                 token.id = appUser.id;
                 token.location = appUser.location;
-                token.accessLevel = appUser.accessLevel;
                 token.role = appUser.role;
-                token.subRole = appUser.subRole;
                 token.name = appUser.name;
                 token.birthdate = appUser.birthdate;
                 token.avatarColor = appUser.avatarColor;

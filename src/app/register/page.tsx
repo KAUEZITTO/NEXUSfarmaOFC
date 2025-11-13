@@ -1,4 +1,5 @@
 
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { RegisterForm } from '@/components/auth/register-form';
@@ -20,7 +21,7 @@ const avatarColors = [
 ];
 
 // A Server Action de registro agora vive aqui, dentro da página do servidor
-async function register(data: { name: string, email: string; password: string; role: Role; subRole?: SubRole; location: UserLocation; }) {
+async function register(data: { name: string, email: string; password: string; role: Role; subRole?: SubRole; location?: UserLocation; }) {
     'use server';
     
     const { name, email, password, role, subRole, location } = data;
@@ -56,11 +57,18 @@ async function register(data: { name: string, email: string; password: string; r
         });
         
         const isFirstUser = users.length === 0;
+
+        // For coordinators, location is not defined from form, default to CAF as they have access to both.
+        const userLocation = subRole === 'Coordenador' ? 'CAF' : location;
+        if (!userLocation) {
+            return { success: false, message: 'O local de trabalho é obrigatório para este cargo.' };
+        }
+
         const newUser: User = {
             id: userRecord.uid,
             email,
             name,
-            location,
+            location: userLocation,
             role,
             subRole: role === 'Farmacêutico' ? subRole : undefined,
             accessLevel: isFirstUser ? 'Admin' : 'User',

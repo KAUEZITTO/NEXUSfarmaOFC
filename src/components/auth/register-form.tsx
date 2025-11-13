@@ -27,7 +27,7 @@ const pharmacistSubRoles: SubRole[] = ['CAF', 'Hospitalar', 'Coordenador'];
 
 
 interface RegisterFormProps {
-    registerAction: (data: { name: string, email: string; password: string; role: Role; subRole?: SubRole; location: UserLocation }) => Promise<{ success: boolean; message: string; }>;
+    registerAction: (data: { name: string, email: string; password: string; role: Role; subRole?: SubRole; location?: UserLocation }) => Promise<{ success: boolean; message: string; }>;
 }
 
 export function RegisterForm({ registerAction }: RegisterFormProps) {
@@ -37,6 +37,7 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
   const [isPending, setIsPending] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<UserLocation | ''>('');
   const [selectedRole, setSelectedRole] = useState<Role | ''>('');
+  const [selectedSubRole, setSelectedSubRole] = useState<SubRole | ''>('');
 
   const availableRoles = selectedLocation === 'CAF' ? cafRoles : selectedLocation === 'Hospital' ? hospitalRoles : [];
   
@@ -50,11 +51,11 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     const confirmPassword = formData.get('confirm-password') as string;
-    const location = formData.get('location') as UserLocation;
+    const location = formData.get('location') as UserLocation | undefined;
     const role = formData.get('role') as Role;
     const subRole = formData.get('subRole') as SubRole | undefined;
 
-    if (!location) {
+    if (subRole !== 'Coordenador' && !location) {
         setErrorMessage("Por favor, selecione um local (CAF ou Hospital).");
         setIsPending(false);
         return;
@@ -117,41 +118,47 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
       </div>
 
        <div className="grid gap-2">
-          <Label htmlFor="location">Local de Trabalho</Label>
-          <Select name="location" required onValueChange={(v) => { setSelectedLocation(v as UserLocation); setSelectedRole(''); }}>
-              <SelectTrigger><SelectValue placeholder="Selecione o local..." /></SelectTrigger>
-              <SelectContent>
-                  <SelectItem value="CAF">CAF (Gestão Central)</SelectItem>
-                  <SelectItem value="Hospital">Hospital</SelectItem>
-              </SelectContent>
-          </Select>
-      </div>
+            <Label htmlFor="role">Cargo</Label>
+            <Select name="role" required value={selectedRole} onValueChange={(v) => { setSelectedRole(v as Role); setSelectedSubRole(''); setSelectedLocation(''); }}>
+                <SelectTrigger><SelectValue placeholder="Selecione seu cargo" /></SelectTrigger>
+                <SelectContent>
+                    {['Farmacêutico', 'Enfermeiro(a)', 'Técnico de Enfermagem', 'Auxiliar de Farmácia', 'Atendente de Farmácia', 'Digitador'].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                </SelectContent>
+            </Select>
+        </div>
 
-      {selectedLocation && (
-        <>
+        {selectedRole === 'Farmacêutico' && (
             <div className="grid gap-2">
-                <Label htmlFor="role">Cargo</Label>
-                <Select name="role" required value={selectedRole} onValueChange={(v) => setSelectedRole(v as Role)}>
-                    <SelectTrigger><SelectValue placeholder="Selecione seu cargo" /></SelectTrigger>
+                <Label htmlFor="subRole">Área de Atuação</Label>
+                <Select name="subRole" required value={selectedSubRole} onValueChange={(v) => setSelectedSubRole(v as SubRole)}>
+                    <SelectTrigger><SelectValue placeholder="Selecione a área" /></SelectTrigger>
                     <SelectContent>
-                        {availableRoles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                        {pharmacistSubRoles.map(sr => <SelectItem key={sr} value={sr}>{sr}</SelectItem>)}
                     </SelectContent>
                 </Select>
             </div>
-            {selectedRole === 'Farmacêutico' && (
-               <div className="grid gap-2">
-                  <Label htmlFor="subRole">Área de Atuação</Label>
-                  <Select name="subRole" required>
-                      <SelectTrigger><SelectValue placeholder="Selecione a área" /></SelectTrigger>
-                      <SelectContent>
-                          {pharmacistSubRoles.map(sr => <SelectItem key={sr} value={sr}>{sr}</SelectItem>)}
-                      </SelectContent>
-                  </Select>
-               </div>
-            )}
-        </>
-      )}
+        )}
 
+        {selectedSubRole !== 'Coordenador' && selectedRole !== '' && (
+            <div className="grid gap-2">
+                <Label htmlFor="location">Local de Trabalho</Label>
+                <Select name="location" required={selectedSubRole !== 'Coordenador'} value={selectedLocation} onValueChange={(v) => setSelectedLocation(v as UserLocation)}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o local..." /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="CAF">CAF (Gestão Central)</SelectItem>
+                        <SelectItem value="Hospital">Hospital</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+        )}
+
+        {availableRoles.length > 0 && selectedRole && !availableRoles.includes(selectedRole as any) && (
+            <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Cargo Inválido</AlertTitle>
+                <AlertDescription>O cargo "{selectedRole}" não é válido para o local "{selectedLocation}". Por favor, selecione um cargo diferente.</AlertDescription>
+            </Alert>
+        )}
 
       <RegisterButton isPending={isPending} />
 
