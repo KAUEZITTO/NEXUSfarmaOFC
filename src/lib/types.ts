@@ -1,3 +1,4 @@
+
 // Adicionando tipos do NextAuth para extender o objeto de sessão
 import type { DefaultUser, DefaultSession } from 'next-auth';
 import { ColumnDef } from '@tanstack/react-table';
@@ -9,6 +10,7 @@ declare module 'next-auth' {
       name?: string | null;
       email?: string | null;
       birthdate?: string | null;
+      location?: UserLocation;
       role?: Role;
       subRole?: SubRole;
       accessLevel?: AccessLevel;
@@ -21,6 +23,7 @@ declare module 'next-auth' {
       name?: string | null;
       email?: string | null;
       birthdate?: string | null;
+      location?: UserLocation;
       role?: Role;
       subRole?: SubRole;
       accessLevel?: AccessLevel;
@@ -33,6 +36,7 @@ declare module 'next-auth' {
 declare module 'next-auth/jwt' {
     interface JWT {
         id: string;
+        location?: UserLocation;
         role?: Role;
         subRole?: SubRole;
         accessLevel?: AccessLevel;
@@ -43,18 +47,18 @@ declare module 'next-auth/jwt' {
     }
 }
 
+export type UserLocation = 'CAF' | 'Hospital';
 
 export type Role =
   | 'Farmacêutico'
   | 'Coordenador'
   | 'Enfermeiro(a)'
-  | 'Odontólogo(a)'
-  | 'Biomédico(a)'
   | 'Técnico de Enfermagem'
   | 'Auxiliar de Farmácia'
+  | 'Atendente de Farmácia'
   | 'Digitador';
 
-export type SubRole = 'CAF' | 'CAPS' | 'Hospital' | 'e-Multi' | 'Outro';
+export type SubRole = 'CAF' | 'Hospitalar' | 'Coordenador';
 
 export type AccessLevel = 'Admin' | 'User';
 
@@ -64,6 +68,7 @@ export type User = {
     name?: string;
     birthdate?: string;
     image?: string; // Kept in DB type, but not used in session
+    location: UserLocation;
     role: Role;
     subRole?: SubRole;
     accessLevel: AccessLevel;

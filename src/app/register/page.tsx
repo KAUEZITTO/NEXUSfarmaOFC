@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase/admin';
 import { getAllUsers, writeData } from '@/lib/data';
-import type { User, Role, SubRole } from '@/lib/types';
+import type { User, Role, SubRole, UserLocation } from '@/lib/types';
 
 const avatarColors = [
   'hsl(211 100% 50%)', // Blue
@@ -20,10 +20,10 @@ const avatarColors = [
 ];
 
 // A Server Action de registro agora vive aqui, dentro da página do servidor
-async function register(data: { name: string, email: string; password: string; role: Role; subRole?: SubRole; }) {
+async function register(data: { name: string, email: string; password: string; role: Role; subRole?: SubRole; location: UserLocation; }) {
     'use server';
     
-    const { name, email, password, role, subRole } = data;
+    const { name, email, password, role, subRole, location } = data;
 
     try {
         const users = await getAllUsers();
@@ -60,6 +60,7 @@ async function register(data: { name: string, email: string; password: string; r
             id: userRecord.uid,
             email,
             name,
+            location,
             role,
             subRole: role === 'Farmacêutico' ? subRole : undefined,
             accessLevel: isFirstUser ? 'Admin' : 'User',

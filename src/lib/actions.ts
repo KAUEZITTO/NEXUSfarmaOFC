@@ -1,10 +1,9 @@
 
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { readData, writeData, getProducts as getProductsFromDb, getAllUsers } from './data';
-import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus } from './types';
+import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation } from './types';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { generatePdf } from '@/lib/pdf-generator';
@@ -473,8 +472,8 @@ const avatarColors = [
   'hsl(198.8 93.4% 42%)' // Teal
 ];
 
-export async function register(data: { name: string, email: string; password: string; role: Role; subRole?: SubRole; }) {
-    const { name, email, password, role, subRole } = data;
+export async function register(data: { name: string, email: string; password: string; role: Role; subRole?: SubRole; location: UserLocation; }) {
+    const { name, email, password, role, subRole, location } = data;
 
     try {
         const users = await getAllUsers();
@@ -504,6 +503,7 @@ export async function register(data: { name: string, email: string; password: st
             id: userRecord.uid,
             email,
             name,
+            location,
             role,
             subRole: role === 'Farmacêutico' ? subRole : undefined,
             accessLevel: isFirstUser ? 'Admin' : 'User',

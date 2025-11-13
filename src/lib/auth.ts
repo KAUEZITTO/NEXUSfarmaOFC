@@ -1,7 +1,7 @@
 
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import type { User as AppUser } from '@/lib/types';
+import type { User as AppUser, UserLocation } from '@/lib/types';
 import { readData } from '@/lib/data';
 
 /**
@@ -61,6 +61,7 @@ export const authOptions: NextAuthOptions = {
             const appUser = await getUserByEmailFromDb(user.email);
             if (appUser) {
                 token.id = appUser.id;
+                token.location = appUser.location;
                 token.accessLevel = appUser.accessLevel;
                 token.role = appUser.role;
                 token.subRole = appUser.subRole;
@@ -74,6 +75,7 @@ export const authOptions: NextAuthOptions = {
             const appUser = await getUserByEmailFromDb(session.user.email as string);
             if (appUser) {
                 token.id = appUser.id;
+                token.location = appUser.location;
                 token.accessLevel = appUser.accessLevel;
                 token.role = appUser.role;
                 token.subRole = appUser.subRole;
@@ -88,6 +90,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
         if (session.user) {
             session.user.id = token.id as string;
+            session.user.location = token.location as UserLocation;
             session.user.accessLevel = token.accessLevel as AppUser['accessLevel'];
             session.user.role = token.role as AppUser['role'];
             session.user.subRole = token.subRole as AppUser['subRole'];

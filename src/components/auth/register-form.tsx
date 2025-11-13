@@ -9,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import type { Role, SubRole } from '@/lib/types';
+import type { Role, SubRole, UserLocation } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 
@@ -22,11 +22,13 @@ function RegisterButton({ isPending }: { isPending: boolean }) {
   );
 }
 
-const roles: Role[] = ['Farmacêutico', 'Coordenador', 'Enfermeiro(a)', 'Odontólogo(a)', 'Biomédico(a)', 'Técnico de Enfermagem', 'Auxiliar de Farmácia', 'Digitador'];
-const subRoles: SubRole[] = ['CAF', 'CAPS', 'Hospital', 'e-Multi', 'Outro'];
+const cafRoles: Role[] = ['Farmacêutico', 'Coordenador', 'Técnico de Enfermagem', 'Auxiliar de Farmácia', 'Digitador'];
+const hospitalRoles: Role[] = ['Farmacêutico', 'Enfermeiro(a)', 'Técnico de Enfermagem', 'Atendente de Farmácia'];
+const pharmacistSubRoles: SubRole[] = ['CAF', 'Hospitalar', 'Coordenador'];
+
 
 interface RegisterFormProps {
-    registerAction: (data: { name: string, email: string; password: string; role: Role; subRole?: SubRole; }) => Promise<{ success: boolean; message: string; }>;
+    registerAction: (data: { name: string, email: string; password: string; role: Role; subRole?: SubRole; location: UserLocation }) => Promise<{ success: boolean; message: string; }>;
 }
 
 export function RegisterForm({ registerAction }: RegisterFormProps) {
@@ -34,7 +36,10 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<UserLocation | ''>('');
   const [selectedRole, setSelectedRole] = useState<Role | ''>('');
+
+  const availableRoles = selectedLocation === 'CAF' ? cafRoles : selectedLocation === 'Hospital' ? hospitalRoles : [];
   
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -46,8 +51,15 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     const confirmPassword = formData.get('confirm-password') as string;
+    const location = formData.get('location') as UserLocation;
     const role = formData.get('role') as Role;
     const subRole = formData.get('subRole') as SubRole | undefined;
+
+    if (!location) {
+        setErrorMessage("Por favor, selecione um local (CAF ou Hospital).");
+        setIsPending(false);
+        return;
+    }
 
     if (password !== confirmPassword) {
       setErrorMessage("As senhas não coincidem.");
@@ -68,7 +80,7 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
     }
 
     try {
-      const result = await registerAction({ name, email, password, role, subRole });
+      const result = await registerAction({ name, email, password, role, subRole, location });
       if (result.success) {
         toast({
             title: "Conta Criada com Sucesso!",
@@ -104,26 +116,43 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
         <Label htmlFor="confirm-password">Confirmar Senha</Label>
         <Input id="confirm-password" name="confirm-password" type="password" required placeholder="••••••••" />
       </div>
-      <div className="grid gap-2">
-          <Label htmlFor="role">Cargo</Label>
-          <Select name="role" required onValueChange={(v) => setSelectedRole(v as Role)}>
-              <SelectTrigger><SelectValue placeholder="Selecione seu cargo" /></SelectTrigger>
+
+       <div className="grid gap-2">
+          <Label htmlFor="location">Local de Trabalho</Label>
+          <Select name="location" required onValueChange={(v) => { setSelectedLocation(v as UserLocation); setSelectedRole(''); }}>
+              <SelectTrigger><SelectValue placeholder="Selecione o local..." /></SelectTrigger>
               <SelectContent>
-                  {roles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                  <SelectItem value="CAF">CAF (Gestão Central)</SelectItem>
+                  <SelectItem value="Hospital">Hospital</SelectItem>
               </SelectContent>
           </Select>
       </div>
-       {selectedRole === 'Farmacêutico' && (
-           <div className="grid gap-2">
-              <Label htmlFor="subRole">Especifique a Lotação</Label>
-              <Select name="subRole" required>
-                  <SelectTrigger><SelectValue placeholder="Selecione a lotação" /></SelectTrigger>
-                  <SelectContent>
-                      {subRoles.map(sr => <SelectItem key={sr} value={sr}>{sr}</SelectItem>)}
-                  </SelectContent>
-              </Select>
-           </div>
-       )}
+
+      {selectedLocation && (
+        <>
+            <div className="grid gap-2">
+                <Label htmlFor="role">Cargo</Label>
+                <Select name="role" required value={selectedRole} onValueChange={(v) => setSelectedRole(v as Role)}>
+                    <SelectTrigger><SelectValue placeholder="Selecione seu cargo" /></SelectTrigger>
+                    <SelectContent>
+                        {availableRoles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+            {selectedRole === 'Farmacêutico' && (
+               <div className="grid gap-2">
+                  <Label htmlFor="subRole">Área de Atuação</Label>
+                  <Select name="subRole" required>
+                      <SelectTrigger><SelectValue placeholder="Selecione a área" /></SelectTrigger>
+                      <SelectContent>
+                          {pharmacistSubRoles.map(sr => <SelectItem key={sr} value={sr}>{sr}</SelectItem>)}
+                      </SelectContent>
+                  </Select>
+               </div>
+            )}
+        </>
+      )}
+
 
       <RegisterButton isPending={isPending} />
 
