@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -10,14 +11,24 @@ import {
   BarChart2,
   Settings,
   Info,
+  Building,
 } from 'lucide-react';
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton } from '@/components/ui/sidebar';
 import { useSidebar } from '@/components/ui/sidebar';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+
 
 export const hospitalNavItems = [
   { href: '/dashboard/hospital', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/dashboard/inventory', icon: Package, label: 'Inventário' },
-  { href: '/dashboard/hospital/dispense', icon: Pill, label: 'Dispensar para Setores' },
+  { 
+    label: 'Dispensar para Setores',
+    icon: Pill,
+    subItems: [
+        { href: '/dashboard/hospital/dispense', label: 'Nova Dispensação' },
+        { href: '/dashboard/hospital/sectors', label: 'Gerenciar Setores' },
+    ]
+  },
   { href: '/dashboard/hospital/patients', icon: Users, label: 'Pacientes Internados' },
   { href: '/dashboard/hospital/reports', icon: BarChart2, label: 'Relatórios' },
   { href: '/dashboard/settings', icon: Settings, label: 'Configurações' },
@@ -30,30 +41,59 @@ export function HospitalNav({ isMobile = false }: { isMobile?: boolean }) {
  
   return (
      <SidebarMenu>
-        {hospitalNavItems.map(({ href, icon: Icon, label }) => {
-            const isActive = pathname === href || (href !== '/dashboard/hospital' && pathname.startsWith(href));
+        <Accordion type="multiple" className="w-full">
+            {hospitalNavItems.map(({ href, icon: Icon, label, subItems }) => {
+                if (subItems) {
+                    const isSubActive = subItems.some(sub => pathname.startsWith(sub.href));
+                    return (
+                        <AccordionItem value={label} key={label} className="border-none">
+                            <AccordionTrigger className="w-full justify-start rounded-md p-2 text-sm font-medium text-primary-foreground/80 hover:bg-secondary hover:text-secondary-foreground hover:no-underline data-[state=open]:bg-secondary/80">
+                                <div className="flex items-center gap-3">
+                                    <Icon className="h-5 w-5" />
+                                    <span>{label}</span>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="pl-8 pt-2">
+                                <SidebarMenu>
+                                    {subItems.map(sub => (
+                                        <SidebarMenuItem key={sub.href}>
+                                            <Link href={sub.href} className={`w-full text-primary-foreground/70 hover:text-primary-foreground text-sm rounded-md p-2 flex ${pathname === sub.href ? 'bg-secondary/50 font-semibold text-primary-foreground' : ''}`}>
+                                                {sub.label}
+                                            </Link>
+                                        </SidebarMenuItem>
+                                    ))}
+                                </SidebarMenu>
+                            </AccordionContent>
+                        </AccordionItem>
+                    )
+                }
 
-            return (
-                <SidebarMenuItem key={label}>
-                    <SidebarMenuButton 
-                        asChild
-                        isActive={isActive}
-                        onClick={() => {
-                            if (isMobile) {
-                                setOpenMobile(false)
-                            }
-                        }}
-                        tooltip={label}
-                        className={`transition-colors duration-200 hover:bg-secondary hover:text-secondary-foreground hover:scale-105`}
-                    >
-                      <Link href={href}>
-                        <Icon className="h-5 w-5" />
-                        <span>{label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            )
-        })}
+                const isActive = pathname === href;
+
+                return (
+                    <SidebarMenuItem key={label}>
+                        <SidebarMenuButton 
+                            asChild
+                            isActive={isActive}
+                            onClick={() => {
+                                if (isMobile) {
+                                    setOpenMobile(false)
+                                }
+                            }}
+                            tooltip={label}
+                            className={`transition-colors duration-200 hover:bg-secondary hover:text-secondary-foreground hover:scale-105`}
+                        >
+                          <Link href={href!}>
+                            <Icon className="h-5 w-5" />
+                            <span>{label}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                )
+            })}
+        </Accordion>
     </SidebarMenu>
   );
 }
+
+    

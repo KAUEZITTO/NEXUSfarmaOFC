@@ -240,11 +240,15 @@ export type KnowledgeBaseItem = {
 }
 
 // --- HOSPITAL SPECIFIC TYPES ---
-export type Sector = 'Enfermaria' | 'UTI' | 'Centro Cirúrgico' | 'Pronto Socorro' | 'Ambulatório';
+export type HospitalSector = {
+    id: string;
+    name: string;
+    description?: string;
+}
 
 export type SectorDispensation = {
     id: string;
-    sector: Sector;
+    sector: string;
     date: string;
     items: DispensationItem[];
     dispensedBy: string; // User name
@@ -271,3 +275,5 @@ export type HospitalPatientDispensation = {
 
 
 export { ColumnDef };
+
+    

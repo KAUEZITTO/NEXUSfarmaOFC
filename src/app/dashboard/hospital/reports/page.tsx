@@ -9,13 +9,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, FileText, Loader2, Filter } from "lucide-react";
+import { FileText, Loader2, Filter } from "lucide-react";
 import { generateHospitalStockReportPDF, generateHospitalEntriesAndExitsReportPDF, generateHospitalSectorDispensationReportPDF } from "@/lib/actions";
 import { useState } from "react";
-import type { Product, StockMovement, SectorDispensation } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateRange } from "react-day-picker";
@@ -98,8 +96,8 @@ export default function HospitalReportsPage() {
   const { startDate, endDate, periodString } = getPeriod();
   
   const reportHandlers = [
-    { name: "Estoque Atual", handler: () => handlePdfAction('stock', () => generateHospitalStockReportPDF()), key: 'stock' },
-    { name: "Entradas e Saídas", handler: () => handlePdfAction('entriesAndExits', () => generateHospitalEntriesAndExitsReportPDF({ startDate, endDate, period: periodString })), key: 'entriesAndExits' },
+    { name: "Estoque do Hospital", handler: () => handlePdfAction('stock', () => generateHospitalStockReportPDF()), key: 'stock' },
+    { name: "Entradas e Saídas do Hospital", handler: () => handlePdfAction('entriesAndExits', () => generateHospitalEntriesAndExitsReportPDF({ startDate, endDate, period: periodString })), key: 'entriesAndExits' },
     { name: "Dispensação por Setor", handler: () => handlePdfAction('sectorDispensation', () => generateHospitalSectorDispensationReportPDF({ startDate, endDate, period: periodString })), key: 'sectorDispensation' },
   ];
 
@@ -193,3 +191,5 @@ export default function HospitalReportsPage() {
     </div>
   )
 }
+
+    

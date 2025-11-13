@@ -1,14 +1,14 @@
 
 'use server';
 
-import { getHospitalPatients } from '@/lib/data';
-import { HospitalPatientsClientPage } from './client-page';
-import { unstable_noStore as noStore } from 'next/cache';
-import { Suspense } from 'react';
-import { Card, CardHeader, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { getHospitalSectors } from "@/lib/data";
+import { HospitalSectorsClientPage } from "./client-page";
+import { unstable_noStore as noStore } from "next/cache";
+import { Suspense } from "react";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
-function PatientsSkeleton() {
+function SectorsSkeleton() {
     return (
         <Card>
             <CardHeader>
@@ -18,7 +18,6 @@ function PatientsSkeleton() {
                 </div>
             </CardHeader>
             <CardContent>
-                <Skeleton className="h-10 w-1/2 mb-4" />
                 <div className="space-y-2">
                     <Skeleton className="h-12 w-full" />
                     <Skeleton className="h-12 w-full" />
@@ -26,18 +25,16 @@ function PatientsSkeleton() {
                 </div>
             </CardContent>
         </Card>
-    )
+    );
 }
 
-export default async function HospitalPatientsPage() {
+export default async function HospitalSectorsPage() {
     noStore();
-    const patients = await getHospitalPatients();
+    const sectors = await getHospitalSectors();
 
     return (
-        <Suspense fallback={<PatientsSkeleton />}>
-            <HospitalPatientsClientPage initialPatients={patients} />
+        <Suspense fallback={<SectorsSkeleton />}>
+            <HospitalSectorsClientPage initialSectors={sectors} />
         </Suspense>
-    )
+    );
 }
-
-    

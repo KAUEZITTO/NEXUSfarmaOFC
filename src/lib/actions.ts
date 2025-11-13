@@ -1,8 +1,9 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { readData, writeData, getProducts as getProductsFromDb, getAllUsers } from './data';
-import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation, SectorDispensation, Sector } from './types';
+import { readData, writeData, getProducts as getProductsFromDb, getAllUsers, getSectorDispensations } from './data';
+import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation, SectorDispensation, HospitalSector as Sector } from './types';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { generatePdf } from '@/lib/pdf-generator';
@@ -51,7 +52,7 @@ const logStockMovement = async (
 
 // --- PRODUCT ACTIONS ---
 export async function addProduct(productData: Omit<Product, 'id' | 'status'>): Promise<Product> {
-    const products = await getProductsFromDb();
+    const products = await getProductsFromDb('all');
     const newProduct: Product = {
         ...productData,
         id: generateId('prod'),
@@ -64,7 +65,7 @@ export async function addProduct(productData: Omit<Product, 'id' | 'status'>): P
 }
 
 export async function updateProduct(productId: string, productData: Partial<Omit<Product, 'id' | 'status'>>): Promise<Product> {
-    const products = await getProductsFromDb();
+    const products = await getProductsFromDb('all');
     const productIndex = products.findIndex(p => p.id === productId);
     if (productIndex === -1) throw new Error('Produto não encontrado.');
 
@@ -91,7 +92,7 @@ export async function updateProduct(productId: string, productData: Partial<Omit
 export async function zeroStock(category?: Product['category']): Promise<{ success: boolean, message: string }> {
     const session = await getServerSession(authOptions);
     const userName = session?.user?.name || 'Sistema';
-    const products = await getProductsFromDb();
+    const products = await getProductsFromDb('all');
     const movements: StockMovement[] = [];
     const movementDate = new Date().toISOString();
     let count = 0;
@@ -141,7 +142,7 @@ export async function zeroStock(category?: Product['category']): Promise<{ succe
 }
 
 export async function deleteProducts(productIds: string[]): Promise<{ success: boolean; message: string }> {
-    const allProducts = await getProductsFromDb();
+    const allProducts = await getProductsFromDb('all');
     const productsToDelete = allProducts.filter(p => productIds.includes(p.id));
     const remainingProducts = allProducts.filter(p => !productIds.includes(p.id));
     
@@ -276,7 +277,7 @@ export async function deletePatient(patientId: string): Promise<{ success: boole
 export async function addOrder(orderData: { unitId: string; unitName: string; orderType: OrderType, items: OrderItem[]; notes?: string; sentDate?: string; }): Promise<Order> {
     const session = await getServerSession(authOptions);
     const orders = await readData<Order>('orders');
-    const products = await getProductsFromDb();
+    const products = await getProductsFromDb('CAF');
 
     const sentDate = orderData.sentDate ? new Date(orderData.sentDate).toISOString() : new Date().toISOString();
 
@@ -316,7 +317,7 @@ export async function addOrder(orderData: { unitId: string; unitName: string; or
 
 export async function deleteOrder(orderId: string): Promise<{ success: boolean; message?: string }> {
     const allOrders = await readData<Order>('orders');
-    const allProducts = await getProductsFromDb();
+    const allProducts = await getProductsFromDb('all');
 
     const orderToDelete = allOrders.find(o => o.id === orderId);
     if (!orderToDelete) {
@@ -343,6 +344,7 @@ export async function deleteOrder(orderId: string): Promise<{ success: boolean; 
                 batch: item.batch,
                 presentation: item.presentation as Product['presentation'],
                 status: item.quantity > 0 ? 'Em Estoque' : 'Sem Estoque',
+                location: 'CAF'
             };
             allProducts.push(newProduct);
             await logStockMovement(newProduct.id, newProduct.name, 'Entrada', 'Estorno de Remessa', newProduct.quantity, 0, reversalDate, orderToDelete.id);
@@ -386,7 +388,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
 export async function addDispensation(dispensationData: { patientId: string; patient: Omit<Patient, 'files'>; items: DispensationItem[]; notes?: string; }): Promise<Dispensation> {
     const session = await getServerSession(authOptions);
     const dispensations = await readData<Dispensation>('dispensations');
-    const products = await getProductsFromDb();
+    const products = await getProductsFromDb('all');
     const dispensationDate = new Date().toISOString();
 
     const { files, ...patientForDispensation } = dispensationData.patient;
@@ -425,7 +427,7 @@ export async function addDispensation(dispensationData: { patientId: string; pat
 
 export async function deleteDispensation(dispensationId: string): Promise<{ success: boolean; message?: string }> {
     const allDispensations = await readData<Dispensation>('dispensations');
-    const allProducts = await getProductsFromDb();
+    const allProducts = await getProductsFromDb('all');
 
     const dispensationToDelete = allDispensations.find(d => d.id === dispensationId);
     if (!dispensationToDelete) {
@@ -881,9 +883,84 @@ export async function generateOrderStatusReportPDF({ units, lastOrdersMap, statu
     );
 }
 
-// HOSPITAL-SPECIFIC REPORTS
+
+// --- HOSPITAL-SPECIFIC ACTIONS ---
+
+export async function addHospitalSector(sectorData: Omit<Sector, 'id'>) {
+    const sectors = await readData<Sector>('hospitalSectors');
+    const newSector: Sector = {
+        ...sectorData,
+        id: generateId('sector'),
+    };
+    await writeData('hospitalSectors', [...sectors, newSector]);
+    revalidatePath('/dashboard/hospital/sectors');
+    revalidatePath('/dashboard/hospital/dispense');
+}
+
+export async function updateHospitalSector(sectorId: string, sectorData: Partial<Omit<Sector, 'id'>>) {
+    const sectors = await readData<Sector>('hospitalSectors');
+    const sectorIndex = sectors.findIndex(s => s.id === sectorId);
+    if (sectorIndex === -1) throw new Error('Setor não encontrado.');
+    sectors[sectorIndex] = { ...sectors[sectorIndex], ...sectorData };
+    await writeData('hospitalSectors', sectors);
+    revalidatePath('/dashboard/hospital/sectors');
+    revalidatePath('/dashboard/hospital/dispense');
+}
+
+export async function deleteHospitalSector(sectorId: string): Promise<{ success: boolean; message?: string }> {
+    const sectors = await readData<Sector>('hospitalSectors');
+    const dispensations = await readData<SectorDispensation>('sectorDispensations');
+
+    if (dispensations.some(d => d.sector === sectors.find(s => s.id === sectorId)?.name)) {
+        return { success: false, message: 'Não é possível excluir setores que possuem dispensações associadas.' };
+    }
+
+    const updatedSectors = sectors.filter(s => s.id !== sectorId);
+    await writeData('hospitalSectors', updatedSectors);
+    revalidatePath('/dashboard/hospital/sectors');
+    revalidatePath('/dashboard/hospital/dispense');
+    return { success: true };
+}
+
+
+export async function addSectorDispensation(data: { sector: string; items: DispensationItem[] }) {
+    const session = await getServerSession(authOptions);
+    const dispensations = await readData<SectorDispensation>('sectorDispensations');
+    const products = await getProductsFromDb('Hospital');
+    const dispensationDate = new Date().toISOString();
+
+    const newDispensation: SectorDispensation = {
+        id: generateId('secdisp'),
+        sector: data.sector,
+        date: dispensationDate,
+        items: data.items,
+        dispensedBy: session?.user?.name || 'Usuário Desconhecido',
+    };
+
+     for (const item of newDispensation.items) {
+        const productIndex = products.findIndex(p => p.id === item.productId);
+        if (productIndex !== -1) {
+            const originalQuantity = products[productIndex].quantity;
+            products[productIndex].quantity -= item.quantity;
+            products[productIndex].status = products[productIndex].quantity <= 0 ? 'Sem Estoque' : products[productIndex].quantity < 20 ? 'Baixo Estoque' : 'Em Estoque';
+            await logStockMovement(item.productId, item.name, 'Saída', 'Saída por Dispensação (Setor)', -item.quantity, originalQuantity, dispensationDate, newDispensation.id);
+        }
+    }
+    
+    await writeData('products', products);
+    await writeData('sectorDispensations', [newDispensation, ...dispensations]);
+
+    revalidatePath('/dashboard/hospital/dispense');
+    revalidatePath('/dashboard/hospital');
+    revalidatePath('/dashboard/inventory');
+    revalidatePath('/dashboard/hospital/reports');
+}
+
+
+// --- HOSPITAL-SPECIFIC REPORTS ---
+
 export async function generateHospitalStockReportPDF(options: any = {}): PdfActionResult {
-    const products = await getProductsFromDb(); // Assuming hospital uses the same product list for now
+    const products = await getProductsFromDb('Hospital');
     return generatePdf(
         'Relatório de Estoque da Farmácia Hospitalar',
         undefined,
@@ -898,9 +975,12 @@ export async function generateHospitalStockReportPDF(options: any = {}): PdfActi
 
 export async function generateHospitalEntriesAndExitsReportPDF({ startDate, endDate, period }: { startDate: Date, endDate: Date, period: string }): PdfActionResult {
     const allMovements = await readData<StockMovement>('stockMovements');
+    const hospitalProducts = await getProductsFromDb('Hospital');
+    const hospitalProductIds = new Set(hospitalProducts.map(p => p.id));
+    
     const movements = allMovements.filter(m => {
         const mDate = new Date(m.date);
-        return mDate >= startDate && mDate <= endDate;
+        return mDate >= startDate && mDate <= endDate && hospitalProductIds.has(m.productId);
     });
 
     return generatePdf(
@@ -912,11 +992,16 @@ export async function generateHospitalEntriesAndExitsReportPDF({ startDate, endD
 
             if (entries.length > 0) {
                 doc.autoTable({ startY: 85, head: [['Data', 'Produto', 'Motivo', 'Qtd', 'Usuário']], body: entries.map(m => [ new Date(m.date).toLocaleString('pt-BR'), m.productName, m.reason, m.quantityChange.toString(), m.user ]), headStyles: { fillColor: [22, 163, 74] } });
+            } else {
+                 doc.autoTable({ startY: 85, body: [['Nenhuma entrada registrada no período.']] });
             }
 
             if (exits.length > 0) {
                  doc.addPage();
                  doc.autoTable({ startY: 85, head: [['Data', 'Produto', 'Motivo', 'Qtd', 'Usuário']], body: exits.map(m => [ new Date(m.date).toLocaleString('pt-BR'), m.productName, m.reason, Math.abs(m.quantityChange).toString(), m.user ]), headStyles: { fillColor: [220, 38, 38] } });
+            } else {
+                 doc.addPage();
+                 doc.autoTable({ startY: 85, body: [['Nenhuma saída registrada no período.']] });
             }
         },
         true
@@ -924,7 +1009,7 @@ export async function generateHospitalEntriesAndExitsReportPDF({ startDate, endD
 }
 
 export async function generateHospitalSectorDispensationReportPDF({ startDate, endDate, period }: { startDate: Date, endDate: Date, period: string }): PdfActionResult {
-    const allDispensations = await readData<SectorDispensation>('sectorDispensations');
+    const allDispensations = await getSectorDispensations();
     const dispensations = allDispensations.filter(d => {
         const dDate = new Date(d.date);
         return dDate >= startDate && dDate <= endDate;
@@ -939,12 +1024,21 @@ export async function generateHospitalSectorDispensationReportPDF({ startDate, e
         sectorData[d.sector].totalDispensations += 1;
     });
 
+    const body = Object.keys(sectorData).length > 0 
+        ? Object.entries(sectorData).map(([sector, data]) => [sector, data.totalDispensations.toString(), data.totalItems.toLocaleString('pt-BR')])
+        : [['Nenhuma dispensação encontrada no período.']];
+
+    const head = Object.keys(sectorData).length > 0 
+        ? [['Setor', 'Nº de Dispensações', 'Total de Itens']] 
+        : [[]];
+
+
     return generatePdf(
         'Relatório de Dispensação por Setor',
         period,
         {
-            head: [['Setor', 'Nº de Dispensações', 'Total de Itens']],
-            body: Object.entries(sectorData).map(([sector, data]) => [sector, data.totalDispensations.toString(), data.totalItems.toLocaleString('pt-BR')]),
+            head: head,
+            body: body,
             headStyles: { fillColor: [13, 148, 136] },
         },
         true

@@ -1,7 +1,7 @@
 
 'use server';
 
-import { getProducts, getSectorDispensations } from '@/lib/data';
+import { getProducts, getSectorDispensations, getHospitalSectors } from '@/lib/data';
 import { DispenseToSectorClientPage } from './client-page';
 import { unstable_noStore as noStore } from 'next/cache';
 import { Suspense } from 'react';
@@ -31,8 +31,12 @@ function DispenseToSectorSkeleton() {
 
 export default async function DispenseToSectorPage() {
     noStore();
-    const products = await getProducts('Hospital');
-    const dispensations = await getSectorDispensations();
+    const [products, dispensations, sectors] = await Promise.all([
+        getProducts('Hospital'),
+        getSectorDispensations(),
+        getHospitalSectors()
+    ]);
+    
     const sortedDispensations = dispensations.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return (
@@ -40,6 +44,7 @@ export default async function DispenseToSectorPage() {
             <DispenseToSectorClientPage 
                 initialProducts={products}
                 initialDispensations={sortedDispensations}
+                hospitalSectors={sectors}
             />
         </Suspense>
     )

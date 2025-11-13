@@ -4,7 +4,7 @@
 import { useState }from 'react';
 import { addSectorDispensation } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import type { Product, Sector, SectorDispensation, DispensationItem } from '@/lib/types';
+import type { Product, HospitalSector, SectorDispensation, DispensationItem } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,18 +16,18 @@ import { useRouter } from 'next/navigation';
 
 type RemessaItem = DispensationItem & { internalId: string };
 
-const sectors: Sector[] = ['Enfermaria', 'UTI', 'Centro Cirúrgico', 'Pronto Socorro', 'Ambulatório'];
 const itemCategories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório'];
 
 interface DispenseToSectorClientPageProps {
     initialProducts: Product[];
     initialDispensations: SectorDispensation[];
+    hospitalSectors: HospitalSector[];
 }
 
-export function DispenseToSectorClientPage({ initialProducts, initialDispensations }: DispenseToSectorClientPageProps) {
+export function DispenseToSectorClientPage({ initialProducts, initialDispensations, hospitalSectors }: DispenseToSectorClientPageProps) {
     const router = useRouter();
     const { toast } = useToast();
-    const [selectedSector, setSelectedSector] = useState<Sector | ''>('');
+    const [selectedSector, setSelectedSector] = useState<string>('');
     const [selectedCategories, setSelectedCategories] = useState<Product['category'][]>([]);
     const [items, setItems] = useState<RemessaItem[]>([]);
     const [isSaving, setIsSaving] = useState(false);
@@ -116,8 +116,13 @@ export function DispenseToSectorClientPage({ initialProducts, initialDispensatio
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Hospital className="h-6 w-6"/> Dispensar Itens para Setores do Hospital</CardTitle>
-                <CardDescription>Registre a saída de medicamentos e materiais para os setores internos do hospital.</CardDescription>
+                <div className="flex justify-between items-center">
+                    <div>
+                        <CardTitle className="flex items-center gap-2"><Hospital className="h-6 w-6"/> Dispensar Itens para Setores</CardTitle>
+                        <CardDescription>Registre a saída de materiais para os setores do hospital.</CardDescription>
+                    </div>
+                    <Button variant="outline" onClick={() => router.push('/dashboard/hospital/sectors')}>Gerenciar Setores</Button>
+                </div>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
@@ -128,10 +133,10 @@ export function DispenseToSectorClientPage({ initialProducts, initialDispensatio
                         <CardContent className="space-y-4">
                             <div>
                                 <label className="font-medium">Setor de Destino</label>
-                                <Select value={selectedSector} onValueChange={(v) => setSelectedSector(v as Sector)}>
+                                <Select value={selectedSector} onValueChange={(v) => setSelectedSector(v as string)}>
                                     <SelectTrigger><SelectValue placeholder="Selecione o setor..." /></SelectTrigger>
                                     <SelectContent>
-                                        {sectors.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                        {hospitalSectors.map(s => <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -225,3 +230,5 @@ export function DispenseToSectorClientPage({ initialProducts, initialDispensatio
         </Card>
     );
 }
+
+    

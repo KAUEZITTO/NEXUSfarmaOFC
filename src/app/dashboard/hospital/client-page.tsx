@@ -149,3 +149,5 @@ export function HospitalClientPage({ products, dispensations }: { products: Prod
         </div>
     );
 }
+
+    

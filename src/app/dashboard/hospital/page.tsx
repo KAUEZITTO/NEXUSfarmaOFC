@@ -1,4 +1,6 @@
 
+'use server';
+
 import { Suspense } from "react";
 import { getProducts, getSectorDispensations } from "@/lib/data";
 import { HospitalClientPage, HospitalDashboardSkeleton } from "./client-page";
@@ -10,7 +12,7 @@ import { unstable_noStore as noStore } from "next/cache";
 export default async function HospitalDashboardPage() {
     noStore(); // Ensures fresh data on every request
     const [products, dispensations] = await Promise.all([
-        getProducts(),
+        getProducts('Hospital'), // Fetch only hospital products
         getSectorDispensations(),
     ]);
 
@@ -23,3 +25,5 @@ export default async function HospitalDashboardPage() {
         </>
     );
 }
+
+    
