@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -102,7 +103,10 @@ export default function HospitalReportsPage() {
     { name: "Dispensação por Setor", handler: () => handlePdfAction('sectorDispensation', () => generateHospitalSectorDispensationReportPDF({ startDate, endDate, period: periodString })), key: 'sectorDispensation' },
   ];
 
-  if (session?.user?.location !== 'Hospital') return null;
+  // Acesso permitido se a localização for 'Hospital' OU se o usuário for Coordenador
+  if (session?.user?.location !== 'Hospital' && session?.user?.subRole !== 'Coordenador') {
+      return null;
+  }
 
   return (
      <div className="space-y-6">
