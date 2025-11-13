@@ -1,3 +1,4 @@
+
 import { Suspense } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, Clock, Box, Activity, FlaskConical, BarChartHorizontal } from "lucide-react";
@@ -150,8 +151,10 @@ function HospitalDashboardData({ products, dispensations }: { products: Product[
     );
 }
 
+// This is the main page component. It's a server component.
+// It fetches data and then passes it to the client component.
 export default async function HospitalDashboardPage() {
-    noStore();
+    noStore(); // Ensures fresh data on every request
     const [products, dispensations] = await Promise.all([
         getProducts(),
         getSectorDispensations(),
