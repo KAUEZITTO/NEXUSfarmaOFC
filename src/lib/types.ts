@@ -1,3 +1,4 @@
+
 // Adicionando tipos do NextAuth para extender o objeto de sessão
 import type { DefaultUser, DefaultSession } from 'next-auth';
 import { ColumnDef } from '@tanstack/react-table';
