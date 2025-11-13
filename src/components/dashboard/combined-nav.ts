@@ -16,7 +16,7 @@ import {
 
 export const combinedNavItems = [
   { href: '/dashboard', icon: Home, label: 'Visão Geral (Coord.)', tourId: 'step-dashboard' },
-  { href: '/dashboard/select-location', icon: Building, label: 'Trocar Ambiente' },
+  { href: '/dashboard/select-location', icon: Building2, label: 'Trocar Ambiente' },
   { isSeparator: true, label: "CAF" },
   { href: '/dashboard/orders', icon: ShoppingCart, label: 'Pedidos (CAF)', tourId: 'step-orders' },
   { href: '/dashboard/patients', icon: Users, label: 'Pacientes (CAF)', tourId: 'step-patients' },
