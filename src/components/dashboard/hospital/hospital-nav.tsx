@@ -12,6 +12,7 @@ import {
   Settings,
   Info,
   Building,
+  Printer,
 } from 'lucide-react';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton } from '@/components/ui/sidebar';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -20,7 +21,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 
 export const hospitalNavItems = [
   { href: '/dashboard/hospital', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/dashboard/inventory', icon: Package, label: 'Inventário' },
+  { href: '/dashboard/inventory?location=Hospital', icon: Package, label: 'Inventário' },
   { 
     label: 'Dispensar para Setores',
     icon: Pill,
@@ -30,6 +31,7 @@ export const hospitalNavItems = [
     ]
   },
   { href: '/dashboard/hospital/patients', icon: Users, label: 'Pacientes Internados' },
+  { href: '/shelf-labels?location=Hospital', icon: Printer, label: 'Etiquetas de Prateleira' },
   { href: '/dashboard/hospital/reports', icon: BarChart2, label: 'Relatórios' },
   { href: '/dashboard/settings', icon: Settings, label: 'Configurações' },
   { href: '/dashboard/about', icon: Info, label: 'Sobre' },

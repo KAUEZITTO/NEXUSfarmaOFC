@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useTransition, useMemo, useEffect } from 'react';
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Search, Printer, Loader2, Edit, MoreHorizontal, PlusCircle, Trash2, ShieldX } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
-import type { Product } from '@/lib/types';
+import type { Product, UserLocation } from '@/lib/types';
 import { 
   Dialog, 
   DialogContent, 
@@ -229,6 +230,7 @@ export function InventoryClientPage({ initialProducts }: { initialProducts: Prod
 
   const activeFilter = (searchParams.get('category') as FilterCategory) || 'Todos';
   const initialSearchTerm = searchParams.get('q') || '';
+  const locationContext = (searchParams.get('location') as UserLocation) || undefined;
 
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
@@ -412,11 +414,17 @@ export function InventoryClientPage({ initialProducts }: { initialProducts: Prod
   ], []);
 
   const selectedRowCount = Object.keys(rowSelection).length;
+  
+  let pageTitle = "Inventário de Produtos";
+  if (locationContext === 'CAF') pageTitle = "Inventário do CAF";
+  if (locationContext === 'Hospital') pageTitle = "Inventário do Hospital";
+  if (!locationContext) pageTitle = "Inventário Global";
+
 
   return (
     <Card>
         <CardHeader>
-            <CardTitle>Inventário de Produtos</CardTitle>
+            <CardTitle>{pageTitle}</CardTitle>
             <CardDescription>
             Gerencie seus produtos, adicione novos e acompanhe o estoque. Itens agrupados por nome e apresentação.
             </CardDescription>
@@ -464,7 +472,7 @@ export function InventoryClientPage({ initialProducts }: { initialProducts: Prod
                         </AlertDialog>
                     )}
                     <Button variant="outline" asChild>
-                        <Link href="/shelf-labels" target="_blank">
+                        <Link href={`/shelf-labels?location=${locationContext || 'CAF'}`} target="_blank">
                             <Printer className="mr-2 h-4 w-4" />
                             Etiquetas de Prateleira
                         </Link>

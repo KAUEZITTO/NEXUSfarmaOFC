@@ -1,4 +1,5 @@
 
+'use server';
 
 import { getProducts } from '@/lib/data';
 import { InventoryClientPage } from './client-page';
@@ -8,6 +9,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { unstable_noStore as noStore } from 'next/cache';
+import type { UserLocation } from '@/lib/types';
+
 
 function InventorySkeleton() {
     return (
@@ -47,7 +50,7 @@ function InventorySkeleton() {
 
 // This component now acts as a Server Component wrapper.
 // It fetches the initial data filtered by user location and passes it down to the client component.
-export default async function InventoryPageWrapper({ searchParams }: { searchParams: { location?: 'CAF' | 'Hospital' } }) {
+export default async function InventoryPageWrapper({ searchParams }: { searchParams: { location?: UserLocation | 'all' } }) {
     noStore();
     const session = await getServerSession(authOptions);
     const userLocation = session?.user?.location;
@@ -55,12 +58,14 @@ export default async function InventoryPageWrapper({ searchParams }: { searchPar
 
     // For coordinators, the filter can be passed via URL. If not, show all.
     // For regular users, force the filter to be their own location.
-    let productLocationFilter: 'CAF' | 'Hospital' | 'all' = 'all';
+    let productLocationFilter: UserLocation | 'all' = 'all';
 
     if (isCoordinator) {
+        // A coordinator can view 'CAF', 'Hospital', or 'all' based on the query param. Default to 'all'.
         productLocationFilter = searchParams.location || 'all';
     } else {
-        productLocationFilter = userLocation || 'all';
+        // A regular user is always restricted to their own location.
+        productLocationFilter = userLocation || 'all'; // Fallback to 'all' if location is missing, though it shouldn't happen.
     }
     
     const initialProducts = await getProducts(productLocationFilter);

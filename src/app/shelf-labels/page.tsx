@@ -1,8 +1,9 @@
 
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import type { Product } from '@/lib/types';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import type { Product, UserLocation } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { getProducts } from '@/lib/data';
 import { Button } from '@/components/ui/button';
@@ -22,25 +23,11 @@ const predefinedSizes = [
     { name: 'Personalizado', width: 100, height: 50, type: 'roll' },
 ];
 
-const ShelfLabel = ({ product, width, height }: { product: Product, width: number, height: number }) => {
-    const isSmall = width < 50 || height < 30;
-
-    return (
-        <div className="p-1 border border-black border-dashed flex flex-col justify-between h-full bg-white text-black break-words" style={{fontSize: isSmall ? '8px' : '10px', lineHeight: '1.2'}}>
-            <div className="text-center">
-                <p className="font-bold bg-black text-white uppercase tracking-wider py-0.5 px-1 -m-1 mb-1" style={{fontSize: isSmall ? '7px' : '9px'}}>{product.category}</p>
-                <p className="font-bold mt-1 leading-tight" style={{fontSize: isSmall ? '10px' : '14px'}}>{product.name}</p>
-                <p className="text-gray-700" style={{fontSize: isSmall ? '7px' : '9px'}}>{product.presentation}</p>
-            </div>
-            <div className="text-center mt-auto">
-                <p className="text-gray-500" style={{fontSize: '7px'}}>Posicione esta etiqueta na prateleira.</p>
-            </div>
-        </div>
-    );
-};
-
 export default function ShelfLabelsPage() {
     const { toast } = useToast();
+    const searchParams = useSearchParams();
+    const locationContext = (searchParams.get('location') as UserLocation) || 'CAF';
+
     const [allProducts, setAllProducts] = useState<Product[]>([]);
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -51,11 +38,12 @@ export default function ShelfLabelsPage() {
     const [customWidth, setCustomWidth] = useState(100);
     const [customHeight, setCustomHeight] = useState(50);
 
-    React.useEffect(() => {
+    useEffect(() => {
         const fetchProducts = async () => {
             setIsLoading(true);
             try {
-                const fetchedProducts = await getProducts('all');
+                // Fetch products based on the location from the URL
+                const fetchedProducts = await getProducts(locationContext);
                 const groupedProductsMap = new Map<string, Product>();
                 fetchedProducts.forEach(product => {
                     const key = `${product.name}|${product.presentation}`;
@@ -77,7 +65,7 @@ export default function ShelfLabelsPage() {
             }
         };
         fetchProducts();
-    }, [toast]);
+    }, [locationContext, toast]);
     
     useMemo(() => {
         const lowerSearch = debouncedSearchTerm.toLowerCase();
@@ -155,10 +143,10 @@ export default function ShelfLabelsPage() {
 
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 p-4 md:p-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Imprimir Etiquetas de Prateleira</CardTitle>
+                    <CardTitle>Imprimir Etiquetas de Prateleira ({locationContext})</CardTitle>
                     <CardDescription>Selecione os produtos e o formato da etiqueta para impressão.</CardDescription>
                 </CardHeader>
                 <CardContent>
