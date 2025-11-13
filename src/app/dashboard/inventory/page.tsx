@@ -47,14 +47,21 @@ function InventorySkeleton() {
 
 // This component now acts as a Server Component wrapper.
 // It fetches the initial data filtered by user location and passes it down to the client component.
-export default async function InventoryPageWrapper() {
+export default async function InventoryPageWrapper({ searchParams }: { searchParams: { location?: 'CAF' | 'Hospital' } }) {
     noStore();
     const session = await getServerSession(authOptions);
     const userLocation = session?.user?.location;
     const isCoordinator = session?.user?.subRole === 'Coordenador';
 
-    // Coordinators see all products (Global View), others see based on their location.
-    const productLocationFilter = isCoordinator ? 'all' : userLocation;
+    // For coordinators, the filter can be passed via URL. If not, show all.
+    // For regular users, force the filter to be their own location.
+    let productLocationFilter: 'CAF' | 'Hospital' | 'all' = 'all';
+
+    if (isCoordinator) {
+        productLocationFilter = searchParams.location || 'all';
+    } else {
+        productLocationFilter = userLocation || 'all';
+    }
     
     const initialProducts = await getProducts(productLocationFilter);
     

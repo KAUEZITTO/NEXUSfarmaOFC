@@ -1,4 +1,3 @@
-
 import {
   Home,
   ShoppingCart,
@@ -11,19 +10,22 @@ import {
   Settings,
   LayoutDashboard,
   Pill,
-  Hospital
+  Hospital,
+  GitCompareArrows
 } from 'lucide-react';
 
 export const combinedNavItems = [
   { href: '/dashboard', icon: Home, label: 'Visão Geral (Coord.)', tourId: 'step-dashboard' },
-  { href: '/dashboard/select-location', icon: Building2, label: 'Trocar Ambiente' },
+  { href: '/dashboard/select-location', icon: GitCompareArrows, label: 'Trocar Ambiente' },
   { isSeparator: true, label: "CAF" },
   { href: '/dashboard/orders', icon: ShoppingCart, label: 'Pedidos (CAF)', tourId: 'step-orders' },
+  { href: '/dashboard/inventory?location=CAF', icon: Package, label: 'Inventário (CAF)' },
   { href: '/dashboard/patients', icon: Users, label: 'Pacientes (CAF)', tourId: 'step-patients' },
   { href: '/dashboard/units', icon: Building2, label: 'Unidades', tourId: 'step-units' },
   { href: '/dashboard/reports', icon: BarChart2, label: 'Relatórios (CAF)', tourId: 'step-reports' },
   { isSeparator: true, label: "Hospital" },
   { href: '/dashboard/hospital', icon: LayoutDashboard, label: 'Dashboard (Hospital)' },
+  { href: '/dashboard/inventory?location=Hospital', icon: Package, label: 'Inventário (Hospital)' },
   { href: '/dashboard/hospital/dispense', icon: Pill, label: 'Dispensar (Setor)' },
   { href: '/dashboard/hospital/patients', icon: Hospital, label: 'Pacientes Internados' },
   { href: '/dashboard/hospital/reports', icon: BarChart2, label: 'Relatórios (Hospital)' },
