@@ -3,7 +3,9 @@
 import { kv } from './server/kv.server';
 import path from 'path';
 import { promises as fs } from 'fs';
-import type { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter, SectorDispensation, KnowledgeBaseItem } from './types';
+import type { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter, SectorDispensation, KnowledgeBaseItem, UserLocation } from './types';
+import { getServerSession } from 'next-auth';
+import { authOptions } from './auth';
 
 // --- GENERIC DATA ACCESS ---
 
@@ -28,12 +30,16 @@ export async function writeData<T>(key: string, data: T[]): Promise<void> {
 
 // --- SPECIFIC DATA ACCESSORS ---
 
-export async function getProducts(): Promise<Product[]> {
-    return await readData<Product>('products');
+export async function getProducts(location?: UserLocation | 'all'): Promise<Product[]> {
+    const allProducts = await readData<Product>('products');
+    if (!location || location === 'all') {
+        return allProducts;
+    }
+    return allProducts.filter(p => p.location === location);
 }
 
 export async function getProduct(productId: string): Promise<Product | null> {
-    const products = await getProducts();
+    const products = await getProducts('all');
     return products.find(p => p.id === productId) || null;
 }
 
@@ -85,6 +91,8 @@ export async function getAllUsers(): Promise<User[]> {
 }
 
 export async function getKnowledgeBase(): Promise<KnowledgeBaseItem[]> {
+    // This function reads a local JSON file, it does not use 'use server' logic
+    // but it's safe to be called from Server Components.
     const jsonPath = path.join(process.cwd(), 'src', 'data', 'knowledge-base.json');
     const fileContents = await fs.readFile(jsonPath, 'utf8');
     const data = JSON.parse(fileContents);

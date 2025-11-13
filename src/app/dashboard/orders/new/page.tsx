@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Suspense } from 'react';
 import { getUnits, getProducts } from '@/lib/data';
@@ -8,7 +9,7 @@ import LoadingNewOrderPage from './loading';
 export default async function NewOrderPageWrapper() {
     // Fetch data on the server
     const unitsData = await getUnits();
-    const productsData = await getProducts();
+    const productsData = await getProducts('CAF');
 
     // The Suspense boundary here handles the loading state while data is being fetched.
     // The fallback points directly to our skeleton component.

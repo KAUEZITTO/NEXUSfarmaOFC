@@ -1,9 +1,13 @@
 
+
 import { getProducts } from '@/lib/data';
 import { InventoryClientPage } from './client-page';
 import { Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { unstable_noStore as noStore } from 'next/cache';
 
 function InventorySkeleton() {
     return (
@@ -42,10 +46,17 @@ function InventorySkeleton() {
 }
 
 // This component now acts as a Server Component wrapper.
-// It fetches the initial data and passes it down to the client component.
-// This is a robust pattern for complex pages with client-side interactivity.
+// It fetches the initial data filtered by user location and passes it down to the client component.
 export default async function InventoryPageWrapper() {
-    const initialProducts = await getProducts();
+    noStore();
+    const session = await getServerSession(authOptions);
+    const userLocation = session?.user?.location;
+    const isCoordinator = session?.user?.subRole === 'Coordenador';
+
+    // Coordinators see all products (Global View), others see based on their location.
+    const productLocationFilter = isCoordinator ? 'all' : userLocation;
+    
+    const initialProducts = await getProducts(productLocationFilter);
     
     return (
         <Suspense fallback={<InventorySkeleton />}>

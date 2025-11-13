@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 export default async function NewDispensationPageWrapper() {
     noStore();
     const [productsData, dispensationsData] = await Promise.all([
-        getProducts(),
+        getProducts('CAF'),
         getAllDispensations()
     ]);
 

@@ -26,7 +26,7 @@ import { addDispensation } from '@/lib/actions';
 import { getPatients, getProducts, getAllDispensations } from '@/lib/data';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import type { Patient, Product, DispensationItem as DispensationItemType, Dispensation } from '@/lib/types';
+import type { Patient, Product, DispensationItem as DispensationItemType, Dispensation, UserLocation } from '@/lib/types';
 import { AddItemsManuallyDialog } from '@/components/dashboard/add-items-manually-dialog';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -258,7 +258,7 @@ export function NewDispensationClientPage({ initialProducts, initialDispensation
     <div className="mx-auto grid w-full max-w-6xl flex-1 auto-rows-max gap-6">
       <div className="flex items-center gap-4">
         <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
-          Registrar Nova Dispensação
+          Registrar Nova Dispensação (CAF)
         </h1>
         <div className="hidden items-center gap-2 md:ml-auto md:flex">
           <Button variant="outline" size="sm" onClick={handleDiscard} disabled={isSaving}>

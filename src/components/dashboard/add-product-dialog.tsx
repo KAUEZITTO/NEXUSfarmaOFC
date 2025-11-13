@@ -23,7 +23,7 @@ import {
 import { Save, Loader2, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { addProduct, updateProduct, uploadImage } from '@/lib/actions';
-import type { Product } from '@/lib/types';
+import type { Product, UserLocation } from '@/lib/types';
 import { ProductSavedDialog } from './product-saved-dialog';
 import Image from 'next/image';
 
@@ -37,6 +37,7 @@ const categories: Product['category'][] = ['Medicamento', 'Material Técnico', '
 const subCategories: Exclude<Product['subCategory'], undefined>[] = ['Medicamento', 'Material'];
 const presentations: Exclude<Product['presentation'], undefined>[] = ['Comprimido', 'Unidade', 'Caixa c/ 100', 'Seringa 4g', 'Frasco 10ml', 'Caixa c/ 50', 'Caneta 3ml', 'Pacote', 'Bolsa', 'Outro'];
 const suppliers: Exclude<Product['supplier'], undefined>[] = ['Casmed', 'Mednutri', 'Doação', 'Outro'];
+const locations: UserLocation[] = ['CAF', 'Hospital'];
 
 export function AddProductDialog({ trigger, productToEdit, onProductSaved }: AddProductDialogProps) {
   const { toast } = useToast();
@@ -62,6 +63,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
   const [therapeuticClass, setTherapeuticClass] = useState('');
   const [mainFunction, setMainFunction] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [location, setLocation] = useState<UserLocation>('CAF');
   
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -79,6 +81,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
     setTherapeuticClass('');
     setMainFunction('');
     setImageUrl('');
+    setLocation('CAF');
   }
 
   useEffect(() => {
@@ -96,6 +99,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
         setQuantity(productToEdit.quantity);
         setPresentation(productToEdit.presentation || 'Outro');
         setImageUrl(productToEdit.imageUrl || '');
+        setLocation(productToEdit.location || 'CAF');
     } else if (!isEditing && isOpen) {
         resetForm();
     }
@@ -152,6 +156,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
             supplier,
             presentation,
             imageUrl,
+            location,
         };
 
         if (isEditing && productToEdit) {
@@ -210,6 +215,16 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
                   <Input id="activeIngredient" value={activeIngredient} onChange={(e) => setActiveIngredient(e.target.value)} />
                 </div>
               )}
+
+              <div className="space-y-2">
+                <Label htmlFor="location">Localização do Estoque</Label>
+                <Select onValueChange={(v) => setLocation(v as UserLocation)} value={location}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="category">Categoria</Label>

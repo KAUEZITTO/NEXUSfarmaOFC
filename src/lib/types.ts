@@ -93,6 +93,7 @@ export type Product = {
   presentation?: 'Comprimido' | 'Unidade' | 'Caixa c/ 100' | 'Seringa 4g' | 'Frasco 10ml' | 'Caixa c/ 50' | 'Caneta 3ml' | 'Pacote' | 'Bolsa' | 'Outro';
   supplier?: 'Casmed' | 'Mednutri' | 'Doação' | 'Outro';
   imageUrl?: string;
+  location: UserLocation;
 };
 
 // Tipo para o produto agrupado, usado na interface do cliente

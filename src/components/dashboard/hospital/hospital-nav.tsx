@@ -17,7 +17,7 @@ import { useSidebar } from '@/components/ui/sidebar';
 export const hospitalNavItems = [
   { href: '/dashboard/hospital', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/dashboard/inventory', icon: Package, label: 'Inventário' },
-  { href: '/dashboard/hospital/dispense', icon: Pill, label: 'Dispensar (Setor)' },
+  { href: '/dashboard/hospital/dispense', icon: Pill, label: 'Dispensar para Setores' },
   { href: '/dashboard/hospital/patients', icon: Users, label: 'Pacientes Internados' },
   { href: '/dashboard/hospital/reports', icon: BarChart2, label: 'Relatórios' },
   { href: '/dashboard/settings', icon: Settings, label: 'Configurações' },
