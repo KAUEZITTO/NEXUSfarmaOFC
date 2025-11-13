@@ -1,6 +1,6 @@
 
 
-import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter } from './types';
+import { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter, SectorDispensation } from './types';
 import type { KnowledgeBaseItem } from './types';
 import { kv } from '@/lib/server/kv.server';
 import path from 'path';
@@ -179,3 +179,6 @@ export async function getAllPatients(): Promise<Patient[]> {
     return await readData<Patient>('patients');
 };
 
+export async function getSectorDispensations(): Promise<SectorDispensation[]> {
+    return await readData<SectorDispensation>('sectorDispensations');
+}

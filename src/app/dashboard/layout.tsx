@@ -14,6 +14,7 @@ import { HospitalNav } from '@/components/dashboard/hospital/hospital-nav';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { PageLoader } from '@/components/ui/page-loader';
+import { combinedNavItems } from '@/components/dashboard/combined-nav';
 
 
 const CURRENT_VERSION = '3.6.2';
@@ -33,23 +34,38 @@ export default function DashboardLayout({
     const router = useRouter();
     const pathname = usePathname();
     const isHospitalUser = session?.user?.location === 'Hospital';
+    const isCoordinator = session?.user?.subRole === 'Coordenador';
 
     useEffect(() => {
-        if (status === 'authenticated') {
-            if (isHospitalUser && !pathname.startsWith('/dashboard/hospital')) {
+        if (status === 'authenticated' && !isCoordinator) {
+             if (pathname === '/dashboard/select-location') {
+                 router.replace('/dashboard');
+                 return;
+             }
+            if (isHospitalUser && !pathname.startsWith('/dashboard/hospital') && !['/dashboard/inventory', '/dashboard/settings', '/dashboard/about'].includes(pathname)) {
                 router.replace('/dashboard/hospital');
             } else if (!isHospitalUser && pathname.startsWith('/dashboard/hospital')) {
                 router.replace('/dashboard');
             }
         }
-    }, [status, isHospitalUser, pathname, router]);
+    }, [status, isHospitalUser, isCoordinator, pathname, router]);
 
-    if (status === 'loading' || (status === 'authenticated' && (
-        (isHospitalUser && !pathname.startsWith('/dashboard/hospital')) ||
+    if (status === 'loading' || (status === 'authenticated' && !isCoordinator && (
+        (isHospitalUser && !pathname.startsWith('/dashboard/hospital') && !['/dashboard/inventory', '/dashboard/settings', '/dashboard/about'].includes(pathname)) ||
         (!isHospitalUser && pathname.startsWith('/dashboard/hospital'))
     ))) {
         return <PageLoader isLoading={true} />;
     }
+
+  const renderNav = () => {
+    if (isCoordinator) {
+        return <DashboardNav navItems={combinedNavItems} />;
+    }
+    if (isHospitalUser) {
+        return <HospitalNav />;
+    }
+    return <DashboardNav />;
+  }
 
   return (
         <SidebarProvider>
@@ -62,7 +78,7 @@ export default function DashboardLayout({
                       </Link>
                   </SidebarHeader>
                   <SidebarContent className="p-2">
-                      {isHospitalUser ? <HospitalNav /> : <DashboardNav />}
+                      {renderNav()}
                   </SidebarContent>
                   <div className="mt-auto flex flex-col items-center gap-2 border-t border-primary-foreground/20 p-4">
                         <ThemeToggle />

@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Users, UserRoundCheck, Activity, AlertTriangle, BarChartHorizontal } from "lucide-react";
-import { getProducts, getAllDispensations, getAllUsers, getPatients, getOrders } from "@/lib/data";
-import type { Product, Dispensation, Patient, Order, User } from "@/lib/types";
+import { getProducts, getAllDispensations, getAllUsers, getPatients, getOrders, getSectorDispensations } from "@/lib/data";
+import type { Product, Dispensation, Patient, Order, User, SectorDispensation } from "@/lib/types";
 import { MonthlyConsumptionChart } from "@/components/dashboard/monthly-consumption-chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
@@ -53,12 +53,13 @@ function DashboardSkeleton() {
     )
 }
 
-function DashboardDataWrapper({ products, dispensations, users, activePatients, orders }: {
+function DashboardDataWrapper({ products, dispensations, users, activePatients, orders, sectorDispensations }: {
     products: Product[],
     dispensations: Dispensation[],
     users: User[],
     activePatients: Patient[],
-    orders: Order[]
+    orders: Order[],
+    sectorDispensations: SectorDispensation[]
 }) {
     const now = new Date();
     const oneHundredTwentyDaysFromNow = new Date();
@@ -133,12 +134,16 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
 
     const sortedReturns = upcomingReturns.sort((a,b) => new Date(a.returnDate.split('/').reverse().join('-')).getTime() - new Date(b.returnDate.split('/').reverse().join('-')).getTime());
 
-    const recentDispensations = [...dispensations]
+    const recentPatientDispensations = [...dispensations]
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 5);
 
     const recentOrders = [...orders]
         .sort((a, b) => new Date(b.sentDate).getTime() - new Date(a.sentDate).getTime())
+        .slice(0, 5);
+    
+    const recentSectorDispensations = [...sectorDispensations]
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 5);
 
     return (
@@ -146,7 +151,7 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <Card className="hover:shadow-lg transition-shadow duration-300">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Baixo Estoque</CardTitle>
+                        <CardTitle className="text-sm font-medium">Baixo Estoque (Global)</CardTitle>
                         <Package className="h-5 w-5 text-primary" />
                     </CardHeader>
                     <CardContent>
@@ -156,7 +161,7 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
                 </Card>
                 <Card className="hover:shadow-lg transition-shadow duration-300">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Próximos do Vencimento</CardTitle>
+                        <CardTitle className="text-sm font-medium">Próximos do Vencimento (Global)</CardTitle>
                         <AlertTriangle className="h-5 w-5 text-destructive" />
                     </CardHeader>
                     <CardContent>
@@ -164,32 +169,24 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
                         <p className="text-xs text-muted-foreground">Lotes vencendo nos próximos 120 dias.</p>
                     </CardContent>
                 </Card>
-                <Card className="lg:col-span-2 hover:shadow-lg transition-shadow duration-300">
+                 <Card className="hover:shadow-lg transition-shadow duration-300">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Retornos Próximos</CardTitle>
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center text-sm text-muted-foreground">
-                                <Users className="h-4 w-4 mr-1 text-green-500" />
-                                {onlineUsersCount} Online
-                            </div>
-                            <UserRoundCheck className="h-5 w-5 text-primary" />
-                        </div>
+                        <CardTitle className="text-sm font-medium">Pacientes Ativos (CAF)</CardTitle>
+                        <Users className="h-5 w-5 text-primary" />
                     </CardHeader>
                     <CardContent>
-                        {sortedReturns.length > 0 ? (
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 text-xs">
-                                {sortedReturns.map(r => (
-                                    <Button key={r.patientId} variant="secondary" size="sm" asChild className="h-auto py-1 px-2 font-normal justify-start hover:scale-105 transition-transform">
-                                        <Link href={`/dashboard/patients/${r.patientId}`} className="flex flex-col items-start">
-                                            <span className="font-semibold truncate">{r.patientName.split(' ')[0]}</span>
-                                            <span className="text-xs text-secondary-foreground/80">Retorno: {r.returnDate}</span>
-                                        </Link>
-                                    </Button>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-sm text-muted-foreground py-2.5">Nenhum retorno agendado para os próximos 7 dias.</p>
-                        )}
+                        <div className="text-3xl font-bold text-foreground">{activePatients.length}</div>
+                        <p className="text-xs text-muted-foreground">Total de pacientes com status ativo.</p>
+                    </CardContent>
+                </Card>
+                <Card className="hover:shadow-lg transition-shadow duration-300">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Usuários Online</CardTitle>
+                        <UserRoundCheck className="h-5 w-5 text-primary" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-foreground">{onlineUsersCount}</div>
+                        <p className="text-xs text-muted-foreground">Usuários ativos nos últimos 5 minutos.</p>
                     </CardContent>
                 </Card>
             </div>
@@ -199,10 +196,10 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <BarChartHorizontal className="h-5 w-5" />
-                            Consumo Mensal de Itens
+                            Consumo Mensal de Itens (CAF)
                         </CardTitle>
                         <CardDescription>
-                            Visualize a quantidade total de itens dispensados nos últimos 6 meses.
+                            Visualize a quantidade total de itens dispensados a pacientes nos últimos 6 meses.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="pl-2">
@@ -216,21 +213,22 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Activity className="h-5 w-5" />
-                            Atividades Recentes
+                            Atividades Recentes (Global)
                         </CardTitle>
                         <CardDescription>
-                            Últimas dispensações e remessas registradas.
+                            Últimas movimentações registradas no sistema.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Tabs defaultValue="dispensations">
-                            <TabsList className="grid w-full grid-cols-2">
+                            <TabsList className="grid w-full grid-cols-3">
                                 <TabsTrigger value="dispensations">Dispensações</TabsTrigger>
                                 <TabsTrigger value="orders">Remessas</TabsTrigger>
+                                <TabsTrigger value="sectors">Setores</TabsTrigger>
                             </TabsList>
                             <TabsContent value="dispensations" className="space-y-4 pt-4">
-                                {recentDispensations.length > 0 ? (
-                                    recentDispensations.map(d => (
+                                {recentPatientDispensations.length > 0 ? (
+                                    recentPatientDispensations.map(d => (
                                         <div key={d.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors">
                                             <div className="flex items-center gap-3">
                                                 <Avatar>
@@ -270,6 +268,28 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
                                     ))
                                 ) : <p className="text-sm text-center text-muted-foreground pt-10">Nenhuma remessa recente.</p>}
                             </TabsContent>
+                             <TabsContent value="sectors" className="space-y-4 pt-4">
+                                {recentSectorDispensations.length > 0 ? (
+                                    recentSectorDispensations.map(d => (
+                                        <div key={d.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="bg-muted">
+                                                    <AvatarFallback>
+                                                        <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="text-sm font-medium leading-none">{d.sector}</p>
+                                                    <p className="text-sm text-muted-foreground">{new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}</p>
+                                                </div>
+                                            </div>
+                                            <Button asChild variant="outline" size="sm">
+                                                <Link href="/dashboard/hospital/dispense">Ver Disp. de Setores</Link>
+                                            </Button>
+                                        </div>
+                                    ))
+                                ) : <p className="text-sm text-center text-muted-foreground pt-10">Nenhuma disp. para setores.</p>}
+                            </TabsContent>
                         </Tabs>
                     </CardContent>
                 </Card>
@@ -280,14 +300,15 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
 
 // This is now a fully dynamic component
 export default async function DashboardPage() {
-    noStore(); // Garante que os dados são sempre frescos e não cacheados durante o build
+    noStore(); 
     
-    const [products, dispensations, users, activePatients, orders] = await Promise.all([
+    const [products, dispensations, users, activePatients, orders, sectorDispensations] = await Promise.all([
         getProducts(),
         getAllDispensations(),
         getAllUsers(),
         getPatients('active'),
         getOrders(),
+        getSectorDispensations(),
     ]);
 
     return (
@@ -300,6 +321,7 @@ export default async function DashboardPage() {
                     users={users}
                     activePatients={activePatients as Patient[]}
                     orders={orders}
+                    sectorDispensations={sectorDispensations}
                 />
             </Suspense>
         </>

@@ -12,13 +12,14 @@ import {
   Info,
   Shield,
   Settings,
+  Building,
 } from 'lucide-react';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '../ui/sidebar';
 import { useSidebar } from '../ui/sidebar';
 import { useSession } from 'next-auth/react';
+import { Separator } from '../ui/separator';
 
-
-export const navItems = [
+export const defaultNavItems = [
   { href: '/dashboard', icon: Home, label: 'Dashboard', tourId: 'step-dashboard' },
   { href: '/dashboard/orders', icon: ShoppingCart, label: 'Pedidos', tourId: 'step-orders' },
   { href: '/dashboard/inventory', icon: Package, label: 'Inventário', tourId: 'step-inventory' },
@@ -30,14 +31,23 @@ export const navItems = [
   { href: '/dashboard/about', icon: Info, label: 'Sobre', tourId: 'step-about' },
 ];
 
-export function DashboardNav({ isMobile = false }: { isMobile?: boolean }) {
+export function DashboardNav({ isMobile = false, navItems = defaultNavItems }: { isMobile?: boolean, navItems?: any[] }) {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
   const { data: session } = useSession();
  
   return (
      <SidebarMenu>
-        {navItems.map(({ href, icon: Icon, label, tourId, adminOnly }) => {
+        {navItems.map(({ href, icon: Icon, label, tourId, adminOnly, isSeparator }, index) => {
+            if (isSeparator) {
+                return (
+                    <div key={`sep-${index}`} className="px-3 py-2">
+                        <Separator className="bg-primary-foreground/20" />
+                        <span className="text-xs font-bold uppercase text-primary-foreground/50 mt-2 block">{label}</span>
+                    </div>
+                )
+            }
+
             if (adminOnly && session?.user?.accessLevel !== 'Admin') {
                 return null;
             }

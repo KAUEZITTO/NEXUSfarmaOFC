@@ -222,7 +222,7 @@ export type StockMovement = {
   productId: string;
   productName: string;
   type: 'Entrada' | 'Saída' | 'Ajuste';
-  reason: 'Entrada por Compra' | 'Saída por Remessa' | 'Saída por Dispensação' | 'Ajuste de Inventário' | 'Entrada Inicial' | 'Estorno de Remessa' | 'Exclusão de Produto' | 'Estorno de Dispensação' | 'Saída por Dispensação (Setor)' | 'Saída por Dispensação (Paciente Internado)';
+  reason: 'Entrada Inicial' | 'Ajuste de Inventário' | 'Entrada por Compra' | 'Saída por Remessa' | 'Estorno de Remessa' | 'Exclusão de Produto' | 'Saída por Dispensação' | 'Estorno de Dispensação' | 'Saída por Dispensação (Setor)' | 'Saída por Dispensação (Paciente Internado)';
   quantityChange: number;
   quantityBefore: number;
   quantityAfter: number;
