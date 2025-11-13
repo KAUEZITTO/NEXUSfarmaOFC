@@ -1,9 +1,8 @@
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { readData, writeData, getProducts as getProductsFromDb, getAllUsers } from './data';
-import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation } from './types';
+import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation, SectorDispensation, Sector } from './types';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { generatePdf } from '@/lib/pdf-generator';
@@ -472,7 +471,7 @@ const avatarColors = [
   'hsl(198.8 93.4% 42%)' // Teal
 ];
 
-export async function register(data: { name: string, email: string; password: string; role: Role; subRole?: SubRole; location: UserLocation; }) {
+export async function register(data: { name: string, email: string; password: string; role: Role; subRole?: SubRole; location?: UserLocation; }) {
     const { name, email, password, role, subRole, location } = data;
 
     try {
@@ -499,11 +498,18 @@ export async function register(data: { name: string, email: string; password: st
         });
         
         const isFirstUser = users.length === 0;
+
+        // For coordinators, location is not defined from form, default to CAF as they have access to both.
+        const userLocation = subRole === 'Coordenador' ? 'CAF' : location;
+        if (!userLocation) {
+            return { success: false, message: 'O local de trabalho é obrigatório para este cargo.' };
+        }
+
         const newUser: User = {
             id: userRecord.uid,
             email,
             name,
-            location,
+            location: userLocation,
             role,
             subRole: role === 'Farmacêutico' ? subRole : undefined,
             accessLevel: isFirstUser ? 'Admin' : 'User',
@@ -872,5 +878,75 @@ export async function generateOrderStatusReportPDF({ units, lastOrdersMap, statu
             }),
             headStyles: { fillColor: [37, 99, 235] },
         }
+    );
+}
+
+// HOSPITAL-SPECIFIC REPORTS
+export async function generateHospitalStockReportPDF(options: any = {}): PdfActionResult {
+    const products = await getProductsFromDb(); // Assuming hospital uses the same product list for now
+    return generatePdf(
+        'Relatório de Estoque da Farmácia Hospitalar',
+        undefined,
+        {
+            head: [['Nome', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote']],
+            body: products.map(p => [ p.name, p.category, p.quantity.toString(), p.status, p.expiryDate ? new Date(p.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : 'N/A', p.batch || 'N/A' ]),
+            headStyles: { fillColor: [37, 99, 235] },
+        },
+        true
+    );
+}
+
+export async function generateHospitalEntriesAndExitsReportPDF({ startDate, endDate, period }: { startDate: Date, endDate: Date, period: string }): PdfActionResult {
+    const allMovements = await readData<StockMovement>('stockMovements');
+    const movements = allMovements.filter(m => {
+        const mDate = new Date(m.date);
+        return mDate >= startDate && mDate <= endDate;
+    });
+
+    return generatePdf(
+        'Relatório de Entradas e Saídas do Hospital',
+        period,
+        (doc) => {
+            const entries = movements.filter(m => m.type === 'Entrada');
+            const exits = movements.filter(m => m.type === 'Saída');
+
+            if (entries.length > 0) {
+                doc.autoTable({ startY: 85, head: [['Data', 'Produto', 'Motivo', 'Qtd', 'Usuário']], body: entries.map(m => [ new Date(m.date).toLocaleString('pt-BR'), m.productName, m.reason, m.quantityChange.toString(), m.user ]), headStyles: { fillColor: [22, 163, 74] } });
+            }
+
+            if (exits.length > 0) {
+                 doc.addPage();
+                 doc.autoTable({ startY: 85, head: [['Data', 'Produto', 'Motivo', 'Qtd', 'Usuário']], body: exits.map(m => [ new Date(m.date).toLocaleString('pt-BR'), m.productName, m.reason, Math.abs(m.quantityChange).toString(), m.user ]), headStyles: { fillColor: [220, 38, 38] } });
+            }
+        },
+        true
+    );
+}
+
+export async function generateHospitalSectorDispensationReportPDF({ startDate, endDate, period }: { startDate: Date, endDate: Date, period: string }): PdfActionResult {
+    const allDispensations = await readData<SectorDispensation>('sectorDispensations');
+    const dispensations = allDispensations.filter(d => {
+        const dDate = new Date(d.date);
+        return dDate >= startDate && dDate <= endDate;
+    });
+
+    const sectorData: Record<string, { totalItems: number, totalDispensations: number }> = {};
+    dispensations.forEach(d => {
+        if (!sectorData[d.sector]) {
+            sectorData[d.sector] = { totalItems: 0, totalDispensations: 0 };
+        }
+        sectorData[d.sector].totalItems += d.items.reduce((sum, item) => sum + item.quantity, 0);
+        sectorData[d.sector].totalDispensations += 1;
+    });
+
+    return generatePdf(
+        'Relatório de Dispensação por Setor',
+        period,
+        {
+            head: [['Setor', 'Nº de Dispensações', 'Total de Itens']],
+            body: Object.entries(sectorData).map(([sector, data]) => [sector, data.totalDispensations.toString(), data.totalItems.toLocaleString('pt-BR')]),
+            headStyles: { fillColor: [13, 148, 136] },
+        },
+        true
     );
 }
