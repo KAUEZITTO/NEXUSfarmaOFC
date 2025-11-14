@@ -87,7 +87,7 @@ const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensatio
                     <p className="text-xs font-bold mt-1 max-w-40">PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU</p>
                 </div>
                 <div className="flex flex-col items-center justify-center">
-                    <Logo />
+                    <Logo className="w-48 h-auto" />
                     <p className="text-sm mt-1 font-semibold">GUIA DE DISPENSAÇÃO</p>
                 </div>
                 <div className="flex flex-col items-center justify-center">

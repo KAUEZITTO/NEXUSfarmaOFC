@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import jsPDF from 'jspdf';
@@ -44,31 +43,30 @@ const addHeaderAndFooter = async (doc: jsPDFWithAutoTable, title: string, subtit
 
         if (prefLogo) doc.addImage(prefLogo, 'PNG', margin, 12, 25, 25);
         doc.setFontSize(7); doc.setFont('helvetica', 'bold');
-        doc.text('PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU', margin, 40);
-        doc.text('SECRETARIA MUNICIPAL DE SAÚDE', margin, 44);
+        doc.text('PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU', margin + 28, 22);
+        doc.text('SECRETARIA MUNICIPAL DE SAÚDE', margin + 28, 27);
 
         doc.setFontSize(10);
-        if (nexusLogo) doc.addImage(nexusLogo, 'PNG', pageWidth / 2 - 20, 12, 40, 15);
-        doc.text('NexusFarma', pageWidth / 2, 32, { align: 'center' });
+        if (nexusLogo) doc.addImage(nexusLogo, 'PNG', pageWidth / 2 - 25, 12, 50, 20);
 
         if (cafLogo) doc.addImage(cafLogo, 'PNG', pageWidth - margin - 25, 12, 25, 25);
-        doc.setFontSize(7);
-        doc.text('CAF - CENTRO DE ABASTECIMENTO', pageWidth - margin, 40, { align: 'right' });
-        doc.text('FARMACÊUTICO', pageWidth - margin, 44, { align: 'right' });
+        doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+        doc.text('CAF - CENTRO DE ABASTECIMENTO', pageWidth - margin - 28, 22, { align: 'right' });
+        doc.text('FARMACÊUTICO', pageWidth - margin - 28, 27, { align: 'right' });
         
         doc.setFontSize(14); doc.setFont('helvetica', 'bold');
-        doc.text(title, pageWidth / 2, 58, { align: 'center' });
+        doc.text(title, pageWidth / 2, 50, { align: 'center' });
         
         doc.setFontSize(9); doc.setTextColor(100); doc.setFont('helvetica', 'normal');
         const generatedDate = `Relatório Gerado em: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`;
         if (subtitle) {
-            doc.text(generatedDate, pageWidth / 2, 64, { align: 'center' });
-            doc.text(`Período: ${subtitle}`, pageWidth / 2, 68, { align: 'center' });
+            doc.text(generatedDate, pageWidth / 2, 56, { align: 'center' });
+            doc.text(`Período: ${subtitle}`, pageWidth / 2, 60, { align: 'center' });
         } else {
-            doc.text(generatedDate, pageWidth / 2, 65, { align: 'center' });
+            doc.text(generatedDate, pageWidth / 2, 58, { align: 'center' });
         }
         doc.setLineWidth(0.5);
-        doc.line(margin, 75, pageWidth - margin, 75);
+        doc.line(margin, 68, pageWidth - margin, 68);
 
         // Footer
         doc.setFontSize(8);
@@ -95,7 +93,8 @@ export async function generatePdf(
 ): Promise<{ success: boolean; data?: string; error?: string }> {
     try {
         const doc = new jsPDF({ orientation: isLandscape ? 'landscape' : 'portrait' }) as jsPDFWithAutoTable;
-        
+        const startY = 75; // Y position for table start
+
         // --- This logic is now simplified. We let autoTable handle the pages. ---
         if (typeof bodyOrTableOptions === 'function') {
             // This path is for complex reports with multiple tables
@@ -106,12 +105,21 @@ export async function generatePdf(
              const tableOptions = bodyOrTableOptions;
              doc.autoTable({
                 ...tableOptions,
-                startY: 85,
+                startY: startY,
                 theme: 'grid',
-                didDrawPage: (data: any) => {
-                    // This callback ensures the header is drawn on every page created by autoTable.
-                    // This was the source of the bug. Now it's handled correctly.
+                pageBreak: 'auto',
+                headStyles: {
+                    fillColor: [41, 128, 185], // A professional blue
+                    textColor: 255,
+                    fontStyle: 'bold',
+                    ...tableOptions.headStyles,
                 },
+                styles: {
+                    cellPadding: 2,
+                    fontSize: 8,
+                    ...tableOptions.styles
+                },
+                margin: { top: 70 } // Ensure content doesn't overlap with header
              });
         }
         

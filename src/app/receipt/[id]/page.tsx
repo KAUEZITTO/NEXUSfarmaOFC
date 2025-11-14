@@ -1,6 +1,6 @@
 
 import React from "react";
-import { notFound } from "next/navigation";
+import { notFound } from 'next/navigation';
 import {
   Table,
   TableBody,
@@ -70,7 +70,7 @@ const ReceiptCopy = ({ order, showSignature, isFirstCopy }: { order: Order, show
               </div>
 
               <div className="flex flex-col items-center justify-center">
-                   <Logo />
+                   <Logo className="w-48 h-auto" />
                    <h1 className="text-sm font-bold mt-2">GUIA DE ENTREGA</h1>
               </div>
 

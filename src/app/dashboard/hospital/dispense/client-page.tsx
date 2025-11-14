@@ -111,8 +111,9 @@ export function DispenseToSectorClientPage({ initialProducts, initialDispensatio
 
     const productsForManualAdd = selectedCategories.length > 0 
         ? initialProducts.filter(p => selectedCategories.includes(p.category)) 
-        : initialProducts;
-    
+        : initialProducts.filter(p => itemCategories.includes(p.category));
+
+
     return (
         <Card>
             <CardHeader>
@@ -136,7 +137,7 @@ export function DispenseToSectorClientPage({ initialProducts, initialDispensatio
                                 <Select value={selectedSector} onValueChange={(v) => setSelectedSector(v as string)}>
                                     <SelectTrigger><SelectValue placeholder="Selecione o setor..." /></SelectTrigger>
                                     <SelectContent>
-                                        {hospitalSectors.map(s => <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}
+                                        {hospitalSectors.length > 0 ? hospitalSectors.map(s => <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>) : <SelectItem value="" disabled>Nenhum setor cadastrado</SelectItem>}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -230,5 +231,3 @@ export function DispenseToSectorClientPage({ initialProducts, initialDispensatio
         </Card>
     );
 }
-
-    
