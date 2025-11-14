@@ -47,6 +47,7 @@ export default async function PatientsPage({
     const filter = (searchParams?.filter as PatientFilter) || 'active';
     const query = (searchParams?.q as string) || '';
     
+    // As chamadas de dados permanecem aqui, no Server Component
     const [initialPatients, initialUnits, initialDispensations] = await Promise.all([
         getPatients(filter, query),
         getUnits(),

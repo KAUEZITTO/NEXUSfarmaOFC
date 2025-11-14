@@ -5,7 +5,7 @@ import { useState, useTransition, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { Search, Printer, Loader2, Edit, MoreHorizontal, PlusCircle, Trash2, ShieldX, Tags } from "lucide-react";
+import { Search, Loader2, Edit, MoreHorizontal, PlusCircle, Trash2, ShieldX, Tags } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import type { Product, UserLocation } from '@/lib/types';
@@ -38,7 +38,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import Image from 'next/image';
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowUpDown } from 'lucide-react';
+import { ArrowUpDown, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
 import {
