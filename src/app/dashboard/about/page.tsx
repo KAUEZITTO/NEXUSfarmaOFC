@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 const changelog = [
+    { version: '3.7.0', changes: ['Implementado o módulo completo da Farmácia Hospitalar, incluindo gerenciamento de setores, inventário próprio, pacientes internados e um novo fluxo de pedidos/solicitações entre Hospital e CAF.', 'Adicionada ferramenta de geração de etiquetas personalizadas e melhorias significativas de performance e responsividade em toda a aplicação.'] },
     { version: '3.6.2', changes: ['Refatoração completa da arquitetura de Server Actions e módulos de dados para resolver múltiplos erros de build (`Module not found` e `use server` em Client Components), garantindo a estabilidade definitiva da aplicação.'] },
     { version: '3.6.1', changes: ['Corrigido bug crítico nos recibos onde a data de validade de alguns itens não era exibida corretamente.'] },
     { version: '3.6.0', changes: ['Implementado campo de observações na tela de dispensação e no recibo final para registrar informações adicionais.', 'Corrigidos múltiplos bugs críticos de cache que causavam inconsistências de dados, garantindo que o dashboard e as listas de pacientes/unidades estejam sempre sincronizados em tempo real.', 'Resolvidos problemas de configuração do servidor que impediam o cadastro de novos usuários e a exclusão de pacientes.', 'Aprimorado o tour guiado para ser interativo e navegar entre as páginas.', 'Ajustado o design e as informações do recibo de dispensação (Termo de Entrega) para incluir dados do paciente e gerar duas vias.'] },
@@ -48,7 +49,7 @@ const changelog = [
     { version: '0.9.2', changes: ['Migração completa do sistema de arquivos para o banco de dados Vercel KV, permitindo persistência de dados online.', 'Remoção de arquivos de dados JSON locais.'] },
 ];
 
-const CURRENT_VERSION = '3.6.2';
+const CURRENT_VERSION = '3.7.0';
 
 export default function AboutPage() {
   return (
@@ -187,6 +188,7 @@ export default function AboutPage() {
     
 
     
+
 
 
 
