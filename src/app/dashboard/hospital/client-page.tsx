@@ -1,13 +1,15 @@
+
 'use client';
 
 import { Suspense } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, Clock, Box, Activity, FlaskConical, BarChartHorizontal } from "lucide-react";
+import { AlertTriangle, Clock, Box, Activity, FlaskConical, BarChartHorizontal, Users } from "lucide-react";
 import { Product, SectorDispensation, User } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 export function HospitalDashboardSkeleton() {
     return (
@@ -64,6 +66,14 @@ export function HospitalClientPage({ products, dispensations, allUsers }: { prod
     const outOfStockItems = products.filter(p => p.quantity === 0).length;
 
     const recentDispensations = dispensations.slice(0, 5);
+    
+    const isUserOnline = (lastSeen?: string | null): boolean => {
+        if (!lastSeen) return false;
+        const lastSeenDate = new Date(lastSeen);
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        return lastSeenDate > fiveMinutesAgo;
+    };
+
 
     return (
         <div className="space-y-6">
@@ -143,6 +153,37 @@ export function HospitalClientPage({ products, dispensations, allUsers }: { prod
                                 </div>
                             </div>
                         )) : <p className="text-sm text-center text-muted-foreground pt-10">Nenhuma dispensação para setores ainda.</p>}
+                    </CardContent>
+                </Card>
+            </div>
+             <div className="grid gap-6">
+                <Card className="hover:shadow-lg transition-shadow duration-300">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Users className="h-5 w-5" />
+                            Equipe do Hospital
+                        </CardTitle>
+                        <CardDescription>
+                            Usuários cadastrados para atuar na farmácia hospitalar.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {allUsers.map(user => (
+                            <div key={user.id} className="flex flex-col items-center text-center gap-2">
+                                <Avatar className="h-16 w-16 text-xl">
+                                    <AvatarFallback 
+                                        className={cn('text-white font-bold', {'ring-2 ring-green-500 ring-offset-2 ring-offset-background': isUserOnline(user.lastSeen)})}
+                                        style={{ backgroundColor: user.avatarColor || 'hsl(var(--primary))' }}
+                                    >
+                                        {user.name?.[0]?.toUpperCase() ?? '?'}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="font-semibold text-sm">{user.name}</p>
+                                    <p className="text-xs text-muted-foreground">{user.role}</p>
+                                </div>
+                            </div>
+                        ))}
                     </CardContent>
                 </Card>
             </div>

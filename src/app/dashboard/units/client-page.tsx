@@ -192,7 +192,7 @@ export function UnitsClientPage({ initialUnits }: { initialUnits: Unit[] }) {
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <CardTitle>Unidades de Saúde</CardTitle>
             <CardDescription>

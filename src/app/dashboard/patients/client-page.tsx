@@ -371,7 +371,7 @@ export function PatientsClientPage({
             <TabsTrigger value="dispensations">Histórico de Dispensações</TabsTrigger>
           </TabsList>
           <TabsContent value="patients" className="mt-4">
-            <div className="flex items-center space-x-2 pt-4 overflow-x-auto pb-2">
+            <div className="flex flex-wrap items-center gap-2 pt-4 pb-2">
                 {filterCategories.map(filter => (
                     <Button 
                         key={filter.value}

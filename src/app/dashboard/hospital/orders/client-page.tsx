@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from "react";
@@ -89,7 +90,7 @@ export function HospitalOrdersClientPage({ initialOrders, cafInventory, hospital
         <>
             <Card>
                 <CardHeader>
-                    <div className="flex flex-wrap gap-4 justify-between items-center">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
                             <CardTitle>Pedidos e Recebimentos</CardTitle>
                             <CardDescription>Visualize remessas do CAF e crie novos pedidos de reposição.</CardDescription>
