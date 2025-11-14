@@ -3,15 +3,12 @@
 
 import { Suspense } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, Clock, Box, Activity, FlaskConical, BarChartHorizontal, UserCheck } from "lucide-react";
+import { AlertTriangle, Clock, Box, Activity, FlaskConical, BarChartHorizontal } from "lucide-react";
 import { Product, SectorDispensation, User } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useSession } from "next-auth/react";
-import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
 
 export function HospitalDashboardSkeleton() {
     return (
@@ -53,82 +50,6 @@ function ConsumptionBySectorChart({ dispensations }: { dispensations: SectorDisp
     );
 }
 
-function ShiftPanel() {
-    const { data: session } = useSession();
-    const [isOnShift, setIsOnShift] = useState(false);
-    const [shiftTitle, setShiftTitle] = useState('');
-
-    useEffect(() => {
-        const checkShift = () => {
-            if (!session?.user?.role) return;
-
-            const now = new Date();
-            const hour = now.getHours();
-            const day = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-
-            const isPharmacist = session.user.role === 'Farmacêutico';
-            const isAssistant = session.user.role.includes('Auxiliar') || session.user.role.includes('Atendente');
-
-            let currentlyOnShift = false;
-            let title = '';
-
-            if (isPharmacist) {
-                // Pharmacist shift: Mon-Fri, 8am to 2pm (14:00)
-                if (day >= 1 && day <= 5 && hour >= 8 && hour < 14) {
-                    currentlyOnShift = true;
-                    title = "Responsável Técnico";
-                }
-            } else if (isAssistant) {
-                // Assistant shift: 24h
-                // For simplicity, we assume if they are logged in, they are the on-call person.
-                // A more complex system would check against a shift schedule.
-                // We'll show them as on-call if it's outside pharmacist hours.
-                const isPharmacistHours = (day >= 1 && day <= 5 && hour >= 8 && hour < 14);
-                 if (!isPharmacistHours) {
-                    currentlyOnShift = true;
-                    title = "Plantonista Responsável";
-                 }
-            }
-            
-            setIsOnShift(currentlyOnShift);
-            setShiftTitle(title);
-        };
-
-        checkShift();
-        const interval = setInterval(checkShift, 60000); // Check every minute
-        return () => clearInterval(interval);
-
-    }, [session]);
-
-    if (!isOnShift || !session?.user) {
-        return (
-            <Card className="hover:shadow-lg transition-shadow duration-300">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Painel de Plantão</CardTitle>
-                    <UserCheck className="h-5 w-5 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-center text-muted-foreground pt-4">
-                        Nenhum responsável no turno atual.
-                    </div>
-                </CardContent>
-            </Card>
-        );
-    }
-    
-    return (
-        <Card className={cn("hover:shadow-lg transition-shadow duration-300 border-l-4", isOnShift ? 'border-green-500' : 'border-muted')}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Painel de Plantão</CardTitle>
-                <UserCheck className="h-5 w-5 text-green-500" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold text-foreground">{session.user.name}</div>
-                <p className="text-xs text-muted-foreground font-semibold">{shiftTitle}</p>
-            </CardContent>
-        </Card>
-    )
-}
 
 export function HospitalClientPage({ products, dispensations, allUsers }: { products: Product[], dispensations: SectorDispensation[], allUsers: User[] }) {
     const now = new Date();
@@ -147,8 +68,7 @@ export function HospitalClientPage({ products, dispensations, allUsers }: { prod
 
     return (
         <div className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <ShiftPanel />
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <Card className="hover:shadow-lg transition-shadow duration-300 border-l-4 border-destructive">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Itens Vencidos</CardTitle>
@@ -230,5 +150,3 @@ export function HospitalClientPage({ products, dispensations, allUsers }: { prod
         </div>
     );
 }
-
-    
