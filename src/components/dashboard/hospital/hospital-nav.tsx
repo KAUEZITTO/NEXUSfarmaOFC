@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import Link from 'next/link';
@@ -15,6 +13,7 @@ import {
   Building,
   Printer,
   ClipboardCheck,
+  Tags,
 } from 'lucide-react';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton } from '@/components/ui/sidebar';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -34,7 +33,6 @@ export const hospitalNavItems = [
     ]
   },
   { href: '/dashboard/hospital/patients', icon: Users, label: 'Pacientes Internados' },
-  { href: '/shelf-labels?location=Hospital', icon: Printer, label: 'Etiquetas de Prateleira' },
   { href: '/dashboard/hospital/reports', icon: BarChart2, label: 'Relatórios' },
   { href: '/dashboard/settings', icon: Settings, label: 'Configurações' },
   { href: '/dashboard/about', icon: Info, label: 'Sobre' },
@@ -100,5 +98,3 @@ export function HospitalNav({ isMobile = false }: { isMobile?: boolean }) {
     </SidebarMenu>
   );
 }
-
-    

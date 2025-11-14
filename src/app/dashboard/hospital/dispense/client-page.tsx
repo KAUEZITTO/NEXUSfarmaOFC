@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState }from 'react';
@@ -117,7 +116,7 @@ export function DispenseToSectorClientPage({ initialProducts, initialDispensatio
     return (
         <Card>
             <CardHeader>
-                <div className="flex justify-between items-center">
+                <div className="flex flex-wrap gap-4 justify-between items-center">
                     <div>
                         <CardTitle className="flex items-center gap-2"><Hospital className="h-6 w-6"/> Dispensar Itens para Setores</CardTitle>
                         <CardDescription>Registre a saída de materiais para os setores do hospital.</CardDescription>

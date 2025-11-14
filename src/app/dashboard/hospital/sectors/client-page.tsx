@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -124,7 +123,7 @@ export function HospitalSectorsClientPage({ initialSectors }: { initialSectors: 
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-center">
+        <div className="flex flex-wrap gap-4 justify-between items-center">
           <div>
             <CardTitle>Gerenciar Setores do Hospital</CardTitle>
             <CardDescription>

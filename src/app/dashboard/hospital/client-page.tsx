@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense } from "react";
@@ -39,7 +38,7 @@ function ConsumptionBySectorChart({ dispensations }: { dispensations: SectorDisp
     return (
         <ChartContainer config={{ total: { label: "Itens", color: "hsl(var(--chart-1))" } }} className="h-full w-full">
             <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartData} layout="vertical" margin={{ left: 10 }}>
+                <BarChart data={chartData} layout="vertical" margin={{ left: 10, right: 30 }}>
                     <XAxis type="number" hide />
                     <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={10} width={80} />
                     <ChartTooltip cursor={{ fill: "hsl(var(--muted))" }} content={<ChartTooltipContent />} />
@@ -111,7 +110,7 @@ export function HospitalClientPage({ products, dispensations, allUsers }: { prod
                             Total de itens dispensados para cada setor do hospital.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="pl-2">
                         <Suspense fallback={<Skeleton className="h-[300px] w-full" />}>
                             <ConsumptionBySectorChart dispensations={dispensations} />
                         </Suspense>

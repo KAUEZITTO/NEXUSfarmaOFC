@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from "react";
@@ -116,7 +115,7 @@ export function HospitalOrdersClientPage({ initialOrders, cafInventory, hospital
                         Itens enviados pelo CAF em {selectedOrder?.sentDate ? new Date(selectedOrder.sentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : ''}.
                         </DialogDescription>
                     </DialogHeader>
-                    <ScrollArea className="max-h-[60vh]">
+                    <ScrollArea className="max-h-[60vh] p-4">
                         <Table>
                             <TableHeader>
                                 <TableRow>
