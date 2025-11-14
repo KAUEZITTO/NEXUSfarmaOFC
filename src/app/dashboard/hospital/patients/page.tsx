@@ -1,12 +1,13 @@
 
 'use server';
 
-import { getHospitalPatients } from '@/lib/data';
+import { getHospitalPatients, getProducts } from '@/lib/data';
 import { HospitalPatientsClientPage } from './client-page';
 import { unstable_noStore as noStore } from 'next/cache';
 import { Suspense } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Product } from '@/lib/types';
 
 function PatientsSkeleton() {
     return (
@@ -31,13 +32,17 @@ function PatientsSkeleton() {
 
 export default async function HospitalPatientsPage() {
     noStore();
-    const patients = await getHospitalPatients();
+    const [patients, hospitalInventory] = await Promise.all([
+        getHospitalPatients(),
+        getProducts('Hospital')
+    ]);
 
     return (
         <Suspense fallback={<PatientsSkeleton />}>
-            <HospitalPatientsClientPage initialPatients={patients} />
+            <HospitalPatientsClientPage 
+                initialPatients={patients} 
+                hospitalInventory={hospitalInventory as Product[]} 
+            />
         </Suspense>
     )
 }
-
-    

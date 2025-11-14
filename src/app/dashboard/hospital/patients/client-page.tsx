@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { HospitalPatient, HospitalPatientStatus } from '@/lib/types';
+import type { HospitalPatient, HospitalPatientStatus, Product } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, MoreHorizontal, ArrowUpDown, Edit, Pill, Trash2 } from 'lucide-react';
@@ -14,15 +14,16 @@ import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { addHospitalPatient, updateHospitalPatient, deleteHospitalPatient, updateHospitalPatientStatus } from '@/lib/actions';
+import { updateHospitalPatientStatus, deleteHospitalPatient } from '@/lib/actions';
 import { AddHospitalPatientDialog } from './add-patient-dialog';
 import { Input } from '@/components/ui/input';
 
 interface HospitalPatientsClientPageProps {
     initialPatients: HospitalPatient[];
+    hospitalInventory: Product[];
 }
 
-export function HospitalPatientsClientPage({ initialPatients }: HospitalPatientsClientPageProps) {
+export function HospitalPatientsClientPage({ initialPatients, hospitalInventory }: HospitalPatientsClientPageProps) {
     const router = useRouter();
     const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
@@ -86,7 +87,7 @@ export function HospitalPatientsClientPage({ initialPatients }: HospitalPatients
                             <DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                <AddHospitalPatientDialog onPatientSaved={handlePatientSaved} patientToEdit={patient} trigger={<DropdownMenuItem onSelect={e => e.preventDefault()}><Edit className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>} />
+                                <AddHospitalPatientDialog onPatientSaved={handlePatientSaved} patientToEdit={patient} hospitalInventory={hospitalInventory} trigger={<DropdownMenuItem onSelect={e => e.preventDefault()}><Edit className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>} />
                                 <DropdownMenuItem disabled><Pill className="mr-2 h-4 w-4"/> Ver Dispensações</DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuSub>
@@ -129,7 +130,7 @@ export function HospitalPatientsClientPage({ initialPatients }: HospitalPatients
                         <CardTitle>Pacientes Internados</CardTitle>
                         <CardDescription>Gerencie os pacientes atualmente internados na unidade hospitalar.</CardDescription>
                     </div>
-                     <AddHospitalPatientDialog onPatientSaved={handlePatientSaved} trigger={
+                     <AddHospitalPatientDialog onPatientSaved={handlePatientSaved} hospitalInventory={hospitalInventory} trigger={
                         <Button><PlusCircle className="mr-2 h-4 w-4" /> Registrar Paciente</Button>
                     } />
                 </div>

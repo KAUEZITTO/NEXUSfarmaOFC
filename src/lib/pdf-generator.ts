@@ -23,7 +23,7 @@ const getImageAsBase64 = async (imagePath: string): Promise<string | null> => {
     }
 };
 
-const addHeaderAndFooter = async (doc: jsPDFWithAutoTable, title: string, subtitle: string | undefined, totalPages: number) => {
+const addHeaderAndFooter = async (doc: jsPDFWithAutoTable, title: string, subtitle: string | undefined, totalPages: number, isHospitalReport: boolean) => {
     const [prefLogo, nexusLogo, cafLogo] = await Promise.all([
         getImageAsBase64('/SMS-PREF.png'),
         getImageAsBase64('/NEXUSnv.png'),
@@ -41,20 +41,27 @@ const addHeaderAndFooter = async (doc: jsPDFWithAutoTable, title: string, subtit
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(0, 0, 0);
 
-        // Bloco Esquerdo: Prefeitura
+        // Common Left Block: Prefeitura
         if (prefLogo) doc.addImage(prefLogo, 'PNG', margin, 15, 20, 20);
         doc.setFontSize(7); doc.setFont('helvetica', 'bold');
         doc.text('PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU', margin + 23, 22);
         doc.text('SECRETARIA MUNICIPAL DE SAÚDE', margin + 23, 27);
-
-        // Bloco Central: NexusFarma
-        if (nexusLogo) doc.addImage(nexusLogo, 'PNG', pageWidth / 2 - 20, 15, 40, 15);
         
-        // Bloco Direito: CAF
-        if (cafLogo) doc.addImage(cafLogo, 'PNG', pageWidth - margin - 50, 15, 20, 20);
-        doc.setFontSize(7); doc.setFont('helvetica', 'bold');
-        doc.text('CAF - CENTRO DE ABASTECIMENTO', pageWidth - margin - 27, 22, { align: 'right' });
-        doc.text('FARMACÊUTICO', pageWidth - margin - 27, 27, { align: 'right' });
+        // Central and Right blocks depend on report type
+        if (isHospitalReport) {
+            // Hospital Header
+            doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+            doc.text('HOSPITAL E MATERNIDADE MUNICIPAL', pageWidth / 2, 22, { align: 'center' });
+            doc.text('JOSÉ BERNARDO DA SILVEIRA', pageWidth / 2, 27, { align: 'center' });
+            if (nexusLogo) doc.addImage(nexusLogo, 'PNG', pageWidth - margin - 50, 15, 40, 15);
+        } else {
+            // CAF Header (Default)
+            if (nexusLogo) doc.addImage(nexusLogo, 'PNG', pageWidth / 2 - 20, 15, 40, 15);
+            if (cafLogo) doc.addImage(cafLogo, 'PNG', pageWidth - margin - 50, 15, 20, 20);
+            doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+            doc.text('CAF - CENTRO DE ABASTECIMENTO', pageWidth - margin - 27, 22, { align: 'right' });
+            doc.text('FARMACÊUTICO', pageWidth - margin - 27, 27, { align: 'right' });
+        }
         
         doc.setFontSize(14); doc.setFont('helvetica', 'bold');
         doc.text(title, pageWidth / 2, 50, { align: 'center' });
@@ -83,7 +90,8 @@ export async function generatePdf(
     title: string,
     subtitle: string | undefined,
     bodyOrTableOptions: ((doc: jsPDFWithAutoTable) => void) | object,
-    isLandscape?: boolean
+    isLandscape?: boolean,
+    isHospitalReport?: boolean,
 ): Promise<{ success: boolean; data?: string; error?: string }>
 
 
@@ -91,7 +99,8 @@ export async function generatePdf(
     title: string,
     subtitle: string | undefined,
     bodyOrTableOptions: any,
-    isLandscape: boolean = false
+    isLandscape: boolean = false,
+    isHospitalReport: boolean = false,
 ): Promise<{ success: boolean; data?: string; error?: string }> {
     try {
         const doc = new jsPDF({ orientation: isLandscape ? 'landscape' : 'portrait' }) as jsPDFWithAutoTable;
@@ -126,7 +135,7 @@ export async function generatePdf(
         }
         
         const totalPages = (doc.internal as any).getNumberOfPages();
-        await addHeaderAndFooter(doc, title, subtitle, totalPages);
+        await addHeaderAndFooter(doc, title, subtitle, totalPages, isHospitalReport);
 
         return { success: true, data: doc.output('datauristring') };
     } catch (error) {

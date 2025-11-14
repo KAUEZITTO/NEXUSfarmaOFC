@@ -1,8 +1,9 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { readData, writeData, getProducts as getProductsFromDb, getAllUsers, getSectorDispensations, getUnits as getUnitsFromDb } from './data';
-import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation, SectorDispensation, HospitalSector as Sector, HospitalOrderTemplateItem } from './types';
+import { readData, writeData, getProducts as getProductsFromDb, getAllUsers, getSectorDispensations, getUnits as getUnitsFromDb, getHospitalPatients as getHospitalPatientsFromDb } from './data';
+import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation, SectorDispensation, HospitalSector as Sector, HospitalOrderTemplateItem, HospitalPatient } from './types';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { generatePdf } from '@/lib/pdf-generator';
@@ -908,6 +909,43 @@ export async function generateOrderStatusReportPDF({ units, lastOrdersMap, statu
 
 // --- HOSPITAL-SPECIFIC ACTIONS ---
 
+export async function addHospitalPatient(patientData: Omit<HospitalPatient, 'id'>) {
+    const patients = await getHospitalPatientsFromDb();
+    const newPatient: HospitalPatient = {
+        ...patientData,
+        id: generateId('hpat'),
+    };
+    await writeData('hospitalPatients', [newPatient, ...patients]);
+    revalidatePath('/dashboard/hospital/patients');
+}
+
+export async function updateHospitalPatient(patientId: string, patientData: Partial<Omit<HospitalPatient, 'id'>>) {
+    const patients = await getHospitalPatientsFromDb();
+    const patientIndex = patients.findIndex(p => p.id === patientId);
+    if (patientIndex === -1) throw new Error('Paciente não encontrado.');
+    
+    patients[patientIndex] = { ...patients[patientIndex], ...patientData };
+    await writeData('hospitalPatients', patients);
+    revalidatePath('/dashboard/hospital/patients');
+}
+
+export async function deleteHospitalPatient(patientId: string) {
+    const patients = await getHospitalPatientsFromDb();
+    const updatedPatients = patients.filter(p => p.id !== patientId);
+    await writeData('hospitalPatients', updatedPatients);
+    revalidatePath('/dashboard/hospital/patients');
+}
+
+export async function updateHospitalPatientStatus(patientId: string, status: HospitalPatient['status']) {
+    const patients = await getHospitalPatientsFromDb();
+    const patientIndex = patients.findIndex(p => p.id === patientId);
+    if (patientIndex === -1) throw new Error('Paciente não encontrado.');
+    patients[patientIndex].status = status;
+    await writeData('hospitalPatients', patients);
+    revalidatePath('/dashboard/hospital/patients');
+}
+
+
 export async function addHospitalSector(sectorData: Omit<Sector, 'id'>) {
     const sectors = await readData<Sector>('hospitalSectors');
     const newSector: Sector = {
@@ -991,7 +1029,8 @@ export async function generateHospitalStockReportPDF(options: any = {}): PdfActi
             body: products.map(p => [ p.name, p.category, p.quantity.toString(), p.status, p.expiryDate ? new Date(p.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : 'N/A', p.batch || 'N/A' ]),
             headStyles: { fillColor: [37, 99, 235] },
         },
-        true
+        true, // isLandscape
+        true // isHospitalReport
     );
 }
 
@@ -1026,7 +1065,8 @@ export async function generateHospitalEntriesAndExitsReportPDF({ startDate, endD
                  doc.autoTable({ startY: 85, body: [['Nenhuma saída registrada no período.']] });
             }
         },
-        true
+        true, // isLandscape
+        true // isHospitalReport
     );
 }
 
@@ -1063,7 +1103,8 @@ export async function generateHospitalSectorDispensationReportPDF({ startDate, e
             body: body,
             headStyles: { fillColor: [13, 148, 136] },
         },
-        true
+        true, // isLandscape
+        true // isHospitalReport
     );
 }
 
@@ -1072,3 +1113,6 @@ export async function updateHospitalOrderTemplate(templateItems: HospitalOrderTe
     await writeData('hospitalOrderTemplate', templateItems);
     revalidatePath('/dashboard/hospital/orders/template');
 }
+
+// Re-exporting for client components
+export { getProducts };
