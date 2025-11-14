@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -15,6 +16,7 @@ import {
   ClipboardCheck,
   Tags,
   Server,
+  Hospital,
 } from 'lucide-react';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton } from '@/components/ui/sidebar';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -25,21 +27,15 @@ export const hospitalNavItems = [
   { href: '/dashboard/hospital', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/dashboard/inventory?location=Hospital', icon: Package, label: 'Inventário' },
   { 
-    label: 'Pedidos',
+    label: 'Pedidos ao CAF',
     icon: ClipboardCheck,
     subItems: [
         { href: '/dashboard/hospital/orders', label: 'Fazer e Ver Pedidos' },
-        { href: '/dashboard/hospital/orders/template', label: 'Pedido Padrão' },
+        { href: '/dashboard/hospital/orders/template', label: 'Definir Pedido Padrão' },
     ]
   },
-  { 
-    label: 'Dispensar para Setores',
-    icon: Pill,
-    subItems: [
-        { href: '/dashboard/hospital/dispense', label: 'Nova Dispensação' },
-        { href: '/dashboard/hospital/sectors', label: 'Gerenciar Setores' },
-    ]
-  },
+  { href: '/dashboard/hospital/dispense', icon: Pill, label: 'Dispensar (Setor)' },
+  { href: '/dashboard/hospital/sectors', icon: Building, label: 'Gerenciar Setores' },
   { href: '/dashboard/hospital/patients', icon: Users, label: 'Pacientes Internados' },
   { href: '/dashboard/hospital/reports', icon: BarChart2, label: 'Relatórios' },
   { href: '/dashboard/settings', icon: Settings, label: 'Configurações' },

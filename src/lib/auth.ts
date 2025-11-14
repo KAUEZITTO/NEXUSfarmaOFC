@@ -3,7 +3,7 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { User as AppUser, UserLocation } from '@/lib/types';
-import { readData } from '@/lib/data';
+import { readData, getUnits } from '@/lib/data';
 
 /**
  * Busca um usuário no nosso banco de dados (Vercel KV) pelo email.
@@ -54,38 +54,47 @@ export const authOptions: NextAuthOptions = {
           userFromDb.accessLevel = 'Admin';
           userFromDb.subRole = 'Coordenador';
         }
+        
+        // Find hospital unit ID if user is from hospital
+        if (userFromDb.location === 'Hospital' && !userFromDb.locationId) {
+            const units = await getUnits();
+            const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
+            if (hospitalUnit) {
+                userFromDb.locationId = hospitalUnit.id;
+            }
+        }
 
         return {
           id: credentials.uid,
           email: userFromDb.email,
+          ...userFromDb // Pass the whole user object to the jwt callback
         } as AppUser;
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user, trigger, session }) {
-        if (user && user.email) {
-            let appUser = await getUserByEmailFromDb(user.email);
-            if (appUser) {
-                 // Hardcoded admin override on session creation
-                if (appUser.email === 'kauemoreiraofc2@gmail.com') {
-                    token.accessLevel = 'Admin';
-                    token.subRole = 'Coordenador';
-                } else {
-                    token.accessLevel = appUser.accessLevel;
-                    token.subRole = appUser.subRole;
-                }
-
-                token.id = appUser.id;
-                token.location = appUser.location;
-                token.locationId = appUser.locationId;
-                token.role = appUser.role;
-                token.name = appUser.name;
-                token.birthdate = appUser.birthdate;
-                token.avatarColor = appUser.avatarColor;
+        // On sign-in, `user` is the object returned from `authorize`.
+        if (user) {
+             // Hardcoded admin override on session creation
+            if (user.email === 'kauemoreiraofc2@gmail.com') {
+                token.accessLevel = 'Admin';
+                token.subRole = 'Coordenador';
+            } else {
+                token.accessLevel = user.accessLevel;
+                token.subRole = user.subRole;
             }
+
+            token.id = user.id;
+            token.location = user.location;
+            token.locationId = user.locationId;
+            token.role = user.role;
+            token.name = user.name;
+            token.birthdate = user.birthdate;
+            token.avatarColor = user.avatarColor;
         }
         
+        // On session update (e.g., via `update` function from `useSession`), refresh data.
         if (trigger === "update" && session?.user) {
             const appUser = await getUserByEmailFromDb(session.user.email as string);
             if (appUser) {
