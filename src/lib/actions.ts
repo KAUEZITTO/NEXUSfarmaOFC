@@ -2,7 +2,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { readData, writeData, getProducts as getProductsFromDb, getAllUsers, getSectorDispensations, getUnits as getUnitsFromDb, getHospitalPatients as getHospitalPatientsFromDb, getHospitalPatientDispensations as getHospitalPatientDispensationsFromDb } from './data';
+import { readData, writeData, getProducts, getAllUsers, getSectorDispensations, getUnits as getUnitsFromDb, getHospitalPatients as getHospitalPatientsFromDb, getHospitalPatientDispensations as getHospitalPatientDispensationsFromDb } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation, SectorDispensation, HospitalSector as Sector, HospitalOrderTemplateItem, HospitalPatient, HospitalPatientDispensation } from './types';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -52,7 +52,7 @@ const logStockMovement = async (
 
 // --- PRODUCT ACTIONS ---
 export async function addProduct(productData: Omit<Product, 'id' | 'status'>): Promise<Product> {
-    const products = await getProductsFromDb('all');
+    const products = await getProducts('all');
     const newProduct: Product = {
         ...productData,
         id: generateId('prod'),
@@ -65,7 +65,7 @@ export async function addProduct(productData: Omit<Product, 'id' | 'status'>): P
 }
 
 export async function updateProduct(productId: string, productData: Partial<Omit<Product, 'id' | 'status'>>): Promise<Product> {
-    const products = await getProductsFromDb('all');
+    const products = await getProducts('all');
     const productIndex = products.findIndex(p => p.id === productId);
     if (productIndex === -1) throw new Error('Produto não encontrado.');
 
@@ -92,7 +92,7 @@ export async function updateProduct(productId: string, productData: Partial<Omit
 export async function zeroStock(category?: Product['category']): Promise<{ success: boolean, message: string }> {
     const session = await getServerSession(authOptions);
     const userName = session?.user?.name || 'Sistema';
-    const products = await getProductsFromDb('all');
+    const products = await getProducts('all');
     const movements: StockMovement[] = [];
     const movementDate = new Date().toISOString();
     let count = 0;
@@ -142,7 +142,7 @@ export async function zeroStock(category?: Product['category']): Promise<{ succe
 }
 
 export async function deleteProducts(productIds: string[]): Promise<{ success: boolean; message: string }> {
-    const allProducts = await getProductsFromDb('all');
+    const allProducts = await getProducts('all');
     const productsToDelete = allProducts.filter(p => productIds.includes(p.id));
     const remainingProducts = allProducts.filter(p => !productIds.includes(p.id));
     
@@ -277,7 +277,7 @@ export async function deletePatient(patientId: string): Promise<{ success: boole
 export async function addOrder(orderData: { unitId: string; unitName?: string; orderType: OrderType, items: OrderItem[]; notes?: string; sentDate?: string; }): Promise<Order> {
     const session = await getServerSession(authOptions);
     const orders = await readData<Order>('orders');
-    const products = await getProductsFromDb('CAF');
+    const products = await getProducts('CAF');
 
     let unitName = orderData.unitName;
     if (!unitName) {
@@ -331,7 +331,7 @@ export async function addOrder(orderData: { unitId: string; unitName?: string; o
 
 export async function deleteOrder(orderId: string): Promise<{ success: boolean; message?: string }> {
     const allOrders = await readData<Order>('orders');
-    const allProducts = await getProductsFromDb('all');
+    const allProducts = await getProducts('all');
 
     const orderToDelete = allOrders.find(o => o.id === orderId);
     if (!orderToDelete) {
@@ -403,7 +403,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
 export async function addDispensation(dispensationData: { patientId: string; patient: Omit<Patient, 'files'>; items: DispensationItem[]; notes?: string; }): Promise<Dispensation> {
     const session = await getServerSession(authOptions);
     const dispensations = await readData<Dispensation>('dispensations');
-    const products = await getProductsFromDb('all');
+    const products = await getProducts('all');
     const dispensationDate = new Date().toISOString();
 
     const { files, ...patientForDispensation } = dispensationData.patient;
@@ -442,7 +442,7 @@ export async function addDispensation(dispensationData: { patientId: string; pat
 
 export async function deleteDispensation(dispensationId: string): Promise<{ success: boolean; message?: string }> {
     const allDispensations = await readData<Dispensation>('dispensations');
-    const allProducts = await getProductsFromDb('all');
+    const allProducts = await getProducts('all');
 
     const dispensationToDelete = allDispensations.find(d => d.id === dispensationId);
     if (!dispensationToDelete) {
@@ -986,7 +986,7 @@ export async function deleteHospitalSector(sectorId: string): Promise<{ success:
 export async function addSectorDispensation(data: { sector: string; items: DispensationItem[] }) {
     const session = await getServerSession(authOptions);
     const dispensations = await readData<SectorDispensation>('sectorDispensations');
-    const products = await getProductsFromDb('Hospital');
+    const products = await getProducts('Hospital');
     const dispensationDate = new Date().toISOString();
 
     const newDispensation: SectorDispensation = {
@@ -1019,7 +1019,7 @@ export async function addSectorDispensation(data: { sector: string; items: Dispe
 export async function addHospitalPatientDispensation(data: { patient: HospitalPatient; items: DispensationItem[] }): Promise<void> {
     const session = await getServerSession(authOptions);
     const dispensations = await getHospitalPatientDispensationsFromDb();
-    const products = await getProductsFromDb('Hospital');
+    const products = await getProducts('Hospital');
     const dispensationDate = new Date().toISOString();
 
     const newDispensation: HospitalPatientDispensation = {
@@ -1054,7 +1054,7 @@ export async function addHospitalPatientDispensation(data: { patient: HospitalPa
 // --- HOSPITAL-SPECIFIC REPORTS ---
 
 export async function generateHospitalStockReportPDF(options: any = {}): PdfActionResult {
-    const products = await getProductsFromDb('Hospital');
+    const products = await getProducts('Hospital');
     return generatePdf(
         'Relatório de Estoque da Farmácia Hospitalar',
         undefined,
@@ -1070,7 +1070,7 @@ export async function generateHospitalStockReportPDF(options: any = {}): PdfActi
 
 export async function generateHospitalEntriesAndExitsReportPDF({ startDate, endDate, period }: { startDate: Date, endDate: Date, period: string }): PdfActionResult {
     const allMovements = await readData<StockMovement>('stockMovements');
-    const hospitalProducts = await getProductsFromDb('Hospital');
+    const hospitalProducts = await getProducts('Hospital');
     const hospitalProductIds = new Set(hospitalProducts.map(p => p.id));
     
     const movements = allMovements.filter(m => {
@@ -1147,6 +1147,3 @@ export async function updateHospitalOrderTemplate(templateItems: HospitalOrderTe
     await writeData('hospitalOrderTemplate', templateItems);
     revalidatePath('/dashboard/hospital/orders/template');
 }
-
-// Re-exporting for client components
-export { getProducts };

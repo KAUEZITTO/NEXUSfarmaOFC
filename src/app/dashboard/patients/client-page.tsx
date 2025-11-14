@@ -243,6 +243,12 @@ export function PatientsClientPage({
 
         return (
           <div className="flex items-center gap-2 justify-end">
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/dashboard/patients/${patient.id}`}>
+                <Eye className="mr-2 h-4 w-4" />
+                Histórico
+              </Link>
+            </Button>
             <AlertDialog>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -253,12 +259,6 @@ export function PatientsClientPage({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Ações do Paciente</DropdownMenuLabel>
-                    <DropdownMenuItem asChild>
-                        <Link href={`/dashboard/patients/${patient.id}`} className="cursor-pointer">
-                        <Eye className="mr-2 h-4 w-4" />
-                        Ver Histórico
-                        </Link>
-                    </DropdownMenuItem>
                     <AddPatientDialog 
                         patientToEdit={patient} 
                         onPatientSaved={handlePatientSaved}

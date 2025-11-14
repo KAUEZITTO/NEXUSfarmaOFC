@@ -9,14 +9,13 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { addHospitalPatient, updateHospitalPatient, getProducts } from '@/lib/actions';
-import { Save, Loader2, PlusCircle, Trash2, Pill, Search } from 'lucide-react';
+import { addHospitalPatient, updateHospitalPatient } from '@/lib/actions';
+import { Save, Loader2, PlusCircle, Trash2, Pill } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { unstable_noStore as noStore } from 'next/cache';
 
 
 interface AddHospitalPatientDialogProps {

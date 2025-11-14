@@ -13,7 +13,6 @@ import { Dispensation, PatientFile } from "@/lib/types";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import type { Patient } from "@/lib/types";
 import { updatePatient } from "@/lib/actions";

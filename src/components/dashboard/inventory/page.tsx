@@ -1,4 +1,6 @@
 
+'use server';
+
 import { getProducts } from '@/lib/data';
 import { InventoryClientPage } from './client-page';
 import { Suspense } from 'react';
@@ -6,8 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import type { Product, UserLocation } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
+import type { UserLocation } from '@/lib/types';
+
 
 function InventorySkeleton() {
     return (
@@ -46,44 +49,30 @@ function InventorySkeleton() {
 }
 
 // This component now acts as a Server Component wrapper.
-// It fetches the initial data and passes it down to the client component.
-// This is a robust pattern for complex pages with client-side interactivity.
-export default async function InventoryPageWrapper() {
+// It fetches the initial data filtered by user location and passes it down to the client component.
+export default async function InventoryPageWrapper({ searchParams }: { searchParams: { location?: UserLocation | 'all' } }) {
     noStore();
     const session = await getServerSession(authOptions);
     const userLocation = session?.user?.location;
     const isCoordinator = session?.user?.subRole === 'Coordenador';
 
-    let allProducts = await getProducts();
-    let filteredProducts: Product[] = [];
+    // For coordinators, the filter can be passed via URL. If not, show all.
+    // For regular users, force the filter to be their own location.
+    let productLocationFilter: UserLocation | 'all' = 'all';
 
-    // Coordinators see everything.
     if (isCoordinator) {
-        filteredProducts = allProducts;
-    } 
-    // Other users see products based on their location.
-    else if (userLocation) {
-        // We'll need a way to distinguish products by location.
-        // For now, let's assume there's a property on the product.
-        // If not, we might need to adjust data model or logic.
-        // For this example, let's assume no filtering exists yet and show all,
-        // but this is where the logic would go.
-        // A better approach would be to have a `location` field on the product itself.
-        // Let's simulate this for now:
-        const isHospitalProduct = (p: Product) => p.category === 'Odontológico' || p.category === 'Laboratório';
-        if (userLocation === 'Hospital') {
-            filteredProducts = allProducts.filter(p => isHospitalProduct(p));
-        } else { // CAF
-            filteredProducts = allProducts.filter(p => !isHospitalProduct(p));
-        }
+        // A coordinator can view 'CAF', 'Hospital', or 'all' based on the query param. Default to 'all'.
+        productLocationFilter = searchParams.location || 'all';
     } else {
-        // Fallback for users without a location (should not happen for non-coordinators)
-        filteredProducts = [];
+        // A regular user is always restricted to their own location.
+        productLocationFilter = userLocation || 'all'; // Fallback to 'all' if location is missing, though it shouldn't happen.
     }
+    
+    const initialProducts = await getProducts(productLocationFilter);
     
     return (
         <Suspense fallback={<InventorySkeleton />}>
-            <InventoryClientPage initialProducts={filteredProducts} />
+            <InventoryClientPage initialProducts={initialProducts} />
         </Suspense>
     );
 }

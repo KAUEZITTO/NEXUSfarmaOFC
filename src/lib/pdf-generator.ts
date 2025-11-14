@@ -49,15 +49,14 @@ const addHeaderAndFooter = async (doc: jsPDFWithAutoTable, title: string, subtit
         
         // Central and Right blocks depend on report type
         if (isHospitalReport) {
-            // Hospital Header
+            // Hospital Header: Nexus Logo and Hospital Name in center
+            if (nexusLogo) doc.addImage(nexusLogo, 'PNG', pageWidth / 2 - 25, 15, 50, 18);
             doc.setFontSize(9); doc.setFont('helvetica', 'bold');
-            doc.text('HOSPITAL E MATERNIDADE MUNICIPAL', pageWidth / 2, 22, { align: 'center' });
-            doc.text('JOSÉ BERNARDO DA SILVEIRA', pageWidth / 2, 27, { align: 'center' });
-            if (nexusLogo) doc.addImage(nexusLogo, 'PNG', pageWidth - margin - 50, 15, 40, 15);
+            doc.text('Hospital e Maternidade Municipal José Bernardo da Silveira', pageWidth / 2, 40, { align: 'center' });
         } else {
             // CAF Header (Default)
             if (nexusLogo) doc.addImage(nexusLogo, 'PNG', pageWidth / 2 - 20, 15, 40, 15);
-            if (cafLogo) doc.addImage(cafLogo, 'PNG', pageWidth - margin - 50, 15, 20, 20);
+            if (cafLogo) doc.addImage(cafLogo, 'PNG', pageWidth - margin - 25, 15, 20, 20);
             doc.setFontSize(7); doc.setFont('helvetica', 'bold');
             doc.text('CAF - CENTRO DE ABASTECIMENTO', pageWidth - margin - 27, 22, { align: 'right' });
             doc.text('FARMACÊUTICO', pageWidth - margin - 27, 27, { align: 'right' });
