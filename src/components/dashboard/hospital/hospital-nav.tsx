@@ -36,7 +36,7 @@ export const hospitalNavItems = [
   },
   { href: '/dashboard/hospital/dispense', icon: Pill, label: 'Dispensar (Setor)' },
   { href: '/dashboard/hospital/sectors', icon: Building, label: 'Gerenciar Setores' },
-  { href: '/dashboard/hospital/patients', icon: Users, label: 'Pacientes Internados' },
+  { href: '/dashboard/hospital/patients', icon: Hospital, label: 'Pacientes Internados' },
   { href: '/dashboard/hospital/reports', icon: BarChart2, label: 'Relatórios' },
   { href: '/dashboard/settings', icon: Settings, label: 'Configurações' },
   { href: '/dashboard/about', icon: Info, label: 'Sobre' },
