@@ -155,7 +155,7 @@ const ReceiptCopy = ({ dispensation, showSignature, isFirstCopy }: { dispensatio
               <p>Av. Marechal Deodoro – Centro – IGARAPÉ-AÇU/PA - CEP 68.725-000</p>
               <p>email: caf.igarape18@gmail.com | CNPJ: 11.718.379/0001-96</p>
               <p className="font-semibold mt-2">PEDIDOS E DEMAIS DEMANDAS PODEM SER ENVIADAS POR EMAIL!</p>
-              {dispensation.creatorName && <p className="mt-2">Documento gerado por: {dispensation.creatorName}</p>}
+              {dispensation.creatorName && <p className="mt-2">Gerado por: {dispensation.creatorName}</p>}
           </div>
         <p className="text-xs text-center mt-4 text-gray-500">
           {isFirstCopy ? "1ª VIA - ARQUIVO CAF" : "2ª VIA - PACIENTE"}

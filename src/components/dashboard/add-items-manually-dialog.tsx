@@ -146,7 +146,7 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
     const lowerCaseSearchTerm = searchTerm.toLowerCase();
     const filteredProducts = searchTerm ? products.filter(p => 
         p.name.toLowerCase().includes(lowerCaseSearchTerm) ||
-        (p.code && p.code.includes(lowerCaseSearchTerm))
+        (p.code && p.code.toLowerCase().includes(lowerCaseSearchTerm))
     ) : products;
 
     filteredProducts.forEach(product => {
