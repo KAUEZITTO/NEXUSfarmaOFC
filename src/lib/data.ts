@@ -1,9 +1,10 @@
+
 'use server';
 
 import { kv } from './server/kv.server';
 import path from 'path';
 import { promises as fs } from 'fs';
-import type { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter, SectorDispensation, KnowledgeBaseItem, UserLocation, HospitalOrderTemplateItem } from './types';
+import type { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter, SectorDispensation, KnowledgeBaseItem, UserLocation, HospitalOrderTemplateItem, HospitalPatient, HospitalSector } from './types';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './auth';
 
@@ -185,4 +186,15 @@ export async function getSectorDispensations(): Promise<SectorDispensation[]> {
 export async function getHospitalOrderTemplate(): Promise<HospitalOrderTemplateItem[]> {
     const data = await kv.get<HospitalOrderTemplateItem[]>('hospitalOrderTemplate');
     return data || [];
+}
+
+// --- HOSPITAL SPECIFIC DATA ---
+export async function getHospitalPatients(): Promise<HospitalPatient[]> {
+    const patients = await readData<HospitalPatient>('hospitalPatients');
+    return patients.sort((a, b) => new Date(b.admissionDate).getTime() - new Date(a.admissionDate).getTime());
+}
+
+export async function getHospitalSectors(): Promise<HospitalSector[]> {
+    const sectors = await readData<HospitalSector>('hospitalSectors');
+    return sectors.sort((a, b) => a.name.localeCompare(b.name));
 }
