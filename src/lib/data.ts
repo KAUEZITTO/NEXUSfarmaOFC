@@ -4,7 +4,7 @@
 import { kv } from './server/kv.server';
 import path from 'path';
 import { promises as fs } from 'fs';
-import type { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter, SectorDispensation, KnowledgeBaseItem, UserLocation, HospitalOrderTemplateItem, HospitalPatient, HospitalSector } from './types';
+import type { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter, SectorDispensation, KnowledgeBaseItem, UserLocation, HospitalOrderTemplateItem, HospitalPatient, HospitalSector, HospitalPatientDispensation } from './types';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './auth';
 
@@ -197,4 +197,8 @@ export async function getHospitalPatients(): Promise<HospitalPatient[]> {
 export async function getHospitalSectors(): Promise<HospitalSector[]> {
     const sectors = await readData<HospitalSector>('hospitalSectors');
     return sectors.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function getHospitalPatientDispensations(): Promise<HospitalPatientDispensation[]> {
+    return await readData<HospitalPatientDispensation>('hospitalPatientDispensations');
 }

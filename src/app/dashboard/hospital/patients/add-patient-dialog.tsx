@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { HospitalPatient, HospitalPatientStatus, PrescribedItem, Product } from '@/lib/types';
+import type { HospitalPatient, HospitalPatientStatus, PrescribedItem, Product, HospitalSector } from '@/lib/types';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -24,9 +24,10 @@ interface AddHospitalPatientDialogProps {
     onPatientSaved: () => void;
     patientToEdit?: HospitalPatient;
     hospitalInventory: Product[];
+    hospitalSectors: HospitalSector[];
 }
 
-export function AddHospitalPatientDialog({ trigger, onPatientSaved, patientToEdit, hospitalInventory }: AddHospitalPatientDialogProps) {
+export function AddHospitalPatientDialog({ trigger, onPatientSaved, patientToEdit, hospitalInventory, hospitalSectors }: AddHospitalPatientDialogProps) {
     const { toast } = useToast();
     const [isOpen, setIsOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -35,6 +36,7 @@ export function AddHospitalPatientDialog({ trigger, onPatientSaved, patientToEdi
     // Form state
     const [name, setName] = useState('');
     const [bedNumber, setBedNumber] = useState('');
+    const [sectorId, setSectorId] = useState('');
     const [admissionDate, setAdmissionDate] = useState(new Date().toISOString().split('T')[0]);
     const [status, setStatus] = useState<HospitalPatientStatus>('Internado');
     const [prescriptions, setPrescriptions] = useState<PrescribedItem[]>([]);
@@ -47,6 +49,7 @@ export function AddHospitalPatientDialog({ trigger, onPatientSaved, patientToEdi
             if (isEditing && patientToEdit) {
                 setName(patientToEdit.name);
                 setBedNumber(patientToEdit.bedNumber);
+                setSectorId(patientToEdit.sectorId || '');
                 setAdmissionDate(new Date(patientToEdit.admissionDate).toISOString().split('T')[0]);
                 setStatus(patientToEdit.status);
                 setPrescriptions(patientToEdit.prescriptions || []);
@@ -54,6 +57,7 @@ export function AddHospitalPatientDialog({ trigger, onPatientSaved, patientToEdi
                 // Reset form
                 setName('');
                 setBedNumber('');
+                setSectorId('');
                 setAdmissionDate(new Date().toISOString().split('T')[0]);
                 setStatus('Internado');
                 setPrescriptions([]);
@@ -62,13 +66,14 @@ export function AddHospitalPatientDialog({ trigger, onPatientSaved, patientToEdi
     }, [isOpen, isEditing, patientToEdit]);
 
     const handleSave = async () => {
-        if (!name || !bedNumber) {
-            toast({ variant: 'destructive', title: 'Campos Obrigatórios', description: 'Nome e Leito são obrigatórios.'});
+        if (!name || !sectorId) {
+            toast({ variant: 'destructive', title: 'Campos Obrigatórios', description: 'Nome e Setor são obrigatórios.'});
             return;
         }
         setIsSaving(true);
         try {
-            const patientData = { name, bedNumber, admissionDate, status, prescriptions };
+            const sectorName = hospitalSectors.find(s => s.id === sectorId)?.name || 'Desconhecido';
+            const patientData = { name, bedNumber, sectorId, sectorName, admissionDate, status, prescriptions };
             if (isEditing && patientToEdit) {
                 await updateHospitalPatient(patientToEdit.id, patientData);
             } else {
@@ -112,21 +117,30 @@ export function AddHospitalPatientDialog({ trigger, onPatientSaved, patientToEdi
                     <DialogDescription>Preencha os dados e a prescrição do paciente internado.</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-6 py-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Nome</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="space-y-2 lg:col-span-2">
+                            <Label htmlFor="name">Nome Completo</Label>
                             <Input id="name" value={name} onChange={e => setName(e.target.value)} />
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="bedNumber">Leito</Label>
+                            <Label htmlFor="bedNumber">Leito (Opcional)</Label>
                             <Input id="bedNumber" value={bedNumber} onChange={e => setBedNumber(e.target.value)} />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="admissionDate">Admissão</Label>
+                            <Label htmlFor="sector">Setor</Label>
+                            <Select value={sectorId} onValueChange={setSectorId}>
+                                <SelectTrigger><SelectValue placeholder="Selecione o setor..." /></SelectTrigger>
+                                <SelectContent>
+                                    {hospitalSectors.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="admissionDate">Data de Admissão</Label>
                             <Input id="admissionDate" type="date" value={admissionDate} onChange={e => setAdmissionDate(e.target.value)} />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="status">Status</Label>
+                            <Label htmlFor="status">Status do Paciente</Label>
                             <Select value={status} onValueChange={(v) => setStatus(v as HospitalPatientStatus)}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>

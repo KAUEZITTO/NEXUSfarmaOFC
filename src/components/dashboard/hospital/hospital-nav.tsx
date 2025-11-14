@@ -17,6 +17,7 @@ import {
   Tags,
   Server,
   Hospital,
+  History,
 } from 'lucide-react';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton } from '@/components/ui/sidebar';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -35,8 +36,9 @@ export const hospitalNavItems = [
     ]
   },
   { href: '/dashboard/hospital/dispense', icon: Pill, label: 'Dispensar (Setor)' },
-  { href: '/dashboard/hospital/sectors', icon: Building, label: 'Gerenciar Setores' },
   { href: '/dashboard/hospital/patients', icon: Hospital, label: 'Pacientes Internados' },
+  { href: '/dashboard/hospital/dispensations-log', icon: History, label: 'Registros (Setor)' },
+  { href: '/dashboard/hospital/sectors', icon: Building, label: 'Gerenciar Setores' },
   { href: '/dashboard/hospital/reports', icon: BarChart2, label: 'Relatórios' },
   { href: '/dashboard/settings', icon: Settings, label: 'Configurações' },
   { href: '/dashboard/about', icon: Info, label: 'Sobre' },

@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { HospitalPatient, HospitalPatientStatus, Product } from '@/lib/types';
+import type { HospitalPatient, HospitalPatientStatus, Product, HospitalSector, HospitalPatientDispensation } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, MoreHorizontal, ArrowUpDown, Edit, Pill, Trash2 } from 'lucide-react';
@@ -17,18 +17,53 @@ import { useToast } from '@/hooks/use-toast';
 import { updateHospitalPatientStatus, deleteHospitalPatient } from '@/lib/actions';
 import { AddHospitalPatientDialog } from './add-patient-dialog';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+const patientDispensationsColumns: ColumnDef<HospitalPatientDispensation>[] = [
+    {
+      accessorKey: "date",
+      header: "Data",
+      cell: ({ row }) => new Date(row.getValue("date")).toLocaleString('pt-BR', { timeZone: 'UTC', dateStyle: 'short', timeStyle: 'short' })
+    },
+    {
+      accessorKey: "patientName",
+      header: "Paciente",
+    },
+     {
+      accessorKey: "sectorName",
+      header: "Setor",
+    },
+    {
+      accessorKey: "items",
+      header: "Nº de Itens",
+      cell: ({ row }) => {
+        const items = row.getValue("items") as any[];
+        return <div className="text-center">{items.length}</div>;
+      },
+    },
+    {
+      accessorKey: "dispensedBy",
+      header: "Dispensado por",
+    },
+];
 
 interface HospitalPatientsClientPageProps {
     initialPatients: HospitalPatient[];
     hospitalInventory: Product[];
+    hospitalSectors: HospitalSector[];
+    dispensations: HospitalPatientDispensation[];
 }
 
-export function HospitalPatientsClientPage({ initialPatients, hospitalInventory }: HospitalPatientsClientPageProps) {
+export function HospitalPatientsClientPage({ initialPatients, hospitalInventory, hospitalSectors, dispensations }: HospitalPatientsClientPageProps) {
     const router = useRouter();
     const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
 
-    const filteredPatients = initialPatients.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.bedNumber.includes(searchTerm));
+    const filteredPatients = initialPatients.filter(p => 
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        p.bedNumber.includes(searchTerm) ||
+        p.sectorName?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     const handlePatientSaved = () => {
         toast({ title: "Sucesso", description: "Dados do paciente salvos."});
@@ -61,6 +96,10 @@ export function HospitalPatientsClientPage({ initialPatients, hospitalInventory 
             header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>Nome <ArrowUpDown className="ml-2 h-4 w-4" /></Button>,
         },
         {
+            accessorKey: 'sectorName',
+            header: 'Setor',
+        },
+        {
             accessorKey: 'bedNumber',
             header: 'Leito',
         },
@@ -87,8 +126,8 @@ export function HospitalPatientsClientPage({ initialPatients, hospitalInventory 
                             <DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                <AddHospitalPatientDialog onPatientSaved={handlePatientSaved} patientToEdit={patient} hospitalInventory={hospitalInventory} trigger={<DropdownMenuItem onSelect={e => e.preventDefault()}><Edit className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>} />
-                                <DropdownMenuItem disabled><Pill className="mr-2 h-4 w-4"/> Ver Dispensações</DropdownMenuItem>
+                                <AddHospitalPatientDialog onPatientSaved={handlePatientSaved} patientToEdit={patient} hospitalInventory={hospitalInventory} hospitalSectors={hospitalSectors} trigger={<DropdownMenuItem onSelect={e => e.preventDefault()}><Edit className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>} />
+                                <DropdownMenuItem disabled><Pill className="mr-2 h-4 w-4"/> Dispensar Medicação</DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuSub>
                                     <DropdownMenuSubTrigger>Alterar Status</DropdownMenuSubTrigger>
@@ -127,19 +166,30 @@ export function HospitalPatientsClientPage({ initialPatients, hospitalInventory 
             <CardHeader>
                 <div className="flex flex-wrap gap-4 justify-between items-center">
                     <div>
-                        <CardTitle>Pacientes Internados</CardTitle>
-                        <CardDescription>Gerencie os pacientes atualmente internados na unidade hospitalar.</CardDescription>
+                        <CardTitle>Gestão de Pacientes (Hospital)</CardTitle>
+                        <CardDescription>Gerencie pacientes internados e o histórico de dispensações.</CardDescription>
                     </div>
-                     <AddHospitalPatientDialog onPatientSaved={handlePatientSaved} hospitalInventory={hospitalInventory} trigger={
+                     <AddHospitalPatientDialog onPatientSaved={handlePatientSaved} hospitalInventory={hospitalInventory} hospitalSectors={hospitalSectors} trigger={
                         <Button><PlusCircle className="mr-2 h-4 w-4" /> Registrar Paciente</Button>
                     } />
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="mb-4">
-                    <Input placeholder="Buscar por nome ou leito..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="max-w-sm" />
-                </div>
-                <DataTable columns={columns} data={filteredPatients} />
+                <Tabs defaultValue="patients">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="patients">Pacientes Internados</TabsTrigger>
+                        <TabsTrigger value="dispensations">Dispensações (Paciente)</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="patients" className="mt-4">
+                        <div className="mb-4">
+                            <Input placeholder="Buscar por nome, setor ou leito..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="max-w-sm" />
+                        </div>
+                        <DataTable columns={columns} data={filteredPatients} />
+                    </TabsContent>
+                    <TabsContent value="dispensations" className="mt-4">
+                        <DataTable columns={patientDispensationsColumns} data={dispensations} />
+                    </TabsContent>
+                </Tabs>
             </CardContent>
         </Card>
     );

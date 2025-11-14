@@ -276,6 +276,8 @@ export type HospitalPatient = {
     id: string;
     name: string;
     bedNumber: string;
+    sectorId: string;
+    sectorName?: string;
     admissionDate: string;
     status: HospitalPatientStatus;
     prescriptions?: PrescribedItem[];
@@ -285,6 +287,8 @@ export type HospitalPatient = {
 export type HospitalPatientDispensation = {
     id: string;
     hospitalPatientId: string;
+    patientName: string;
+    sectorName: string;
     date: string;
     items: DispensationItem[];
     dispensedBy: string;

@@ -2,8 +2,8 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { readData, writeData, getProducts as getProductsFromDb, getAllUsers, getSectorDispensations, getUnits as getUnitsFromDb, getHospitalPatients as getHospitalPatientsFromDb } from './data';
-import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation, SectorDispensation, HospitalSector as Sector, HospitalOrderTemplateItem, HospitalPatient } from './types';
+import { readData, writeData, getProducts as getProductsFromDb, getAllUsers, getSectorDispensations, getUnits as getUnitsFromDb, getHospitalPatients as getHospitalPatientsFromDb, getHospitalPatientDispensations as getHospitalPatientDispensationsFromDb } from './data';
+import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation, SectorDispensation, HospitalSector as Sector, HospitalOrderTemplateItem, HospitalPatient, HospitalPatientDispensation } from './types';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { generatePdf } from '@/lib/pdf-generator';
@@ -1014,6 +1014,40 @@ export async function addSectorDispensation(data: { sector: string; items: Dispe
     revalidatePath('/dashboard/hospital');
     revalidatePath('/dashboard/inventory');
     revalidatePath('/dashboard/hospital/reports');
+}
+
+export async function addHospitalPatientDispensation(data: { patient: HospitalPatient; items: DispensationItem[] }): Promise<void> {
+    const session = await getServerSession(authOptions);
+    const dispensations = await getHospitalPatientDispensationsFromDb();
+    const products = await getProductsFromDb('Hospital');
+    const dispensationDate = new Date().toISOString();
+
+    const newDispensation: HospitalPatientDispensation = {
+        id: generateId('hpatdisp'),
+        hospitalPatientId: data.patient.id,
+        patientName: data.patient.name,
+        sectorName: data.patient.sectorName || 'N/A',
+        date: dispensationDate,
+        items: data.items,
+        dispensedBy: session?.user?.name || 'Usuário Desconhecido',
+    };
+
+    for (const item of newDispensation.items) {
+        const productIndex = products.findIndex(p => p.id === item.productId);
+        if (productIndex !== -1) {
+            const originalQuantity = products[productIndex].quantity;
+            products[productIndex].quantity -= item.quantity;
+            products[productIndex].status = products[productIndex].quantity <= 0 ? 'Sem Estoque' : 'Em Estoque';
+            await logStockMovement(item.productId, item.name, 'Saída', 'Saída por Dispensação (Paciente Internado)', -item.quantity, originalQuantity, dispensationDate, newDispensation.id);
+        }
+    }
+
+    await writeData('products', products);
+    await writeData('hospitalPatientDispensations', [newDispensation, ...dispensations]);
+
+    revalidatePath('/dashboard/hospital/patients');
+    revalidatePath('/dashboard/hospital');
+    revalidatePath('/dashboard/inventory?location=Hospital');
 }
 
 
