@@ -1,4 +1,5 @@
 
+
 // Adicionando tipos do NextAuth para extender o objeto de sessão
 import type { DefaultUser, DefaultSession } from 'next-auth';
 import { ColumnDef } from '@tanstack/react-table';
@@ -11,6 +12,7 @@ declare module 'next-auth' {
       email?: string | null;
       birthdate?: string | null;
       location?: UserLocation;
+      locationId?: string;
       role?: Role;
       subRole?: SubRole;
       accessLevel?: AccessLevel;
@@ -24,6 +26,7 @@ declare module 'next-auth' {
       email?: string | null;
       birthdate?: string | null;
       location?: UserLocation;
+      locationId?: string;
       role?: Role;
       subRole?: SubRole;
       accessLevel?: AccessLevel;
@@ -37,6 +40,7 @@ declare module 'next-auth/jwt' {
     interface JWT {
         id: string;
         location?: UserLocation;
+        locationId?: string;
         role?: Role;
         subRole?: SubRole;
         accessLevel?: AccessLevel;
@@ -69,6 +73,7 @@ export type User = {
     birthdate?: string;
     image?: string; // Kept in DB type, but not used in session
     location: UserLocation;
+    locationId?: string;
     role: Role;
     subRole?: SubRole;
     accessLevel: AccessLevel;

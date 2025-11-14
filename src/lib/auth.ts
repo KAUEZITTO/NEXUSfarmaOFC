@@ -78,6 +78,7 @@ export const authOptions: NextAuthOptions = {
 
                 token.id = appUser.id;
                 token.location = appUser.location;
+                token.locationId = appUser.locationId;
                 token.role = appUser.role;
                 token.name = appUser.name;
                 token.birthdate = appUser.birthdate;
@@ -90,6 +91,7 @@ export const authOptions: NextAuthOptions = {
             if (appUser) {
                 token.id = appUser.id;
                 token.location = appUser.location;
+                token.locationId = appUser.locationId;
                 token.accessLevel = appUser.accessLevel;
                 token.role = appUser.role;
                 token.subRole = appUser.subRole;
@@ -105,6 +107,7 @@ export const authOptions: NextAuthOptions = {
         if (session.user) {
             session.user.id = token.id as string;
             session.user.location = token.location as UserLocation;
+            session.user.locationId = token.locationId as string;
             session.user.accessLevel = token.accessLevel as AppUser['accessLevel'];
             session.user.role = token.role as AppUser['role'];
             session.user.subRole = token.subRole as AppUser['subRole'];

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -13,6 +14,7 @@ import {
   Info,
   Building,
   Printer,
+  ClipboardCheck,
 } from 'lucide-react';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton } from '@/components/ui/sidebar';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -22,6 +24,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 export const hospitalNavItems = [
   { href: '/dashboard/hospital', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/dashboard/inventory?location=Hospital', icon: Package, label: 'Inventário' },
+  { href: '/dashboard/hospital/orders', icon: ClipboardCheck, label: 'Pedidos ao CAF' },
   { 
     label: 'Dispensar para Setores',
     icon: Pill,

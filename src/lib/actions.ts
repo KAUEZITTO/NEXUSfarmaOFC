@@ -1,8 +1,9 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { readData, writeData, getProducts as getProductsFromDb, getAllUsers, getSectorDispensations } from './data';
+import { readData, writeData, getProducts as getProductsFromDb, getAllUsers, getSectorDispensations, getUnits as getUnitsFromDb } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation, SectorDispensation, HospitalSector as Sector } from './types';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -274,17 +275,26 @@ export async function deletePatient(patientId: string): Promise<{ success: boole
 
 
 // --- ORDER ACTIONS ---
-export async function addOrder(orderData: { unitId: string; unitName: string; orderType: OrderType, items: OrderItem[]; notes?: string; sentDate?: string; }): Promise<Order> {
+export async function addOrder(orderData: { unitId: string; unitName?: string; orderType: OrderType, items: OrderItem[]; notes?: string; sentDate?: string; }): Promise<Order> {
     const session = await getServerSession(authOptions);
     const orders = await readData<Order>('orders');
     const products = await getProductsFromDb('CAF');
+
+    let unitName = orderData.unitName;
+    if (!unitName) {
+        const units = await getUnitsFromDb();
+        const unit = units.find(u => u.id === orderData.unitId);
+        if (!unit) throw new Error("Unit not found for order");
+        unitName = unit.name;
+    }
+
 
     const sentDate = orderData.sentDate ? new Date(orderData.sentDate).toISOString() : new Date().toISOString();
 
     const newOrder: Order = {
         id: generateNumericId(),
         unitId: orderData.unitId,
-        unitName: orderData.unitName,
+        unitName: unitName,
         items: orderData.items,
         orderType: orderData.orderType,
         notes: orderData.notes,
@@ -294,20 +304,25 @@ export async function addOrder(orderData: { unitId: string; unitName: string; or
         creatorName: session?.user?.name || 'Usuário Desconhecido',
     };
 
-    for (const item of newOrder.items) {
-        const productIndex = products.findIndex(p => p.id === item.productId);
-        if (productIndex !== -1) {
-            const originalQuantity = products[productIndex].quantity;
-            products[productIndex].quantity -= item.quantity;
-            products[productIndex].status = products[productIndex].quantity <= 0 ? 'Sem Estoque' : products[productIndex].quantity < 20 ? 'Baixo Estoque' : 'Em Estoque';
-            await logStockMovement(item.productId, item.name, 'Saída', 'Saída por Remessa', -item.quantity, originalQuantity, sentDate, newOrder.id);
+    // If order is created by CAF, deduct stock. If by Hospital, it's a request, so don't deduct.
+    const isCafUser = session?.user?.location === 'CAF';
+    if (isCafUser) {
+        for (const item of newOrder.items) {
+            const productIndex = products.findIndex(p => p.id === item.productId);
+            if (productIndex !== -1) {
+                const originalQuantity = products[productIndex].quantity;
+                products[productIndex].quantity -= item.quantity;
+                products[productIndex].status = products[productIndex].quantity <= 0 ? 'Sem Estoque' : products[productIndex].quantity < 20 ? 'Baixo Estoque' : 'Em Estoque';
+                await logStockMovement(item.productId, item.name, 'Saída', 'Saída por Remessa', -item.quantity, originalQuantity, sentDate, newOrder.id);
+            }
         }
+        await writeData('products', products);
     }
 
-    await writeData('products', products);
     await writeData('orders', [newOrder, ...orders].sort((a, b) => new Date(b.sentDate).getTime() - new Date(a.sentDate).getTime()));
 
     revalidatePath('/dashboard/orders');
+    revalidatePath('/dashboard/hospital/orders');
     revalidatePath('/dashboard/inventory');
     revalidatePath('/dashboard/reports');
     revalidatePath(`/dashboard/units/${orderData.unitId}`);
@@ -378,6 +393,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
     await writeData('orders', orders);
     
     revalidatePath('/dashboard/orders');
+    revalidatePath('/dashboard/hospital/orders');
     revalidatePath(`/dashboard/units/${orders[orderIndex].unitId}`);
     revalidatePath('/dashboard/units');
     revalidatePath('/dashboard/reports');
@@ -506,12 +522,20 @@ export async function register(data: { name: string, email: string; password: st
         if (!userLocation) {
             return { success: false, message: 'O local de trabalho é obrigatório para este cargo.' };
         }
+        
+        let locationId;
+        if (userLocation === 'Hospital') {
+            const units = await getUnitsFromDb();
+            const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
+            if(hospitalUnit) locationId = hospitalUnit.id;
+        }
 
         const newUser: User = {
             id: userRecord.uid,
             email,
             name,
             location: userLocation,
+            locationId,
             role,
             subRole: role === 'Farmacêutico' ? subRole : undefined,
             accessLevel: isFirstUser ? 'Admin' : 'User',
@@ -1043,4 +1067,48 @@ export async function generateHospitalSectorDispensationReportPDF({ startDate, e
         },
         true
     );
+}
+
+// --- HOSPITAL PATIENT ACTIONS ---
+export async function addHospitalPatient(patientData: Omit<HospitalPatient, 'id'>) {
+    const patients = await readData<HospitalPatient>('hospitalPatients');
+    const newPatient: HospitalPatient = {
+        ...patientData,
+        id: generateId('hpat'),
+    };
+    await writeData('hospitalPatients', [newPatient, ...patients]);
+    revalidatePath('/dashboard/hospital/patients');
+}
+
+export async function updateHospitalPatient(patientId: string, patientData: Partial<Omit<HospitalPatient, 'id'>>) {
+    const patients = await readData<HospitalPatient>('hospitalPatients');
+    const patientIndex = patients.findIndex(p => p.id === patientId);
+    if (patientIndex === -1) throw new Error('Paciente não encontrado.');
+    
+    patients[patientIndex] = { ...patients[patientIndex], ...patientData };
+    await writeData('hospitalPatients', patients);
+    revalidatePath('/dashboard/hospital/patients');
+}
+
+export async function deleteHospitalPatient(patientId: string): Promise<{ success: boolean; message?: string }> {
+    // Check for dispensations before deleting
+    const dispensations = await readData<any>('hospitalPatientDispensations');
+    if(dispensations.some(d => d.hospitalPatientId === patientId)) {
+        return { success: false, message: 'Não é possível excluir pacientes com dispensações associadas.' };
+    }
+
+    const patients = await readData<HospitalPatient>('hospitalPatients');
+    const updatedPatients = patients.filter(p => p.id !== patientId);
+    await writeData('hospitalPatients', updatedPatients);
+    revalidatePath('/dashboard/hospital/patients');
+    return { success: true };
+}
+
+export async function updateHospitalPatientStatus(patientId: string, status: HospitalPatientStatus) {
+    const patients = await readData<HospitalPatient>('hospitalPatients');
+    const patientIndex = patients.findIndex(p => p.id === patientId);
+    if (patientIndex === -1) throw new Error('Paciente não encontrado.');
+    patients[patientIndex].status = status;
+    await writeData('hospitalPatients', patients);
+    revalidatePath('/dashboard/hospital/patients');
 }
