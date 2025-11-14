@@ -35,7 +35,6 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import Image from 'next/image';
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
 import { ArrowUpDown, Printer } from 'lucide-react';
@@ -69,7 +68,7 @@ function BatchDetailsDialog({ isOpen, onOpenChange, product }: BatchDetailsDialo
 
   if (!product) return null;
   
-  const { batches, name, presentation, imageUrl } = product;
+  const { batches, name, presentation } = product;
 
   const handleProductSaved = () => {
     // router.refresh() does not work reliably inside a dialog after a server action
@@ -86,19 +85,7 @@ function BatchDetailsDialog({ isOpen, onOpenChange, product }: BatchDetailsDialo
             Apresentação: {presentation}. Total em estoque: {product.quantity.toLocaleString('pt-BR')}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex gap-6 max-h-[60vh] overflow-y-auto">
-          {imageUrl && (
-              <div className="w-1/3">
-                  <Image
-                      src={imageUrl}
-                      alt={`Imagem de ${name}`}
-                      width={200}
-                      height={200}
-                      className="rounded-md object-cover w-full"
-                  />
-              </div>
-          )}
-          <div className={imageUrl ? 'w-2/3' : 'w-full'}>
+        <div className="max-h-[60vh] overflow-y-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -157,7 +144,6 @@ function BatchDetailsDialog({ isOpen, onOpenChange, product }: BatchDetailsDialo
               </TableBody>
             </Table>
           </div>
-        </div>
         <DialogFooter>
             <DialogClose asChild>
                  <Button type="button" variant="outline">Fechar</Button>

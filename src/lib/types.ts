@@ -82,12 +82,15 @@ export type User = {
     avatarColor?: string; // e.g., 'hsl(211 100% 50%)'
 }
 
+export type ProductCategory = 'Medicamento' | 'Material Técnico' | 'Tiras de Glicemia/Lancetas' | 'Odontológico' | 'Laboratório' | 'Fraldas' | 'Fórmulas' | 'Não Padronizado (Compra)' | 'Outro';
+
 export type Product = {
   id: string;
+  code?: string; // Novo código para o hospital
   name: string; // This is now the commercial name
   activeIngredient?: string; // This is the old 'name'
   manufacturer?: string;
-  category: 'Medicamento' | 'Material Técnico' | 'Tiras de Glicemia/Lancetas' | 'Odontológico' | 'Laboratório' | 'Fraldas' | 'Fórmulas' | 'Não Padronizado (Compra)';
+  category: ProductCategory;
   subCategory?: 'Medicamento' | 'Material';
   therapeuticClass?: string; 
   mainFunction?: string; 
@@ -96,9 +99,10 @@ export type Product = {
   status: 'Em Estoque' | 'Baixo Estoque' | 'Sem Estoque';
   batch?: string;
   presentation?: 'Comprimido' | 'Unidade' | 'Caixa c/ 100' | 'Seringa 4g' | 'Frasco 10ml' | 'Caixa c/ 50' | 'Caneta 3ml' | 'Pacote' | 'Bolsa' | 'Outro';
-  supplier?: 'Casmed' | 'Mednutri' | 'Doação' | 'Outro';
+  supplier?: 'CAF' | 'Doação' | 'Outro' | 'Casmed' | 'Mednutri';
   imageUrl?: string;
   location: UserLocation;
+  storageLocation?: string; // Localização física no estoque
 };
 
 // Tipo para o produto agrupado, usado na interface do cliente
@@ -211,7 +215,7 @@ export type DispensationItem = {
   batch?: string;
   expiryDate?: string;
   presentation?: string;
-  category: Product['category'];
+  category: ProductCategory;
 };
 
 export type Dispensation = {

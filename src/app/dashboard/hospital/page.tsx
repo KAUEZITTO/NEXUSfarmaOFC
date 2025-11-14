@@ -16,11 +16,17 @@ export default async function HospitalDashboardPage() {
         getSectorDispensations(),
     ]);
 
+    const filteredDispensations = dispensations.filter(d => {
+        // Here you could add logic to ensure the dispensation belongs to the hospital if needed
+        // For now, we assume all sector dispensations are hospital-related
+        return true;
+    });
+
     return (
         <>
             <DashboardHeader />
             <Suspense fallback={<HospitalDashboardSkeleton />}>
-                <HospitalClientPage products={products} dispensations={dispensations} />
+                <HospitalClientPage products={products} dispensations={filteredDispensations} />
             </Suspense>
         </>
     );

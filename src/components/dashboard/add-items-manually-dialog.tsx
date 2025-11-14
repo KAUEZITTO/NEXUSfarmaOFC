@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -15,27 +15,28 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ChevronLeft, ChevronDown, ChevronUp, Pill, Stethoscope, Beaker, Baby, Milk, ShoppingCart } from 'lucide-react';
-import type { Product } from '@/lib/types';
+import { ChevronLeft, ChevronDown, ChevronUp, Pill, Stethoscope, Beaker, Baby, Milk, ShoppingCart, AlertTriangle, Search } from 'lucide-react';
+import type { Product, ProductCategory } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
 import { Badge } from '../ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
-import { cn } from '@/lib/utils';
+import { useDebounce } from 'use-debounce';
 
 
 type AddItemsManuallyDialogProps = {
   trigger: React.ReactNode;
   allProducts: Product[];
   onAddProduct: (product: Product, quantity: number) => boolean;
-  selectedCategories: Product['category'][];
+  selectedCategories: ProductCategory[];
 };
 
 type GroupedProduct = {
   id: string;
+  code?: string;
   name: string;
   presentation?: string;
-  category: Product['category'];
+  category: ProductCategory;
   totalQuantity: number;
   batches: Product[];
 };
@@ -49,7 +50,7 @@ const ToothIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 
-const categoryConfig: { name: Product['category'], icon: React.ElementType }[] = [
+const categoryConfig: { name: ProductCategory, icon: React.ElementType }[] = [
     { name: 'Medicamento', icon: Pill },
     { name: 'Material Técnico', icon: Stethoscope },
     { name: 'Odontológico', icon: ToothIcon },
@@ -57,6 +58,8 @@ const categoryConfig: { name: Product['category'], icon: React.ElementType }[] =
     { name: 'Fraldas', icon: Baby },
     { name: 'Fórmulas', icon: Milk },
     { name: 'Não Padronizado (Compra)', icon: ShoppingCart },
+    { name: 'Tiras de Glicemia/Lancetas', icon: Pill },
+    { name: 'Outro', icon: Pill },
 ]
 
 export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, selectedCategories }: AddItemsManuallyDialogProps) {
@@ -64,12 +67,15 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
   const [isOpen, setIsOpen] = useState(false);
   const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({});
   const [batchQuantities, setBatchQuantities] = useState<Record<string, number>>({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
+
   
   const initialStep = selectedCategories.length > 1 ? 'category' : 'list';
   const initialCategory = selectedCategories.length === 1 ? selectedCategories[0] : null;
 
   const [step, setStep] = useState<'category' | 'list'>(initialStep);
-  const [currentCategory, setCurrentCategory] = useState<Product['category'] | null>(initialCategory);
+  const [currentCategory, setCurrentCategory] = useState<ProductCategory | null>(initialCategory);
   
   useEffect(() => {
     if (isOpen) {
@@ -79,11 +85,12 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
       setCurrentCategory(newInitialCategory);
       setExpandedProducts({});
       setBatchQuantities({});
+      setSearchTerm('');
     }
   }, [isOpen, selectedCategories]);
 
 
-  const handleCategorySelect = (category: Product['category']) => {
+  const handleCategorySelect = (category: ProductCategory) => {
     setCurrentCategory(category);
     setStep('list');
   };
@@ -133,13 +140,21 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
     }
   };
 
-  const groupProducts = (products: Product[]): GroupedProduct[] => {
+  const groupAndFilterProducts = (products: Product[], searchTerm: string): GroupedProduct[] => {
     const map = new Map<string, GroupedProduct>();
-    products.forEach(product => {
+    
+    const lowerCaseSearchTerm = searchTerm.toLowerCase();
+    const filteredProducts = searchTerm ? products.filter(p => 
+        p.name.toLowerCase().includes(lowerCaseSearchTerm) ||
+        (p.code && p.code.includes(lowerCaseSearchTerm))
+    ) : products;
+
+    filteredProducts.forEach(product => {
       const key = `${product.name}|${product.presentation}`;
       if (!map.has(key)) {
         map.set(key, {
           id: key,
+          code: product.code,
           name: product.name,
           presentation: product.presentation,
           category: product.category,
@@ -160,9 +175,12 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   };
   
-  const productsForCategory = currentCategory 
-    ? groupProducts(allProducts.filter(p => p.category === currentCategory))
-    : [];
+  const productsForCategory = useMemo(() => {
+    if (!currentCategory) return [];
+    const categoryProducts = allProducts.filter(p => p.category === currentCategory);
+    return groupAndFilterProducts(categoryProducts, debouncedSearchTerm);
+  }, [allProducts, currentCategory, debouncedSearchTerm]);
+
 
   const renderContent = () => {
     if (step === 'category') {
@@ -187,74 +205,88 @@ export function AddItemsManuallyDialog({ trigger, allProducts, onAddProduct, sel
 
     if (step === 'list') {
       return (
-        <ScrollArea className="h-96">
-            <div className="space-y-2">
-                {productsForCategory.length > 0 ? productsForCategory.map(group => (
-                    <Collapsible
-                        key={group.id}
-                        open={expandedProducts[group.id]}
-                        onOpenChange={(isOpen) => setExpandedProducts(prev => ({ ...prev, [group.id]: isOpen }))}
-                        className="space-y-2"
-                    >
-                        <CollapsibleTrigger asChild>
-                            <div className="flex w-full cursor-pointer items-center justify-between rounded-md border p-3 text-left hover:bg-muted">
-                                <div>
-                                    <p className="font-semibold">{group.name}</p>
-                                    <p className="text-sm text-muted-foreground">{group.presentation}</p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant={group.totalQuantity > 0 ? 'default' : 'destructive'}>
-                                      Estoque Total: {group.totalQuantity}
-                                  </Badge>
-                                  <Button variant="ghost" size="sm" className="w-9 p-0">
-                                      {expandedProducts[group.id] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                                      <span className="sr-only">Toggle</span>
-                                  </Button>
-                                </div>
-                            </div>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-2 pl-4 border-l-2 ml-2">
-                             <div className="p-3 bg-muted/50 rounded-md">
-                                {group.batches.map(batch => (
-                                    <div key={batch.id} className="grid grid-cols-5 items-center gap-4 py-2 border-b last:border-b-0">
-                                        <div className="col-span-2">
-                                            <p className="text-sm">Lote: <span className="font-mono">{batch.batch || 'N/A'}</span></p>
-                                            <p className="text-xs text-muted-foreground">Val: {batch.expiryDate ? new Date(batch.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A'}</p>
-                                        </div>
-                                        <div className="text-sm">
-                                            Estoque: <Badge variant="outline">{batch.quantity}</Badge>
-                                        </div>
-                                        <div className="col-span-2">
-                                            <Label htmlFor={`qty-${batch.id}`} className="sr-only">Quantidade</Label>
-                                            <Input 
-                                                id={`qty-${batch.id}`}
-                                                type="number"
-                                                min="0"
-                                                max={batch.quantity}
-                                                placeholder="Qtd."
-                                                className="h-9"
-                                                value={batchQuantities[batch.id] || ''}
-                                                onChange={(e) => {
-                                                    const value = e.target.value;
-                                                    const qty = parseInt(value, 10);
-                                                    setBatchQuantities(prev => ({
-                                                        ...prev,
-                                                        [batch.id]: isNaN(qty) ? 0 : Math.min(qty, batch.quantity)
-                                                    }));
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                ))}
-                                <Button className="mt-4 w-full" onClick={() => handleAddSelectedBatches(group)}>Adicionar Selecionados</Button>
-                             </div>
-                        </CollapsibleContent>
-                    </Collapsible>
-                )) : (
-                    <div className="text-center text-muted-foreground pt-10">Nenhum produto encontrado para esta categoria.</div>
-                )}
+        <div className="space-y-4">
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Buscar por nome ou código..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                />
             </div>
-        </ScrollArea>
+            <ScrollArea className="h-96">
+                <div className="space-y-2">
+                    {productsForCategory.length > 0 ? productsForCategory.map(group => (
+                        <Collapsible
+                            key={group.id}
+                            open={expandedProducts[group.id]}
+                            onOpenChange={(isOpen) => setExpandedProducts(prev => ({ ...prev, [group.id]: isOpen }))}
+                            className="space-y-2"
+                        >
+                            <CollapsibleTrigger asChild>
+                                <div className="flex w-full cursor-pointer items-center justify-between rounded-md border p-3 text-left hover:bg-muted">
+                                    <div>
+                                        <p className="font-semibold">{group.name}</p>
+                                        <p className="text-sm text-muted-foreground">{group.presentation}</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                    <Badge variant={group.totalQuantity > 0 ? 'default' : 'destructive'}>
+                                        Estoque Total: {group.totalQuantity}
+                                    </Badge>
+                                    <Button variant="ghost" size="sm" className="w-9 p-0">
+                                        {expandedProducts[group.id] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                        <span className="sr-only">Toggle</span>
+                                    </Button>
+                                    </div>
+                                </div>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="space-y-2 pl-4 border-l-2 ml-2">
+                                <div className="p-3 bg-muted/50 rounded-md">
+                                    {group.batches.map((batch, index) => (
+                                        <div key={batch.id} className="grid grid-cols-5 items-center gap-4 py-2 border-b last:border-b-0">
+                                            <div className="col-span-2 flex items-center gap-2">
+                                                {index === 0 && <AlertTriangle className="h-4 w-4 text-orange-500" title="Vencimento mais próximo"/>}
+                                                <div>
+                                                    <p className="text-sm">Lote: <span className="font-mono">{batch.batch || 'N/A'}</span></p>
+                                                    <p className="text-xs text-muted-foreground">Val: {batch.expiryDate ? new Date(batch.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A'}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-sm">
+                                                Estoque: <Badge variant="outline">{batch.quantity}</Badge>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <Label htmlFor={`qty-${batch.id}`} className="sr-only">Quantidade</Label>
+                                                <Input 
+                                                    id={`qty-${batch.id}`}
+                                                    type="number"
+                                                    min="0"
+                                                    max={batch.quantity}
+                                                    placeholder="Qtd."
+                                                    className="h-9"
+                                                    value={batchQuantities[batch.id] || ''}
+                                                    onChange={(e) => {
+                                                        const value = e.target.value;
+                                                        const qty = parseInt(value, 10);
+                                                        setBatchQuantities(prev => ({
+                                                            ...prev,
+                                                            [batch.id]: isNaN(qty) ? 0 : Math.min(qty, batch.quantity)
+                                                        }));
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <Button className="mt-4 w-full" onClick={() => handleAddSelectedBatches(group)}>Adicionar Selecionados</Button>
+                                </div>
+                            </CollapsibleContent>
+                        </Collapsible>
+                    )) : (
+                        <div className="text-center text-muted-foreground pt-10">Nenhum produto encontrado para "{debouncedSearchTerm}".</div>
+                    )}
+                </div>
+            </ScrollArea>
+        </div>
       );
     }
   };

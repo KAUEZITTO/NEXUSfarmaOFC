@@ -4,7 +4,7 @@
 import { useState }from 'react';
 import { addSectorDispensation } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import type { Product, HospitalSector, SectorDispensation, DispensationItem } from '@/lib/types';
+import type { Product, HospitalSector, SectorDispensation, DispensationItem, ProductCategory } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,7 +16,7 @@ import { useRouter } from 'next/navigation';
 
 type RemessaItem = DispensationItem & { internalId: string };
 
-const itemCategories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Odontológico', 'Laboratório'];
+const itemCategories: ProductCategory[] = ['Medicamento', 'Material Técnico', 'Outro'];
 
 interface DispenseToSectorClientPageProps {
     initialProducts: Product[];
@@ -28,13 +28,13 @@ export function DispenseToSectorClientPage({ initialProducts, initialDispensatio
     const router = useRouter();
     const { toast } = useToast();
     const [selectedSector, setSelectedSector] = useState<string>('');
-    const [selectedCategories, setSelectedCategories] = useState<Product['category'][]>([]);
+    const [selectedCategories, setSelectedCategories] = useState<ProductCategory[]>([]);
     const [items, setItems] = useState<RemessaItem[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     
     const recentDispensationsForSector = selectedSector ? initialDispensations.filter(d => d.sector === selectedSector).slice(0, 5) : [];
 
-    const handleCategoryToggle = (category: Product['category']) => {
+    const handleCategoryToggle = (category: ProductCategory) => {
         setSelectedCategories(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]);
     };
 
@@ -111,7 +111,7 @@ export function DispenseToSectorClientPage({ initialProducts, initialDispensatio
 
     const productsForManualAdd = selectedCategories.length > 0 
         ? initialProducts.filter(p => selectedCategories.includes(p.category)) 
-        : [];
+        : initialProducts;
     
     return (
         <Card>
@@ -149,10 +149,10 @@ export function DispenseToSectorClientPage({ initialProducts, initialDispensatio
                                 </div>
                                 <AddItemsManuallyDialog 
                                     allProducts={productsForManualAdd}
-                                    selectedCategories={selectedCategories}
+                                    selectedCategories={selectedCategories.length > 0 ? selectedCategories : itemCategories}
                                     onAddProduct={addProductToDispensation}
                                     trigger={
-                                        <Button variant="secondary" className="w-full mt-4" disabled={selectedCategories.length === 0}>
+                                        <Button variant="secondary" className="w-full mt-4">
                                             <ListPlus className="mr-2 h-4 w-4" /> Adicionar Itens
                                         </Button>
                                     }
