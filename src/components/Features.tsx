@@ -13,45 +13,47 @@ import {
   ShieldCheck,
   Building2,
   Users,
+  Hospital,
+  Tags,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const featuresData = [
   {
     icon: <Package className="h-10 w-10 text-primary" />,
-    title: 'Controle de Estoque',
+    title: 'Controle de Estoque Inteligente',
     description:
-      'Gestão completa de lotes, validades e inventário em tempo real para evitar perdas.',
+      'Gestão completa de lotes, validades e inventário separado por setor (CAF e Hospital) em tempo real para evitar perdas.',
   },
   {
     icon: <Users className="h-10 w-10 text-primary" />,
-    title: 'Gestão de Pacientes',
+    title: 'Gestão de Pacientes (CAF)',
     description:
-      'Cadastro detalhado de pacientes e histórico completo de todas as dispensações realizadas.',
+      'Cadastro detalhado de pacientes, demandas de cuidado contínuo e histórico completo de dispensações.',
+  },
+  {
+    icon: <Hospital className="h-10 w-10 text-primary" />,
+    title: 'Gestão Hospitalar Integrada',
+    description:
+      'Controle o estoque da farmácia hospitalar, dispense materiais para setores (UTI, Enfermaria) e gerencie pacientes internados.',
   },
   {
     icon: <ClipboardList className="h-10 w-10 text-primary" />,
     title: 'Dispensação e Remessas',
     description:
-      'Registre a saída de itens para pacientes e gere guias de remessa para as unidades de saúde.',
+      'Registre a saída de itens para pacientes (CAF) e gere guias de remessa para abastecer as unidades de saúde.',
+  },
+   {
+    icon: <Tags className="h-10 w-10 text-primary" />,
+    title: 'Etiquetas Profissionais',
+    description:
+      'Gere etiquetas personalizadas com código de barras para qualquer item, com suporte para impressoras térmicas (rolo) e A4.',
   },
   {
     icon: <BarChart2 className="h-10 w-10 text-primary" />,
     title: 'Relatórios Gerenciais',
     description:
-      'Dados consolidados sobre consumo, atendimentos e estoque para decisões estratégicas.',
-  },
-  {
-    icon: <ShieldCheck className="h-10 w-10 text-primary" />,
-    title: 'Segurança e Rastreabilidade',
-    description:
-      'Controle de acesso e rastreabilidade total de cada item, do recebimento à entrega final.',
-  },
-  {
-    icon: <Building2 className="h-10 w-10 text-primary" />,
-    title: 'Gestão de Unidades',
-    description:
-      'Cadastre e gerencie as informações das unidades de saúde (UBS, hospitais, etc).',
+      'Dados consolidados sobre consumo, estoque e atendimentos para decisões estratégicas, com relatórios específicos por setor.',
   },
 ];
 
@@ -67,7 +69,7 @@ export function Features() {
             Tudo que você precisa em um só lugar
           </h2>
           <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-            O NexusFarma foi desenhado para simplificar a complexa rotina do Centro de Abastecimento Farmacêutico (CAF), integrando todas as operações em uma plataforma robusta e intuitiva.
+            O NexusFarma foi desenhado para simplificar a complexa rotina da gestão farmacêutica, integrando as operações do CAF e do Hospital em uma plataforma robusta e intuitiva.
           </p>
         </div>
         <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 lg:grid-cols-3">
