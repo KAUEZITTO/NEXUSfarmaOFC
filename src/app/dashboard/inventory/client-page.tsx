@@ -6,10 +6,10 @@ import { useState, useTransition, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { Search, Printer, Loader2, Edit, MoreHorizontal, PlusCircle, Trash2, ShieldX } from "lucide-react";
+import { Search, Printer, Loader2, Edit, MoreHorizontal, PlusCircle, Trash2, ShieldX, Tags } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
-import type { Product } from '@/lib/types';
+import type { Product, UserLocation } from '@/lib/types';
 import { 
   Dialog, 
   DialogContent, 
@@ -53,6 +53,7 @@ import { zeroStock, deleteProducts } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useDebounce } from 'use-debounce';
+import { CustomLabelDialog } from '@/components/dashboard/custom-label-dialog';
 
 type GroupedProduct = Product & {
     batches: Product[];
@@ -230,6 +231,7 @@ export function InventoryClientPage({ initialProducts }: { initialProducts: Prod
 
   const activeFilter = (searchParams.get('category') as FilterCategory) || 'Todos';
   const initialSearchTerm = searchParams.get('q') || '';
+  const locationContext = (searchParams.get('location') as UserLocation) || undefined;
 
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
@@ -372,7 +374,11 @@ export function InventoryClientPage({ initialProducts }: { initialProducts: Prod
       {
         accessorKey: "therapeuticClass",
         header: "Classe",
-        cell: ({ row }) => <div className="capitalize">{row.getValue("therapeuticClass") || "N/A"}</div>
+        cell: ({ row }) => {
+          const product = row.original;
+          const displayValue = product.therapeuticClass || product.category;
+          return <div className="capitalize">{displayValue || "N/A"}</div>;
+        },
       },
       {
         accessorKey: "mainFunction",
@@ -409,11 +415,17 @@ export function InventoryClientPage({ initialProducts }: { initialProducts: Prod
   ], []);
 
   const selectedRowCount = Object.keys(rowSelection).length;
+  
+  let pageTitle = "Inventário de Produtos";
+  if (locationContext === 'CAF') pageTitle = "Inventário do CAF";
+  if (locationContext === 'Hospital') pageTitle = "Inventário do Hospital";
+  if (!locationContext) pageTitle = "Inventário Global";
+
 
   return (
     <Card>
         <CardHeader>
-            <CardTitle>Inventário de Produtos</CardTitle>
+            <CardTitle>{pageTitle}</CardTitle>
             <CardDescription>
             Gerencie seus produtos, adicione novos e acompanhe o estoque. Itens agrupados por nome e apresentação.
             </CardDescription>
@@ -460,12 +472,12 @@ export function InventoryClientPage({ initialProducts }: { initialProducts: Prod
                             </AlertDialogContent>
                         </AlertDialog>
                     )}
-                    <Button variant="outline" asChild>
-                        <Link href="/shelf-labels" target="_blank">
-                            <Printer className="mr-2 h-4 w-4" />
-                            Etiquetas de Prateleira
-                        </Link>
-                    </Button>
+                    <CustomLabelDialog>
+                        <Button variant="outline">
+                            <Tags className="mr-2 h-4 w-4" />
+                            Gerar Etiquetas Personalizadas
+                        </Button>
+                    </CustomLabelDialog>
                      <AlertDialog>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
