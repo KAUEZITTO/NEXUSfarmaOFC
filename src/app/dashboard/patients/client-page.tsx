@@ -337,14 +337,14 @@ export function PatientsClientPage({
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-start flex-wrap gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <CardTitle>Gerenciamento de Pacientes e Dispensações</CardTitle>
             <CardDescription>
               Visualize pacientes e o histórico completo de dispensações.
             </CardDescription>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button asChild>
               <Link href="/dashboard/dispense/new">
                 <UserCheck className="mr-2 h-4 w-4" />

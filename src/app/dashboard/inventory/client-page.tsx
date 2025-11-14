@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useTransition, useMemo, useEffect } from 'react';
@@ -431,8 +430,8 @@ export function InventoryClientPage({ initialProducts }: { initialProducts: Prod
             </CardDescription>
         </CardHeader>
         <CardContent>
-            <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
-                <div className="flex items-center space-x-2 pt-2 overflow-x-auto pb-2">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+                <div className="flex items-center space-x-2 overflow-x-auto pb-2 w-full md:w-auto">
                     {filterCategories.map(filter => (
                         <Button 
                             key={filter}
@@ -446,13 +445,13 @@ export function InventoryClientPage({ initialProducts }: { initialProducts: Prod
                         </Button>
                     ))}
                 </div>
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-2 items-center flex-wrap justify-start w-full md:w-auto md:justify-end">
                     {selectedRowCount > 0 && (
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <Button variant="destructive" disabled={isProcessing}>
                                     <Trash2 className="mr-2 h-4 w-4" />
-                                    Excluir Selecionados ({selectedRowCount})
+                                    Excluir ({selectedRowCount})
                                 </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
@@ -475,7 +474,7 @@ export function InventoryClientPage({ initialProducts }: { initialProducts: Prod
                     <CustomLabelDialog>
                         <Button variant="outline">
                             <Tags className="mr-2 h-4 w-4" />
-                            Gerar Etiquetas Personalizadas
+                            Etiquetas
                         </Button>
                     </CustomLabelDialog>
                      <AlertDialog>

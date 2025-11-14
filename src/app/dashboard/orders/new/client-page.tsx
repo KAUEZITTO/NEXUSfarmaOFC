@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -240,8 +239,7 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
 
   return (
     <>
-    <div className="grid flex-1 items-start gap-4 md:gap-8">
-      <div className="mx-auto grid w-full max-w-6xl flex-1 auto-rows-max gap-6">
+    <div className="mx-auto grid w-full max-w-6xl flex-1 auto-rows-max gap-6">
         <div className="flex items-center gap-4">
           <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
             Criar Nova Remessa
@@ -415,7 +413,7 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
             </Card>
         </div>
         
-        <div className="md:hidden sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 border-t -mx-4">
+        <div className="md:hidden sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 border-t -mx-4 z-10">
             <div className="flex items-center justify-end gap-2">
                 <Button variant="outline" onClick={handleDiscard} disabled={isSaving} className="flex-1">
                     Descartar
@@ -426,7 +424,6 @@ export function NewOrderClientPage({ initialUnits, initialProducts }: NewOrderCl
                 </Button>
             </div>
         </div>
-      </div>
     </div>
     
     <AlertDialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>

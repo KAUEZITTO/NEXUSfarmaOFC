@@ -465,7 +465,7 @@ export function NewDispensationClientPage({ initialProducts, initialDispensation
         </Card>
       )}
       
-      <div className="md:hidden sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 border-t -mx-4">
+      <div className="md:hidden sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 border-t -mx-4 z-10">
         <div className="flex items-center justify-end gap-2">
             <Button variant="outline" onClick={handleDiscard} disabled={isSaving} className="flex-1">Descartar</Button>
             <Button onClick={handleSave} disabled={isSaving || items.length === 0} className="flex-1">
