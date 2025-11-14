@@ -1,89 +1,66 @@
+
 'use client';
 
-import { useState, useMemo } from 'react';
-import type { Product, HospitalOrderTemplateItem } from '@/lib/types';
+import { useState } from 'react';
+import type { HospitalOrderTemplateItem, ProductCategory } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { DataTable } from '@/components/ui/data-table';
-import { ColumnDef } from '@tanstack/react-table';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Save, Loader2 } from 'lucide-react';
+import { Save, Loader2, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { updateHospitalOrderTemplate } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// Represents an item in the selection table, could be in the template or not.
-type SelectableItem = {
-    productId: string;
-    name: string;
-    presentation: string;
-    category: string;
-    isInTemplate: boolean;
+const productCategories: ProductCategory[] = ['Medicamento', 'Material Técnico', 'Tiras de Glicemia/Lancetas', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)', 'Outro'];
+
+type EditableTemplateItem = HospitalOrderTemplateItem & {
+    internalId: string;
 };
 
-export function OrderTemplateClientPage({ cafInventory, initialTemplate }: { cafInventory: Product[], initialTemplate: HospitalOrderTemplateItem[] }) {
+export function OrderTemplateClientPage({ initialTemplate }: { initialTemplate: HospitalOrderTemplateItem[] }) {
     const { toast } = useToast();
     const router = useRouter();
-    const [searchTerm, setSearchTerm] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     
-    // Group CAF inventory by name and presentation to get unique requestable items
-    const uniqueRequestableItems = useMemo(() => {
-        const map = new Map<string, SelectableItem>();
-        cafInventory.forEach(product => {
-            const key = `${product.name}|${product.presentation}`;
-            if (!map.has(key)) {
-                map.set(key, {
-                    productId: product.id, // Use the ID of the first product instance as the reference
-                    name: product.name,
-                    presentation: product.presentation || 'N/A',
-                    category: product.category,
-                    isInTemplate: initialTemplate.some(t => t.name === product.name && t.presentation === product.presentation),
-                });
-            }
-        });
-        return Array.from(map.values());
-    }, [cafInventory, initialTemplate]);
-    
-    const [selection, setSelection] = useState<Record<string, boolean>>(() => {
-        const initialSelection: Record<string, boolean> = {};
-        uniqueRequestableItems.forEach(item => {
-            if (item.isInTemplate) {
-                initialSelection[item.productId] = true;
-            }
-        });
-        return initialSelection;
-    });
+    const [templateItems, setTemplateItems] = useState<EditableTemplateItem[]>(() => 
+        initialTemplate.map(item => ({ ...item, internalId: `item-${Math.random()}` }))
+    );
 
-    const filteredItems = useMemo(() => {
-        return uniqueRequestableItems.filter(item => 
-            item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-            item.presentation.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [uniqueRequestableItems, searchTerm]);
+    const handleAddItem = () => {
+        setTemplateItems(prev => [
+            ...prev,
+            {
+                internalId: `new-${Date.now()}`,
+                productId: `temp-${Date.now()}`, // Placeholder ID
+                name: '',
+                presentation: '',
+                category: 'Medicamento',
+            }
+        ]);
+    };
+    
+    const handleRemoveItem = (internalId: string) => {
+        setTemplateItems(prev => prev.filter(item => item.internalId !== internalId));
+    };
+    
+    const handleItemChange = (internalId: string, field: keyof EditableTemplateItem, value: string) => {
+        setTemplateItems(prev => prev.map(item => 
+            item.internalId === internalId ? { ...item, [field]: value } : item
+        ));
+    };
 
     const handleSaveTemplate = async () => {
         setIsSaving(true);
-        const newTemplate: HospitalOrderTemplateItem[] = [];
-        Object.keys(selection).forEach(productId => {
-            if (selection[productId]) {
-                const item = uniqueRequestableItems.find(i => i.productId === productId);
-                if (item) {
-                    newTemplate.push({
-                        productId: item.productId,
-                        name: item.name,
-                        presentation: item.presentation,
-                        category: item.category,
-                    });
-                }
-            }
-        });
+        const newTemplate = templateItems
+            .filter(item => item.name.trim() !== '') // Ensure item has a name
+            .map(({ internalId, ...rest }) => rest);
         
         try {
             await updateHospitalOrderTemplate(newTemplate);
             toast({ title: "Sucesso!", description: "Seu pedido padrão foi salvo."});
-            router.refresh(); // To reflect changes if the user navigates away and comes back
+            router.refresh(); 
         } catch (error) {
             toast({ variant: 'destructive', title: 'Erro ao Salvar', description: 'Não foi possível salvar o pedido padrão.'});
         } finally {
@@ -91,63 +68,79 @@ export function OrderTemplateClientPage({ cafInventory, initialTemplate }: { caf
         }
     };
     
-    const columns: ColumnDef<SelectableItem>[] = [
-        {
-            id: 'select',
-            header: ({ table }) => (
-                <Checkbox
-                    checked={table.getIsAllPageRowsSelected()}
-                    onCheckedChange={(value) => {
-                        const newSelection = { ...selection };
-                        table.getRowModel().rows.forEach(row => {
-                            newSelection[row.original.productId] = !!value;
-                        });
-                        setSelection(newSelection);
-                        table.toggleAllPageRowsSelected(!!value);
-                    }}
-                    aria-label="Selecionar tudo"
-                />
-            ),
-            cell: ({ row }) => (
-                 <Checkbox
-                    checked={!!selection[row.original.productId]}
-                    onCheckedChange={(value) => {
-                        setSelection(prev => ({
-                            ...prev,
-                            [row.original.productId]: !!value,
-                        }));
-                    }}
-                    aria-label="Selecionar linha"
-                />
-            ),
-        },
-        { accessorKey: 'name', header: 'Nome do Produto' },
-        { accessorKey: 'presentation', header: 'Apresentação' },
-        { accessorKey: 'category', header: 'Categoria' },
-    ];
-    
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Definir Pedido Padrão</CardTitle>
-                <CardDescription>
-                    Selecione os itens que aparecerão na sua lista de pedidos para o CAF. Itens marcados serão seu pedido padrão.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="flex justify-between items-center mb-4">
-                    <Input 
-                        placeholder="Buscar item no inventário do CAF..."
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                        className="max-w-sm"
-                    />
+                <div className="flex flex-wrap gap-4 justify-between items-center">
+                    <div>
+                        <CardTitle>Definir Pedido Padrão</CardTitle>
+                        <CardDescription>
+                            Crie e gerencie a lista de itens que aparecerão no seu formulário de pedido para o CAF.
+                        </CardDescription>
+                    </div>
                     <Button onClick={handleSaveTemplate} disabled={isSaving}>
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
                         Salvar Pedido Padrão
                     </Button>
                 </div>
-                <DataTable columns={columns} data={filteredItems} rowSelection={selection} setRowSelection={setSelection} />
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-[40%]">Nome do Produto</TableHead>
+                            <TableHead className="w-[30%]">Apresentação</TableHead>
+                            <TableHead className="w-[20%]">Categoria</TableHead>
+                            <TableHead className="w-[10%]" />
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {templateItems.length > 0 ? templateItems.map((item) => (
+                            <TableRow key={item.internalId}>
+                                <TableCell>
+                                    <Input 
+                                        value={item.name} 
+                                        onChange={(e) => handleItemChange(item.internalId, 'name', e.target.value)}
+                                        placeholder="Ex: Dipirona 500mg"
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                    <Input 
+                                        value={item.presentation} 
+                                        onChange={(e) => handleItemChange(item.internalId, 'presentation', e.target.value)}
+                                        placeholder="Ex: Comprimido"
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                    <Select 
+                                        value={item.category} 
+                                        onValueChange={(value) => handleItemChange(item.internalId, 'category', value)}
+                                    >
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            {productCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </TableCell>
+                                <TableCell>
+                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.internalId)}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        )) : (
+                            <TableRow>
+                                <TableCell colSpan={4} className="h-24 text-center">
+                                    Nenhum item no pedido padrão. Comece adicionando um.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+                <Button onClick={handleAddItem} variant="outline" className="mt-4">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Adicionar Item
+                </Button>
             </CardContent>
         </Card>
     );
