@@ -18,21 +18,17 @@ function PatientsSkeleton() {
                     </div>
                     <div className="flex gap-2">
                         <Skeleton className="h-9 w-40 bg-muted rounded-md" />
+                        <Skeleton className="h-9 w-44 bg-muted rounded-md" />
                     </div>
                 </div>
-                <div className="flex items-center space-x-2 pt-4 overflow-x-auto pb-2">
-                    <Skeleton className="h-9 w-20 bg-muted rounded-full" />
-                    <Skeleton className="h-9 w-24 bg-muted rounded-full" />
-                    <Skeleton className="h-9 w-28 bg-muted rounded-full" />
-                </div>
-                 <div className="relative mt-4">
-                    <Skeleton className="h-10 max-w-sm" />
-                </div>
+                 <div className="mt-4">
+                   <Skeleton className="h-10 w-full max-w-lg" />
+                 </div>
             </CardHeader>
             <CardContent>
                 <div className="text-center py-10">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto" />
-                    <p className="mt-2 text-muted-foreground">Carregando pacientes...</p>
+                    <p className="mt-2 text-muted-foreground">Carregando...</p>
                 </div>
             </CardContent>
         </Card>

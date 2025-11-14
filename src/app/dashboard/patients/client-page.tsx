@@ -366,7 +366,7 @@ export function PatientsClientPage({
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="patients">
-          <TabsList>
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="patients">Pacientes</TabsTrigger>
             <TabsTrigger value="dispensations">Histórico de Dispensações</TabsTrigger>
           </TabsList>
