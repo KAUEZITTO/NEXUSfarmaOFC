@@ -1,5 +1,3 @@
-
-
 // Adicionando tipos do NextAuth para extender o objeto de sessão
 import type { DefaultUser, DefaultSession } from 'next-auth';
 import { ColumnDef } from '@tanstack/react-table';
@@ -280,6 +278,13 @@ export type HospitalPatientDispensation = {
     date: string;
     items: DispensationItem[];
     dispensedBy: string;
+};
+
+export type HospitalOrderTemplateItem = {
+    productId: string;
+    name: string;
+    presentation: string;
+    category: string;
 };
 
 

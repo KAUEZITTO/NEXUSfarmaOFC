@@ -1,6 +1,5 @@
-
 import { Suspense } from 'react';
-import { getOrders } from "@/lib/data";
+import { getOrders, getProducts } from "@/lib/data";
 import { OrdersClientPage } from './client-page';
 import {
   Card,
@@ -34,12 +33,15 @@ function OrdersSkeleton() {
 }
 
 export default async function OrdersPage() {
-    const orders = await getOrders();
+    const [orders, cafInventory] = await Promise.all([
+      getOrders(),
+      getProducts('CAF'),
+    ]);
     const sortedOrders = orders.sort((a, b) => new Date(b.sentDate).getTime() - new Date(a.sentDate).getTime());
 
     return (
         <Suspense fallback={<OrdersSkeleton />}>
-            <OrdersClientPage initialOrders={sortedOrders} />
+            <OrdersClientPage initialOrders={sortedOrders} cafInventory={cafInventory} />
         </Suspense>
     );
 }

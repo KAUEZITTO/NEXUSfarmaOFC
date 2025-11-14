@@ -14,6 +14,7 @@ import {
   Printer,
   ClipboardCheck,
   Tags,
+  Server,
 } from 'lucide-react';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton } from '@/components/ui/sidebar';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -23,7 +24,14 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 export const hospitalNavItems = [
   { href: '/dashboard/hospital', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/dashboard/inventory?location=Hospital', icon: Package, label: 'Inventário' },
-  { href: '/dashboard/hospital/orders', icon: ClipboardCheck, label: 'Pedidos ao CAF' },
+  { 
+    label: 'Pedidos',
+    icon: ClipboardCheck,
+    subItems: [
+        { href: '/dashboard/hospital/orders', label: 'Fazer e Ver Pedidos' },
+        { href: '/dashboard/hospital/orders/template', label: 'Pedido Padrão' },
+    ]
+  },
   { 
     label: 'Dispensar para Setores',
     icon: Pill,

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -7,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { DataTable } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Eye, Printer, Trash2, Edit, MoreHorizontal, ArrowUpDown, CheckCircle, XCircle, Hourglass } from 'lucide-react';
-import type { Order, OrderItem, OrderStatus } from '@/lib/types';
+import type { Order, OrderItem, OrderStatus, Product } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { ColumnDef } from '@tanstack/react-table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,26 +46,19 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { deleteOrder, updateOrderStatus } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 
-
-const renderItemRows = (items: OrderItem[]) => {
-  if (!items || items.length === 0) return null;
-  return items.map((item, index) => (
-      <TableRow key={item.productId + item.batch} >
-          <TableCell className="font-medium">{item.name}</TableCell>
-          <TableCell className="text-center">{item.presentation || "--"}</TableCell>
-          <TableCell className="text-center">{item.batch || "--"}</TableCell>
-          <TableCell className="text-center">{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC'}) : "--"}</TableCell>
-          <TableCell className="text-right">{item.quantity.toLocaleString('pt-BR')}</TableCell>
-      </TableRow>
-  ));
+interface OrdersClientPageProps {
+  initialOrders: Order[];
+  cafInventory: Product[];
 }
 
-export function OrdersClientPage({ initialOrders }: { initialOrders: Order[] }) {
+export function OrdersClientPage({ initialOrders, cafInventory }: OrdersClientPageProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
+
+  const cafInventoryMap = new Map(cafInventory.map(p => [p.id, p.quantity]));
 
   const filteredOrders = initialOrders.filter(
     (order) =>
@@ -297,26 +289,32 @@ export function OrdersClientPage({ initialOrders }: { initialOrders: Order[] }) 
           <DialogHeader>
             <DialogTitle>Visualizar Pedido: {selectedOrder?.id}</DialogTitle>
             <DialogDescription>
-              Itens enviados para {selectedOrder?.unitName} em {selectedOrder?.sentDate ? new Date(selectedOrder.sentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : ''}.
+              Pedido de {selectedOrder?.unitName} em {selectedOrder?.sentDate ? new Date(selectedOrder.sentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : ''}.
             </DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh]">
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead className="w-[40%]">Item</TableHead>
-                        <TableHead>Apresentação</TableHead>
-                        <TableHead>Lote</TableHead>
-                        <TableHead>Validade</TableHead>
-                        <TableHead className="text-right">Qtd.</TableHead>
+                        <TableHead className="w-[50%]">Item</TableHead>
+                        <TableHead>Qtd. Pedida</TableHead>
+                        <TableHead>Qtd. em Estoque (CAF)</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {selectedOrder?.items ? renderItemRows(selectedOrder.items) : (
-                        <TableRow>
-                            <TableCell colSpan={5} className="text-center">Nenhum item encontrado.</TableCell>
-                        </TableRow>
-                    )}
+                    {selectedOrder?.items.map((item) => {
+                       const stockQuantity = cafInventoryMap.get(item.productId) ?? 0;
+                       const hasEnoughStock = stockQuantity >= item.quantity;
+                       return (
+                         <TableRow key={item.productId + (item.batch || '')}>
+                            <TableCell className="font-medium">{item.name} <span className="text-muted-foreground text-xs">({item.presentation})</span></TableCell>
+                            <TableCell>{item.quantity}</TableCell>
+                            <TableCell className={cn(hasEnoughStock ? 'text-green-600' : 'text-destructive font-bold')}>
+                                {stockQuantity}
+                            </TableCell>
+                         </TableRow>
+                       )
+                    })}
                 </TableBody>
             </Table>
           </ScrollArea>

@@ -1,10 +1,8 @@
-
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { readData, writeData, getProducts as getProductsFromDb, getAllUsers, getSectorDispensations, getUnits as getUnitsFromDb } from './data';
-import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation, SectorDispensation, HospitalSector as Sector } from './types';
+import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation, SectorDispensation, HospitalSector as Sector, HospitalOrderTemplateItem } from './types';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { generatePdf } from '@/lib/pdf-generator';
@@ -305,7 +303,7 @@ export async function addOrder(orderData: { unitId: string; unitName?: string; o
     };
 
     // If order is created by CAF, deduct stock. If by Hospital, it's a request, so don't deduct.
-    const isCafUser = session?.user?.location === 'CAF';
+    const isCafUser = session?.user?.location === 'CAF' || session?.user?.subRole === 'Coordenador';
     if (isCafUser) {
         for (const item of newOrder.items) {
             const productIndex = products.findIndex(p => p.id === item.productId);
@@ -349,7 +347,7 @@ export async function deleteOrder(orderId: string): Promise<{ success: boolean; 
             allProducts[productIndex].status = allProducts[productIndex].quantity > 0 ? (allProducts[productIndex].quantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque';
             await logStockMovement(item.productId, item.name, 'Entrada', 'Estorno de Remessa', item.quantity, originalQuantity, reversalDate, orderToDelete.id);
         } else {
-            console.warn(`Produto com ID ${item.productId} não encontrado durante estorno. Criando novo produto.`);
+             console.warn(`Produto com ID ${item.productId} não encontrado durante estorno. Criando novo produto.`);
             const newProduct: Product = {
                 id: item.productId,
                 name: item.name,
@@ -1069,46 +1067,8 @@ export async function generateHospitalSectorDispensationReportPDF({ startDate, e
     );
 }
 
-// --- HOSPITAL PATIENT ACTIONS ---
-export async function addHospitalPatient(patientData: Omit<HospitalPatient, 'id'>) {
-    const patients = await readData<HospitalPatient>('hospitalPatients');
-    const newPatient: HospitalPatient = {
-        ...patientData,
-        id: generateId('hpat'),
-    };
-    await writeData('hospitalPatients', [newPatient, ...patients]);
-    revalidatePath('/dashboard/hospital/patients');
-}
-
-export async function updateHospitalPatient(patientId: string, patientData: Partial<Omit<HospitalPatient, 'id'>>) {
-    const patients = await readData<HospitalPatient>('hospitalPatients');
-    const patientIndex = patients.findIndex(p => p.id === patientId);
-    if (patientIndex === -1) throw new Error('Paciente não encontrado.');
-    
-    patients[patientIndex] = { ...patients[patientIndex], ...patientData };
-    await writeData('hospitalPatients', patients);
-    revalidatePath('/dashboard/hospital/patients');
-}
-
-export async function deleteHospitalPatient(patientId: string): Promise<{ success: boolean; message?: string }> {
-    // Check for dispensations before deleting
-    const dispensations = await readData<any>('hospitalPatientDispensations');
-    if(dispensations.some(d => d.hospitalPatientId === patientId)) {
-        return { success: false, message: 'Não é possível excluir pacientes com dispensações associadas.' };
-    }
-
-    const patients = await readData<HospitalPatient>('hospitalPatients');
-    const updatedPatients = patients.filter(p => p.id !== patientId);
-    await writeData('hospitalPatients', updatedPatients);
-    revalidatePath('/dashboard/hospital/patients');
-    return { success: true };
-}
-
-export async function updateHospitalPatientStatus(patientId: string, status: HospitalPatientStatus) {
-    const patients = await readData<HospitalPatient>('hospitalPatients');
-    const patientIndex = patients.findIndex(p => p.id === patientId);
-    if (patientIndex === -1) throw new Error('Paciente não encontrado.');
-    patients[patientIndex].status = status;
-    await writeData('hospitalPatients', patients);
-    revalidatePath('/dashboard/hospital/patients');
+// --- HOSPITAL ORDER TEMPLATE ---
+export async function updateHospitalOrderTemplate(templateItems: HospitalOrderTemplateItem[]): Promise<void> {
+    await writeData('hospitalOrderTemplate', templateItems);
+    revalidatePath('/dashboard/hospital/orders/template');
 }

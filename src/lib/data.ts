@@ -3,7 +3,7 @@
 import { kv } from './server/kv.server';
 import path from 'path';
 import { promises as fs } from 'fs';
-import type { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter, SectorDispensation, KnowledgeBaseItem, UserLocation } from './types';
+import type { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter, SectorDispensation, KnowledgeBaseItem, UserLocation, HospitalOrderTemplateItem } from './types';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './auth';
 
@@ -180,4 +180,9 @@ export async function getAllPatients(): Promise<Patient[]> {
 
 export async function getSectorDispensations(): Promise<SectorDispensation[]> {
     return await readData<SectorDispensation>('sectorDispensations');
+}
+
+export async function getHospitalOrderTemplate(): Promise<HospitalOrderTemplateItem[]> {
+    const data = await kv.get<HospitalOrderTemplateItem[]>('hospitalOrderTemplate');
+    return data || [];
 }

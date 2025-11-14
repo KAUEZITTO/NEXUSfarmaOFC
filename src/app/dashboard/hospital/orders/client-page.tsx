@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from "react";
@@ -9,22 +8,22 @@ import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Eye, ArrowUpDown, MoreHorizontal, CheckCircle, PlusCircle } from 'lucide-react';
+import { Eye, ArrowUpDown, MoreHorizontal, CheckCircle, PlusCircle, Server } from 'lucide-react';
 import { updateOrderStatus } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import Link from "next/link";
 import { CreateOrderDialog } from "./create-order-dialog";
 
 interface HospitalOrdersClientPageProps {
     initialOrders: Order[];
-    cafInventory: Product[];
     hospitalUnitId: string;
 }
 
-export function HospitalOrdersClientPage({ initialOrders, cafInventory, hospitalUnitId }: HospitalOrdersClientPageProps) {
+export function HospitalOrdersClientPage({ initialOrders, hospitalUnitId }: HospitalOrdersClientPageProps) {
     const { toast } = useToast();
     const router = useRouter();
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -93,14 +92,20 @@ export function HospitalOrdersClientPage({ initialOrders, cafInventory, hospital
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
                             <CardTitle>Pedidos e Recebimentos</CardTitle>
-                            <CardDescription>Visualize remessas do CAF e crie novos pedidos de reposição.</CardDescription>
+                            <CardDescription>Visualize remessas do CAF, crie novos pedidos e defina seu pedido padrão.</CardDescription>
                         </div>
-                        <CreateOrderDialog 
-                            cafInventory={cafInventory}
-                            hospitalUnitId={hospitalUnitId}
-                            onOrderCreated={handleOrderCreated}
-                            trigger={<Button><PlusCircle className="mr-2 h-4 w-4" /> Fazer Pedido ao CAF</Button>} 
-                        />
+                        <div className="flex gap-2 flex-wrap">
+                            <Button asChild variant="outline">
+                                <Link href="/dashboard/hospital/orders/template">
+                                    <Server className="mr-2 h-4 w-4" /> Definir Pedido Padrão
+                                </Link>
+                            </Button>
+                            <CreateOrderDialog 
+                                hospitalUnitId={hospitalUnitId}
+                                onOrderCreated={handleOrderCreated}
+                                trigger={<Button><PlusCircle className="mr-2 h-4 w-4" /> Fazer Pedido ao CAF</Button>} 
+                            />
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>

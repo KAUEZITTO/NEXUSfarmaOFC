@@ -1,105 +1,117 @@
-
 'use client';
 
-import { useState } from 'react';
-import type { Product, OrderItem, OrderType } from '@/lib/types';
+import { useState, useEffect } from 'react';
+import type { OrderItem, OrderType, HospitalOrderTemplateItem } from '@/lib/types';
+import { getHospitalOrderTemplate, addOrder } from '@/lib/actions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AddItemsManuallyDialog } from '@/components/dashboard/add-items-manually-dialog';
-import { ListPlus, PackagePlus, X, Send, Loader2 } from 'lucide-react';
+import { PackagePlus, Send, Loader2, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { addOrder } from '@/lib/actions';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 
-type RemessaItem = OrderItem & { internalId: string };
-const itemCategories: Product['category'][] = ['Medicamento', 'Material Técnico', 'Tiras de Glicemia/Lancetas', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)'];
+type RequestedItem = OrderItem & { internalId: string };
 
 interface CreateOrderDialogProps {
     trigger: React.ReactNode;
-    cafInventory: Product[];
     hospitalUnitId: string;
     onOrderCreated: () => void;
 }
 
-export function CreateOrderDialog({ trigger, cafInventory, hospitalUnitId, onOrderCreated }: CreateOrderDialogProps) {
+export function CreateOrderDialog({ trigger, hospitalUnitId, onOrderCreated }: CreateOrderDialogProps) {
     const { toast } = useToast();
     const [isOpen, setIsOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [items, setItems] = useState<RemessaItem[]>([]);
-    const [selectedCategories, setSelectedCategories] = useState<Product['category'][]>([]);
+    
+    // Form state
+    const [standardItems, setStandardItems] = useState<RequestedItem[]>([]);
+    const [otherItems, setOtherItems] = useState<RequestedItem[]>([]);
     const [orderType, setOrderType] = useState<OrderType>('Pedido Mensal');
     const [notes, setNotes] = useState('');
 
-    const handleCategoryToggle = (category: Product['category']) => {
-        setSelectedCategories(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]);
-    };
-
-    const addProductToOrder = (product: Product, quantity: number) => {
-        const existingItem = items.find(item => item.productId === product.id);
-        if (existingItem) {
-            setItems(items.map(item => item.productId === product.id ? { ...item, quantity: item.quantity + quantity } : item));
-        } else {
-            const newItem: RemessaItem = {
-                internalId: `item-${Date.now()}-${Math.random()}`,
-                productId: product.id,
-                name: product.name,
-                quantity: quantity,
-                batch: product.batch,
-                expiryDate: product.expiryDate,
-                presentation: product.presentation,
-                category: product.category,
+    useEffect(() => {
+        if (isOpen) {
+            const fetchTemplate = async () => {
+                setIsLoading(true);
+                try {
+                    const template = await getHospitalOrderTemplate();
+                    const requestedItems: RequestedItem[] = template.map(item => ({
+                        ...item,
+                        internalId: `std-${item.productId}`,
+                        quantity: 0,
+                    }));
+                    setStandardItems(requestedItems);
+                } catch (error) {
+                    toast({ variant: 'destructive', title: 'Erro ao Carregar', description: 'Não foi possível carregar o pedido padrão.'});
+                } finally {
+                    setIsLoading(false);
+                }
             };
-            setItems(prev => [newItem, ...prev]);
+            fetchTemplate();
+        } else {
+            // Reset state on close
+            setStandardItems([]);
+            setOtherItems([]);
+            setOrderType('Pedido Mensal');
+            setNotes('');
         }
-        toast({ title: "Item Adicionado", description: `${product.name} foi adicionado ao seu pedido.` });
-        return true; // Assume success, as we are requesting from CAF's inventory
+    }, [isOpen, toast]);
+
+    const handleQuantityChange = (id: string, newQuantity: number, isStandard: boolean) => {
+        const list = isStandard ? standardItems : otherItems;
+        const setList = isStandard ? setStandardItems : setOtherItems;
+        setList(list.map(item => item.internalId === id ? { ...item, quantity: newQuantity >= 0 ? newQuantity : 0 } : item));
     };
 
-    const handleRemoveItem = (id: string) => {
-        setItems(items.filter(item => item.internalId !== id));
+    const handleAddOtherItem = () => {
+        setOtherItems(prev => [...prev, {
+            internalId: `other-${Date.now()}`,
+            productId: `other-${Date.now()}`, // Placeholder ID
+            name: '',
+            presentation: '',
+            category: 'Outro',
+            quantity: 1,
+        }]);
     };
 
-    const handleItemQuantityChange = (id: string, newQuantity: number) => {
-        setItems(items.map(item => item.internalId === id ? { ...item, quantity: newQuantity >= 1 ? newQuantity : 1 } : item));
+    const handleOtherItemChange = (id: string, field: 'name' | 'presentation', value: string) => {
+        setOtherItems(otherItems.map(item => item.internalId === id ? { ...item, [field]: value } : item));
+    };
+
+    const handleRemoveOtherItem = (id: string) => {
+        setOtherItems(otherItems.filter(item => item.internalId !== id));
     };
 
     const handleSendOrder = async () => {
-        if (items.length === 0) {
-            toast({ variant: "destructive", title: "Pedido Vazio", description: "Adicione pelo menos um item ao pedido." });
+        const allItems = [...standardItems, ...otherItems];
+        const itemsToSubmit = allItems.filter(item => item.quantity > 0 && item.name);
+        
+        if (itemsToSubmit.length === 0) {
+            toast({ variant: "destructive", title: "Pedido Vazio", description: "Adicione a quantidade de pelo menos um item." });
             return;
         }
+
         setIsSaving(true);
         try {
-            // We need the hospital unit's name, which we don't have here. 
-            // The action can fetch it based on hospitalUnitId.
-            // For now, let's pass a placeholder.
             await addOrder({
                 unitId: hospitalUnitId,
-                unitName: 'Hospital Municipal', // This should be fetched dynamically
+                unitName: 'Hospital Municipal', // The action should confirm this name
                 orderType,
-                items: items.map(({ internalId, ...rest }) => rest),
+                items: itemsToSubmit.map(({ internalId, ...rest }) => rest),
                 notes,
             });
             onOrderCreated();
             setIsOpen(false);
-            setItems([]);
-            setNotes('');
-            setSelectedCategories([]);
         } catch (error) {
             toast({ variant: 'destructive', title: "Erro ao Enviar", description: "Não foi possível enviar o pedido." });
         } finally {
             setIsSaving(false);
         }
     };
-    
-    const productsForManualAdd = selectedCategories.length > 0 
-        ? cafInventory.filter(p => selectedCategories.includes(p.category)) 
-        : [];
-
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -107,73 +119,85 @@ export function CreateOrderDialog({ trigger, cafInventory, hospitalUnitId, onOrd
             <DialogContent className="max-w-4xl">
                 <DialogHeader>
                     <DialogTitle>Criar Novo Pedido para o CAF</DialogTitle>
-                    <DialogDescription>Selecione os itens e quantidades que deseja solicitar do Centro de Abastecimento Farmacêutico.</DialogDescription>
+                    <DialogDescription>Preencha as quantidades dos itens do seu pedido padrão ou adicione outros itens.</DialogDescription>
                 </DialogHeader>
-                <div className="grid md:grid-cols-2 gap-6 py-4">
-                    <div className="space-y-4">
-                        <h3 className="font-semibold">1. Filtre e adicione itens</h3>
-                         <div className="flex flex-wrap gap-2">
-                            {itemCategories.map(cat => (
-                                <Button key={cat} variant={selectedCategories.includes(cat) ? 'default' : 'outline'} size="sm" onClick={() => handleCategoryToggle(cat)}>{cat}</Button>
-                            ))}
-                        </div>
-                        <AddItemsManuallyDialog
-                            allProducts={productsForManualAdd}
-                            selectedCategories={selectedCategories}
-                            onAddProduct={addProductToOrder}
-                            trigger={<Button variant="secondary" className="w-full" disabled={selectedCategories.length === 0}><ListPlus className="mr-2 h-4 w-4" /> Adicionar Itens</Button>}
-                        />
-                         <div className="space-y-2">
-                            <label className="font-medium">Tipo de Pedido</label>
-                            <Select value={orderType} onValueChange={(v) => setOrderType(v as OrderType)}>
-                                <SelectTrigger><SelectValue/></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Pedido Mensal">Pedido Mensal</SelectItem>
-                                    <SelectItem value="Pedido Extra">Pedido Extra</SelectItem>
-                                    <SelectItem value="Pedido Urgente">Pedido Urgente</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="font-medium">Justificativa / Observações</label>
-                            <Textarea placeholder="Ex: Aumento da demanda no setor de emergência." value={notes} onChange={e => setNotes(e.target.value)} />
-                        </div>
+                {isLoading ? (
+                    <div className="flex justify-center items-center h-96">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     </div>
-                     <div>
-                        <h3 className="font-semibold mb-4 flex items-center gap-2"><PackagePlus className="h-5 w-5"/> Itens no Pedido</h3>
-                        <ScrollArea className="h-96">
-                            {items.length > 0 ? (
+                ) : (
+                    <div className="grid md:grid-cols-2 gap-6 py-4">
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="font-medium">Tipo de Pedido</label>
+                                <Select value={orderType} onValueChange={(v) => setOrderType(v as OrderType)}>
+                                    <SelectTrigger><SelectValue/></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Pedido Mensal">Pedido Mensal</SelectItem>
+                                        <SelectItem value="Pedido Extra">Pedido Extra</SelectItem>
+                                        <SelectItem value="Pedido Urgente">Pedido Urgente</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="font-medium">Justificativa / Observações</label>
+                                <Textarea placeholder="Ex: Aumento da demanda no setor de emergência." value={notes} onChange={e => setNotes(e.target.value)} />
+                            </div>
+                        </div>
+                        <div>
+                            <h3 className="font-semibold mb-4 flex items-center gap-2"><PackagePlus className="h-5 w-5"/> Itens do Pedido</h3>
+                            <ScrollArea className="h-96">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Produto</TableHead>
                                             <TableHead className="w-[100px]">Qtd.</TableHead>
-                                            <TableHead className="w-[50px]"></TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {items.map((item) => (
+                                        {standardItems.map((item) => (
                                             <TableRow key={item.internalId}>
                                                 <TableCell className="font-medium">{item.name} <span className="text-muted-foreground text-xs">({item.presentation})</span></TableCell>
                                                 <TableCell>
-                                                    <Input type="number" min="1" value={item.quantity} onChange={(e) => handleItemQuantityChange(item.internalId, parseInt(e.target.value, 10) || 0)} className="w-20 h-8" />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.internalId)}><X className="h-4 w-4 text-destructive" /></Button>
+                                                    <Input type="number" min="0" value={item.quantity} onChange={(e) => handleQuantityChange(item.internalId, parseInt(e.target.value, 10) || 0, true)} className="w-20 h-8" />
                                                 </TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>
                                 </Table>
-                            ) : (
-                                <div className="text-center h-full text-muted-foreground flex items-center justify-center border rounded-md">Aguardando adição de itens...</div>
-                            )}
-                        </ScrollArea>
+                                <div className="mt-4">
+                                    <h4 className="font-semibold text-sm mb-2">Outros Itens</h4>
+                                    {otherItems.length > 0 && (
+                                        <Table>
+                                             <TableBody>
+                                                {otherItems.map((item) => (
+                                                     <TableRow key={item.internalId}>
+                                                        <TableCell className='flex gap-2'>
+                                                            <Input placeholder='Nome do item' value={item.name} onChange={e => handleOtherItemChange(item.internalId, 'name', e.target.value)} />
+                                                            <Input placeholder='Apresentação' value={item.presentation} onChange={e => handleOtherItemChange(item.internalId, 'presentation', e.target.value)} />
+                                                        </TableCell>
+                                                         <TableCell>
+                                                            <Input type="number" min="1" value={item.quantity} onChange={(e) => handleQuantityChange(item.internalId, parseInt(e.target.value, 10) || 0, false)} className="w-20 h-8" />
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Button variant="ghost" size="icon" onClick={() => handleRemoveOtherItem(item.internalId)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                        </TableCell>
+                                                     </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    )}
+                                    <Button variant="outline" size="sm" className="mt-2" onClick={handleAddOtherItem}>
+                                        <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Outro Item
+                                    </Button>
+                                </div>
+                            </ScrollArea>
+                        </div>
                     </div>
-                </div>
+                )}
                 <DialogFooter>
                     <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
-                    <Button onClick={handleSendOrder} disabled={isSaving || items.length === 0}>
+                    <Button onClick={handleSendOrder} disabled={isSaving || isLoading}>
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Send className="mr-2 h-4 w-4"/>}
                         Enviar Pedido
                     </Button>
@@ -182,4 +206,3 @@ export function CreateOrderDialog({ trigger, cafInventory, hospitalUnitId, onOrd
         </Dialog>
     );
 }
-
