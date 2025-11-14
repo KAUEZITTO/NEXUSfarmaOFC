@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { DataTable } from '@/components/ui/data-table';
@@ -49,16 +49,26 @@ import { useToast } from '@/hooks/use-toast';
 interface OrdersClientPageProps {
   initialOrders: Order[];
   cafInventory: Product[];
+  hospitalInventory: Product[];
 }
 
-export function OrdersClientPage({ initialOrders, cafInventory }: OrdersClientPageProps) {
+export function OrdersClientPage({ initialOrders, cafInventory, hospitalInventory }: OrdersClientPageProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
 
-  const cafInventoryMap = new Map(cafInventory.map(p => [p.id, p.quantity]));
+  // Map for Hospital's inventory by product name and presentation
+  const hospitalInventoryMap = useMemo(() => {
+    const map = new Map<string, number>();
+    hospitalInventory.forEach(product => {
+      const key = `${product.name}|${product.presentation}`;
+      map.set(key, (map.get(key) || 0) + product.quantity);
+    });
+    return map;
+  }, [hospitalInventory]);
+
 
   const filteredOrders = initialOrders.filter(
     (order) =>
@@ -259,19 +269,13 @@ export function OrdersClientPage({ initialOrders, cafInventory }: OrdersClientPa
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Histórico de Pedidos</CardTitle>
-          <CardDescription>
-            Visualize todos os pedidos enviados para as unidades de saúde.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
-            <Input
-              placeholder="Filtrar por nome da unidade ou ID..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
-            />
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <CardTitle>Histórico de Pedidos</CardTitle>
+              <CardDescription>
+                Visualize todos os pedidos enviados para as unidades de saúde.
+              </CardDescription>
+            </div>
             <Button asChild>
               <Link href="/dashboard/orders/new">
                 <PlusCircle className="mr-2 h-4 w-4" />
@@ -279,8 +283,20 @@ export function OrdersClientPage({ initialOrders, cafInventory }: OrdersClientPa
               </Link>
             </Button>
           </div>
-
-          <DataTable columns={tableColumns} data={filteredOrders} />
+        </CardHeader>
+        <CardContent>
+          <div className="relative mt-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Filtrar por nome da unidade ou ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 max-w-sm"
+                />
+            </div>
+          <div className="mt-4">
+            <DataTable columns={tableColumns} data={filteredOrders} />
+          </div>
         </CardContent>
       </Card>
 
@@ -298,18 +314,20 @@ export function OrdersClientPage({ initialOrders, cafInventory }: OrdersClientPa
                     <TableRow>
                         <TableHead className="w-[50%]">Item</TableHead>
                         <TableHead>Qtd. Pedida</TableHead>
-                        <TableHead>Qtd. em Estoque (CAF)</TableHead>
+                        <TableHead>Estoque Atual (Hospital)</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {selectedOrder?.items.map((item) => {
-                       const stockQuantity = cafInventoryMap.get(item.productId) ?? 0;
+                       const itemKey = `${item.name}|${item.presentation}`;
+                       const stockQuantity = hospitalInventoryMap.get(itemKey) ?? 0;
                        const hasEnoughStock = stockQuantity >= item.quantity;
+                       
                        return (
                          <TableRow key={item.productId + (item.batch || '')}>
                             <TableCell className="font-medium">{item.name} <span className="text-muted-foreground text-xs">({item.presentation})</span></TableCell>
                             <TableCell>{item.quantity}</TableCell>
-                            <TableCell className={cn(hasEnoughStock ? 'text-green-600' : 'text-destructive font-bold')}>
+                            <TableCell className={cn(hasEnoughStock ? '' : 'text-orange-500 font-bold')}>
                                 {stockQuantity}
                             </TableCell>
                          </TableRow>

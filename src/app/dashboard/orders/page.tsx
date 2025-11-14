@@ -33,15 +33,20 @@ function OrdersSkeleton() {
 }
 
 export default async function OrdersPage() {
-    const [orders, cafInventory] = await Promise.all([
+    const [orders, cafInventory, hospitalInventory] = await Promise.all([
       getOrders(),
       getProducts('CAF'),
+      getProducts('Hospital'),
     ]);
     const sortedOrders = orders.sort((a, b) => new Date(b.sentDate).getTime() - new Date(a.sentDate).getTime());
 
     return (
         <Suspense fallback={<OrdersSkeleton />}>
-            <OrdersClientPage initialOrders={sortedOrders} cafInventory={cafInventory} />
+            <OrdersClientPage 
+              initialOrders={sortedOrders} 
+              cafInventory={cafInventory} 
+              hospitalInventory={hospitalInventory}
+            />
         </Suspense>
     );
 }
