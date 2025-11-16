@@ -1,13 +1,11 @@
 
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import type { User as AppUser, UserLocation } from '@/lib/types';
+import type { User as AppUser } from '@/lib/types';
 import { readData, getUnits } from '@/lib/data';
 import { KVAdapter } from '@/lib/kv-adapter';
 import { kv } from '@/lib/server/kv.server';
 import { updateUserLastSeen } from '@/lib/actions';
-import { getAdminApp } from '@/lib/firebase/admin';
-
 
 /**
  * Busca um usuário no nosso banco de dados (Vercel KV) pelo email.
@@ -16,7 +14,7 @@ async function getUserByEmailFromDb(email: string): Promise<AppUser | null> {
   if (!email) return null;
   try {
     const users = await readData<AppUser>('users');
-    const user = users.find(u => u.email === email);
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     return user || null;
   } catch (error) {
     console.error("CRITICAL: Falha ao ler dados do usuário do Vercel KV.", error);
@@ -39,8 +37,7 @@ export const authOptions: NextAuthOptions = {
       name: 'Credentials',
       credentials: {
         email: { label: "Email", type: "email" },
-        // A senha é recebida do cliente, mas não será usada para re-autenticar aqui.
-        // A presença dela é apenas para compatibilidade.
+        // A senha é opcional aqui, pois a validação real ocorre no cliente com o Firebase.
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials: any) {
@@ -56,10 +53,10 @@ export const authOptions: NextAuthOptions = {
             const userFromDb = await getUserByEmailFromDb(credentials.email);
             
             if (!userFromDb) {
-                console.error(`[NextAuth][Authorize] Error: Usuário com email ${credentials.email} autenticado pelo Firebase, mas não encontrado no banco de dados KV.`);
+                console.error(`[NextAuth][Authorize] Error: Usuário com email ${credentials.email} autenticado, mas não encontrado no banco de dados KV.`);
                 return null; // Usuário não existe no nosso sistema, nega a sessão.
             }
-
+            
             // Hardcoded admin override
             if (userFromDb.email === 'kauemoreiraofc2@gmail.com') {
               userFromDb.accessLevel = 'Admin';
@@ -100,6 +97,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    // O callback `jwt` não é mais necessário com a estratégia 'database'
     async session({ session, user }) {
         if (session.user) {
             session.user.id = user.id;
