@@ -40,7 +40,6 @@ export function LoginForm() {
     setIsLoading(true);
     setError(null);
 
-    // Etapa 1: Autenticar com o Firebase no lado do cliente
     try {
       if (!firebaseApp) {
         throw new Error("Firebase não está inicializado.");
@@ -48,28 +47,25 @@ export function LoginForm() {
       const auth = getAuth(firebaseApp);
       await signInWithEmailAndPassword(auth, email, password);
 
-      // Etapa 2: Se a autenticação do Firebase for bem-sucedida, criar a sessão do NextAuth
       const result = await signIn('credentials', {
         email,
-        password, // A senha é enviada, mas o authorize irá ignorá-la e confiar na validação do Firebase.
+        password,
         redirect: false,
       });
       
       if (result?.error) {
-        // Isso pode acontecer se o usuário existir no Firebase Auth mas não no nosso banco de dados KV
         console.error("NextAuth signIn error:", result.error);
         if (result.error === 'CredentialsSignin') {
-          setError('Usuário autenticado, mas não encontrado no sistema. Contate o suporte.');
+          setError('Usuário autenticado, mas não encontrado no sistema ou credenciais inválidas. Contate o suporte se o problema persistir.');
         } else {
-          setError('Ocorreu um erro ao criar sua sessão. Tente novamente.');
+           setError(`Ocorreu um erro ao criar sua sessão: ${result.error}. Tente novamente.`);
         }
       } else if (result?.ok) {
         router.push('/dashboard');
-        router.refresh();
+        router.refresh(); // Garante que a sessão seja atualizada
       }
 
     } catch (firebaseError: any) {
-      // Tratar erros de login do Firebase
       if (firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
         setError('Email ou senha inválidos.');
       } else {

@@ -1,3 +1,4 @@
+
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { User as AppUser } from '@/lib/types';
@@ -5,8 +6,6 @@ import { readData, getUnits } from '@/lib/data';
 import { KVAdapter } from '@/lib/kv-adapter';
 import { kv } from '@/lib/server/kv.server';
 import { updateUserLastSeen } from '@/lib/actions';
-import { getAdminApp } from '@/lib/firebase/admin';
-import { getAuth } from 'firebase-admin/auth';
 
 /**
  * Busca um usuário no nosso banco de dados (Vercel KV) pelo email.
@@ -41,20 +40,20 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials: any) {
-        if (!credentials?.email) {
-          console.error("[NextAuth][Authorize] Error: Email não fornecido.");
+        if (!credentials?.email || !credentials.password) {
+          console.error("[NextAuth][Authorize] Error: Email ou senha não fornecidos.");
           return null;
         }
 
         try {
-            // A função authorize agora confia que o Firebase já validou a senha no cliente.
-            // Sua única responsabilidade é buscar o usuário no nosso banco de dados (KV)
-            // e construir o objeto de sessão.
+            // A responsabilidade da função authorize é APENAS buscar o usuário
+            // no banco de dados e retornar. A validação de senha é feita
+            // pelo Firebase no lado do cliente antes de chamar o signIn.
             const userFromDb = await getUserByEmailFromDb(credentials.email);
             
             if (!userFromDb) {
                 console.error(`[NextAuth][Authorize] Error: Usuário com email ${credentials.email} autenticado, mas não encontrado no banco de dados KV.`);
-                return null; // Usuário não existe no nosso sistema, nega a sessão.
+                return null;
             }
             
             // Hardcoded admin override
@@ -63,7 +62,6 @@ export const authOptions: NextAuthOptions = {
               userFromDb.subRole = 'Coordenador';
             }
             
-            // Find hospital unit ID if user is from hospital
             if (userFromDb.location === 'Hospital' && !userFromDb.locationId) {
                 const units = await getUnits();
                 const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
@@ -74,7 +72,6 @@ export const authOptions: NextAuthOptions = {
             
             await updateUserLastSeen(userFromDb.id);
 
-            // Retorna o objeto de usuário completo para o NextAuth criar a sessão.
             return {
               id: userFromDb.id,
               email: userFromDb.email,
@@ -91,13 +88,12 @@ export const authOptions: NextAuthOptions = {
 
         } catch (error: any) {
             console.error("[NextAuth][Authorize] Erro inesperado durante a autorização:", error);
-            return null; // Retorna null em caso de qualquer falha.
+            return null;
         }
       },
     }),
   ],
   callbacks: {
-    // O callback `jwt` não é mais necessário com a estratégia 'database'
     async session({ session, user }) {
         if (session.user) {
             session.user.id = user.id;
