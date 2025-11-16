@@ -9,8 +9,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { firebaseApp } from '@/lib/firebase/client';
 
 export function LoginForm() {
   const router = useRouter();
@@ -25,8 +23,10 @@ export function LoginForm() {
     const authError = searchParams.get('error');
     if (authError === 'Configuration') {
       setError('Ocorreu um erro de configuração no servidor. Por favor, contate o suporte.');
+    } else if (authError === 'CredentialsSignin') {
+      setError('Email ou senha inválidos. Verifique suas credenciais e tente novamente.');
     } else if (authError) {
-      setError('Ocorreu um erro de autenticação. Tente novamente.');
+      setError('Ocorreu um erro inesperado durante a autenticação. Tente novamente mais tarde.');
     }
   }, [searchParams]);
 
@@ -35,40 +35,27 @@ export function LoginForm() {
     setIsLoading(true);
     setError(null);
 
+    // O fluxo agora é simplificado: o cliente apenas envia as credenciais para o backend do NextAuth.
+    // Toda a validação acontece no servidor, dentro da função 'authorize'.
     try {
-      // Step 1: Authenticate with Firebase on the client.
-      // This is the only step that actually validates the password.
-      const auth = getAuth(firebaseApp);
-      await signInWithEmailAndPassword(auth, email, password);
-      
-      // Step 2: If Firebase auth succeeds, sign in with NextAuth.
-      // The `password` is NOT sent to the server. The `authorize` function
-      // will only use the email to fetch user data from KV.
       const result = await signIn('credentials', {
         email,
-        redirect: false,
+        password,
+        redirect: false, // Controlamos o redirecionamento manualmente.
       });
-      
+
       if (result?.error) {
+        // A função 'authorize' retornou null ou um erro, resultando em 'CredentialsSignin'.
         console.error("NextAuth signIn error:", result.error);
-        if (result.error === 'CredentialsSignin') {
-           setError('Credenciais inválidas ou usuário não encontrado no sistema.');
-        } else {
-           setError(`Ocorreu um erro ao criar sua sessão: ${result.error}`);
-        }
+        setError('Email ou senha inválidos. Verifique suas credenciais e tente novamente.');
       } else if (result?.ok) {
-        // Success! Force a full page reload to ensure the new session state is properly loaded.
+        // Sucesso! O NextAuth criou a sessão.
+        // Forçamos um recarregamento completo para o dashboard para garantir que a nova sessão seja aplicada.
         window.location.href = '/dashboard';
       }
-
-    } catch (firebaseError: any) {
-      // Handle Firebase-specific errors (wrong password, user not found).
-      if (firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
-        setError('Email ou senha inválidos.');
-      } else {
-        console.error("Firebase login error:", firebaseError);
-        setError('Ocorreu um erro ao tentar fazer login. Verifique sua conexão e tente novamente.');
-      }
+    } catch (e) {
+      console.error("Unexpected signIn error:", e);
+      setError('Ocorreu um erro de rede ou inesperado. Por favor, verifique sua conexão.');
     } finally {
       setIsLoading(false);
     }
