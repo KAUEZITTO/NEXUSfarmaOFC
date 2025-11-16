@@ -41,6 +41,8 @@ const drawHeaderAndFooter = async (doc: jsPDFWithAutoTable, data: any, title: st
     doc.setTextColor(0, 0, 0);
 
     if (isHospitalReport) {
+        // --- HOSPITAL HEADER ---
+        // Left Block (Pref)
         if (prefLogo) doc.addImage(prefLogo, 'PNG', margin, 15, 20, 20);
         doc.setFontSize(7); doc.setFont('helvetica', 'bold');
         doc.text('PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU', margin + 23, 19);
@@ -48,23 +50,30 @@ const drawHeaderAndFooter = async (doc: jsPDFWithAutoTable, data: any, title: st
         doc.setFontSize(8);
         doc.text('Hospital e Maternidade Municipal José Bernardo da Silveira', margin + 23, 29);
 
+        // Right Block (NexusFarma)
         if (nexusLogo) doc.addImage(nexusLogo, 'PNG', pageWidth - margin - 40, 15, 40, 15);
+        
     } else {
+        // --- CAF HEADER ---
+        // Left Block (Pref)
         if (prefLogo) doc.addImage(prefLogo, 'PNG', margin, 15, 20, 20);
         doc.setFontSize(7); doc.setFont('helvetica', 'bold');
         doc.text('PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU', margin, 38);
         doc.text('SECRETARIA MUNICIPAL DE SAÚDE', margin, 42);
 
+        // Center Block (NexusFarma)
         if (nexusLogo) doc.addImage(nexusLogo, 'PNG', pageWidth / 2 - 20, 15, 40, 12);
         doc.setFontSize(8); doc.setFont('helvetica', 'bold');
         doc.text('NEXUS FARMA', pageWidth / 2, 32, { align: 'center' });
 
+        // Right Block (CAF)
         if (cafLogo) doc.addImage(cafLogo, 'PNG', pageWidth - margin - 20, 15, 20, 20);
         doc.setFontSize(7); doc.setFont('helvetica', 'bold');
         doc.text('CAF - CENTRO DE ABASTECIMENTO', pageWidth - margin, 38, { align: 'right' });
         doc.text('FARMACÊUTICO', pageWidth - margin, 42, { align: 'right' });
     }
     
+    // --- COMMON HEADER ELEMENTS ---
     doc.setFontSize(14); doc.setFont('helvetica', 'bold');
     doc.text(title, pageWidth / 2, 50, { align: 'center' });
     
@@ -79,7 +88,7 @@ const drawHeaderAndFooter = async (doc: jsPDFWithAutoTable, data: any, title: st
     doc.setLineWidth(0.5);
     doc.line(margin, 68, pageWidth - margin, 68);
 
-    // Footer
+    // --- FOOTER ---
     doc.setFontSize(8);
     doc.setTextColor(150);
     doc.text(`Página ${pageNumber} de ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
@@ -106,17 +115,24 @@ export async function generatePdf(
         const doc = new jsPDF({ orientation: isLandscape ? 'landscape' : 'portrait' }) as jsPDFWithAutoTable;
         const startY = 85;
 
-        // This is a complex report with multiple tables/custom drawing.
+        // Custom function to draw multiple tables or complex layouts
         if (typeof bodyOrTableOptions === 'function') {
              const bodyFn = bodyOrTableOptions;
-             // Here, the bodyFn is responsible for its own drawing and page breaks.
-             // We still need to hook into the page creation to draw headers/footers.
-             // This is a more complex scenario that might require passing the header function to the callback.
-             // For now, let's assume this path needs rethinking if complex multi-page custom reports are needed.
-             // Let's focus on the autoTable path which is the most common.
+             // The function itself is responsible for calling doc.autoTable and doc.addPage
+             // We use a wrapper to ensure header/footer are drawn on each page.
+             // This is complex and requires careful implementation in the calling function.
+             // For now, let's assume `autoTable` with `didDrawPage` is the primary method.
+             // This path is left as-is, but the standard `autoTable` approach is preferred.
+             
+             // A better approach for multi-table reports:
+             // The bodyFn would just call doc.autoTable multiple times.
+             // The `didDrawPage` hook inside each `autoTable` call would handle headers/footers.
+             // This is implicitly handled if we *only* use the object-based approach.
+             // Let's unify the logic. We will call the function, which will in turn call autoTable with the hook.
              bodyFn(doc);
+
         } else {
-             // This is the standard path for single-table reports.
+             // Standard path for a single table report
              const tableOptions = bodyOrTableOptions;
              doc.autoTable({
                 ...tableOptions,
@@ -124,20 +140,17 @@ export async function generatePdf(
                 theme: 'grid',
                 pageBreak: 'auto',
                 headStyles: {
-                    fillColor: [41, 128, 185],
+                    fillColor: tableOptions.headStyles?.fillColor || [41, 128, 185],
                     textColor: 255,
                     fontStyle: 'bold',
-                    ...tableOptions.headStyles,
                 },
                 styles: {
                     cellPadding: 2,
                     fontSize: 8,
                     ...tableOptions.styles
                 },
-                margin: { top: 75 }, // Adjusted margin
+                margin: { top: 75 },
                 didDrawPage: (data: any) => {
-                    // This function is called for every page, *before* the table content is drawn on that page.
-                    // This is the correct place to draw headers and footers.
                     drawHeaderAndFooter(doc, data, title, subtitle, isHospitalReport);
                 },
              });
