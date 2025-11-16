@@ -4,6 +4,8 @@ import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { User as AppUser, UserLocation } from '@/lib/types';
 import { readData, getUnits } from '@/lib/data';
+import { KVAdapter } from '@/lib/kv-adapter';
+import { kv } from '@/lib/server/kv.server';
 
 /**
  * Busca um usuário no nosso banco de dados (Vercel KV) pelo email.
@@ -24,10 +26,14 @@ async function getUserByEmailFromDb(email: string): Promise<AppUser | null> {
  * Options for NextAuth.js configuration.
  */
 export const authOptions: NextAuthOptions = {
+  // A estratégia 'database' armazena a sessão no banco de dados (Vercel KV),
+  // enviando apenas um ID de sessão para o cliente, o que resolve o erro
+  // "REQUEST_HEADER_TOO_LARGE" ao evitar cookies grandes.
   session: {
-    strategy: 'jwt',
+    strategy: 'database',
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
+  adapter: KVAdapter(kv),
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
@@ -65,49 +71,33 @@ export const authOptions: NextAuthOptions = {
         }
 
         return {
-          id: credentials.uid,
+          id: userFromDb.id,
           email: userFromDb.email,
-          ...userFromDb // Pass the whole user object to the jwt callback
+          name: userFromDb.name,
+          image: userFromDb.image,
+          birthdate: userFromDb.birthdate,
+          location: userFromDb.location,
+          locationId: userFromDb.locationId,
+          role: userFromDb.role,
+          subRole: userFromDb.subRole,
+          accessLevel: userFromDb.accessLevel,
+          avatarColor: userFromDb.avatarColor,
         } as AppUser;
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
-        // This callback is only triggered on sign-in, not on every request
-        // We populate the token with the user data from authorize once.
-        if (user) {
-            // Hardcoded admin override on session creation
-            if (user.email === 'kauemoreiraofc2@gmail.com') {
-                token.accessLevel = 'Admin';
-                token.subRole = 'Coordenador';
-            } else {
-                token.accessLevel = user.accessLevel;
-                token.subRole = user.subRole;
-            }
-
-            token.id = user.id;
-            token.location = user.location;
-            token.locationId = user.locationId;
-            token.role = user.role;
-            token.name = user.name;
-            token.birthdate = user.birthdate;
-            token.avatarColor = user.avatarColor;
-        }
-        
-        return token;
-    },
-    async session({ session, token }) {
+    async session({ session, user }) {
         if (session.user) {
-            session.user.id = token.id as string;
-            session.user.location = token.location as UserLocation;
-            session.user.locationId = token.locationId as string;
-            session.user.accessLevel = token.accessLevel as AppUser['accessLevel'];
-            session.user.role = token.role as AppUser['role'];
-            session.user.subRole = token.subRole as AppUser['subRole'];
-            session.user.name = token.name;
-            session.user.birthdate = token.birthdate;
-            session.user.avatarColor = token.avatarColor as string;
+            session.user.id = user.id;
+            session.user.location = user.location;
+            session.user.locationId = user.locationId;
+            session.user.accessLevel = user.accessLevel;
+            session.user.role = user.role;
+            session.user.subRole = user.subRole;
+            session.user.name = user.name;
+            session.user.birthdate = user.birthdate;
+            session.user.avatarColor = user.avatarColor;
         }
         return session;
     }
