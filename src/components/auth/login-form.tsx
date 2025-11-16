@@ -41,30 +41,34 @@ export function LoginForm() {
     setError(null);
 
     try {
-      // Step 1: Authenticate with Firebase on the client side
+      // Etapa 1: Autenticar com o Firebase no lado do cliente
       const auth = getAuth(firebaseApp);
       await signInWithEmailAndPassword(auth, email, password);
       
-      // Step 2: If Firebase auth is successful, sign in with NextAuth to create a session
+      // Etapa 2: Se a autenticação do Firebase for bem-sucedida,
+      // chame o signIn do NextAuth para criar a sessão do servidor.
+      // Passamos apenas o email, pois a senha já foi validada.
       const result = await signIn('credentials', {
         email,
-        password, // Still passing password, authorize function will use email only.
-        redirect: false,
+        password, // O password ainda é enviado, mas o `authorize` o ignora.
+        redirect: false, // Gerenciamos o redirecionamento manualmente.
       });
       
       if (result?.error) {
         console.error("NextAuth signIn error:", result.error);
-        if (result.error === 'CredentialsSignin') {
-          setError('Usuário autenticado, mas não encontrado no sistema ou credenciais inválidas. Contate o suporte se o problema persistir.');
+        if (result.error === 'CredentialsSignin' || result.error === 'Configuration') {
+          setError('Usuário autenticado, mas não encontrado no sistema ou erro de configuração. Contate o suporte se o problema persistir.');
         } else {
            setError(`Ocorreu um erro ao criar sua sessão: ${result.error}. Tente novamente.`);
         }
       } else if (result?.ok) {
+        // Redireciona para o dashboard em caso de sucesso
         router.push('/dashboard');
-        router.refresh(); // Ensure session is updated across the app
+        router.refresh(); // Garante que a sessão seja atualizada em toda a aplicação
       }
 
     } catch (firebaseError: any) {
+      // Captura erros específicos do Firebase
       if (firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
         setError('Email ou senha inválidos.');
       } else {

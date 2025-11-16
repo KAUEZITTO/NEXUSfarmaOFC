@@ -37,6 +37,7 @@ export const authOptions: NextAuthOptions = {
       name: 'Credentials',
       credentials: {
         email: { label: "Email", type: "email" },
+        // A senha não é mais usada diretamente aqui, mas o campo é esperado.
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials: any) {
@@ -46,22 +47,23 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-            // The password is now validated on the client with Firebase Auth.
-            // The `authorize` function's only job is to find the user in our DB
-            // and return it to NextAuth to create a session.
+            // A senha agora é validada no cliente com o Firebase Auth.
+            // A única responsabilidade desta função é encontrar o usuário no nosso banco de dados
+            // e retorná-lo para o NextAuth criar a sessão.
             const userFromDb = await getUserByEmailFromDb(credentials.email);
             
             if (!userFromDb) {
-                console.error(`[NextAuth][Authorize] Error: Usuário com email ${credentials.email} autenticado, mas não encontrado no banco de dados KV.`);
+                console.error(`[NextAuth][Authorize] Error: Usuário com email ${credentials.email} autenticado no Firebase, mas não encontrado no banco de dados KV.`);
                 return null;
             }
             
-            // Hardcoded admin override
+            // Hardcoded admin override for development/super user
             if (userFromDb.email === 'kauemoreiraofc2@gmail.com') {
               userFromDb.accessLevel = 'Admin';
               userFromDb.subRole = 'Coordenador';
             }
             
+            // Ensure hospital users have their locationId set
             if (userFromDb.location === 'Hospital' && !userFromDb.locationId) {
                 const units = await getUnits();
                 const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
@@ -70,8 +72,10 @@ export const authOptions: NextAuthOptions = {
                 }
             }
             
+            // Update last seen status
             await updateUserLastSeen(userFromDb.id);
 
+            // Return the user object for NextAuth to create a session
             return {
               id: userFromDb.id,
               email: userFromDb.email,
@@ -94,6 +98,9 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    // A sessão agora pega os dados do banco de dados, então o callback jwt não é mais necessário
+    // para preencher os dados. O callback de session é usado para estender o objeto de sessão
+    // com os dados do usuário do banco de dados.
     async session({ session, user }) {
         if (session.user) {
             session.user.id = user.id;
@@ -111,6 +118,6 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/login',
-    error: '/login',
+    error: '/login', // Redireciona para o login em caso de qualquer erro de autenticação
   },
 };
