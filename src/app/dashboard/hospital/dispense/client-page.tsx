@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState }from 'react';
@@ -43,14 +44,14 @@ export function DispenseToSectorClientPage({ initialProducts, initialDispensatio
             return false;
         }
 
-        const existingItem = items.find(item => item.productId === product.id);
-        if (existingItem) {
-            const newQuantity = existingItem.quantity + quantity;
+        const existingItemIndex = items.findIndex(item => item.productId === product.id);
+        if (existingItemIndex > -1) {
+            const newQuantity = items[existingItemIndex].quantity + quantity;
             if (product.quantity < newQuantity) {
                 toast({ variant: 'destructive', title: 'Estoque Insuficiente', description: `Quantidade total (${newQuantity}) excede o estoque disponível (${product.quantity}).` });
                 return false;
             }
-            setItems(items.map(item => item.productId === product.id ? { ...item, quantity: newQuantity } : item));
+            setItems(items.map((item, index) => index === existingItemIndex ? { ...item, quantity: newQuantity } : item));
         } else {
             const newItem: RemessaItem = {
                 internalId: `item-${Date.now()}-${Math.random()}`,
@@ -230,3 +231,5 @@ export function DispenseToSectorClientPage({ initialProducts, initialDispensatio
         </Card>
     );
 }
+
+    

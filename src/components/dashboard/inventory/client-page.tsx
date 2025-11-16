@@ -208,7 +208,11 @@ const groupAndFilterProducts = (products: Product[], filter: FilterCategory, sea
 
 type ActionType = 'zero' | 'delete';
 
-export function InventoryClientPage({ initialProducts }: { initialProducts: Product[] }) {
+interface InventoryClientPageProps {
+  initialProducts: Product[];
+}
+
+export function InventoryClientPage({ initialProducts }: InventoryClientPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -565,3 +569,5 @@ export function InventoryClientPage({ initialProducts }: { initialProducts: Prod
     </Card>
   );
 }
+
+    

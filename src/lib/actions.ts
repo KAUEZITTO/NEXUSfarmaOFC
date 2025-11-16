@@ -403,7 +403,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
 export async function addDispensation(dispensationData: { patientId: string; patient: Omit<Patient, 'files'>; items: DispensationItem[]; notes?: string; }): Promise<Dispensation> {
     const session = await getServerSession(authOptions);
     const dispensations = await readData<Dispensation>('dispensations');
-    const products = await getProducts('all');
+    const products = await getProducts('CAF');
     const dispensationDate = new Date().toISOString();
 
     const { files, ...patientForDispensation } = dispensationData.patient;
@@ -873,8 +873,8 @@ export async function generateEntriesAndExitsReportPDF({ movements, allProducts,
             }
 
             if (exits.length > 0) {
-                doc.addPage();
-                doc.autoTable({ startY: 85, head: [['Data', 'Produto', 'Motivo', 'Quantidade', 'Usuário']], body: exits.map(m => [ new Date(m.date).toLocaleString('pt-BR', { timeZone: 'UTC' }), m.productName, m.reason, Math.abs(m.quantityChange).toLocaleString('pt-BR'), m.user ]), theme: 'grid', headStyles: { fillColor: [220, 38, 38] } });
+                 doc.addPage();
+                 doc.autoTable({ startY: 85, head: [['Data', 'Produto', 'Motivo', 'Quantidade', 'Usuário']], body: exits.map(m => [ new Date(m.date).toLocaleString('pt-BR', { timeZone: 'UTC' }), m.productName, m.reason, Math.abs(m.quantityChange).toLocaleString('pt-BR'), m.user ]), theme: 'grid', headStyles: { fillColor: [220, 38, 38] } });
             }
         }
     );
@@ -971,7 +971,8 @@ export async function deleteHospitalSector(sectorId: string): Promise<{ success:
     const sectors = await readData<Sector>('hospitalSectors');
     const dispensations = await readData<SectorDispensation>('sectorDispensations');
 
-    if (dispensations.some(d => d.sector === sectors.find(s => s.id === sectorId)?.name)) {
+    const sectorToDelete = sectors.find(s => s.id === sectorId);
+    if (sectorToDelete && dispensations.some(d => d.sector === sectorToDelete.name)) {
         return { success: false, message: 'Não é possível excluir setores que possuem dispensações associadas.' };
     }
 
@@ -1007,7 +1008,15 @@ export async function addSectorDispensation(data: { sector: string; items: Dispe
         }
     }
     
-    await writeData('products', products);
+    // This is a critical fix: we must write back the 'products' array which includes ALL products,
+    // not just the hospital ones, otherwise we would wipe out the CAF inventory.
+    const allProducts = await getProducts('all');
+    const updatedAllProducts = allProducts.map(p => {
+        const updatedProduct = products.find(up => up.id === p.id);
+        return updatedProduct || p;
+    });
+
+    await writeData('products', updatedAllProducts);
     await writeData('sectorDispensations', [newDispensation, ...dispensations]);
 
     revalidatePath('/dashboard/hospital/dispense');
@@ -1042,7 +1051,13 @@ export async function addHospitalPatientDispensation(data: { patient: HospitalPa
         }
     }
 
-    await writeData('products', products);
+    const allProducts = await getProducts('all');
+    const updatedAllProducts = allProducts.map(p => {
+        const updatedProduct = products.find(up => up.id === p.id);
+        return updatedProduct || p;
+    });
+
+    await writeData('products', updatedAllProducts);
     await writeData('hospitalPatientDispensations', [newDispensation, ...dispensations]);
 
     revalidatePath('/dashboard/hospital/patients');
@@ -1147,3 +1162,5 @@ export async function updateHospitalOrderTemplate(templateItems: HospitalOrderTe
     await writeData('hospitalOrderTemplate', templateItems);
     revalidatePath('/dashboard/hospital/orders/template');
 }
+
+    

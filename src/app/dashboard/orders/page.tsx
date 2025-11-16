@@ -1,3 +1,4 @@
+
 import { Suspense } from 'react';
 import { getOrders, getProducts } from "@/lib/data";
 import { OrdersClientPage } from './client-page';
@@ -49,8 +50,10 @@ export default async function OrdersPage() {
             <OrdersClientPage 
               initialOrders={sortedOrders} 
               cafInventory={cafInventory} 
-              hospitalInventory={hospitalInventory}
+              hospitalInventory={hospitalInventory || []} // Ensure hospitalInventory is always an array
             />
         </Suspense>
     );
 }
+
+    

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -144,7 +145,7 @@ export function OrdersClientPage({ initialOrders, cafInventory, hospitalInventor
         return (
           <div className="flex flex-col">
             <span className="font-medium">{order.unitName}</span>
-            <span className="text-xs text-muted-foreground font-mono">ID: {order.id}</span>
+            <span className="text-xs text-muted-foreground font-mono">ID: {order.id.substring(0, 6)}...</span>
           </div>
         );
       },
@@ -327,7 +328,7 @@ export function OrdersClientPage({ initialOrders, cafInventory, hospitalInventor
                        
                        return (
                          <TableRow key={item.productId + (item.batch || '')}>
-                            <TableCell className="font-medium">{item.name} <span className="text-muted-foreground text-xs">({item.presentation})</span></TableCell>
+                            <TableCell className="font-medium">{item.name} <span className="text-muted-foreground text-xs">({item.presentation || 'N/A'})</span></TableCell>
                             <TableCell>{item.quantity}</TableCell>
                             <TableCell className={cn(hasEnoughStock ? '' : 'text-orange-500 font-bold')}>
                                 {stockQuantity}
@@ -350,3 +351,5 @@ export function OrdersClientPage({ initialOrders, cafInventory, hospitalInventor
     </>
   );
 }
+
+    
