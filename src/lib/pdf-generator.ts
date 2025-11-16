@@ -56,24 +56,19 @@ const addHeaderAndFooter = async (doc: jsPDFWithAutoTable, title: string, subtit
 
         } else {
             // --- CAF HEADER (Default) ---
-            const blockWidth = (pageWidth - (margin * 2)) / 3;
+             if (prefLogo) doc.addImage(prefLogo, 'PNG', margin, 15, 20, 20);
+             doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+             doc.text('PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU', margin, 38);
+             doc.text('SECRETARIA MUNICIPAL DE SAÚDE', margin, 42);
 
-            // Bloco Esquerda (Prefeitura)
-            if (prefLogo) doc.addImage(prefLogo, 'PNG', margin + 5, 15, 18, 18);
-            doc.setFontSize(7); doc.setFont('helvetica', 'bold');
-            doc.text('PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU', margin + 25, 22);
-            doc.text('SECRETARIA MUNICIPAL DE SAÚDE', margin + 25, 27);
+             if (nexusLogo) doc.addImage(nexusLogo, 'PNG', pageWidth / 2 - 20, 15, 40, 12);
+             doc.setFontSize(8); doc.setFont('helvetica', 'bold');
+             doc.text('NEXUS FARMA', pageWidth / 2, 32, { align: 'center' });
 
-            // Bloco Centro (NexusFarma)
-            if (nexusLogo) doc.addImage(nexusLogo, 'PNG', pageWidth / 2 - 20, 15, 40, 12);
-            doc.setFontSize(8); doc.setFont('helvetica', 'bold');
-            doc.text('NEXUS FARMA', pageWidth / 2, 32, { align: 'center' });
-
-            // Bloco Direita (CAF)
-            if (cafLogo) doc.addImage(cafLogo, 'PNG', pageWidth - margin - 23, 15, 18, 18);
-            doc.setFontSize(7); doc.setFont('helvetica', 'bold');
-            doc.text('CAF - CENTRO DE ABASTECIMENTO', pageWidth - margin - 25, 22, { align: 'right' });
-            doc.text('FARMACÊUTICO', pageWidth - margin - 25, 27, { align: 'right' });
+             if (cafLogo) doc.addImage(cafLogo, 'PNG', pageWidth - margin - 20, 15, 20, 20);
+             doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+             doc.text('CAF - CENTRO DE ABASTECIMENTO', pageWidth - margin - 23, 38, { align: 'right' });
+             doc.text('FARMACÊUTICO', pageWidth - margin - 23, 42, { align: 'right' });
         }
         
         // Common title block
@@ -106,7 +101,7 @@ export async function generatePdf(
     bodyOrTableOptions: ((doc: jsPDFWithAutoTable) => void) | object,
     isLandscape?: boolean,
     isHospitalReport?: boolean,
-): Promise<{ success: boolean; data?: string; error?: string }>
+): PdfActionResult
 
 
 export async function generatePdf(
