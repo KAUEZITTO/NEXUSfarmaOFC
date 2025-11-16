@@ -4,7 +4,7 @@
 import { revalidatePath } from 'next/cache';
 import { readData, writeData, getProducts, getAllUsers, getSectorDispensations, getUnits as getUnitsFromDb, getHospitalPatients as getHospitalPatientsFromDb, getHospitalPatientDispensations as getHospitalPatientDispensationsFromDb } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation, SectorDispensation, HospitalSector as Sector, HospitalOrderTemplateItem, HospitalPatient, HospitalPatientDispensation } from './types';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next/auth';
 import { authOptions } from '@/lib/auth';
 import { generatePdf } from '@/lib/pdf-generator';
 import { getAuth } from 'firebase-admin/auth';
@@ -488,8 +488,8 @@ const avatarColors = [
   'hsl(198.8 93.4% 42%)' // Teal
 ];
 
-export async function register(data: { name: string, email: string; password: string; role: Role; subRole?: SubRole; location?: UserLocation; }) {
-    const { name, email, password, role, subRole, location } = data;
+export async function register(data: { name: string, email: string; password: string; birthdate: string; role: Role; subRole?: SubRole; location?: UserLocation; }) {
+    const { name, email, password, birthdate, role, subRole, location } = data;
 
     try {
         const users = await getAllUsers();
@@ -533,6 +533,7 @@ export async function register(data: { name: string, email: string; password: st
             id: userRecord.uid,
             email,
             name,
+            birthdate,
             location: userLocation,
             locationId,
             role,

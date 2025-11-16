@@ -27,7 +27,7 @@ const pharmacistSubRoles: SubRole[] = ['CAF', 'Hospitalar', 'Coordenador'];
 
 
 interface RegisterFormProps {
-    registerAction: (data: { name: string, email: string; password: string; role: Role; subRole?: SubRole; location?: UserLocation }) => Promise<{ success: boolean; message: string; }>;
+    registerAction: (data: { name: string, email: string; password: string; birthdate: string; role: Role; subRole?: SubRole; location?: UserLocation }) => Promise<{ success: boolean; message: string; }>;
 }
 
 export function RegisterForm({ registerAction }: RegisterFormProps) {
@@ -51,9 +51,16 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     const confirmPassword = formData.get('confirm-password') as string;
+    const birthdate = formData.get('birthdate') as string;
     const location = formData.get('location') as UserLocation | undefined;
     const role = formData.get('role') as Role;
     const subRole = formData.get('subRole') as SubRole | undefined;
+
+    if (!birthdate) {
+        setErrorMessage("A data de nascimento é obrigatória.");
+        setIsPending(false);
+        return;
+    }
 
     if (subRole !== 'Coordenador' && !location) {
         setErrorMessage("Por favor, selecione um local (CAF ou Hospital).");
@@ -80,7 +87,7 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
     }
 
     try {
-      const result = await registerAction({ name, email, password, role, subRole, location });
+      const result = await registerAction({ name, email, password, birthdate, role, subRole, location });
       if (result.success) {
         toast({
             title: "Conta Criada com Sucesso!",
@@ -107,6 +114,10 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
        <div className="grid gap-2">
         <Label htmlFor="email">Email</Label>
         <Input id="email" name="email" type="email" placeholder="seu@email.com" required />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="birthdate">Data de Nascimento</Label>
+        <Input id="birthdate" name="birthdate" type="date" required />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="password">Senha (mínimo 6 caracteres)</Label>
