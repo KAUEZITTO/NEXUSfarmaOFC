@@ -23,13 +23,10 @@ export function LoginForm() {
 
   useEffect(() => {
     const authError = searchParams.get('error');
-    if (authError) {
-      if (authError === 'Configuration') {
-        setError('Ocorreu um erro de configuração de autenticação. Contate o suporte.');
-      }
-      else {
-        setError('Ocorreu um erro de autenticação. Tente novamente.');
-      }
+    if (authError === 'Configuration') {
+      setError('Ocorreu um erro de configuração no servidor. Por favor, contate o suporte.');
+    } else if (authError) {
+      setError('Ocorreu um erro de autenticação. Tente novamente.');
     }
   }, [searchParams]);
 
@@ -39,7 +36,8 @@ export function LoginForm() {
     setError(null);
 
     try {
-      // Etapa 1: Autenticar com o Firebase no cliente
+      // Etapa 1: Autenticar com o Firebase no cliente.
+      // Esta é a única etapa que valida a senha.
       const auth = getAuth(firebaseApp);
       await signInWithEmailAndPassword(auth, email, password);
       
@@ -47,7 +45,7 @@ export function LoginForm() {
       // A senha NÃO é enviada, apenas o email. A autorização já aconteceu.
       const result = await signIn('credentials', {
         email,
-        redirect: false,
+        redirect: false, // Nós controlaremos o redirecionamento
       });
       
       if (result?.error) {
@@ -65,7 +63,7 @@ export function LoginForm() {
       }
 
     } catch (firebaseError: any) {
-      // Lida com erros específicos do Firebase
+      // Lida com erros específicos do Firebase (senha errada, usuário não encontrado).
       if (firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
         setError('Email ou senha inválidos.');
       } else {

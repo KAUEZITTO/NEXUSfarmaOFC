@@ -36,12 +36,11 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        // A senha não é mais esperada aqui, apenas o email.
         email: { label: "Email", type: "email" },
       },
       async authorize(credentials) {
         if (!credentials?.email) {
-          console.error("[NextAuth][Authorize] Error: Email não fornecido.");
+          console.error("[NextAuth][Authorize] Error: Email não foi fornecido para autorização.");
           return null;
         }
 
@@ -71,6 +70,7 @@ export const authOptions: NextAuthOptions = {
             }
 
             // Retorna o objeto do usuário para o NextAuth criar a sessão.
+            // IMPORTANTE: Apenas retornamos os dados. Nenhuma outra operação assíncrona deve ocorrer aqui.
             return {
               id: userFromDb.id,
               email: userFromDb.email,
@@ -83,7 +83,7 @@ export const authOptions: NextAuthOptions = {
               subRole: userFromDb.subRole,
               accessLevel: userFromDb.accessLevel,
               avatarColor: userFromDb.avatarColor,
-            } as AppUser;
+            };
 
         } catch (error: any) {
             console.error("[NextAuth][Authorize] Erro inesperado durante a autorização:", error);
