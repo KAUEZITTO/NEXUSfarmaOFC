@@ -8,7 +8,6 @@ import { UserNav } from '@/components/dashboard/user-nav';
 import { DashboardNav } from '@/components/dashboard/dashboard-nav';
 import { Logo } from '@/components/logo';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { TourGuideWrapper, UpdateDialog } from '@/components/dashboard/tour-guide';
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { HospitalNav } from '@/components/dashboard/hospital/hospital-nav';
@@ -16,17 +15,6 @@ import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { PageLoader } from '@/components/ui/page-loader';
 import { combinedNavItems } from '@/components/dashboard/combined-nav';
-
-const CURRENT_VERSION = '3.8.1';
-
-const changelog = [
-    { version: '3.8.1', changes: ['Correção de bug crítico na lógica de estoque do hospital que deduzia itens do inventário errado.', 'Implementada validação de estoque nos formulários de dispensação para prevenir saídas maiores que o disponível.', 'Bloqueada a exclusão de unidades com pedidos associados para garantir integridade dos dados.', 'Refatoração geral e verificação de tipos para aumentar a estabilidade e prevenir erros de "client-side exception".'] },
-    { version: '3.8.0', changes: ['Correção de erro crítico de compilação que impedia a visualização de detalhes de pacientes.', 'Unificado o histórico de dispensações na página principal de pacientes para uma visão centralizada.', 'Implementado sistema de prescrição estruturada para pacientes internados.', 'Corrigido o cabeçalho dos relatórios do hospital para exibir o nome correto da instituição e remover o logo do CAF.', 'Implementada a funcionalidade de "Registro de Dispensações" para setores hospitalares.', 'Adicionada aba de "Dispensações (Paciente)" na tela de gestão de pacientes internados.', 'Aprimoradas as funcionalidades de gerenciamento de pacientes internados (mudança de setor e status).'] },
-    { version: '3.7.0', changes: ['Implementado o módulo completo da Farmácia Hospitalar, incluindo gerenciamento de setores, inventário próprio, pacientes internados e um novo fluxo de pedidos/solicitações entre Hospital e CAF.', 'Adicionada ferramenta de geração de etiquetas personalizadas e melhorias significativas de performance e responsividade em toda a aplicação.'] },
-    { version: '3.6.2', changes: ['Refatoração completa da arquitetura de Server Actions e módulos de dados para resolver múltiplos erros de build (`Module not found` e `use server` em Client Components), garantindo a estabilidade definitiva da aplicação.'] },
-    { version: '3.6.1', changes: ['Corrigido bug crítico nos recibos onde a data de validade de alguns itens não era exibida corretamente.'] },
-    { version: '3.6.0', changes: ['Implementado campo de observações na tela de dispensação e no recibo final para registrar informações adicionais.', 'Corrigidos múltiplos bugs críticos de cache que causavam inconsistências de dados, garantindo que o dashboard e as listas de pacientes/unidades estejam sempre sincronizados em tempo real.', 'Resolvidos problemas de configuração do servidor que impediam o cadastro de novos usuários e a exclusão de pacientes.', 'Aprimorado o tour guiado para ser interativo e navegar entre as páginas.', 'Ajustado o design e as informações do recibo de dispensação (Termo de Entrega) para incluir dados do paciente e gerar duas vias.'] },
-];
 
 export default function DashboardLayout({
   children,
@@ -66,11 +54,10 @@ export default function DashboardLayout({
 
   return (
         <SidebarProvider>
-          <TourGuideWrapper>
             <div className="grid min-h-screen w-full md:grid-cols-[var(--sidebar-width)_1fr] peer-data-[state=collapsed]:md:grid-cols-[var(--sidebar-width-icon)_1fr] transition-[grid-template-columns] duration-300 ease-in-out">
               <Sidebar className="bg-primary text-primary-foreground hidden md:flex">
                   <SidebarHeader className="border-b border-primary-foreground/20">
-                      <Link href="/dashboard" className="flex items-center gap-2 font-semibold" data-tour-id="step-logo">
+                      <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
                           <Logo />
                       </Link>
                   </SidebarHeader>
@@ -99,12 +86,7 @@ export default function DashboardLayout({
                 </main>
               </div>
             </div>
-            
-            <UpdateDialog currentVersion={CURRENT_VERSION} changelog={changelog.slice(0,1)} />
             <SpeedInsights />
-          </TourGuideWrapper>
         </SidebarProvider>
   );
 }
-
-    

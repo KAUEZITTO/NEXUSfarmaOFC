@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,48 +9,58 @@ body {
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
-    --foreground: 220 15% 20%;
+    --background: 0 0% 100%;
+    --foreground: 224 71.4% 4.1%;
     --card: 0 0% 100%;
-    --card-foreground: 220 15% 20%;
+    --card-foreground: 224 71.4% 4.1%;
     --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 20%;
-    --primary: 206 100% 23%;
+    --popover-foreground: 224 71.4% 4.1%;
+    --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 38 100% 48%;
+    --secondary: 173 96% 31%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 220 15% 90%;
-    --muted-foreground: 220 10% 40%;
-    --accent: 202 81% 57%;
-    --accent-foreground: 206 100% 23%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 220 15% 85%;
-    --input: 220 15% 85%;
-    --ring: 206 100% 23%;
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 220 8.9% 46.1%;
+    --accent: 45 93% 47%;
+    --accent-foreground: 48 95.5% 12.5%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 217 91% 60%;
     --radius: 0.5rem;
+    --chart-1: 217 91% 60%;
+    --chart-2: 173 96% 31%;
+    --chart-3: 160 60% 45%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
   }
 
   .dark {
-    --background: 210 20% 13%;
-    --foreground: 210 20% 95%;
-    --card: 210 20% 18%;
-    --card-foreground: 210 20% 95%;
-    --popover: 210 20% 13%;
-    --popover-foreground: 210 20% 95%;
-    --primary: 206 100% 23%;
+    --background: 224 71.4% 4.1%;
+    --foreground: 210 20% 98%;
+    --card: 224 71.4% 4.1%;
+    --card-foreground: 210 20% 98%;
+    --popover: 224 71.4% 4.1%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 38 100% 48%;
+    --secondary: 173 96% 31%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 210 20% 22%;
-    --muted-foreground: 210 15% 65%;
-    --accent: 202 81% 57%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 210 20% 25%;
-    --input: 210 20% 25%;
-    --ring: 202 81% 57%;
+    --muted: 215 27.9% 16.9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
+    --accent: 45 93% 47%;
+    --accent-foreground: 48 95.5% 12.5%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+    --border: 215 27.9% 16.9%;
+    --input: 215 27.9% 16.9%;
+    --ring: 217 91% 60%;
+    --chart-1: 217 91% 60%;
+    --chart-2: 173 96% 31%;
+    --chart-3: 160 60% 45%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
   }
 }
 
@@ -58,79 +69,53 @@ body {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground transition-colors duration-300 ease-in-out;
-    font-family: 'Inter', sans-serif;
-  }
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-bold;
+    @apply bg-background text-foreground;
   }
 }
 
-/* Custom styles for Intro.js */
-.custom-tooltip-class {
-    background-color: hsl(var(--card));
-    border: 1px solid hsl(var(--border));
-    color: hsl(var(--card-foreground));
-    border-radius: var(--radius);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    max-width: 350px !important;
+.loading-capsule {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 48px;
+  height: 24px;
 }
 
-.introjs-button {
-    background-color: hsl(var(--primary)) !important;
-    color: hsl(var(--primary-foreground)) !important;
-    text-shadow: none !important;
-    border-radius: var(--radius) !important;
-    padding: 0.5rem 1rem !important;
-    font-size: 0.875rem !important;
-    font-weight: 500 !important;
-    transition: background-color 0.2s;
+.capsule-half {
+  width: 24px;
+  height: 24px;
+  position: relative;
+  animation-duration: 1.5s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
 }
 
-.introjs-button:hover {
-    background-color: hsl(var(--primary) / 0.9) !important;
+.capsule-half.left {
+  background-color: hsl(var(--primary));
+  border-radius: 12px 0 0 12px;
+  animation-name: slide-left;
 }
 
-.introjs-prevbutton {
-    background-color: hsl(var(--muted)) !important;
-    color: hsl(var(--muted-foreground)) !important;
-    border: 1px solid hsl(var(--border)) !important;
-}
-.introjs-prevbutton:hover {
-    background-color: hsl(var(--muted) / 0.9) !important;
+.capsule-half.right {
+  background-color: hsl(var(--secondary));
+  border-radius: 0 12px 12px 0;
+  animation-name: slide-right;
 }
 
-.introjs-skipbutton {
-    color: hsl(var(--muted-foreground)) !important;
-}
-.introjs-skipbutton:hover {
-    color: hsl(var(--foreground)) !important;
-}
-
-.introjs-tooltiptext {
-    line-height: 1.7;
-    padding: 0.5rem;
+@keyframes slide-left {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-8px);
+  }
 }
 
-.introjs-arrow.top {
-    border-bottom-color: hsl(var(--card)) !important;
-}
-.introjs-arrow.bottom {
-    border-top-color: hsl(var(--card)) !important;
-}
-.introjs-arrow.left {
-    border-right-color: hsl(var(--card)) !important;
-}
-.introjs-arrow.right {
-    border-left-color: hsl(var(--card)) !important;
-}
-
-.introjs-overlay {
-    position: fixed;
-    box-sizing: border-box;
-    z-index: 999999;
-    background-color: #000;
-    opacity: 0;
-    background: hsla(0,0%,0%,.3);
-    transition: all .3s ease-out;
+@keyframes slide-right {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(8px);
+  }
 }

@@ -1,3 +1,4 @@
+
 import {
   Home,
   ShoppingCart,
@@ -15,14 +16,14 @@ import {
 } from 'lucide-react';
 
 export const combinedNavItems = [
-  { href: '/dashboard', icon: Home, label: 'Visão Geral (Coord.)', tourId: 'step-dashboard' },
+  { href: '/dashboard', icon: Home, label: 'Visão Geral (Coord.)' },
   { href: '/dashboard/select-location', icon: GitCompareArrows, label: 'Trocar Ambiente' },
   { isSeparator: true, label: "CAF" },
-  { href: '/dashboard/orders', icon: ShoppingCart, label: 'Pedidos (CAF)', tourId: 'step-orders' },
+  { href: '/dashboard/orders', icon: ShoppingCart, label: 'Pedidos (CAF)' },
   { href: '/dashboard/inventory?location=CAF', icon: Package, label: 'Inventário (CAF)' },
-  { href: '/dashboard/patients', icon: Users, label: 'Pacientes (CAF)', tourId: 'step-patients' },
-  { href: '/dashboard/units', icon: Building2, label: 'Unidades', tourId: 'step-units' },
-  { href: '/dashboard/reports', icon: BarChart2, label: 'Relatórios (CAF)', tourId: 'step-reports' },
+  { href: '/dashboard/patients', icon: Users, label: 'Pacientes (CAF)' },
+  { href: '/dashboard/units', icon: Building2, label: 'Unidades' },
+  { href: '/dashboard/reports', icon: BarChart2, label: 'Relatórios (CAF)' },
   { isSeparator: true, label: "Hospital" },
   { href: '/dashboard/hospital', icon: LayoutDashboard, label: 'Dashboard (Hospital)' },
   { href: '/dashboard/inventory?location=Hospital', icon: Package, label: 'Inventário (Hospital)' },
@@ -30,8 +31,8 @@ export const combinedNavItems = [
   { href: '/dashboard/hospital/patients', icon: Hospital, label: 'Pacientes Internados' },
   { href: '/dashboard/hospital/reports', icon: BarChart2, label: 'Relatórios (Hospital)' },
   { isSeparator: true, label: "Geral" },
-  { href: '/dashboard/inventory', icon: Package, label: 'Inventário (Global)', tourId: 'step-inventory' },
-  { href: '/dashboard/user-management', icon: Shield, label: 'Usuários', adminOnly: true, tourId: 'step-users' },
-  { href: '/dashboard/settings', icon: Settings, label: 'Configurações', tourId: 'step-settings' },
-  { href: '/dashboard/about', icon: Info, label: 'Sobre', tourId: 'step-about' },
+  { href: '/dashboard/inventory', icon: Package, label: 'Inventário (Global)' },
+  { href: '/dashboard/user-management', icon: Shield, label: 'Usuários', adminOnly: true },
+  { href: '/dashboard/settings', icon: Settings, label: 'Configurações' },
+  { href: '/dashboard/about', icon: Info, label: 'Sobre' },
 ];

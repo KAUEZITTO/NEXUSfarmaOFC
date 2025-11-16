@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -16,7 +17,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { LogOut, HelpCircle, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useTour } from './tour-guide';
 import { Skeleton } from '../ui/skeleton';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
@@ -24,7 +24,6 @@ import { cn } from '@/lib/utils';
 import { ThemeToggle } from '../ThemeToggle';
 
 export function UserNav() {
-  const { startTour } = useTour();
   const { toast } = useToast();
   const { data: session, status } = useSession();
 
@@ -46,7 +45,7 @@ export function UserNav() {
   const fallbackInitial = user.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? '?';
 
   return (
-    <div data-tour-id="step-user-nav" className="flex items-center gap-2">
+    <div className="flex items-center gap-2">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -76,10 +75,6 @@ export function UserNav() {
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Configurações</span>
               </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={startTour}>
-                <HelpCircle className="mr-2 h-4 w-4" />
-                <span>Fazer Tour</span>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />

@@ -20,15 +20,15 @@ import { useSession } from 'next-auth/react';
 import { Separator } from '../ui/separator';
 
 export const defaultNavItems = [
-  { href: '/dashboard', icon: Home, label: 'Dashboard', tourId: 'step-dashboard' },
-  { href: '/dashboard/orders', icon: ShoppingCart, label: 'Pedidos', tourId: 'step-orders' },
-  { href: '/dashboard/inventory', icon: Package, label: 'Inventário', tourId: 'step-inventory' },
-  { href: '/dashboard/patients', icon: Users, label: 'Pacientes', tourId: 'step-patients' },
-  { href: '/dashboard/units', icon: Building2, label: 'Unidades', tourId: 'step-units' },
-  { href: '/dashboard/reports', icon: BarChart2, label: 'Relatórios', tourId: 'step-reports' },
-  { href: '/dashboard/user-management', icon: Shield, label: 'Usuários', adminOnly: true, tourId: 'step-users' },
-  { href: '/dashboard/settings', icon: Settings, label: 'Configurações', tourId: 'step-settings' },
-  { href: '/dashboard/about', icon: Info, label: 'Sobre', tourId: 'step-about' },
+  { href: '/dashboard', icon: Home, label: 'Dashboard' },
+  { href: '/dashboard/orders', icon: ShoppingCart, label: 'Pedidos' },
+  { href: '/dashboard/inventory', icon: Package, label: 'Inventário' },
+  { href: '/dashboard/patients', icon: Users, label: 'Pacientes' },
+  { href: '/dashboard/units', icon: Building2, label: 'Unidades' },
+  { href: '/dashboard/reports', icon: BarChart2, label: 'Relatórios' },
+  { href: '/dashboard/user-management', icon: Shield, label: 'Usuários', adminOnly: true },
+  { href: '/dashboard/settings', icon: Settings, label: 'Configurações' },
+  { href: '/dashboard/about', icon: Info, label: 'Sobre' },
 ];
 
 export function DashboardNav({ isMobile = false, navItems = defaultNavItems }: { isMobile?: boolean, navItems?: any[] }) {
@@ -38,7 +38,7 @@ export function DashboardNav({ isMobile = false, navItems = defaultNavItems }: {
  
   return (
      <SidebarMenu>
-        {navItems.map(({ href, icon: Icon, label, tourId, adminOnly, isSeparator }, index) => {
+        {navItems.map(({ href, icon: Icon, label, adminOnly, isSeparator }, index) => {
             if (isSeparator) {
                 return (
                     <div key={`sep-${index}`} className="px-3 py-2">
@@ -55,7 +55,7 @@ export function DashboardNav({ isMobile = false, navItems = defaultNavItems }: {
             const isActive = pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
 
             return (
-                <SidebarMenuItem key={label} data-tour-id={tourId}>
+                <SidebarMenuItem key={label}>
                     <SidebarMenuButton 
                         asChild
                         isActive={isActive}

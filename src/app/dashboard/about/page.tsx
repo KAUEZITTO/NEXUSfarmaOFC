@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 const changelog = [
+    { version: '3.8.2', changes: ['Removido o tour guiado para uma interface mais limpa e direta, otimizando a experiência do usuário experiente.'] },
     { version: '3.8.1', changes: ['Correção de bug crítico na lógica de estoque do hospital que deduzia itens do inventário errado.', 'Implementada validação de estoque nos formulários de dispensação para prevenir saídas maiores que o disponível.', 'Bloqueada a exclusão de unidades com pedidos associados para garantir integridade dos dados.', 'Refatoração geral e verificação de tipos para aumentar a estabilidade e prevenir erros de "client-side exception".'] },
     { version: '3.8.0', changes: ['Correção de erro crítico de compilação que impedia a visualização de detalhes de pacientes.', 'Unificado o histórico de dispensações na página principal de pacientes para uma visão centralizada.', 'Implementado sistema de prescrição estruturada para pacientes internados.', 'Corrigido o cabeçalho dos relatórios do hospital para exibir o nome correto da instituição e remover o logo do CAF.', 'Implementada a funcionalidade de "Registro de Dispensações" para setores hospitalares.', 'Adicionada aba de "Dispensações (Paciente)" na tela de gestão de pacientes internados.', 'Aprimoradas as funcionalidades de gerenciamento de pacientes internados (mudança de setor e status).'] },
     { version: '3.7.0', changes: ['Implementado o módulo completo da Farmácia Hospitalar, incluindo gerenciamento de setores, inventário próprio, pacientes internados e um novo fluxo de pedidos/solicitações entre Hospital e CAF.', 'Adicionada ferramenta de geração de etiquetas personalizadas e melhorias significativas de performance e responsividade em toda a aplicação.'] },
@@ -51,7 +52,7 @@ const changelog = [
     { version: '0.9.2', changes: ['Migração completa do sistema de arquivos para o banco de dados Vercel KV, permitindo persistência de dados online.', 'Remoção de arquivos de dados JSON locais.'] },
 ];
 
-const CURRENT_VERSION = '3.8.1';
+const CURRENT_VERSION = '3.8.2';
 
 export default function AboutPage() {
   return (
