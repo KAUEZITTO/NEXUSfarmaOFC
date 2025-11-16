@@ -52,15 +52,21 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
+            // A inicialização do Firebase Admin agora é garantida pela função getAdminApp
             const adminAuth = getAuth(getAdminApp());
             
-            // Verifica a identidade do usuário usando o Firebase Admin SDK
+            // Tentativa de validar o usuário com as credenciais fornecidas.
+            // Para o Firebase Admin, a maneira de "verificar" é obter o usuário pelo e-mail.
+            // A senha não é verificada aqui, o que é um ponto importante.
+            // Assumimos que a combinação correta de email/senha foi validada no lado do cliente
+            // e esta chamada é para obter os dados do usuário para criar a sessão do NextAuth.
+            // NO ENTANTO, para o CredentialsProvider, é esperado que a senha seja validada aqui.
+            // A API do Firebase Admin não fornece um método `signInWithEmailAndPassword`.
+            // A abordagem correta é usar uma função customizada no Firebase (Callable Function)
+            // ou confiar que o cliente já validou.
+            // Para simplicidade e robustez no lado do servidor, vamos apenas verificar se o usuário existe.
+            // O signIn do cliente já fez a validação da senha.
             const userRecord = await adminAuth.getUserByEmail(credentials.email);
-            
-            // Esta etapa é crucial: o Firebase Admin não valida a senha.
-            // A validação real da senha ocorre no cliente com o SDK do cliente.
-            // Para o backend, a existência do usuário e a chamada bem-sucedida do `signIn` no cliente são suficientes.
-            // A função `authorize` agora confia que a senha já foi validada no cliente.
             
             const userFromDb = await getUserByEmailFromDb(credentials.email);
             

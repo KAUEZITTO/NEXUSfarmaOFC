@@ -1,4 +1,5 @@
 
+
 import * as admin from 'firebase-admin';
 
 // Esta é a forma robusta de inicializar o Firebase Admin SDK em um ambiente serverless como a Vercel.
@@ -8,6 +9,7 @@ let adminApp: admin.app.App;
 
 export const initializeAdminApp = () => {
     if (admin.apps.length > 0) {
+        // Se já existe uma instância, a reutilizamos.
         return admin.apps[0]!;
     }
 
@@ -38,6 +40,8 @@ export const initializeAdminApp = () => {
 
 // Exporta uma função que sempre retorna a instância inicializada.
 export const getAdminApp = () => {
+    // Se a `adminApp` ainda não foi definida, inicializa-a.
+    // Isso é crucial para o ambiente serverless, onde o código pode ser "congelado".
     if (!adminApp) {
         return initializeAdminApp();
     }

@@ -55,6 +55,9 @@ export function LoginForm() {
          setError('Ocorreu um erro ao tentar fazer login. Tente novamente.');
        }
     } else if (result?.ok) {
+        // Sucesso! A sessão foi criada.
+        // O middleware cuidará do redirecionamento se necessário,
+        // ou podemos forçar aqui.
         router.push('/dashboard');
         router.refresh(); // Garante que os dados da sessão sejam recarregados
     }
