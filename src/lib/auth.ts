@@ -73,10 +73,11 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
-        // On sign-in, `user` is the object returned from `authorize`.
+    async jwt({ token, user }) {
+        // This callback is only triggered on sign-in, not on every request
+        // We populate the token with the user data from authorize once.
         if (user) {
-             // Hardcoded admin override on session creation
+            // Hardcoded admin override on session creation
             if (user.email === 'kauemoreiraofc2@gmail.com') {
                 token.accessLevel = 'Admin';
                 token.subRole = 'Coordenador';
@@ -92,22 +93,6 @@ export const authOptions: NextAuthOptions = {
             token.name = user.name;
             token.birthdate = user.birthdate;
             token.avatarColor = user.avatarColor;
-        }
-        
-        // On session update (e.g., via `update` function from `useSession`), refresh data.
-        if (trigger === "update" && session?.user) {
-            const appUser = await getUserByEmailFromDb(session.user.email as string);
-            if (appUser) {
-                token.id = appUser.id;
-                token.location = appUser.location;
-                token.locationId = appUser.locationId;
-                token.accessLevel = appUser.accessLevel;
-                token.role = appUser.role;
-                token.subRole = appUser.subRole;
-                token.name = appUser.name;
-                token.birthdate = appUser.birthdate;
-                token.avatarColor = appUser.avatarColor;
-            }
         }
         
         return token;

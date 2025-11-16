@@ -51,15 +51,22 @@ export function AccountForm() {
     try {
       const result = await updateUserProfile(user.id, { name, birthdate, avatarColor });
       
-      await updateSession({ ...session, user: { ...session?.user, ...result.user } });
+      // Manually update the session on the client-side
+      await updateSession({ 
+        ...session, 
+        user: { 
+          ...session?.user, 
+          name: result.user.name, 
+          birthdate: result.user.birthdate,
+          avatarColor: result.user.avatarColor 
+        } 
+      });
 
       toast({
         title: 'Perfil Atualizado!',
         description: 'Suas informações foram salvas com sucesso.',
       });
       
-      router.refresh();
-
     } catch (error) {
       toast({
         variant: 'destructive',
