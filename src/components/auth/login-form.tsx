@@ -44,11 +44,9 @@ export function LoginForm() {
       await signInWithEmailAndPassword(auth, email, password);
       
       // Etapa 2: Se a autenticação do Firebase for bem-sucedida, inicie a sessão no NextAuth
-      // A senha não é validada aqui, pois já foi validada pelo Firebase.
-      // O 'password' é apenas um placeholder para satisfazer o provedor.
+      // A senha NÃO é enviada, apenas o email. A autorização já aconteceu.
       const result = await signIn('credentials', {
         email,
-        password: 'password_placeholder', 
         redirect: false,
       });
       
