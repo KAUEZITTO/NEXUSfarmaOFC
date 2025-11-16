@@ -6,6 +6,7 @@ import type { User as AppUser, UserLocation } from '@/lib/types';
 import { readData, getUnits } from '@/lib/data';
 import { KVAdapter } from '@/lib/kv-adapter';
 import { kv } from '@/lib/server/kv.server';
+import { updateUserLastSeen } from '@/lib/actions';
 
 /**
  * Busca um usuário no nosso banco de dados (Vercel KV) pelo email.
@@ -69,6 +70,9 @@ export const authOptions: NextAuthOptions = {
                 userFromDb.locationId = hospitalUnit.id;
             }
         }
+        
+        // Update last seen status
+        await updateUserLastSeen(userFromDb.id);
 
         return {
           id: userFromDb.id,

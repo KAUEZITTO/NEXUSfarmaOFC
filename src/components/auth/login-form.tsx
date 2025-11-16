@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -27,7 +28,10 @@ export function LoginForm() {
       if (authError === 'CredentialsSignin') {
         // Esta mensagem agora será exibida corretamente, pois o erro 'Configuration' foi resolvido.
         setError('Credenciais inválidas ou usuário não encontrado em nosso sistema.');
-      } else {
+      } else if (authError === 'Configuration') {
+        setError('Ocorreu um erro de configuração de autenticação. Contate o suporte.');
+      }
+      else {
         // O erro de configuração não deve mais acontecer, mas mantemos um fallback.
         setError('Ocorreu um erro de autenticação. Tente novamente.');
       }
