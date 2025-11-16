@@ -41,20 +41,26 @@ const addHeaderAndFooter = async (doc: jsPDFWithAutoTable, title: string, subtit
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(0, 0, 0);
 
-        // Common Left Block: Prefeitura
-        if (prefLogo) doc.addImage(prefLogo, 'PNG', margin, 15, 20, 20);
-        doc.setFontSize(7); doc.setFont('helvetica', 'bold');
-        doc.text('PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU', margin + 23, 22);
-        doc.text('SECRETARIA MUNICIPAL DE SAÚDE', margin + 23, 27);
-        
-        // Central and Right blocks depend on report type
         if (isHospitalReport) {
-            // Hospital Header: Nexus Logo and Hospital Name in center
-            if (nexusLogo) doc.addImage(nexusLogo, 'PNG', pageWidth / 2 - 25, 15, 50, 18);
-            doc.setFontSize(9); doc.setFont('helvetica', 'bold');
-            doc.text('Hospital e Maternidade Municipal José Bernardo da Silveira', pageWidth / 2, 40, { align: 'center' });
+            // --- HOSPITAL HEADER ---
+            // Left block: Prefeitura/SMS/Hospital info
+            if (prefLogo) doc.addImage(prefLogo, 'PNG', margin, 15, 20, 20);
+            doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+            doc.text('PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU', margin + 23, 19);
+            doc.text('SECRETARIA MUNICIPAL DE SAÚDE', margin + 23, 24);
+            doc.setFontSize(8);
+            doc.text('Hospital e Maternidade Municipal José Bernardo da Silveira', margin + 23, 29);
+
+            // Right block: NexusFarma logo
+            if (nexusLogo) doc.addImage(nexusLogo, 'PNG', pageWidth - margin - 40, 15, 40, 15);
+
         } else {
-            // CAF Header (Default)
+            // --- CAF HEADER (Default) ---
+            if (prefLogo) doc.addImage(prefLogo, 'PNG', margin, 15, 20, 20);
+            doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+            doc.text('PREFEITURA MUNICIPAL DE IGARAPÉ-AÇU', margin + 23, 22);
+            doc.text('SECRETARIA MUNICIPAL DE SAÚDE', margin + 23, 27);
+            
             if (nexusLogo) doc.addImage(nexusLogo, 'PNG', pageWidth / 2 - 20, 15, 40, 15);
             if (cafLogo) doc.addImage(cafLogo, 'PNG', pageWidth - margin - 25, 15, 20, 20);
             doc.setFontSize(7); doc.setFont('helvetica', 'bold');
@@ -62,6 +68,7 @@ const addHeaderAndFooter = async (doc: jsPDFWithAutoTable, title: string, subtit
             doc.text('FARMACÊUTICO', pageWidth - margin - 27, 27, { align: 'right' });
         }
         
+        // Common title block
         doc.setFontSize(14); doc.setFont('helvetica', 'bold');
         doc.text(title, pageWidth / 2, 50, { align: 'center' });
         
