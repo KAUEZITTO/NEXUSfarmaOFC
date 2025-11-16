@@ -1,4 +1,6 @@
 
+'use server';
+
 import { Suspense } from 'react';
 import { getOrders, getProducts } from "@/lib/data";
 import { OrdersClientPage } from './client-page';
@@ -16,15 +18,19 @@ function OrdersSkeleton() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Histórico de Pedidos</CardTitle>
-        <CardDescription>Visualize todos os pedidos enviados para as unidades de saúde.</CardDescription>
-        <div className="flex justify-between items-center pt-4">
-            <Skeleton className="h-10 w-64" />
-            <Skeleton className="h-10 w-36" />
+        <div className="flex justify-between items-start flex-wrap gap-4">
+            <div>
+                <Skeleton className="h-7 w-48 bg-muted rounded-md" />
+                <Skeleton className="h-4 w-72 mt-2 bg-muted rounded-md" />
+            </div>
+            <Skeleton className="h-9 w-40 bg-muted rounded-md" />
+        </div>
+        <div className="mt-4">
+          <Skeleton className="h-10 w-full max-w-lg" />
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2 mt-4">
+         <div className="space-y-2 mt-4">
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
@@ -38,22 +44,20 @@ export default async function OrdersPage() {
     noStore();
     
     // As chamadas de dados agora são feitas aqui, no Server Component
-    const [orders, cafInventory, hospitalInventory] = await Promise.all([
+    const [allOrders, cafInventory, hospitalInventory] = await Promise.all([
       getOrders(),
       getProducts('CAF'),
       getProducts('Hospital'),
     ]);
-    const sortedOrders = orders.sort((a, b) => new Date(b.sentDate).getTime() - new Date(a.sentDate).getTime());
+    const sortedOrders = allOrders.sort((a, b) => new Date(b.sentDate).getTime() - new Date(a.sentDate).getTime());
 
     return (
         <Suspense fallback={<OrdersSkeleton />}>
             <OrdersClientPage 
               initialOrders={sortedOrders} 
               cafInventory={cafInventory} 
-              hospitalInventory={hospitalInventory || []} // Ensure hospitalInventory is always an array
+              hospitalInventory={hospitalInventory || []}
             />
         </Suspense>
     );
 }
-
-    

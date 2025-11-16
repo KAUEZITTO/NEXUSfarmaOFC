@@ -46,6 +46,7 @@ import {
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { deleteOrder, updateOrderStatus } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface OrdersClientPageProps {
   initialOrders: Order[];
@@ -60,6 +61,23 @@ export function OrdersClientPage({ initialOrders, cafInventory, hospitalInventor
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
 
+  // Separate orders: from hospital and to other units
+  const hospitalUnitName = 'Hospital Municipal';
+  const receivedOrders = initialOrders.filter(o => o.unitName === hospitalUnitName && o.creatorName !== 'Sistema'); // Assuming hospital user won't be 'Sistema'
+  const sentOrders = initialOrders.filter(o => o.unitName !== hospitalUnitName || o.creatorName === 'Sistema');
+
+  const filteredSentOrders = sentOrders.filter(
+    (order) =>
+      order.unitName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  const filteredReceivedOrders = receivedOrders.filter(
+    (order) =>
+      order.unitName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   // Map for Hospital's inventory by product name and presentation
   const hospitalInventoryMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -72,12 +90,6 @@ export function OrdersClientPage({ initialOrders, cafInventory, hospitalInventor
     return map;
   }, [hospitalInventory]);
 
-
-  const filteredOrders = initialOrders.filter(
-    (order) =>
-      order.unitName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const handleViewOrder = (order: Order) => {
     setSelectedOrder(order);
@@ -118,7 +130,7 @@ export function OrdersClientPage({ initialOrders, cafInventory, hospitalInventor
       }
   };
 
-  const getColumns = (): ColumnDef<Order>[] => [
+  const getColumns = (isReceivedOrder: boolean): ColumnDef<Order>[] => [
     {
       accessorKey: "sentDate",
       header: ({ column }) => {
@@ -210,7 +222,7 @@ export function OrdersClientPage({ initialOrders, cafInventory, hospitalInventor
                 <DropdownMenuItem asChild>
                     <Link href={`/receipt/${order.id}`} target="_blank" className="w-full h-full flex items-center cursor-pointer">
                         <Printer className="mr-2 h-4 w-4" />
-                        Imprimir Recibo
+                        Imprimir {isReceivedOrder ? 'Pedido' : 'Recibo'}
                     </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -266,7 +278,9 @@ export function OrdersClientPage({ initialOrders, cafInventory, hospitalInventor
     },
   ];
 
-  const tableColumns = getColumns();
+  const sentColumns = getColumns(false);
+  const receivedColumns = getColumns(true);
+
 
   return (
     <>
@@ -274,32 +288,46 @@ export function OrdersClientPage({ initialOrders, cafInventory, hospitalInventor
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <CardTitle>Histórico de Pedidos</CardTitle>
+              <CardTitle>Gestão de Pedidos e Remessas</CardTitle>
               <CardDescription>
-                Visualize todos os pedidos enviados para as unidades de saúde.
+                Gerencie remessas para unidades e atenda pedidos recebidos do hospital.
               </CardDescription>
             </div>
-            <Button asChild>
-              <Link href="/dashboard/orders/new">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Nova Remessa
-              </Link>
-            </Button>
+            
           </div>
         </CardHeader>
         <CardContent>
-          <div className="relative mt-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Filtrar por nome da unidade ou ID..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 max-w-sm"
-                />
+          <Tabs defaultValue="sent">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="sent">Remessas Enviadas</TabsTrigger>
+              <TabsTrigger value="received">Pedidos Recebidos (Hospital)</TabsTrigger>
+            </TabsList>
+            <div className="flex justify-between items-center mt-4">
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Filtrar por nome da unidade ou ID..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 max-w-sm"
+                    />
+                </div>
+                <TabsContent value="sent" className="m-0">
+                    <Button asChild>
+                      <Link href="/dashboard/orders/new">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Nova Remessa
+                      </Link>
+                    </Button>
+                </TabsContent>
             </div>
-          <div className="mt-4">
-            <DataTable columns={tableColumns} data={filteredOrders} />
-          </div>
+            <TabsContent value="sent" className="mt-4">
+              <DataTable columns={sentColumns} data={filteredSentOrders} />
+            </TabsContent>
+            <TabsContent value="received" className="mt-4">
+              <DataTable columns={receivedColumns} data={filteredReceivedOrders} />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
@@ -351,5 +379,3 @@ export function OrdersClientPage({ initialOrders, cafInventory, hospitalInventor
     </>
   );
 }
-
-    
