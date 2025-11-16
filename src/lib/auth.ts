@@ -1,5 +1,4 @@
 
-
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { User as AppUser, UserLocation } from '@/lib/types';
@@ -30,9 +29,6 @@ async function getUserByEmailFromDb(email: string): Promise<AppUser | null> {
  * Options for NextAuth.js configuration.
  */
 export const authOptions: NextAuthOptions = {
-  // A estratégia 'database' armazena a sessão no banco de dados (Vercel KV),
-  // enviando apenas um ID de sessão para o cliente, o que resolve o erro
-  // "REQUEST_HEADER_TOO_LARGE" ao evitar cookies grandes.
   session: {
     strategy: 'database',
     maxAge: 30 * 24 * 60 * 60, // 30 days
@@ -47,32 +43,20 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials: any) {
-        if (!credentials?.email || !credentials?.password) {
+        if (!credentials?.email) {
+          console.error("[NextAuth][Authorize] Error: Email não fornecido.");
           return null;
         }
 
         try {
-            // A inicialização do Firebase Admin agora é garantida pela função getAdminApp
-            const adminAuth = getAuth(getAdminApp());
-            
-            // Tentativa de validar o usuário com as credenciais fornecidas.
-            // Para o Firebase Admin, a maneira de "verificar" é obter o usuário pelo e-mail.
-            // A senha não é verificada aqui, o que é um ponto importante.
-            // Assumimos que a combinação correta de email/senha foi validada no lado do cliente
-            // e esta chamada é para obter os dados do usuário para criar a sessão do NextAuth.
-            // NO ENTANTO, para o CredentialsProvider, é esperado que a senha seja validada aqui.
-            // A API do Firebase Admin não fornece um método `signInWithEmailAndPassword`.
-            // A abordagem correta é usar uma função customizada no Firebase (Callable Function)
-            // ou confiar que o cliente já validou.
-            // Para simplicidade e robustez no lado do servidor, vamos apenas verificar se o usuário existe.
-            // O signIn do cliente já fez a validação da senha.
-            const userRecord = await adminAuth.getUserByEmail(credentials.email);
-            
+            // A função authorize agora confia que o Firebase já validou a senha no cliente.
+            // Sua única responsabilidade é buscar o usuário no nosso banco de dados (KV)
+            // e construir o objeto de sessão.
             const userFromDb = await getUserByEmailFromDb(credentials.email);
             
             if (!userFromDb) {
-                console.error(`[NextAuth][Authorize] Error: Usuário com email ${credentials.email} autenticado pelo Firebase, mas não encontrado no banco de dados KV.`);
-                return null;
+                console.error(`[NextAuth][Authorize] Error: Usuário com email ${credentials.email} autenticado, mas não encontrado no banco de dados KV.`);
+                return null; // Usuário não existe no nosso sistema, nega a sessão.
             }
 
             // Hardcoded admin override
@@ -92,6 +76,7 @@ export const authOptions: NextAuthOptions = {
             
             await updateUserLastSeen(userFromDb.id);
 
+            // Retorna o objeto de usuário completo para o NextAuth criar a sessão.
             return {
               id: userFromDb.id,
               email: userFromDb.email,
@@ -107,13 +92,8 @@ export const authOptions: NextAuthOptions = {
             } as AppUser;
 
         } catch (error: any) {
-            // Se o Firebase Admin não encontrar o usuário, ele lança um erro.
-            if (error.code === 'auth/user-not-found') {
-                console.log(`[NextAuth][Authorize] Tentativa de login para usuário não existente no Firebase: ${credentials.email}`);
-            } else {
-                console.error("[NextAuth][Authorize] Erro inesperado durante a autorização:", error);
-            }
-            return null; // Retorna null em caso de falha de autenticação.
+            console.error("[NextAuth][Authorize] Erro inesperado durante a autorização:", error);
+            return null; // Retorna null em caso de qualquer falha.
         }
       },
     }),

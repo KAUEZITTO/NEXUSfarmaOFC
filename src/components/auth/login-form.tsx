@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,6 +9,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { firebaseApp } from '@/lib/firebase/client';
 
 export function LoginForm() {
   const router = useRouter();
@@ -39,27 +40,44 @@ export function LoginForm() {
     setIsLoading(true);
     setError(null);
 
-    const result = await signIn('credentials', {
-      email,
-      password,
-      redirect: false,
-    });
-    
-    setIsLoading(false);
+    // Etapa 1: Autenticar com o Firebase no lado do cliente
+    try {
+      if (!firebaseApp) {
+        throw new Error("Firebase não está inicializado.");
+      }
+      const auth = getAuth(firebaseApp);
+      await signInWithEmailAndPassword(auth, email, password);
 
-    if (result?.error) {
-       console.error("NextAuth signIn error:", result.error);
-       if (result.error === 'CredentialsSignin') {
-         setError('Credenciais inválidas. Verifique seu email e senha e tente novamente.');
-       } else {
-         setError('Ocorreu um erro ao tentar fazer login. Tente novamente.');
-       }
-    } else if (result?.ok) {
-        // Sucesso! A sessão foi criada.
-        // O middleware cuidará do redirecionamento se necessário,
-        // ou podemos forçar aqui.
+      // Etapa 2: Se a autenticação do Firebase for bem-sucedida, criar a sessão do NextAuth
+      const result = await signIn('credentials', {
+        email,
+        password, // A senha é enviada, mas o authorize irá ignorá-la e confiar na validação do Firebase.
+        redirect: false,
+      });
+      
+      if (result?.error) {
+        // Isso pode acontecer se o usuário existir no Firebase Auth mas não no nosso banco de dados KV
+        console.error("NextAuth signIn error:", result.error);
+        if (result.error === 'CredentialsSignin') {
+          setError('Usuário autenticado, mas não encontrado no sistema. Contate o suporte.');
+        } else {
+          setError('Ocorreu um erro ao criar sua sessão. Tente novamente.');
+        }
+      } else if (result?.ok) {
         router.push('/dashboard');
-        router.refresh(); // Garante que os dados da sessão sejam recarregados
+        router.refresh();
+      }
+
+    } catch (firebaseError: any) {
+      // Tratar erros de login do Firebase
+      if (firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
+        setError('Email ou senha inválidos.');
+      } else {
+        console.error("Firebase login error:", firebaseError);
+        setError('Ocorreu um erro ao tentar fazer login. Verifique sua conexão e tente novamente.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
