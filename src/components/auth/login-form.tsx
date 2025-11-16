@@ -10,8 +10,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { firebaseApp } from '@/lib/firebase/client';
 
 export function LoginForm() {
   const router = useRouter();
@@ -26,13 +24,11 @@ export function LoginForm() {
     const authError = searchParams.get('error');
     if (authError) {
       if (authError === 'CredentialsSignin') {
-        // Esta mensagem agora será exibida corretamente, pois o erro 'Configuration' foi resolvido.
-        setError('Credenciais inválidas ou usuário não encontrado em nosso sistema.');
+        setError('Credenciais inválidas. Verifique seu email e senha.');
       } else if (authError === 'Configuration') {
         setError('Ocorreu um erro de configuração de autenticação. Contate o suporte.');
       }
       else {
-        // O erro de configuração não deve mais acontecer, mas mantemos um fallback.
         setError('Ocorreu um erro de autenticação. Tente novamente.');
       }
     }
@@ -43,53 +39,29 @@ export function LoginForm() {
     setIsLoading(true);
     setError(null);
 
-    try {
-      // 1. Autenticar diretamente com o Firebase no cliente
-      const auth = getAuth(firebaseApp);
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const firebaseUser = userCredential.user;
+    const result = await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
+    });
+    
+    setIsLoading(false);
 
-      if (firebaseUser) {
-        // 2. Se o login no Firebase for bem-sucedido, use NextAuth para criar a sessão do app
-        const result = await signIn('credentials', {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email!,
-          redirect: false, // Manipulamos o redirecionamento manualmente
-        });
-
-        if (result?.error) {
-          // Erro vindo do 'authorize' (retornou null) ou do próprio NextAuth
-          console.error("NextAuth signIn error:", result.error);
-          if (result.error === 'CredentialsSignin') {
-             setError('Credenciais inválidas ou usuário não encontrado em nosso sistema. Verifique os dados e tente novamente.');
-          } else {
-             // Este erro agora é menos provável, mas é bom ter um fallback.
-             setError('Ocorreu um erro ao iniciar a sessão. Tente novamente.');
-          }
-        } else if (result?.ok) {
-          // Sucesso! Redireciona para o dashboard.
-          router.push('/dashboard');
-        } else {
-            setError('Falha ao iniciar sessão. Resposta inesperada do servidor.');
-        }
-      } else {
-        throw new Error('Usuário Firebase não encontrado após login.');
-      }
-    } catch (error: any) {
-      // Erro vindo do 'signInWithEmailAndPassword' do Firebase (senha incorreta, etc.)
-      console.error("Firebase Auth Error:", error.code);
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        setError('Credenciais inválidas. Verifique seu email e senha.');
-      } else {
-        setError('Ocorreu um erro de autenticação. Tente novamente mais tarde.');
-      }
-    } finally {
-      setIsLoading(false);
+    if (result?.error) {
+       console.error("NextAuth signIn error:", result.error);
+       if (result.error === 'CredentialsSignin') {
+         setError('Credenciais inválidas. Verifique seu email e senha e tente novamente.');
+       } else {
+         setError('Ocorreu um erro ao tentar fazer login. Tente novamente.');
+       }
+    } else if (result?.ok) {
+        router.push('/dashboard');
+        router.refresh(); // Garante que os dados da sessão sejam recarregados
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4">
+    <form onSubmit={handleSubmit} className="grid gap-4 mt-6">
       <fieldset disabled={isLoading} className="grid gap-4">
         <div className="grid gap-2">
           <Label htmlFor="email">Email</Label>

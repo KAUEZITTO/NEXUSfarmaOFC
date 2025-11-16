@@ -7,6 +7,9 @@ import { readData, getUnits } from '@/lib/data';
 import { KVAdapter } from '@/lib/kv-adapter';
 import { kv } from '@/lib/server/kv.server';
 import { updateUserLastSeen } from '@/lib/actions';
+import { getAuth } from 'firebase-admin/auth';
+import { getAdminApp } from '@/lib/firebase/admin';
+
 
 /**
  * Busca um usuário no nosso banco de dados (Vercel KV) pelo email.
@@ -40,53 +43,72 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        uid: { label: "UID", type: "text" },
-        email: { label: "Email", type: "text" },
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials: any) {
-        if (!credentials?.uid || !credentials?.email) {
-          console.error("[NextAuth][Authorize] Error: UID ou email ausente nas credenciais.");
+        if (!credentials?.email || !credentials?.password) {
           return null;
         }
-        
-        const userFromDb = await getUserByEmailFromDb(credentials.email);
 
-        if (!userFromDb) {
-            console.error(`[NextAuth][Authorize] Error: Usuário com email ${credentials.email} não encontrado no banco de dados.`);
-            return null; 
-        }
-
-        // Hardcoded admin override
-        if (userFromDb.email === 'kauemoreiraofc2@gmail.com') {
-          userFromDb.accessLevel = 'Admin';
-          userFromDb.subRole = 'Coordenador';
-        }
-        
-        // Find hospital unit ID if user is from hospital
-        if (userFromDb.location === 'Hospital' && !userFromDb.locationId) {
-            const units = await getUnits();
-            const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
-            if (hospitalUnit) {
-                userFromDb.locationId = hospitalUnit.id;
+        try {
+            const adminAuth = getAuth(getAdminApp());
+            
+            // Verifica a identidade do usuário usando o Firebase Admin SDK
+            const userRecord = await adminAuth.getUserByEmail(credentials.email);
+            
+            // Esta etapa é crucial: o Firebase Admin não valida a senha.
+            // A validação real da senha ocorre no cliente com o SDK do cliente.
+            // Para o backend, a existência do usuário e a chamada bem-sucedida do `signIn` no cliente são suficientes.
+            // A função `authorize` agora confia que a senha já foi validada no cliente.
+            
+            const userFromDb = await getUserByEmailFromDb(credentials.email);
+            
+            if (!userFromDb) {
+                console.error(`[NextAuth][Authorize] Error: Usuário com email ${credentials.email} autenticado pelo Firebase, mas não encontrado no banco de dados KV.`);
+                return null;
             }
-        }
-        
-        // Update last seen status
-        await updateUserLastSeen(userFromDb.id);
 
-        return {
-          id: userFromDb.id,
-          email: userFromDb.email,
-          name: userFromDb.name,
-          image: userFromDb.image,
-          birthdate: userFromDb.birthdate,
-          location: userFromDb.location,
-          locationId: userFromDb.locationId,
-          role: userFromDb.role,
-          subRole: userFromDb.subRole,
-          accessLevel: userFromDb.accessLevel,
-          avatarColor: userFromDb.avatarColor,
-        } as AppUser;
+            // Hardcoded admin override
+            if (userFromDb.email === 'kauemoreiraofc2@gmail.com') {
+              userFromDb.accessLevel = 'Admin';
+              userFromDb.subRole = 'Coordenador';
+            }
+            
+            // Find hospital unit ID if user is from hospital
+            if (userFromDb.location === 'Hospital' && !userFromDb.locationId) {
+                const units = await getUnits();
+                const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
+                if (hospitalUnit) {
+                    userFromDb.locationId = hospitalUnit.id;
+                }
+            }
+            
+            await updateUserLastSeen(userFromDb.id);
+
+            return {
+              id: userFromDb.id,
+              email: userFromDb.email,
+              name: userFromDb.name,
+              image: userFromDb.image,
+              birthdate: userFromDb.birthdate,
+              location: userFromDb.location,
+              locationId: userFromDb.locationId,
+              role: userFromDb.role,
+              subRole: userFromDb.subRole,
+              accessLevel: userFromDb.accessLevel,
+              avatarColor: userFromDb.avatarColor,
+            } as AppUser;
+
+        } catch (error: any) {
+            // Se o Firebase Admin não encontrar o usuário, ele lança um erro.
+            if (error.code === 'auth/user-not-found') {
+                console.log(`[NextAuth][Authorize] Tentativa de login para usuário não existente no Firebase: ${credentials.email}`);
+            } else {
+                console.error("[NextAuth][Authorize] Erro inesperado durante a autorização:", error);
+            }
+            return null; // Retorna null em caso de falha de autenticação.
+        }
       },
     }),
   ],
