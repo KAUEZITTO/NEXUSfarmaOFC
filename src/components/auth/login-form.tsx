@@ -47,7 +47,7 @@ export function LoginForm() {
       
       // Etapa 2: Se a autenticação do Firebase for bem-sucedida,
       // chame o signIn do NextAuth para criar a sessão do servidor.
-      // Passamos apenas o email, pois a senha já foi validada.
+      // O `authorize` no backend vai confiar que o Firebase já validou a senha.
       const result = await signIn('credentials', {
         email,
         password, // O password ainda é enviado, mas o `authorize` o ignora.

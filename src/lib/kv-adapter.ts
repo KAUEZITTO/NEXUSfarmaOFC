@@ -24,20 +24,26 @@ export function KVAdapter(kv: KV): Adapter {
     },
     async getUserByAccount({ provider, providerAccountId }) {
       const accountKey = `account:${provider}:${providerAccountId}`;
-      const account = await kv.get(accountKey);
-      if (!account) return null;
-      const user = await kv.hgetall(`user:id:${(account as any).userId}`);
+      const userId = await kv.get<string>(accountKey);
+      if (!userId) return null;
+      const user = await kv.hgetall(`user:id:${userId}`);
       if (!user) return null;
       return { ...(user as any), emailVerified: null };
     },
     async updateUser(user) {
       const userKeyById = `user:id:${user.id}`;
-      const existingUser = await kv.hgetall(userKeyById);
+      const existingUser = await kv.hgetall<any>(userKeyById);
       if (!existingUser) throw new Error("User not found for update.");
 
       const updatedUser = { ...existingUser, ...user };
       await kv.hset(userKeyById, updatedUser);
+
+      // Handle email change: delete old key and create new one
+      if (existingUser.email !== user.email) {
+          await kv.del(`user:${existingUser.email}`);
+      }
       await kv.hset(`user:${user.email}`, updatedUser);
+
       return { ...(updatedUser as any), emailVerified: null };
     },
     async deleteUser(userId) {
@@ -49,14 +55,15 @@ export function KVAdapter(kv: KV): Adapter {
     },
     async linkAccount(account) {
       const key = `account:${account.provider}:${account.providerAccountId}`;
-      await kv.set(key, { ...account, id: key });
+      // Store only the userId to link the account, not the full account object
+      await kv.set(key, account.userId);
     },
     async unlinkAccount({ provider, providerAccountId }) {
       await kv.del(`account:${provider}:${providerAccountId}`);
     },
     async createSession(session) {
       const key = `session:${session.sessionToken}`;
-      await kv.set(key, session, { ex: session.expires.getTime() / 1000 });
+      await kv.set(key, session, { ex: Math.round((new Date(session.expires).getTime() - Date.now()) / 1000) });
       return session;
     },
     async getSessionAndUser(sessionToken) {
@@ -71,7 +78,7 @@ export function KVAdapter(kv: KV): Adapter {
     },
     async updateSession(session) {
       const key = `session:${session.sessionToken}`;
-      await kv.set(key, session, { ex: session.expires.getTime() / 1000 });
+      await kv.set(key, session, { ex: Math.round((new Date(session.expires).getTime() - Date.now()) / 1000) });
       return session;
     },
     async deleteSession(sessionToken) {
@@ -79,7 +86,7 @@ export function KVAdapter(kv: KV): Adapter {
     },
     async createVerificationToken(token) {
       const key = `verification:${token.identifier}:${token.token}`;
-      await kv.set(key, token, { ex: token.expires.getTime() / 1000 });
+      await kv.set(key, token, { ex: Math.round((new Date(token.expires).getTime() - Date.now()) / 1000) });
       return token;
     },
     async useVerificationToken({ identifier, token }) {
