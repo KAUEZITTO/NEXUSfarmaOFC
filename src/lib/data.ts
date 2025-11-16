@@ -12,10 +12,8 @@ import { authOptions } from './auth';
 
 export const readData = async <T>(key: string): Promise<T[]> => {
     try {
-        // Temporarily return empty array to simulate a data reset.
-        return [];
-        // const data = await kv.get<T[]>(key);
-        // return data || [];
+        const data = await kv.get<T[]>(key);
+        return data || [];
     } catch (error) {
         console.error(`Error reading data from KV for key "${key}":`, error);
         return [];
