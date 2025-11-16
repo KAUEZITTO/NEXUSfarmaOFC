@@ -184,25 +184,3 @@ export default function AboutPage() {
   );
 }
     
-
-    
-
-
-
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
