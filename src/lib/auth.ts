@@ -37,8 +37,9 @@ export const authOptions: NextAuthOptions = {
       name: 'Credentials',
       credentials: {
         email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
-      async authorize(credentials: any) {
+      async authorize(credentials) {
         if (!credentials?.email) {
           console.error("[NextAuth][Authorize] Error: Email não fornecido.");
           return null;
@@ -103,8 +104,6 @@ export const authOptions: NextAuthOptions = {
             session.user.birthdate = user.birthdate;
             session.user.avatarColor = user.avatarColor;
             
-            // Este é o lugar correto para atualizar o status "visto por último".
-            // Ele é executado toda vez que a sessão é verificada.
             if (user.id) {
                await updateUserLastSeen(user.id);
             }
