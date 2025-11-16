@@ -8,20 +8,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Users, Pill, Stethoscope, ArrowLeft, FileText, CheckCircle, XCircle, Home, Truck, FlaskConical, Ambulance } from "lucide-react";
+import { Building2, Users, Pill, Stethoscope, ArrowLeft, FileText, CheckCircle, XCircle, Home, Truck, FlaskConical, Ambulance, Hourglass, ShoppingCart, Send } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { Order, Unit as UnitType, OrderStatus } from "@/lib/types";
+import { ColumnDef } from "@tanstack/react-table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 const calculateItemTotals = (orders: Order[]) => {
     let medCount = 0;
@@ -54,21 +50,37 @@ const ServiceIndicator = ({ name, available, icon: Icon }: { name: string, avail
     </div>
 )
 
+const sentOrderColumns: ColumnDef<Order>[] = [
+    { accessorKey: "sentDate", header: "Data Envio", cell: ({ row }) => new Date(row.getValue("sentDate")).toLocaleDateString('pt-BR', { timeZone: 'UTC' })},
+    { accessorKey: "orderType", header: "Tipo" },
+    { accessorKey: "itemCount", header: "Nº Itens" },
+    { 
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => {
+            const status = row.getValue("status") as OrderStatus;
+            const statusIcons = { 'Em análise': <Hourglass className="mr-2 h-4 w-4" />, 'Atendido': <CheckCircle className="mr-2 h-4 w-4" />, 'Não atendido': <XCircle className="mr-2 h-4 w-4" /> };
+            return <Badge variant={status === 'Atendido' ? 'default' : status === 'Não atendido' ? 'destructive' : 'secondary'} className={cn('flex items-center w-fit', { 'bg-green-600': status === 'Atendido' })}>{statusIcons[status]} {status}</Badge>;
+        }
+    },
+];
+
+const receivedOrderColumns: ColumnDef<Order>[] = [
+    { accessorKey: "sentDate", header: "Data Envio", cell: ({ row }) => new Date(row.getValue("sentDate")).toLocaleDateString('pt-BR', { timeZone: 'UTC' })},
+    { accessorKey: "deliveryDate", header: "Data Entrega", cell: ({ row }) => row.getValue("deliveryDate") ? new Date(row.getValue("deliveryDate") as string).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : <span className="text-muted-foreground">Pendente</span>},
+    { accessorKey: "itemCount", header: "Nº Itens" },
+    { id: "actions", cell: ({ row }) => <Button asChild variant="outline" size="sm"><Link href={`/receipt/${row.original.id}`} target="_blank"><FileText className="mr-2 h-4 w-4" />Recibo</Link></Button> },
+];
+
+
 export function UnitDetailsClientPage({ initialUnit, initialPatientCount, initialOrders }: UnitDetailsClientPageProps) {
   
   const { medCount: totalMedicationsSent, materialCount: totalMaterialsSent } = calculateItemTotals(initialOrders);
 
-  const statusVariantMap: { [key in OrderStatus]: "destructive" | "secondary" | "default" } = {
-    'Não atendido': "destructive",
-    'Em análise': "secondary",
-    'Atendido': "default",
-  };
+  const isHospital = initialUnit.name.toLowerCase().includes('hospital');
 
-  const statusClassMap = {
-      'Em análise': 'bg-accent text-accent-foreground',
-      'Atendido': 'bg-green-600 text-white',
-  };
-
+  const hospitalSentOrders = isHospital ? initialOrders.filter(o => o.creatorName !== 'Sistema') : [];
+  const unitReceivedOrders = initialOrders.filter(o => o.creatorName === 'Sistema');
 
   return (
     <div className="space-y-6">
@@ -137,10 +149,10 @@ export function UnitDetailsClientPage({ initialUnit, initialPatientCount, initia
 
       <Card>
         <CardHeader>
-          <CardTitle>Histórico de Pedidos Recentes</CardTitle>
+          <CardTitle>Histórico de Pedidos</CardTitle>
            <div className="flex justify-between items-center">
               <CardDescription>
-                Últimos pedidos e remessas para esta unidade.
+                Acompanhe as movimentações de entrada e saída de itens.
               </CardDescription>
               <Button asChild variant="outline">
                   <Link href={`/dashboard/orders`}>Ver Histórico Completo</Link>
@@ -148,50 +160,29 @@ export function UnitDetailsClientPage({ initialUnit, initialPatientCount, initia
            </div>
         </CardHeader>
         <CardContent>
-           <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID Pedido</TableHead>
-                  <TableHead>Data de Envio</TableHead>
-                  <TableHead>Data de Entrega</TableHead>
-                  <TableHead>Itens</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {initialOrders.length > 0 ? initialOrders.slice(0, 10).map((order) => (
-                   <TableRow key={order.id}>
-                      <TableCell className="font-mono">{order.id.substring(0, 8)}...</TableCell>
-                      <TableCell>{new Date(order.sentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</TableCell>
-                      <TableCell>{order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : <span className="text-muted-foreground">Pendente</span>}</TableCell>
-                      <TableCell>{order.itemCount}</TableCell>
-                      <TableCell>
-                         <Badge 
-                            variant={statusVariantMap[order.status] || "default"}
-                            className={cn(statusClassMap[order.status as keyof typeof statusClassMap])}
-                         >
-                            {order.status}
-                        </Badge>
-                      </TableCell>
-                       <TableCell className="text-right">
-                          <Button variant="outline" size="sm" asChild>
-                            <Link href={`/receipt/${order.id}`} target="_blank">
-                                <FileText className="mr-2 h-4 w-4" />
-                                Recibo
-                            </Link>
-                          </Button>
-                      </TableCell>
-                   </TableRow>
-                )) : (
-                    <TableRow>
-                        <TableCell colSpan={6} className="text-center h-24">Nenhum pedido encontrado para esta unidade.</TableCell>
-                    </TableRow>
-                )}
-              </TableBody>
-            </Table>
+           {isHospital ? (
+                <Tabs defaultValue="received">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="received">
+                            <ShoppingCart className="mr-2 h-4 w-4"/> Remessas Recebidas do CAF
+                        </TabsTrigger>
+                        <TabsTrigger value="sent">
+                            <Send className="mr-2 h-4 w-4"/> Pedidos Enviados ao CAF
+                        </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="received" className="mt-4">
+                        <DataTable columns={receivedOrderColumns} data={unitReceivedOrders} />
+                    </TabsContent>
+                    <TabsContent value="sent" className="mt-4">
+                        <DataTable columns={sentOrderColumns} data={hospitalSentOrders} />
+                    </TabsContent>
+                </Tabs>
+           ) : (
+                <DataTable columns={receivedOrderColumns} data={unitReceivedOrders} />
+           )}
         </CardContent>
       </Card>
     </div>
   );
 }
+
