@@ -36,8 +36,8 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
+        // A senha não é mais esperada aqui, apenas o email.
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email) {
@@ -70,6 +70,7 @@ export const authOptions: NextAuthOptions = {
                 }
             }
 
+            // Retorna o objeto do usuário para o NextAuth criar a sessão.
             return {
               id: userFromDb.id,
               email: userFromDb.email,
@@ -104,6 +105,7 @@ export const authOptions: NextAuthOptions = {
             session.user.birthdate = user.birthdate;
             session.user.avatarColor = user.avatarColor;
             
+            // A atualização do "lastSeen" agora é feita aqui, de forma segura.
             if (user.id) {
                await updateUserLastSeen(user.id);
             }

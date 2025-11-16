@@ -43,7 +43,7 @@ export function LoginForm() {
       const auth = getAuth(firebaseApp);
       await signInWithEmailAndPassword(auth, email, password);
       
-      // Etapa 2: Se a autenticação do Firebase for bem-sucedida, inicie a sessão no NextAuth
+      // Etapa 2: Se a autenticação do Firebase for bem-sucedida, inicie a sessão no NextAuth.
       // A senha NÃO é enviada, apenas o email. A autorização já aconteceu.
       const result = await signIn('credentials', {
         email,
