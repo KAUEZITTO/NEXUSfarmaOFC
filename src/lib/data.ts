@@ -1,12 +1,12 @@
 
+
 'use server';
 
 import { kv } from './server/kv.server';
 import path from 'path';
 import { promises as fs } from 'fs';
 import type { Product, Unit, Patient, Order, Dispensation, StockMovement, User, PatientFilter, SectorDispensation, KnowledgeBaseItem, UserLocation, HospitalOrderTemplateItem, HospitalPatient, HospitalSector, HospitalPatientDispensation } from './types';
-import { getServerSession } from 'next-auth';
-import { authOptions } from './auth';
+import { getCurrentUser } from './session';
 
 // --- GENERIC DATA ACCESS ---
 
