@@ -42,11 +42,10 @@ export function LoginForm() {
       await signInWithEmailAndPassword(auth, email, password);
       
       // Step 2: If Firebase auth succeeds, sign in with NextAuth.
-      // We pass the password here just so the server-side `credentials` object matches,
-      // but the `authorize` function will NOT use it for validation.
+      // The `password` is NOT sent to the server. The `authorize` function
+      // will only use the email to fetch user data from KV.
       const result = await signIn('credentials', {
         email,
-        password, // This is required to match the `credentials` definition, but not used for validation in `authorize`
         redirect: false,
       });
       

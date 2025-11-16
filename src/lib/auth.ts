@@ -6,26 +6,6 @@ import { readData, getUnits } from '@/lib/data';
 import { KVAdapter } from '@/lib/kv-adapter';
 import { kv } from '@/lib/server/kv.server';
 import { updateUserLastSeen } from '@/lib/actions';
-import { getAuth } from 'firebase-admin/auth';
-import { getAdminApp } from '@/lib/firebase/admin';
-
-// Helper to verify password using Firebase Admin SDK
-async function verifyPassword(email: string, password_from_form: string): Promise<boolean> {
-  // This is a workaround since Firebase Admin SDK cannot directly verify a password.
-  // We rely on the client-side SDK for password verification.
-  // This function on the server side is effectively bypassed by client-side logic.
-  // We keep the structure but the real validation is in login-form.tsx
-  // For safety, we will prevent login if this is ever called directly without a password.
-  if (!password_from_form) return false;
-  
-  // In a real scenario where you'd validate on the server, you would need a custom
-  // endpoint that uses the client SDK or a different auth mechanism.
-  // Given our architecture (Firebase client SDK validates), we assume if this
-  // function is reached, the client has already implicitly validated the user.
-  // However, the presence of `password_from_form` is a guard.
-  return true;
-}
-
 
 async function getUserByEmailFromDb(email: string): Promise<AppUser | null> {
   if (!email) return null;
@@ -51,17 +31,16 @@ export const authOptions: NextAuthOptions = {
       name: 'Credentials',
       credentials: {
         email: { label: "Email", type: "email" },
-        // Although the password isn't directly used in `authorize` for validation,
-        // it must be here to be accepted from the client `signIn` call.
-        password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials.password) {
-          console.error("[NextAuth][Authorize] Error: Email or password not provided.");
+        if (!credentials?.email) {
+          console.error("[NextAuth][Authorize] Error: Email not provided.");
           return null;
         }
 
         try {
+          // The password has already been verified by Firebase on the client-side.
+          // This function's only job is to fetch the user from our database.
           const userFromDb = await getUserByEmailFromDb(credentials.email);
           
           if (!userFromDb) {
@@ -88,9 +67,6 @@ export const authOptions: NextAuthOptions = {
               }
           }
 
-          // The client-side form handles the actual password check with Firebase Auth SDK.
-          // This `authorize` function's main job is to find the user in our DB
-          // and return the user object (without password) to create a session.
           return userForSession;
 
         } catch (error: any) {
