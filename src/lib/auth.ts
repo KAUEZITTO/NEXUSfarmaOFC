@@ -7,6 +7,7 @@ import { KVAdapter } from '@/lib/kv-adapter';
 import { kv } from '@/lib/server/kv.server';
 import { updateUserLastSeen } from '@/lib/actions';
 
+// This function is now the single source of truth for fetching a user by email from the database.
 async function getUserByEmailFromDb(email: string): Promise<AppUser | null> {
   if (!email) return null;
   try {
@@ -31,6 +32,7 @@ export const authOptions: NextAuthOptions = {
       name: 'Credentials',
       credentials: {
         email: { label: "Email", type: "email" },
+        // The password is not needed here, as validation happens on the client.
       },
       async authorize(credentials) {
         if (!credentials?.email) {
@@ -38,41 +40,35 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        try {
-          // The password has already been verified by Firebase on the client-side.
-          // This function's only job is to fetch the user from our database.
-          const userFromDb = await getUserByEmailFromDb(credentials.email);
-          
-          if (!userFromDb) {
-            console.error(`[NextAuth][Authorize] Error: User with email ${credentials.email} not found in KV database.`);
-            return null;
-          }
-
-          // **THE CRITICAL FIX**: Never return the password hash.
-          // Create a new object for the session without the password.
-          const { password, ...userForSession } = userFromDb;
-            
-          // Lógica de superusuário
-          if (userForSession.email === 'kauemoreiraofc2@gmail.com') {
-            userForSession.accessLevel = 'Admin';
-            userForSession.subRole = 'Coordenador';
-          }
-          
-          // Garante que usuários do hospital tenham seu locationId definido.
-          if (userForSession.location === 'Hospital' && !userForSession.locationId) {
-              const units = await getUnits();
-              const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
-              if (hospitalUnit) {
-                  userForSession.locationId = hospitalUnit.id;
-              }
-          }
-
-          return userForSession;
-
-        } catch (error: any) {
-            console.error("[NextAuth][Authorize] Unexpected error during authorization:", error);
-            return null;
+        // The password has already been verified by Firebase on the client-side.
+        // This function's only job is to fetch the user from our database.
+        const userFromDb = await getUserByEmailFromDb(credentials.email);
+        
+        if (!userFromDb) {
+          console.error(`[NextAuth][Authorize] Error: User with email ${credentials.email} not found in KV database.`);
+          return null;
         }
+
+        // **THE CRITICAL FIX**: Never return the password hash.
+        // Create a new object for the session without the password.
+        const { password, ...userForSession } = userFromDb;
+          
+        // Superuser logic
+        if (userForSession.email === 'kauemoreiraofc2@gmail.com') {
+          userForSession.accessLevel = 'Admin';
+          userForSession.subRole = 'Coordenador';
+        }
+        
+        // Ensure hospital users have their locationId set.
+        if (userForSession.location === 'Hospital' && !userForSession.locationId) {
+            const units = await getUnits();
+            const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
+            if (hospitalUnit) {
+                userForSession.locationId = hospitalUnit.id;
+            }
+        }
+
+        return userForSession;
       },
     }),
   ],
