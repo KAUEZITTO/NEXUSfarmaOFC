@@ -1,4 +1,3 @@
-
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { User as AppUser } from '@/lib/types';
@@ -6,6 +5,8 @@ import { readData, getUnits } from '@/lib/data';
 import { KVAdapter } from '@/lib/kv-adapter';
 import { kv } from '@/lib/server/kv.server';
 import { updateUserLastSeen } from '@/lib/actions';
+import { getAdminApp } from '@/lib/firebase/admin';
+import { getAuth } from 'firebase-admin/auth';
 
 /**
  * Busca um usuário no nosso banco de dados (Vercel KV) pelo email.
@@ -37,7 +38,6 @@ export const authOptions: NextAuthOptions = {
       name: 'Credentials',
       credentials: {
         email: { label: "Email", type: "email" },
-        // A senha é opcional aqui, pois a validação real ocorre no cliente com o Firebase.
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials: any) {
