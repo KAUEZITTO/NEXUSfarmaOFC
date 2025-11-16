@@ -265,11 +265,9 @@ export type HospitalPatientStatus = 'Internado' | 'Alta' | 'Transferido' | 'Óbi
 
 export type PrescribedItem = {
     id: string; // internal unique id for the list item
-    productId: string;
     name: string;
-    presentation: string;
-    frequency: string; // e.g., "8 em 8 horas", "1x ao dia"
     dosage: string; // e.g., "1 comprimido", "10ml"
+    frequency: string; // e.g., "8 em 8 horas", "1x ao dia"
 };
 
 export type HospitalPatient = {

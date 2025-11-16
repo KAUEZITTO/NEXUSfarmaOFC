@@ -49,12 +49,11 @@ const patientDispensationsColumns: ColumnDef<HospitalPatientDispensation>[] = [
 
 interface HospitalPatientsClientPageProps {
     initialPatients: HospitalPatient[];
-    hospitalInventory: Product[];
     hospitalSectors: HospitalSector[];
     dispensations: HospitalPatientDispensation[];
 }
 
-export function HospitalPatientsClientPage({ initialPatients, hospitalInventory, hospitalSectors, dispensations }: HospitalPatientsClientPageProps) {
+export function HospitalPatientsClientPage({ initialPatients, hospitalSectors, dispensations }: HospitalPatientsClientPageProps) {
     const router = useRouter();
     const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
@@ -126,7 +125,7 @@ export function HospitalPatientsClientPage({ initialPatients, hospitalInventory,
                             <DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                <AddHospitalPatientDialog onPatientSaved={handlePatientSaved} patientToEdit={patient} hospitalInventory={hospitalInventory} hospitalSectors={hospitalSectors} trigger={<DropdownMenuItem onSelect={e => e.preventDefault()}><Edit className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>} />
+                                <AddHospitalPatientDialog onPatientSaved={handlePatientSaved} patientToEdit={patient} hospitalSectors={hospitalSectors} trigger={<DropdownMenuItem onSelect={e => e.preventDefault()}><Edit className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>} />
                                 <DropdownMenuItem disabled><Pill className="mr-2 h-4 w-4"/> Dispensar Medicação</DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuSub>
@@ -169,7 +168,7 @@ export function HospitalPatientsClientPage({ initialPatients, hospitalInventory,
                         <CardTitle>Gestão de Pacientes (Hospital)</CardTitle>
                         <CardDescription>Gerencie pacientes internados e o histórico de dispensações.</CardDescription>
                     </div>
-                     <AddHospitalPatientDialog onPatientSaved={handlePatientSaved} hospitalInventory={hospitalInventory} hospitalSectors={hospitalSectors} trigger={
+                     <AddHospitalPatientDialog onPatientSaved={handlePatientSaved} hospitalSectors={hospitalSectors} trigger={
                         <Button><PlusCircle className="mr-2 h-4 w-4" /> Registrar Paciente</Button>
                     } />
                 </div>
