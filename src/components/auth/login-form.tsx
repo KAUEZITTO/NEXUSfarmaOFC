@@ -41,12 +41,14 @@ export function LoginForm() {
     setError(null);
 
     try {
+      // 1. Authenticate with Firebase on the client
       const auth = getAuth(firebaseApp);
       await signInWithEmailAndPassword(auth, email, password);
       
+      // 2. If Firebase auth is successful, sign in with NextAuth using credentials
       const result = await signIn('credentials', {
         email,
-        password,
+        password, // Password is sent but not re-validated, just for the provider's signature
         redirect: false,
       });
       
@@ -58,11 +60,13 @@ export function LoginForm() {
            setError(`Ocorreu um erro ao criar sua sessão. Tente novamente.`);
         }
       } else if (result?.ok) {
+        // On successful NextAuth sign-in, redirect to the dashboard
         router.push('/dashboard');
-        router.refresh();
+        router.refresh(); // Ensure the layout re-renders with session data
       }
 
     } catch (firebaseError: any) {
+      // Handle Firebase-specific errors
       if (firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
         setError('Email ou senha inválidos.');
       } else {

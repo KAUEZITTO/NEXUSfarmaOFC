@@ -46,6 +46,8 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
+            // The password has already been verified by Firebase Client SDK on the login form.
+            // The job of `authorize` is now just to find the user in our DB and return it.
             const userFromDb = await getUserByEmailFromDb(credentials.email);
             
             if (!userFromDb) {
@@ -58,6 +60,7 @@ export const authOptions: NextAuthOptions = {
               userFromDb.subRole = 'Coordenador';
             }
             
+            // Ensure hospital users have their locationId set.
             if (userFromDb.location === 'Hospital' && !userFromDb.locationId) {
                 const units = await getUnits();
                 const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
@@ -66,6 +69,7 @@ export const authOptions: NextAuthOptions = {
                 }
             }
 
+            // Return the user object for NextAuth to create a session.
             return {
               id: userFromDb.id,
               email: userFromDb.email,
