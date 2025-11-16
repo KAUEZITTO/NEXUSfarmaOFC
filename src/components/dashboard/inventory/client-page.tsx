@@ -569,5 +569,3 @@ export function InventoryClientPage({ initialProducts }: InventoryClientPageProp
     </Card>
   );
 }
-
-    

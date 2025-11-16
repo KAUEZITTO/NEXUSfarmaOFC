@@ -67,8 +67,8 @@ const addHeaderAndFooter = async (doc: jsPDFWithAutoTable, title: string, subtit
 
              if (cafLogo) doc.addImage(cafLogo, 'PNG', pageWidth - margin - 20, 15, 20, 20);
              doc.setFontSize(7); doc.setFont('helvetica', 'bold');
-             doc.text('CAF - CENTRO DE ABASTECIMENTO', pageWidth - margin - 23, 38, { align: 'right' });
-             doc.text('FARMACÊUTICO', pageWidth - margin - 23, 42, { align: 'right' });
+             doc.text('CAF - CENTRO DE ABASTECIMENTO', pageWidth - margin, 38, { align: 'right' });
+             doc.text('FARMACÊUTICO', pageWidth - margin, 42, { align: 'right' });
         }
         
         // Common title block
