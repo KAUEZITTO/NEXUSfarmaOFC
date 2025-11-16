@@ -4,8 +4,7 @@
 import { revalidatePath } from 'next/cache';
 import { readData, writeData, getProducts, getAllUsers, getSectorDispensations, getUnits as getUnitsFromDb, getHospitalPatients as getHospitalPatientsFromDb, getHospitalPatientDispensations as getHospitalPatientDispensationsFromDb } from './data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation, SectorDispensation, HospitalSector as Sector, HospitalOrderTemplateItem, HospitalPatient, HospitalPatientDispensation } from './types';
-import { getServerSession } from 'next/auth';
-import { authOptions } from '@/lib/auth';
+import { getCurrentUser } from './session';
 import { generatePdf } from '@/lib/pdf-generator';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase/admin';
@@ -29,9 +28,9 @@ const logStockMovement = async (
   movementDate: string,
   relatedId?: string
 ) => {
-  const session = await getServerSession(authOptions);
+  const session = await getCurrentUser();
   const movements = await readData<StockMovement>('stockMovements');
-  const userName = session?.user?.name || 'Sistema';
+  const userName = session?.name || 'Sistema';
 
   const newMovement: StockMovement = {
     id: generateId('mov'),
@@ -90,8 +89,8 @@ export async function updateProduct(productId: string, productData: Partial<Omit
 }
 
 export async function zeroStock(category?: Product['category']): Promise<{ success: boolean, message: string }> {
-    const session = await getServerSession(authOptions);
-    const userName = session?.user?.name || 'Sistema';
+    const session = await getCurrentUser();
+    const userName = session?.name || 'Sistema';
     const products = await getProducts('all');
     const movements: StockMovement[] = [];
     const movementDate = new Date().toISOString();
@@ -151,8 +150,8 @@ export async function deleteProducts(productIds: string[]): Promise<{ success: b
     }
 
     const movements: StockMovement[] = [];
-    const session = await getServerSession(authOptions);
-    const userName = session?.user?.name || 'Sistema';
+    const session = await getCurrentUser();
+    const userName = session?.name || 'Sistema';
     const movementDate = new Date().toISOString();
 
     for (const product of productsToDelete) {
@@ -275,7 +274,7 @@ export async function deletePatient(patientId: string): Promise<{ success: boole
 
 // --- ORDER ACTIONS ---
 export async function addOrder(orderData: { unitId: string; unitName?: string; orderType: OrderType, items: OrderItem[]; notes?: string; sentDate?: string; }): Promise<Order> {
-    const session = await getServerSession(authOptions);
+    const session = await getCurrentUser();
     const orders = await readData<Order>('orders');
     const products = await getProducts('CAF');
 
@@ -300,11 +299,11 @@ export async function addOrder(orderData: { unitId: string; unitName?: string; o
         sentDate: sentDate,
         status: 'Em análise',
         itemCount: orderData.items.reduce((sum, item) => sum + item.quantity, 0),
-        creatorName: session?.user?.name || 'Usuário Desconhecido',
+        creatorName: session?.name || 'Usuário Desconhecido',
     };
 
     // If order is created by CAF, deduct stock. If by Hospital, it's a request, so don't deduct.
-    const isCafUser = session?.user?.location === 'CAF' || session?.user?.subRole === 'Coordenador';
+    const isCafUser = session?.location === 'CAF' || session?.subRole === 'Coordenador';
     if (isCafUser) {
         for (const item of newOrder.items) {
             const productIndex = products.findIndex(p => p.id === item.productId);
@@ -401,7 +400,7 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
 
 // --- DISPENSATION ACTIONS ---
 export async function addDispensation(dispensationData: { patientId: string; patient: Omit<Patient, 'files'>; items: DispensationItem[]; notes?: string; }): Promise<Dispensation> {
-    const session = await getServerSession(authOptions);
+    const session = await getCurrentUser();
     const dispensations = await readData<Dispensation>('dispensations');
     const products = await getProducts('CAF');
     const dispensationDate = new Date().toISOString();
@@ -414,7 +413,7 @@ export async function addDispensation(dispensationData: { patientId: string; pat
       patient: patientForDispensation,
       date: dispensationDate,
       items: dispensationData.items,
-      creatorName: session?.user?.name || 'Usuário Desconhecido',
+      creatorName: session?.name || 'Usuário Desconhecido',
       notes: dispensationData.notes,
     };
 
@@ -986,7 +985,7 @@ export async function deleteHospitalSector(sectorId: string): Promise<{ success:
 
 
 export async function addSectorDispensation(data: { sector: string; items: DispensationItem[] }) {
-    const session = await getServerSession(authOptions);
+    const session = await getCurrentUser();
     const dispensations = await readData<SectorDispensation>('sectorDispensations');
     const products = await getProducts('Hospital');
     const dispensationDate = new Date().toISOString();
@@ -996,7 +995,7 @@ export async function addSectorDispensation(data: { sector: string; items: Dispe
         sector: data.sector,
         date: dispensationDate,
         items: data.items,
-        dispensedBy: session?.user?.name || 'Usuário Desconhecido',
+        dispensedBy: session?.name || 'Usuário Desconhecido',
     };
 
      for (const item of newDispensation.items) {
@@ -1027,7 +1026,7 @@ export async function addSectorDispensation(data: { sector: string; items: Dispe
 }
 
 export async function addHospitalPatientDispensation(data: { patient: HospitalPatient; items: DispensationItem[] }): Promise<void> {
-    const session = await getServerSession(authOptions);
+    const session = await getCurrentUser();
     const dispensations = await getHospitalPatientDispensationsFromDb();
     const products = await getProducts('Hospital');
     const dispensationDate = new Date().toISOString();
@@ -1039,7 +1038,7 @@ export async function addHospitalPatientDispensation(data: { patient: HospitalPa
         sectorName: data.patient.sectorName || 'N/A',
         date: dispensationDate,
         items: data.items,
-        dispensedBy: session?.user?.name || 'Usuário Desconhecido',
+        dispensedBy: session?.name || 'Usuário Desconhecido',
     };
 
     for (const item of newDispensation.items) {
