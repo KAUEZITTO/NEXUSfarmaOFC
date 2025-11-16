@@ -24,9 +24,7 @@ export function LoginForm() {
   useEffect(() => {
     const authError = searchParams.get('error');
     if (authError) {
-      if (authError === 'CredentialsSignin') {
-        setError('Credenciais inválidas. Verifique seu email e senha.');
-      } else if (authError === 'Configuration') {
+      if (authError === 'Configuration') {
         setError('Ocorreu um erro de configuração de autenticação. Contate o suporte.');
       }
       else {
@@ -49,7 +47,7 @@ export function LoginForm() {
       const result = await signIn('credentials', {
         email,
         // A senha não precisa ser reenviada, mas o NextAuth espera o campo
-        password: 'password_not_needed', 
+        password: 'password_not_needed_firebase_auth_is_king', 
         redirect: false,
       });
       
@@ -58,7 +56,7 @@ export function LoginForm() {
         if (result.error === 'CredentialsSignin') {
            setError('Credenciais inválidas ou usuário não encontrado no sistema.');
         } else {
-           setError(`Ocorreu um erro ao criar sua sessão. Tente novamente.`);
+           setError(`Ocorreu um erro ao criar sua sessão: ${result.error}`);
         }
       } else if (result?.ok) {
         // Sucesso! Redireciona para o dashboard.

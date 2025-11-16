@@ -47,8 +47,8 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-            // A senha já foi verificada pelo Firebase Client SDK no formulário de login.
-            // A tarefa aqui é apenas encontrar o usuário no nosso DB e retorná-lo.
+            // A senha JÁ FOI VALIDADA no cliente pelo SDK do Firebase.
+            // A tarefa aqui é apenas encontrar o usuário no nosso DB e retorná-lo para criar a sessão.
             const userFromDb = await getUserByEmailFromDb(credentials.email);
             
             if (!userFromDb) {
