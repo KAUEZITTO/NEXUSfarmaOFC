@@ -6,7 +6,6 @@ import { readData, getUnits } from '@/lib/data';
 import { KVAdapter } from '@/lib/kv-adapter';
 import { kv } from '@/lib/server/kv.server';
 import { updateUserLastSeen } from '@/lib/actions';
-import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase/admin';
 
 
@@ -40,6 +39,8 @@ export const authOptions: NextAuthOptions = {
       name: 'Credentials',
       credentials: {
         email: { label: "Email", type: "email" },
+        // A senha é recebida do cliente, mas não será usada para re-autenticar aqui.
+        // A presença dela é apenas para compatibilidade.
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials: any) {
@@ -55,7 +56,7 @@ export const authOptions: NextAuthOptions = {
             const userFromDb = await getUserByEmailFromDb(credentials.email);
             
             if (!userFromDb) {
-                console.error(`[NextAuth][Authorize] Error: Usuário com email ${credentials.email} autenticado, mas não encontrado no banco de dados KV.`);
+                console.error(`[NextAuth][Authorize] Error: Usuário com email ${credentials.email} autenticado pelo Firebase, mas não encontrado no banco de dados KV.`);
                 return null; // Usuário não existe no nosso sistema, nega a sessão.
             }
 
