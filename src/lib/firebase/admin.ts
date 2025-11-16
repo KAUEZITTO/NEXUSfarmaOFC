@@ -1,5 +1,4 @@
 
-
 import * as admin from 'firebase-admin';
 
 // Esta é a forma robusta de inicializar o Firebase Admin SDK em um ambiente serverless como a Vercel.

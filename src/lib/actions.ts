@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -580,7 +579,7 @@ export async function updateUserLastSeen(userId: string) {
         users[userIndex].lastSeen = new Date().toISOString();
         await writeData('users', users);
     }
-    revalidatePath('/dashboard', 'layout');
+    // No revalidatePath here to avoid potential issues in auth flow
 }
 
 export async function updateUserAccessLevel(userId: string, accessLevel: AccessLevel) {
@@ -870,7 +869,7 @@ export async function generateEntriesAndExitsReportPDF({ movements, allProducts,
 
             if (entries.length > 0) {
                 doc.addPage();
-                doc.autoTable({ startY: 85, head: [['Data', 'Produto', 'Motivo', 'Quantidade', 'Usuário']], body: entries.map(m => [ new Date(m.date).toLocaleString('pt-BR', { timeZone: 'UTC' }), m.productName, m.reason, m.quantityChange.toLocaleString('pt-BR'), m.user ]), theme: 'grid', headStyles: { fillColor: [22, 163, 74] } });
+                doc.autoTable({ startY: 85, head: [['Data', 'Produto', 'Motivo', 'Quantidade', 'Usuário']], body: entries.map(m => [ new Date(m.date).toLocaleString('pt-BR', { timeZone: 'UTC' }), m.productName, m.reason, m.quantityChange.toLocaleString('pt-BR'), m.user ]), headStyles: { fillColor: [22, 163, 74] } });
             }
 
             if (exits.length > 0) {
@@ -1164,4 +1163,3 @@ export async function updateHospitalOrderTemplate(templateItems: HospitalOrderTe
     revalidatePath('/dashboard/hospital/orders/template');
 }
 
-    
