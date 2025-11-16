@@ -37,6 +37,7 @@ export const authOptions: NextAuthOptions = {
       name: 'Credentials',
       credentials: {
         email: { label: "Email", type: "email" },
+        // A senha não é mais usada diretamente aqui, mas o campo é mantido para a assinatura do provedor.
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials: any) {
@@ -46,8 +47,8 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-            // The password has already been verified by Firebase Client SDK on the login form.
-            // The job of `authorize` is now just to find the user in our DB and return it.
+            // A senha já foi verificada pelo Firebase Client SDK no formulário de login.
+            // A tarefa aqui é apenas encontrar o usuário no nosso DB e retorná-lo.
             const userFromDb = await getUserByEmailFromDb(credentials.email);
             
             if (!userFromDb) {
@@ -55,12 +56,13 @@ export const authOptions: NextAuthOptions = {
                 return null;
             }
             
+            // Lógica de superusuário
             if (userFromDb.email === 'kauemoreiraofc2@gmail.com') {
               userFromDb.accessLevel = 'Admin';
               userFromDb.subRole = 'Coordenador';
             }
             
-            // Ensure hospital users have their locationId set.
+            // Garante que usuários do hospital tenham seu locationId definido.
             if (userFromDb.location === 'Hospital' && !userFromDb.locationId) {
                 const units = await getUnits();
                 const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
@@ -69,7 +71,7 @@ export const authOptions: NextAuthOptions = {
                 }
             }
 
-            // Return the user object for NextAuth to create a session.
+            // Retorna o objeto do usuário para o NextAuth criar a sessão.
             return {
               id: userFromDb.id,
               email: userFromDb.email,
@@ -104,8 +106,8 @@ export const authOptions: NextAuthOptions = {
             session.user.birthdate = user.birthdate;
             session.user.avatarColor = user.avatarColor;
             
-            // This is the correct place to update the last seen status
-            // It runs every time the session is checked.
+            // Este é o lugar correto para atualizar o status "visto por último".
+            // Ele é executado toda vez que a sessão é verificada.
             if (user.id) {
                await updateUserLastSeen(user.id);
             }
@@ -115,6 +117,6 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/login',
-    error: '/login', // Redirects to login page on any auth error
+    error: '/login', // Redireciona para a página de login em caso de erro.
   },
 };

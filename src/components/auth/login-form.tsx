@@ -41,14 +41,15 @@ export function LoginForm() {
     setError(null);
 
     try {
-      // 1. Authenticate with Firebase on the client
+      // Etapa 1: Autenticar com o Firebase no cliente
       const auth = getAuth(firebaseApp);
       await signInWithEmailAndPassword(auth, email, password);
       
-      // 2. If Firebase auth is successful, sign in with NextAuth using credentials
+      // Etapa 2: Se a autenticação do Firebase for bem-sucedida, inicie a sessão no NextAuth
       const result = await signIn('credentials', {
         email,
-        password, // Password is sent but not re-validated, just for the provider's signature
+        // A senha não precisa ser reenviada, mas o NextAuth espera o campo
+        password: 'password_not_needed', 
         redirect: false,
       });
       
@@ -60,13 +61,14 @@ export function LoginForm() {
            setError(`Ocorreu um erro ao criar sua sessão. Tente novamente.`);
         }
       } else if (result?.ok) {
-        // On successful NextAuth sign-in, redirect to the dashboard
-        router.push('/dashboard');
-        router.refresh(); // Ensure the layout re-renders with session data
+        // Sucesso! Redireciona para o dashboard.
+        // O `window.location.href` força um recarregamento completo da página, 
+        // que é mais robusto para garantir que o layout obtenha a nova sessão.
+        window.location.href = '/dashboard';
       }
 
     } catch (firebaseError: any) {
-      // Handle Firebase-specific errors
+      // Lida com erros específicos do Firebase
       if (firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
         setError('Email ou senha inválidos.');
       } else {
