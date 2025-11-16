@@ -6,8 +6,6 @@ import { readData, getUnits } from '@/lib/data';
 import { KVAdapter } from '@/lib/kv-adapter';
 import { kv } from '@/lib/server/kv.server';
 import { updateUserLastSeen } from '@/lib/actions';
-import { getAuth } from 'firebase-admin/auth';
-import { getAdminApp } from '@/lib/firebase/admin';
 
 /**
  * Busca um usuário no nosso banco de dados (Vercel KV) pelo email.
