@@ -36,16 +36,18 @@ export function LoginForm() {
     setError(null);
 
     try {
-      // Etapa 1: Autenticar com o Firebase no cliente.
-      // Esta é a única etapa que valida a senha.
+      // Step 1: Authenticate with Firebase on the client.
+      // This is the only step that actually validates the password.
       const auth = getAuth(firebaseApp);
       await signInWithEmailAndPassword(auth, email, password);
       
-      // Etapa 2: Se a autenticação do Firebase for bem-sucedida, inicie a sessão no NextAuth.
-      // A senha NÃO é enviada, apenas o email. A autorização já aconteceu.
+      // Step 2: If Firebase auth succeeds, sign in with NextAuth.
+      // We pass the password here just so the server-side `credentials` object matches,
+      // but the `authorize` function will NOT use it for validation.
       const result = await signIn('credentials', {
         email,
-        redirect: false, // Nós controlaremos o redirecionamento
+        password, // This is required to match the `credentials` definition, but not used for validation in `authorize`
+        redirect: false,
       });
       
       if (result?.error) {
@@ -56,14 +58,12 @@ export function LoginForm() {
            setError(`Ocorreu um erro ao criar sua sessão: ${result.error}`);
         }
       } else if (result?.ok) {
-        // Sucesso! Redireciona para o dashboard.
-        // O `window.location.href` força um recarregamento completo da página, 
-        // que é mais robusto para garantir que o layout obtenha a nova sessão.
+        // Success! Force a full page reload to ensure the new session state is properly loaded.
         window.location.href = '/dashboard';
       }
 
     } catch (firebaseError: any) {
-      // Lida com erros específicos do Firebase (senha errada, usuário não encontrado).
+      // Handle Firebase-specific errors (wrong password, user not found).
       if (firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
         setError('Email ou senha inválidos.');
       } else {
