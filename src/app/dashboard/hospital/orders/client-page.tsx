@@ -8,7 +8,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Eye, ArrowUpDown, MoreHorizontal, CheckCircle, PlusCircle, Server } from 'lucide-react';
+import { Eye, ArrowUpDown, MoreHorizontal, CheckCircle, PlusCircle, Server, Hourglass, XCircle } from 'lucide-react';
 import { updateOrderStatus } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
@@ -62,11 +62,29 @@ export function HospitalOrdersClientPage({ initialOrders, hospitalUnitId }: Hosp
             header: "Status",
             cell: ({ row }) => {
                 const status = row.getValue("status") as Order['status'];
-                return <Badge className={cn({
-                    'bg-yellow-500': status === 'Em análise',
-                    'bg-green-600': status === 'Atendido',
-                    'bg-red-500': status === 'Não atendido'
-                })}>{status}</Badge>;
+                const statusIcons = {
+                  'Em análise': <Hourglass className="mr-2 h-4 w-4 text-yellow-500" />,
+                  'Atendido': <CheckCircle className="mr-2 h-4 w-4 text-green-600" />,
+                  'Não atendido': <XCircle className="mr-2 h-4 w-4 text-red-500" />,
+                };
+                return (
+                  <Badge
+                    variant={
+                      status === 'Atendido'
+                        ? 'default'
+                        : status === 'Não atendido'
+                        ? 'destructive'
+                        : 'secondary'
+                    }
+                    className={cn(
+                      'flex items-center w-fit',
+                      { 'bg-green-600': status === 'Atendido' }
+                    )}
+                  >
+                    {statusIcons[status]}
+                    {status}
+                  </Badge>
+                );
             }
         },
         {

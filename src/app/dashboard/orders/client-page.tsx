@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { DataTable } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Eye, Printer, Trash2, Edit, MoreHorizontal, ArrowUpDown, CheckCircle, XCircle, Hourglass } from 'lucide-react';
+import { PlusCircle, Eye, Printer, Trash2, Edit, MoreHorizontal, ArrowUpDown, CheckCircle, XCircle, Hourglass, Search } from 'lucide-react';
 import type { Order, OrderItem, OrderStatus, Product } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { ColumnDef } from '@tanstack/react-table';
@@ -308,7 +308,7 @@ export function OrdersClientPage({ initialOrders, cafInventory, hospitalInventor
               Pedido de {selectedOrder?.unitName} em {selectedOrder?.sentDate ? new Date(selectedOrder.sentDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : ''}.
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
+          <ScrollArea className="max-h-[60vh] p-4">
             <Table>
                 <TableHeader>
                     <TableRow>
