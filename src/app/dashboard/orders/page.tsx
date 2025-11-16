@@ -9,6 +9,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Skeleton } from '@/components/ui/skeleton';
+import { unstable_noStore as noStore } from 'next/cache';
 
 function OrdersSkeleton() {
   return (
@@ -33,6 +34,9 @@ function OrdersSkeleton() {
 }
 
 export default async function OrdersPage() {
+    noStore();
+    
+    // As chamadas de dados agora são feitas aqui, no Server Component
     const [orders, cafInventory, hospitalInventory] = await Promise.all([
       getOrders(),
       getProducts('CAF'),

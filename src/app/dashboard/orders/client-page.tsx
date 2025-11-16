@@ -62,10 +62,12 @@ export function OrdersClientPage({ initialOrders, cafInventory, hospitalInventor
   // Map for Hospital's inventory by product name and presentation
   const hospitalInventoryMap = useMemo(() => {
     const map = new Map<string, number>();
-    hospitalInventory.forEach(product => {
-      const key = `${product.name}|${product.presentation}`;
-      map.set(key, (map.get(key) || 0) + product.quantity);
-    });
+    if (hospitalInventory) {
+        hospitalInventory.forEach(product => {
+          const key = `${product.name}|${product.presentation}`;
+          map.set(key, (map.get(key) || 0) + product.quantity);
+        });
+    }
     return map;
   }, [hospitalInventory]);
 
