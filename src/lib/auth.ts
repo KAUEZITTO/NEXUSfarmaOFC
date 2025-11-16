@@ -72,6 +72,7 @@ export const authOptions: NextAuthOptions = {
             }
 
             // Retorna o objeto do usuário para o NextAuth criar a sessão.
+            // A chamada para `updateUserLastSeen` foi removida daqui para evitar o erro de configuração.
             return {
               id: userFromDb.id,
               email: userFromDb.email,
@@ -113,7 +114,22 @@ export const authOptions: NextAuthOptions = {
             }
         }
         return session;
-    }
+    },
+    // O callback jwt não é mais necessário com a estratégia de sessão no banco de dados.
+    // async jwt({ token, user }) {
+    //   if (user) {
+    //     token.id = user.id;
+    //     token.location = user.location;
+    //     token.locationId = user.locationId;
+    //     token.accessLevel = user.accessLevel;
+    //     token.role = user.role;
+    //     token.subRole = user.subRole;
+    //     token.name = user.name;
+    //     token.birthdate = user.birthdate;
+    //     token.avatarColor = user.avatarColor;
+    //   }
+    //   return token;
+    // }
   },
   pages: {
     signIn: '/login',
