@@ -6,6 +6,8 @@ import { readData, getUnits } from '@/lib/data';
 import { KVAdapter } from '@/lib/kv-adapter';
 import { kv } from '@/lib/server/kv.server';
 import { updateUserLastSeen } from '@/lib/actions';
+import { getAuth } from 'firebase-admin/auth';
+import { getAdminApp } from '@/lib/firebase/admin';
 
 /**
  * Busca um usuário no nosso banco de dados (Vercel KV) pelo email.
@@ -40,15 +42,15 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials: any) {
-        if (!credentials?.email || !credentials.password) {
-          console.error("[NextAuth][Authorize] Error: Email ou senha não fornecidos.");
+        if (!credentials?.email) {
+          console.error("[NextAuth][Authorize] Error: Email não fornecido.");
           return null;
         }
 
         try {
-            // A responsabilidade da função authorize é APENAS buscar o usuário
-            // no banco de dados e retornar. A validação de senha é feita
-            // pelo Firebase no lado do cliente antes de chamar o signIn.
+            // The password is now validated on the client with Firebase Auth.
+            // The `authorize` function's only job is to find the user in our DB
+            // and return it to NextAuth to create a session.
             const userFromDb = await getUserByEmailFromDb(credentials.email);
             
             if (!userFromDb) {

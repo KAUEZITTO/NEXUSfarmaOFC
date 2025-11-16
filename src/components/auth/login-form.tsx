@@ -41,15 +41,14 @@ export function LoginForm() {
     setError(null);
 
     try {
-      if (!firebaseApp) {
-        throw new Error("Firebase não está inicializado.");
-      }
+      // Step 1: Authenticate with Firebase on the client side
       const auth = getAuth(firebaseApp);
       await signInWithEmailAndPassword(auth, email, password);
-
+      
+      // Step 2: If Firebase auth is successful, sign in with NextAuth to create a session
       const result = await signIn('credentials', {
         email,
-        password,
+        password, // Still passing password, authorize function will use email only.
         redirect: false,
       });
       
@@ -62,7 +61,7 @@ export function LoginForm() {
         }
       } else if (result?.ok) {
         router.push('/dashboard');
-        router.refresh(); // Garante que a sessão seja atualizada
+        router.refresh(); // Ensure session is updated across the app
       }
 
     } catch (firebaseError: any) {
