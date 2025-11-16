@@ -1,12 +1,11 @@
 
-
 'use client';
 
 import { useState, useTransition, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { Search, Printer, Loader2, Edit, MoreHorizontal, PlusCircle, Trash2, ShieldX } from "lucide-react";
+import { Search, Loader2, Edit, MoreHorizontal, PlusCircle, Trash2, ShieldX, Tags } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import type { Product, UserLocation } from '@/lib/types';
@@ -36,10 +35,9 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import Image from 'next/image';
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowUpDown } from 'lucide-react';
+import { ArrowUpDown, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddProductDialog } from '@/components/dashboard/add-product-dialog';
 import {
@@ -53,6 +51,7 @@ import { zeroStock, deleteProducts } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useDebounce } from 'use-debounce';
+import { CustomLabelDialog } from '@/components/dashboard/custom-label-dialog';
 
 type GroupedProduct = Product & {
     batches: Product[];
@@ -69,7 +68,7 @@ function BatchDetailsDialog({ isOpen, onOpenChange, product }: BatchDetailsDialo
 
   if (!product) return null;
   
-  const { batches, name, presentation, imageUrl } = product;
+  const { batches, name, presentation } = product;
 
   const handleProductSaved = () => {
     // router.refresh() does not work reliably inside a dialog after a server action
@@ -86,19 +85,7 @@ function BatchDetailsDialog({ isOpen, onOpenChange, product }: BatchDetailsDialo
             Apresentação: {presentation}. Total em estoque: {product.quantity.toLocaleString('pt-BR')}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex gap-6 max-h-[60vh] overflow-y-auto">
-          {imageUrl && (
-              <div className="w-1/3">
-                  <Image
-                      src={imageUrl}
-                      alt={`Imagem de ${name}`}
-                      width={200}
-                      height={200}
-                      className="rounded-md object-cover w-full"
-                  />
-              </div>
-          )}
-          <div className={imageUrl ? 'w-2/3' : 'w-full'}>
+        <div className="max-h-[60vh] overflow-y-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -157,7 +144,6 @@ function BatchDetailsDialog({ isOpen, onOpenChange, product }: BatchDetailsDialo
               </TableBody>
             </Table>
           </div>
-        </div>
         <DialogFooter>
             <DialogClose asChild>
                  <Button type="button" variant="outline">Fechar</Button>
@@ -169,7 +155,9 @@ function BatchDetailsDialog({ isOpen, onOpenChange, product }: BatchDetailsDialo
 }
 
 type FilterCategory = 'Todos' | Product['category'];
-const filterCategories: FilterCategory[] = ['Todos', 'Medicamento', 'Material Técnico', 'Tiras de Glicemia/Lancetas', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)'];
+const cafFilterCategories: FilterCategory[] = ['Todos', 'Medicamento', 'Material Técnico', 'Tiras de Glicemia/Lancetas', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)'];
+const hospitalFilterCategories: FilterCategory[] = ['Todos', 'Medicamento', 'Material Técnico', 'Fraldas', 'Outro'];
+
 
 const groupAndFilterProducts = (products: Product[], filter: FilterCategory, searchTerm: string): GroupedProduct[] => {
     const groupedProductsMap = new Map<string, GroupedProduct>();
@@ -228,9 +216,13 @@ export function InventoryClientPage({ initialProducts }: { initialProducts: Prod
   const [isPending, startTransition] = useTransition();
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const locationContext = (searchParams.get('location') as UserLocation) || undefined;
+  const isHospital = locationContext === 'Hospital';
+  const filterCategories = isHospital ? hospitalFilterCategories : cafFilterCategories;
+
   const activeFilter = (searchParams.get('category') as FilterCategory) || 'Todos';
   const initialSearchTerm = searchParams.get('q') || '';
-  const locationContext = (searchParams.get('location') as UserLocation) || undefined;
+  
 
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
@@ -251,6 +243,11 @@ export function InventoryClientPage({ initialProducts }: { initialProducts: Prod
         } else {
             params.delete(key);
         }
+        
+        if (locationContext) {
+            params.set('location', locationContext);
+        }
+
         router.push(`/dashboard/inventory?${params.toString()}`);
     });
   };
@@ -430,8 +427,8 @@ export function InventoryClientPage({ initialProducts }: { initialProducts: Prod
             </CardDescription>
         </CardHeader>
         <CardContent>
-            <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
-                <div className="flex items-center space-x-2 pt-2 overflow-x-auto pb-2">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+                <div className="flex items-center space-x-2 overflow-x-auto pb-2 w-full md:w-auto">
                     {filterCategories.map(filter => (
                         <Button 
                             key={filter}
@@ -445,13 +442,13 @@ export function InventoryClientPage({ initialProducts }: { initialProducts: Prod
                         </Button>
                     ))}
                 </div>
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-2 items-center flex-wrap justify-start w-full md:w-auto md:justify-end">
                     {selectedRowCount > 0 && (
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <Button variant="destructive" disabled={isProcessing}>
                                     <Trash2 className="mr-2 h-4 w-4" />
-                                    Excluir Selecionados ({selectedRowCount})
+                                    Excluir ({selectedRowCount})
                                 </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
@@ -471,12 +468,12 @@ export function InventoryClientPage({ initialProducts }: { initialProducts: Prod
                             </AlertDialogContent>
                         </AlertDialog>
                     )}
-                    <Button variant="outline" asChild>
-                        <Link href={`/shelf-labels?location=${locationContext || 'CAF'}`} target="_blank">
-                            <Printer className="mr-2 h-4 w-4" />
-                            Etiquetas de Prateleira
-                        </Link>
-                    </Button>
+                    <CustomLabelDialog>
+                        <Button variant="outline">
+                            <Tags className="mr-2 h-4 w-4" />
+                            Etiquetas
+                        </Button>
+                    </CustomLabelDialog>
                      <AlertDialog>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>

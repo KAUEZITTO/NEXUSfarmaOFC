@@ -264,10 +264,12 @@ export type SectorDispensation = {
 export type HospitalPatientStatus = 'Internado' | 'Alta' | 'Transferido' | 'Óbito';
 
 export type PrescribedItem = {
-    id: string; // internal unique id for the list item
+    id: string;
+    productId: string;
     name: string;
-    dosage: string; // e.g., "1 comprimido", "10ml"
-    frequency: string; // e.g., "8 em 8 horas", "1x ao dia"
+    presentation: string;
+    dosage: string;
+    frequency: string;
 };
 
 export type HospitalPatient = {

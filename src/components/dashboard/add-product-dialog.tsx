@@ -35,7 +35,7 @@ type AddProductDialogProps = {
 };
 
 const cafCategories: ProductCategory[] = ['Medicamento', 'Material Técnico', 'Tiras de Glicemia/Lancetas', 'Odontológico', 'Laboratório', 'Fraldas', 'Fórmulas', 'Não Padronizado (Compra)'];
-const hospitalCategories: ProductCategory[] = ['Medicamento', 'Material Técnico', 'Outro'];
+const hospitalCategories: ProductCategory[] = ['Medicamento', 'Material Técnico', 'Fraldas', 'Outro'];
 const cafSuppliers: Exclude<Product['supplier'], undefined>[] = ['Casmed', 'Mednutri', 'Doação', 'Outro'];
 const hospitalSuppliers: Exclude<Product['supplier'], undefined>[] = ['CAF', 'Doação', 'Outro'];
 const subCategories: Exclude<Product['subCategory'], undefined>[] = ['Medicamento', 'Material'];
