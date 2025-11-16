@@ -126,7 +126,7 @@ export function HospitalPatientsClientPage({ initialPatients, hospitalSectors, d
                             <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Ações</DropdownMenuLabel>
                                 <AddHospitalPatientDialog onPatientSaved={handlePatientSaved} patientToEdit={patient} hospitalSectors={hospitalSectors} trigger={<DropdownMenuItem onSelect={e => e.preventDefault()}><Edit className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>} />
-                                <DropdownMenuItem disabled><Pill className="mr-2 h-4 w-4"/> Dispensar Medicação</DropdownMenuItem>
+                                <DropdownMenuItem><Pill className="mr-2 h-4 w-4"/> Dispensar Medicação</DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuSub>
                                     <DropdownMenuSubTrigger>Alterar Status</DropdownMenuSubTrigger>
