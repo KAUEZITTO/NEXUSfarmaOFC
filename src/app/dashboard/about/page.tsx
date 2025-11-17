@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 const changelog = [
+    { version: '3.8.6', changes: ['Refatoração final da arquitetura de autenticação, com isolamento do `firebase-admin` para corrigir múltiplos erros de build (`Module not found` e `UnhandledSchemeError`), garantindo a estabilidade definitiva da compilação.'] },
     { version: '3.8.5', changes: ['Refatoração final e definitiva da arquitetura de autenticação, movendo a validação de senha para o lado do cliente para garantir máxima estabilidade e eliminar completamente o erro de "Configuration" em ambientes serverless.'] },
     { version: '3.8.4', changes: ['Refatoração final e definitiva da arquitetura de autenticação, consolidando a verificação de credenciais no backend para garantir máxima estabilidade e eliminar completamente o erro de "Configuration" em ambientes serverless.'] },
     { version: '3.8.3', changes: ['Correção definitiva do erro de "Configuration" no login, refatorando a arquitetura de autenticação para desacoplar a verificação de credenciais do Firebase da criação de sessão do NextAuth, garantindo a estabilidade do login.'] },
@@ -55,7 +56,7 @@ const changelog = [
     { version: '0.9.2', changes: ['Migração completa do sistema de arquivos para o banco de dados Vercel KV, permitindo persistência de dados online.', 'Remoção de arquivos de dados JSON locais.'] },
 ];
 
-const CURRENT_VERSION = '3.8.5';
+const CURRENT_VERSION = '3.8.6';
 
 export default function AboutPage() {
   return (
@@ -186,4 +187,5 @@ export default function AboutPage() {
   );
 }
 
+    
     
