@@ -1,7 +1,7 @@
 
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { updateUserLastSeen, validateAndGetUser, verifyUserPassword } from '@/lib/actions';
+import { updateUserLastSeen, validateAndGetUser } from '@/lib/actions';
 import type { User } from '@/lib/types';
 
 export const authOptions: NextAuthOptions = {
@@ -18,50 +18,24 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        email: { label: "Email", type: "text" },
-        password: {  label: "Password", type: "password" }
+        // Os dados do usuário agora são passados como uma string JSON, pré-validados no cliente.
+        user: { label: "User JSON", type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials.password) {
-          console.error("[NextAuth][Authorize] Email ou senha não fornecidos.");
+        // A função authorize agora é extremamente simples e não faz chamadas de DB.
+        // Ela apenas recebe o objeto de usuário que já foi validado no cliente.
+        // Isso evita o erro de configuração no ambiente serverless.
+        if (!credentials?.user) {
+          console.error("[NextAuth][Authorize] Error: User data not provided in credentials.");
           return null;
         }
 
-        // A arquitetura final e estável:
-        // 1. A senha é validada no CLIENTE usando o SDK do Firebase.
-        // 2. Se a senha for válida, o cliente chama `validateAndGetUser`.
-        // 3. O cliente então chama `signIn` passando o objeto de usuário completo.
-        // 4. O `authorize` aqui é PASSIVO. Ele não faz chamadas de rede. Ele apenas confia no objeto que o cliente enviou.
-        // Esta abordagem elimina o erro "Configuration" em ambientes serverless.
-        
-        // No fluxo final, o `credentials` objeto conterá um campo `user` que é uma string JSON.
-        // O `email` e `password` ainda estão aqui para compatibilidade, mas o `user` tem precedência.
-        if (credentials.user) {
-          try {
-            const user = JSON.parse(credentials.user);
-            return user;
-          } catch (e) {
-            console.error("[NextAuth][Authorize] Falha ao fazer parse do JSON do usuário.", e);
-            return null;
-          }
-        }
-        
-        // Fallback para o fluxo antigo (verificação no servidor), que é instável na Vercel mas pode funcionar em dev.
-        // Este bloco é a fonte do erro 'Configuration'.
         try {
-          const isPasswordValid = await verifyUserPassword(credentials.email, credentials.password);
-          if (!isPasswordValid) {
-            console.log(`[NextAuth][Authorize] Falha na validação de senha (backend) para: ${credentials.email}`);
-            return null;
-          }
-          const user = await validateAndGetUser(credentials.email);
-          if (!user) {
-            console.log(`[NextAuth][Authorize] Usuário não encontrado no banco de dados (backend): ${credentials.email}`);
-            return null;
-          }
-          return user;
+            const user = JSON.parse(credentials.user);
+            // O objeto 'user' já vem limpo, sem a senha.
+            return user;
         } catch (error) {
-            console.error("[NextAuth][Authorize] Erro durante o fluxo de autorização de fallback.", error);
+            console.error("[NextAuth][Authorize] Error parsing user JSON.", error);
             return null;
         }
       },
@@ -111,5 +85,3 @@ export const authOptions: NextAuthOptions = {
     error: '/login', 
   },
 };
-
-    
