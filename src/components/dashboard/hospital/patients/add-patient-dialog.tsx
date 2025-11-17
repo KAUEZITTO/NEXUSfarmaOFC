@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,6 +12,11 @@ import { useToast } from '@/hooks/use-toast';
 import { addHospitalPatient, updateHospitalPatient } from '@/lib/actions';
 import { Save, Loader2, PlusCircle, Trash2, Pill } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
 
 interface AddHospitalPatientDialogProps {
     trigger: React.ReactNode;
@@ -81,6 +87,7 @@ export function AddHospitalPatientDialog({ trigger, onPatientSaved, patientToEdi
         setPrescriptions(prev => [...prev, {
             id: `presc-${Date.now()}`,
             name: '',
+            presentation: '',
             dosage: '',
             frequency: ''
         }]);
@@ -90,7 +97,7 @@ export function AddHospitalPatientDialog({ trigger, onPatientSaved, patientToEdi
         setPrescriptions(prev => prev.filter(p => p.id !== id));
     };
 
-    const handlePrescriptionChange = (id: string, field: 'name' | 'frequency' | 'dosage', value: string) => {
+    const handlePrescriptionChange = (id: string, field: keyof Omit<PrescribedItem, 'id' | 'productId'>, value: string) => {
         setPrescriptions(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p));
     };
 
@@ -100,7 +107,7 @@ export function AddHospitalPatientDialog({ trigger, onPatientSaved, patientToEdi
             <DialogContent className="max-w-3xl">
                 <DialogHeader>
                     <DialogTitle>{isEditing ? 'Editar Paciente' : 'Registrar Novo Paciente Internado'}</DialogTitle>
-                    <DialogDescription>Preencha os dados e a prescrição médica do paciente.</DialogDescription>
+                    <DialogDescription>Preencha os dados e a prescrição do paciente internado.</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-6 py-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -137,18 +144,22 @@ export function AddHospitalPatientDialog({ trigger, onPatientSaved, patientToEdi
                     </div>
                     
                     <div className="space-y-4 pt-4 border-t">
-                        <h4 className="font-medium text-lg flex items-center gap-2"><Pill className="h-5 w-5"/> Prescrição Médica</h4>
+                        <h4 className="font-medium text-lg flex items-center gap-2"><Pill className="h-5 w-5"/> Prescrições</h4>
                         <ScrollArea className="h-48 w-full pr-4">
                             <div className="space-y-4">
                             {prescriptions.length > 0 ? prescriptions.map(item => (
-                                <div key={item.id} className="p-3 border rounded-md grid grid-cols-1 md:grid-cols-7 gap-3 items-end">
+                                <div key={item.id} className="p-3 border rounded-md grid grid-cols-1 md:grid-cols-8 gap-3 items-end">
                                     <div className="space-y-1 md:col-span-3">
                                         <Label htmlFor={`name-${item.id}`} className='text-xs'>Medicamento/Item</Label>
                                         <Input id={`name-${item.id}`} value={item.name} onChange={e => handlePrescriptionChange(item.id, 'name', e.target.value)} placeholder="Ex: Dipirona 500mg" />
                                     </div>
                                     <div className="space-y-1 md:col-span-2">
+                                        <Label htmlFor={`presentation-${item.id}`} className='text-xs'>Apresentação</Label>
+                                        <Input id={`presentation-${item.id}`} value={item.presentation} onChange={e => handlePrescriptionChange(item.id, 'presentation', e.target.value)} placeholder="Ex: Comprimido" />
+                                    </div>
+                                    <div className="space-y-1 md:col-span-1">
                                         <Label htmlFor={`dosage-${item.id}`} className='text-xs'>Posologia</Label>
-                                        <Input id={`dosage-${item.id}`} value={item.dosage} onChange={e => handlePrescriptionChange(item.id, 'dosage', e.target.value)} placeholder="Ex: 1 comp." />
+                                        <Input id={`dosage-${item.id}`} value={item.dosage} onChange={e => handlePrescriptionChange(item.id, 'dosage', e.target.value)} placeholder="Ex: 1cp" />
                                     </div>
                                      <div className="space-y-1 md:col-span-1">
                                         <Label htmlFor={`frequency-${item.id}`} className='text-xs'>Frequência</Label>

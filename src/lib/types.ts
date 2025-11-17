@@ -265,7 +265,7 @@ export type HospitalPatientStatus = 'Internado' | 'Alta' | 'Transferido' | 'Óbi
 
 export type PrescribedItem = {
     id: string;
-    productId: string;
+    productId?: string; // Optional if manually entered
     name: string;
     presentation: string;
     dosage: string;

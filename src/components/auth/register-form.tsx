@@ -22,8 +22,7 @@ function RegisterButton({ isPending }: { isPending: boolean }) {
   );
 }
 
-const cafRoles: Role[] = ['Farmacêutico', 'Coordenador', 'Técnico de Enfermagem', 'Auxiliar de Farmácia', 'Digitador'];
-const hospitalRoles: Role[] = ['Farmacêutico', 'Enfermeiro(a)', 'Técnico de Enfermagem', 'Atendente de Farmácia'];
+const allRoles: Role[] = ['Farmacêutico', 'Enfermeiro(a)', 'Técnico de Enfermagem', 'Auxiliar de Farmácia', 'Atendente de Farmácia', 'Digitador', 'Coordenador'];
 const pharmacistSubRoles: SubRole[] = ['CAF', 'Hospitalar', 'Coordenador'];
 
 
@@ -39,8 +38,6 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
   const [selectedLocation, setSelectedLocation] = useState<UserLocation | ''>('');
   const [selectedRole, setSelectedRole] = useState<Role | ''>('');
   const [selectedSubRole, setSelectedSubRole] = useState<SubRole | ''>('');
-
-  const availableRoles = selectedLocation === 'CAF' ? cafRoles : selectedLocation === 'Hospital' ? hospitalRoles : [];
   
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -53,9 +50,9 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
     const password = formData.get('password') as string;
     const confirmPassword = formData.get('confirm-password') as string;
     const birthdate = formData.get('birthdate') as string;
-    const location = formData.get('location') as UserLocation | undefined;
     const role = formData.get('role') as Role;
     const subRole = formData.get('subRole') as SubRole | undefined;
+    const location = formData.get('location') as UserLocation | undefined;
 
     if (!birthdate) {
         setErrorMessage("A data de nascimento é obrigatória.");
@@ -81,19 +78,19 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
         return;
     }
 
-    // Lógica de validação corrigida
-    if (role === 'Farmacêutico' && subRole !== 'Coordenador' && !location) {
-        setErrorMessage("Por favor, selecione um local (CAF ou Hospital) para esta área de atuação.");
+    // Lógica de validação corrigida para resolver o erro de tipo
+    if (role === 'Farmacêutico' && !subRole) {
+        setErrorMessage("Para farmacêuticos, a área de atuação é obrigatória.");
         setIsPending(false);
         return;
     }
     
-    if (role !== 'Farmacêutico' && !location) {
-        setErrorMessage("Por favor, selecione um local (CAF ou Hospital) para este cargo.");
+    // Se não for farmacêutico ou for farmacêutico que não é coordenador, o local é obrigatório.
+    if ( (role !== 'Farmacêutico' || (role === 'Farmacêutico' && subRole !== 'Coordenador') ) && !location) {
+        setErrorMessage("Por favor, selecione um local (CAF ou Hospital) para este cargo/atuação.");
         setIsPending(false);
         return;
     }
-
 
     try {
       const result = await registerAction({ name, email, password, birthdate, role, subRole, location });
@@ -113,7 +110,20 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
       setIsPending(false);
     }
   }
-  
+
+  const handleRoleChange = (value: string) => {
+    const newRole = value as Role;
+    setSelectedRole(newRole);
+    // Reset selections dependent on role
+    setSelectedSubRole('');
+    if (newRole !== 'Farmacêutico') {
+        // Se o novo cargo não for Farmacêutico, a sub-área não se aplica.
+    }
+  }
+
+  const showSubRole = selectedRole === 'Farmacêutico';
+  const showLocation = selectedRole && (selectedRole !== 'Farmacêutico' || (selectedRole === 'Farmacêutico' && selectedSubRole !== 'Coordenador'));
+
   return (
     <form onSubmit={handleSubmit} className="grid gap-4">
        <div className="grid gap-2">
@@ -139,18 +149,18 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
 
        <div className="grid gap-2">
             <Label htmlFor="role">Cargo</Label>
-            <Select name="role" required value={selectedRole} onValueChange={(v) => { setSelectedRole(v as Role); setSelectedSubRole(''); setSelectedLocation(''); }}>
+            <Select name="role" required value={selectedRole} onValueChange={handleRoleChange}>
                 <SelectTrigger><SelectValue placeholder="Selecione seu cargo" /></SelectTrigger>
                 <SelectContent>
-                    {['Farmacêutico', 'Enfermeiro(a)', 'Técnico de Enfermagem', 'Auxiliar de Farmácia', 'Atendente de Farmácia', 'Digitador'].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                    {allRoles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                 </SelectContent>
             </Select>
         </div>
 
-        {selectedRole === 'Farmacêutico' && (
+        {showSubRole && (
             <div className="grid gap-2">
-                <Label htmlFor="subRole">Área de Atuação</Label>
-                <Select name="subRole" required value={selectedSubRole} onValueChange={(v) => setSelectedSubRole(v as SubRole)}>
+                <Label htmlFor="subRole">Área de Atuação (Farmacêutico)</Label>
+                <Select name="subRole" required={showSubRole} value={selectedSubRole} onValueChange={(v) => setSelectedSubRole(v as SubRole)}>
                     <SelectTrigger><SelectValue placeholder="Selecione a área" /></SelectTrigger>
                     <SelectContent>
                         {pharmacistSubRoles.map(sr => <SelectItem key={sr} value={sr}>{sr}</SelectItem>)}
@@ -159,10 +169,10 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
             </div>
         )}
 
-        {selectedRole && selectedSubRole !== 'Coordenador' && (
+        {showLocation && (
             <div className="grid gap-2">
                 <Label htmlFor="location">Local de Trabalho</Label>
-                <Select name="location" required={selectedRole !== '' && selectedSubRole !== 'Coordenador'} value={selectedLocation} onValueChange={(v) => setSelectedLocation(v as UserLocation)}>
+                <Select name="location" required={showLocation} value={selectedLocation} onValueChange={(v) => setSelectedLocation(v as UserLocation)}>
                     <SelectTrigger><SelectValue placeholder="Selecione o local..." /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value="CAF">CAF (Gestão Central)</SelectItem>
@@ -170,15 +180,6 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
                     </SelectContent>
                 </Select>
             </div>
-        )}
-
-
-        {availableRoles.length > 0 && selectedRole && !availableRoles.includes(selectedRole as any) && (
-            <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Cargo Inválido</AlertTitle>
-                <AlertDescription>O cargo "{selectedRole}" não é válido para o local "{selectedLocation}". Por favor, selecione um cargo diferente.</AlertDescription>
-            </Alert>
         )}
 
       <RegisterButton isPending={isPending} />
