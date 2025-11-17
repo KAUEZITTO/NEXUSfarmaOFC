@@ -58,7 +58,7 @@ export function LoginForm() {
       // Passo 3: Criar a sessão no NextAuth com o usuário já validado.
       // O 'authorize' no backend apenas passará esses dados para o callback 'jwt'.
       const result = await signIn('credentials', {
-        user: JSON.stringify(user),
+        user: JSON.stringify(user), // Passa o objeto de usuário completo e validado
         redirect: false,
       });
 
