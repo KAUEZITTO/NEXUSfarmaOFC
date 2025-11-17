@@ -2,12 +2,49 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { readData, writeData, getProducts, getAllUsers, getSectorDispensations, getUnits as getUnitsFromDb, getHospitalPatients as getHospitalPatientsFromDb, getHospitalPatientDispensations as getHospitalPatientDispensationsFromDb } from './data';
-import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation, SectorDispensation, HospitalSector as Sector, HospitalOrderTemplateItem, HospitalPatient, HospitalPatientDispensation } from './types';
-import { getCurrentUser } from './session';
+import { readData, writeData, getProducts, getAllUsers, getSectorDispensations, getUnits as getUnitsFromDb, getHospitalPatients as getHospitalPatientsFromDb, getHospitalPatientDispensations as getHospitalPatientDispensationsFromDb, getUnits } from '@/lib/data';
+import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation, SectorDispensation, HospitalSector as Sector, HospitalOrderTemplateItem, HospitalPatient, HospitalPatientDispensation } from '@/lib/types';
+import { getCurrentUser } from '@/lib/session';
 import { generatePdf } from '@/lib/pdf-generator';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase/admin';
+
+
+// --- AUTH ACTIONS ---
+
+// Esta função é uma Server Action chamada pelo cliente para buscar os dados do usuário APÓS a validação do Firebase.
+export async function validateAndGetUser(email: string): Promise<User | null> {
+    if (!email) return null;
+    try {
+        const users = await readData<User>('users');
+        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+        if (!user) return null;
+
+        // Regra especial para o superadmin
+        if (user.email === 'kauemoreiraofc2@gmail.com') {
+            user.accessLevel = 'Admin';
+            user.subRole = 'Coordenador';
+        }
+        
+        // Garante que o usuário do hospital tenha o ID da unidade correto
+        if (user.location === 'Hospital' && !user.locationId) {
+            const units = await getUnits();
+            const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
+            if (hospitalUnit) {
+                user.locationId = hospitalUnit.id;
+            }
+        }
+
+        // Remove a senha antes de retornar
+        const { password, ...userForSession } = user;
+        return userForSession as User;
+
+    } catch (error) {
+        console.error("CRITICAL: Failed to read user data from Vercel KV in validateAndGetUser.", error);
+        return null;
+    }
+}
+
 
 // --- UTILITIES ---
 const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -870,12 +907,12 @@ export async function generateEntriesAndExitsReportPDF({ movements, allProducts,
 
             if (entries.length > 0) {
                 doc.addPage();
-                doc.autoTable({ startY: 85, head: [['Data', 'Produto', 'Motivo', 'Quantidade', 'Usuário']], body: entries.map(m => [ new Date(m.date).toLocaleString('pt-BR', { timeZone: 'UTC' }), m.productName, m.reason, m.quantityChange.toLocaleString('pt-BR'), m.user ]), headStyles: { fillColor: [22, 163, 74] } });
+                doc.autoTable({ startY: 85, head: [['Data', 'Produto', 'Motivo', 'Qtd', 'Usuário']], body: entries.map(m => [ new Date(m.date).toLocaleString('pt-BR', { timeZone: 'UTC' }), m.productName, m.reason, m.quantityChange.toLocaleString('pt-BR'), m.user ]), headStyles: { fillColor: [22, 163, 74] } });
             }
 
             if (exits.length > 0) {
                  doc.addPage();
-                 doc.autoTable({ startY: 85, head: [['Data', 'Produto', 'Motivo', 'Quantidade', 'Usuário']], body: exits.map(m => [ new Date(m.date).toLocaleString('pt-BR', { timeZone: 'UTC' }), m.productName, m.reason, Math.abs(m.quantityChange).toLocaleString('pt-BR'), m.user ]), theme: 'grid', headStyles: { fillColor: [220, 38, 38] } });
+                 doc.autoTable({ startY: 85, head: [['Data', 'Produto', 'Motivo', 'Qtd', 'Usuário']], body: exits.map(m => [ new Date(m.date).toLocaleString('pt-BR', { timeZone: 'UTC' }), m.productName, m.reason, Math.abs(m.quantityChange).toLocaleString('pt-BR'), m.user ]), theme: 'grid', headStyles: { fillColor: [220, 38, 38] } });
             }
         }
     );

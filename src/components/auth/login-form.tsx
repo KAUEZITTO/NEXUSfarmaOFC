@@ -11,7 +11,7 @@ import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase/client';
-import { validateAndGetUser } from '@/lib/auth';
+import { validateAndGetUser } from '@/lib/actions';
 
 export function LoginForm() {
   const searchParams = useSearchParams();

@@ -7,41 +7,6 @@ import { KVAdapter } from '@/lib/kv-adapter';
 import { kv } from '@/lib/server/kv.server';
 import { updateUserLastSeen } from '@/lib/actions';
 
-// Esta função é uma Server Action chamada pelo cliente para buscar os dados do usuário APÓS a validação do Firebase.
-export async function validateAndGetUser(email: string): Promise<AppUser | null> {
-    'use server';
-    if (!email) return null;
-    try {
-        const users = await readData<AppUser>('users');
-        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-        if (!user) return null;
-
-        // Regra especial para o superadmin
-        if (user.email === 'kauemoreiraofc2@gmail.com') {
-            user.accessLevel = 'Admin';
-            user.subRole = 'Coordenador';
-        }
-        
-        // Garante que o usuário do hospital tenha o ID da unidade correto
-        if (user.location === 'Hospital' && !user.locationId) {
-            const units = await getUnits();
-            const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
-            if (hospitalUnit) {
-                user.locationId = hospitalUnit.id;
-            }
-        }
-
-        // Remove a senha antes de retornar
-        const { password, ...userForSession } = user;
-        return userForSession;
-
-    } catch (error) {
-        console.error("CRITICAL: Failed to read user data from Vercel KV in validateAndGetUser.", error);
-        return null;
-    }
-}
-
-
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'database',
