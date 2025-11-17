@@ -1,61 +1,40 @@
 
-import type { NextAuthOptions, User as NextAuthUser } from 'next-auth';
-import { updateUserLastSeen, validateAndGetUser } from '@/lib/actions';
-import type { User, UserLocation, Role, SubRole, AccessLevel } from '@/lib/types';
+'use server';
 
-// O CredentialsProvider foi removido. A autenticação agora é gerenciada
-// por uma Server Action e cookies JWT manuais para máxima estabilidade.
-// Este arquivo é mantido para que o [...nextauth]/route.ts não quebre,
-// mas o provedor de credenciais não será mais invocado pelo fluxo de login principal.
+import { jwtVerify, SignJWT } from 'jose';
+import { cookies } from 'next/headers';
+import type { NextRequest } from 'next/server';
+import type { User } from './types';
 
-export const authOptions: NextAuthOptions = {
-  session: {
-    strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 dias
-  },
-  
-  secret: process.env.NEXTAUTH_SECRET,
+const secretKey = process.env.NEXTAUTH_SECRET;
+const key = new TextEncoder().encode(secretKey);
 
-  providers: [
-    // Provedores futuros (como Google, etc.) podem ser adicionados aqui.
-    // O CredentialsProvider foi intencionalmente removido para resolver o erro de configuração.
-  ],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.name = user.name;
-        token.email = user.email;
-        token.location = (user as User).location;
-        token.locationId = (user as User).locationId;
-        token.accessLevel = (user as User).accessLevel;
-        token.role = (user as User).role;
-        token.subRole = (user as User).subRole;
-        token.birthdate = (user as User).birthdate;
-        token.avatarColor = (user as User).avatarColor;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user && token.id) {
-        session.user.id = token.id as string;
-        session.user.name = token.name;
-        session.user.email = token.email;
-        session.user.location = token.location as UserLocation;
-        session.user.locationId = token.locationId as string | undefined;
-        session.user.accessLevel = token.accessLevel as AccessLevel;
-        session.user.role = token.role as Role;
-        session.user.subRole = token.subRole as SubRole | undefined;
-        session.user.birthdate = token.birthdate as string | null;
-        session.user.avatarColor = token.avatarColor as string | undefined;
+export async function encrypt(payload: any) {
+  return await new SignJWT(payload)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('30d')
+    .sign(key);
+}
 
-        updateUserLastSeen(token.id as string).catch(console.error);
-      }
-      return session;
-    },
-  },
-  pages: {
-    signIn: '/login',
-    error: '/login', 
-  },
-};
+export async function decrypt(input: string): Promise<any> {
+  const { payload } = await jwtVerify(input, key, {
+    algorithms: ['HS256'],
+  });
+  return payload;
+}
+
+export async function verifyAuth(req?: NextRequest) {
+    const token = req ? req.cookies.get('session_token')?.value : cookies().get('session_token')?.value;
+
+    if (!token) {
+        throw new Error('Token de sessão não encontrado.');
+    }
+
+    try {
+        const verified = await decrypt(token);
+        return verified as User;
+    } catch (err) {
+        throw new Error('Seu token de sessão expirou ou é inválido.');
+    }
+}
