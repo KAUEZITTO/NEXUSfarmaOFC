@@ -1,7 +1,7 @@
 
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { updateUserLastSeen } from '@/lib/actions';
+import { updateUserLastSeen, validateAndGetUser } from '@/lib/actions';
 import type { User } from '@/lib/types';
 
 export const authOptions: NextAuthOptions = {
@@ -11,8 +11,8 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 dias
   },
   // O Adapter é REMOVIDO pois é incompatível com a estratégia 'jwt'.
-  // adapter: KVAdapter(kv), 
-
+  // O token JWT será a única fonte de verdade para a sessão.
+  
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
