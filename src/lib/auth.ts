@@ -1,12 +1,14 @@
 
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { readData, getUnits } from '@/lib/data';
-import { updateUserLastSeen, validateAndGetUser } from '@/lib/actions';
+import { validateAndGetUser, verifyUserPassword } from '@/lib/actions';
+import { updateUserLastSeen } from '@/lib/actions';
+import type { User as AppUser } from '@/lib/types';
+
 
 export const authOptions: NextAuthOptions = {
   session: {
-    strategy: 'jwt', // Revertido para JWT, que é o padrão e mais estável com callbacks
+    strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 dias
   },
   secret: process.env.NEXTAUTH_SECRET,
@@ -14,46 +16,60 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
         name: 'Credentials',
         credentials: {
-          // O formulário de login agora passa apenas o email para o signIn
           email: { label: "Email", type: "text" },
-          // A senha é validada no cliente e não é enviada para este provider
+          password: { label: "Password", type: "password" }
         },
         async authorize(credentials) {
-            // Esta função agora apenas atua como uma ponte.
-            // A validação real acontece no login-form e no callback jwt.
-            // Retornamos um objeto temporário que será usado no callback jwt.
-            if (!credentials?.email) return null;
-            
-            // Apenas para satisfazer a função authorize. O objeto real será construído no callback 'jwt'.
-            return { id: `temp-${credentials.email}`, email: credentials.email };
+            if (!credentials?.email || !credentials?.password) {
+                console.error("Authorize: Email ou senha não fornecidos.");
+                return null;
+            }
+
+            try {
+                // Passo 1: Verificar a senha com o Firebase Admin SDK (no servidor)
+                const isPasswordValid = await verifyUserPassword(credentials.email, credentials.password);
+                
+                if (!isPasswordValid) {
+                    console.log(`Authorize: Senha inválida para o email: ${credentials.email}`);
+                    return null; // Senha incorreta
+                }
+
+                // Passo 2: Se a senha for válida, buscar os dados do usuário no nosso banco de dados
+                const user = await validateAndGetUser(credentials.email);
+
+                if (user) {
+                    return user; // Retorna o objeto de usuário para o NextAuth
+                } else {
+                    console.log(`Authorize: Usuário autenticado pelo Firebase, mas não encontrado no DB: ${credentials.email}`);
+                    return null; // Usuário não encontrado no nosso DB
+                }
+
+            } catch (error) {
+                console.error("Erro crítico na função authorize:", error);
+                return null;
+            }
         },
     }),
   ],
   callbacks: {
-    // O callback 'jwt' é chamado ANTES do callback 'session'.
-    // Ele é o responsável por buscar os dados do usuário e construir o token.
     async jwt({ token, user }) {
         // Na primeira vez que o usuário faz login (quando `user` está presente),
-        // buscamos os dados completos no banco de dados.
-        if (user && user.email) {
-            const appUser = await validateAndGetUser(user.email);
-            if (appUser) {
-                token.id = appUser.id;
-                token.name = appUser.name;
-                token.email = appUser.email;
-                token.location = appUser.location;
-                token.locationId = appUser.locationId;
-                token.accessLevel = appUser.accessLevel;
-                token.role = appUser.role;
-                token.subRole = appUser.subRole;
-                token.birthdate = appUser.birthdate;
-                token.avatarColor = appUser.avatarColor;
-            }
+        // o objeto `user` vem da função `authorize`.
+        if (user) {
+            const appUser = user as AppUser;
+            token.id = appUser.id;
+            token.name = appUser.name;
+            token.email = appUser.email;
+            token.location = appUser.location;
+            token.locationId = appUser.locationId;
+            token.accessLevel = appUser.accessLevel;
+            token.role = appUser.role;
+            token.subRole = appUser.subRole;
+            token.birthdate = appUser.birthdate;
+            token.avatarColor = appUser.avatarColor;
         }
         return token;
     },
-    // O callback 'session' é chamado DEPOIS do 'jwt'.
-    // Ele recebe os dados do token e os repassa para a sessão do cliente.
     async session({ session, token }) {
         if (session.user && token.id) {
             session.user.id = token.id as string;
@@ -67,7 +83,6 @@ export const authOptions: NextAuthOptions = {
             session.user.birthdate = token.birthdate as string;
             session.user.avatarColor = token.avatarColor as string;
 
-            // Atualiza o 'lastSeen' do usuário no banco de dados a cada sessão
             if (token.id) {
                await updateUserLastSeen(token.id as string);
             }

@@ -12,7 +12,47 @@ import { getAdminApp } from '@/lib/firebase/admin';
 
 // --- AUTH ACTIONS ---
 
-// Esta função é uma Server Action chamada pelo cliente para buscar os dados do usuário APÓS a validação do Firebase.
+export async function verifyUserPassword(email: string, password_provided: string): Promise<boolean> {
+    // Esta função é chamada no backend e usa o Firebase Admin para validar a senha
+    // sem precisar de um token personalizado. É um fluxo mais direto.
+    // NOTA: Esta abordagem não é padrão no Firebase e depende de uma API REST não documentada oficialmente para este fim.
+    // Se isso falhar, a alternativa seria usar um fluxo de token personalizado.
+    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+    if (!apiKey) {
+        console.error("Firebase API Key não está definida.");
+        throw new Error("Configuração do servidor incompleta.");
+    }
+    const verifyPasswordUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`;
+
+    try {
+        const response = await fetch(verifyPasswordUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password_provided,
+                returnSecureToken: false
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.localId) {
+            return true; // Senha válida
+        } else {
+            // Log do erro para depuração no servidor, mas não expõe detalhes ao cliente
+            console.warn(`Falha na verificação de senha para ${email}:`, data.error?.message || 'Resposta inválida');
+            return false; // Senha inválida ou outro erro
+        }
+    } catch (error) {
+        console.error("Erro de rede ao verificar senha com Firebase:", error);
+        return false;
+    }
+}
+
+
 export async function validateAndGetUser(email: string): Promise<User | null> {
     if (!email) return null;
     try {
@@ -20,13 +60,11 @@ export async function validateAndGetUser(email: string): Promise<User | null> {
         const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
         if (!user) return null;
 
-        // Regra especial para o superadmin
         if (user.email === 'kauemoreiraofc2@gmail.com') {
             user.accessLevel = 'Admin';
             user.subRole = 'Coordenador';
         }
         
-        // Garante que o usuário do hospital tenha o ID da unidade correto
         if (user.location === 'Hospital' && !user.locationId) {
             const units = await getUnits();
             const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
@@ -35,7 +73,6 @@ export async function validateAndGetUser(email: string): Promise<User | null> {
             }
         }
 
-        // Remove a senha antes de retornar
         const { password, ...userForSession } = user;
         return userForSession as User;
 
@@ -49,7 +86,7 @@ export async function validateAndGetUser(email: string): Promise<User | null> {
 // --- UTILITIES ---
 const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
 const generateNumericId = (): string => {
-    const timestamp = Date.now().toString(); // e.g., "1678886400000"
+    const timestamp = Date.now().toString(); 
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     return (timestamp.slice(-3) + random).padStart(6, '0').slice(0, 6);
 };
@@ -528,7 +565,7 @@ export async function register(data: { name: string, email: string; password: st
     const { name, email, password, birthdate, role, subRole, location } = data;
 
     try {
-        const adminAuth = getAdminApp(); // Garantir que o app admin está inicializado
+        const adminAuth = getAdminApp(); 
         const auth = getAuth(adminAuth);
 
         const users = await getAllUsers();
@@ -617,7 +654,6 @@ export async function updateUserLastSeen(userId: string) {
         users[userIndex].lastSeen = new Date().toISOString();
         await writeData('users', users);
     }
-    // No revalidatePath here to avoid potential issues in auth flow
 }
 
 export async function updateUserAccessLevel(userId: string, accessLevel: AccessLevel) {
@@ -733,7 +769,6 @@ export async function generateCompleteReportPDF(
           headStyles: { fillColor: [22, 163, 74] },
         });
 
-        // The logic to add a new page for each table is now handled inside generatePdf
         doc.addPage();
         doc.autoTable({ startY: 85, head: [['Nome', 'Categoria', 'Qtd', 'Status', 'Validade', 'Lote']], body: products.map(p => [ p.name, p.category, p.quantity.toString(), p.status, p.expiryDate ? new Date(p.expiryDate).toLocaleDateString('pt-BR') : 'N/A', p.batch || 'N/A' ]), theme: 'grid', headStyles: { fillColor: [37, 99, 235] } });
         doc.addPage();
@@ -1046,8 +1081,6 @@ export async function addSectorDispensation(data: { sector: string; items: Dispe
         }
     }
     
-    // This is a critical fix: we must write back the 'products' array which includes ALL products,
-    // not just the hospital ones, otherwise we would wipe out the CAF inventory.
     const allProducts = await getProducts('all');
     const updatedAllProducts = allProducts.map(p => {
         const updatedProduct = products.find(up => up.id === p.id);
