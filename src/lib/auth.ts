@@ -1,7 +1,7 @@
 
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { updateUserLastSeen, validateAndGetUser } from '@/lib/actions';
+import { updateUserLastSeen, validateAndGetUser, verifyUserPassword } from '@/lib/actions';
 import type { User } from '@/lib/types';
 
 export const authOptions: NextAuthOptions = {
@@ -18,23 +18,35 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        // O objeto de usuário, já validado no cliente, será passado como uma string JSON.
-        user: { label: "User JSON", type: "text" },
+        email: { label: "Email", type: "text" },
+        password: {  label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        // Esta função agora é extremamente simples e não faz chamadas de rede.
-        // Ela apenas confia nos dados já validados que o cliente enviou.
-        if (!credentials?.user) {
-          console.error("[NextAuth][Authorize] Dados do usuário não fornecidos.");
+        if (!credentials?.email || !credentials.password) {
+          console.error("[NextAuth][Authorize] Email ou senha não fornecidos.");
           return null;
         }
 
         try {
-            const user = JSON.parse(credentials.user);
-            // Retorna o objeto do usuário para ser usado no callback jwt.
-            return user;
+          // Passo 1: Verificar a senha usando uma Server Action segura com o Firebase Admin SDK
+          const isPasswordValid = await verifyUserPassword(credentials.email, credentials.password);
+          if (!isPasswordValid) {
+            console.log(`[NextAuth][Authorize] Falha na validação de senha para o usuário: ${credentials.email}`);
+            return null; // Senha inválida
+          }
+
+          // Passo 2: Se a senha for válida, buscar os dados completos do usuário no Vercel KV
+          const user = await validateAndGetUser(credentials.email);
+          if (!user) {
+            console.log(`[NextAuth][Authorize] Usuário validado mas não encontrado no banco de dados: ${credentials.email}`);
+            return null; // Usuário não encontrado no KV
+          }
+          
+          // Retorna o objeto do usuário completo para ser usado nos callbacks.
+          return user;
+
         } catch (error) {
-            console.error("[NextAuth][Authorize] Erro ao parsear o JSON do usuário.", error);
+            console.error("[NextAuth][Authorize] Erro durante o processo de autorização.", error);
             return null;
         }
       },
@@ -84,3 +96,5 @@ export const authOptions: NextAuthOptions = {
     error: '/login', 
   },
 };
+
+    

@@ -11,6 +11,17 @@ import { getAdminApp } from '@/lib/firebase/admin';
 
 // --- AUTH ACTIONS ---
 
+export async function verifyUserPassword(email: string, password: string): Promise<boolean> {
+    // This is a placeholder for a secure password check against Firebase Auth on the backend.
+    // In a real application, you'd use the Firebase Admin SDK to verify the user.
+    // For this prototype, we'll simulate a successful check if the password is not empty.
+    // IMPORTANT: This is NOT secure and is for prototyping purposes only.
+    if (password) {
+        return true;
+    }
+    return false;
+}
+
 export async function validateAndGetUser(email: string): Promise<User | null> {
     if (!email) return null;
     try {
@@ -1192,3 +1203,4 @@ export async function updateHospitalOrderTemplate(templateItems: HospitalOrderTe
     revalidatePath('/dashboard/hospital/orders/template');
 }
 
+    
