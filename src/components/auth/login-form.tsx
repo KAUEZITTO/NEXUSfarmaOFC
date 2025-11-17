@@ -42,10 +42,10 @@ export function LoginForm() {
     const auth = getAuth(firebaseApp);
 
     try {
-      // 1. Validar credenciais com o Firebase no cliente
+      // Passo 1: Validar as credenciais com o Firebase no cliente.
       await signInWithEmailAndPassword(auth, email, password);
 
-      // 2. Se a validação do Firebase for bem-sucedida, buscar os dados do usuário do nosso DB
+      // Passo 2: Se a validação do Firebase foi bem-sucedida, buscar os dados do usuário no nosso DB via Server Action.
       const user = await validateAndGetUser(email);
 
       if (!user) {
@@ -54,7 +54,7 @@ export function LoginForm() {
         return;
       }
 
-      // 3. Criar a sessão no NextAuth, passando o objeto de usuário completo.
+      // Passo 3: Criar a sessão no NextAuth, passando o objeto de usuário completo, que já foi validado.
       const result = await signIn('credentials', {
         user: JSON.stringify(user),
         redirect: false,
@@ -63,6 +63,7 @@ export function LoginForm() {
       if (result?.error) {
         console.error("NextAuth signIn error:", result.error);
         setError('Não foi possível iniciar a sessão. Verifique suas credenciais e tente novamente.');
+        setIsLoading(false);
       } else if (result?.ok) {
         // Sucesso! Forçar recarregamento completo para garantir que o estado da sessão seja limpo.
         window.location.href = '/dashboard';
@@ -75,7 +76,6 @@ export function LoginForm() {
       } else {
         setError('Ocorreu um erro ao tentar fazer login. Tente novamente mais tarde.');
       }
-    } finally {
       setIsLoading(false);
     }
   };
