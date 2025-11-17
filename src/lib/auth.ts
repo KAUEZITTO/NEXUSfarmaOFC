@@ -1,6 +1,6 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { updateUserLastSeen, validateAndGetUser, verifyUserPassword } from '@/lib/actions';
+import { updateUserLastSeen, validateAndGetUser } from '@/lib/actions';
 import type { User as AppUser } from '@/lib/types';
 
 export const authOptions: NextAuthOptions = {
@@ -14,55 +14,45 @@ export const authOptions: NextAuthOptions = {
         name: 'Credentials',
         credentials: {
           email: { label: "Email", type: "email" },
-          password: { label: "Password", type: "password" }
         },
+        // A função authorize foi removida para usar o fluxo de JWT.
+        // A validação agora acontece no callback jwt.
         async authorize(credentials) {
-            if (!credentials?.email || !credentials?.password) {
+           if (!credentials?.email) {
+                console.error("[NextAuth][Authorize] No email provided.");
                 return null;
             }
-
-            try {
-                // 1. Validar a senha com o Firebase Admin no backend
-                const isPasswordValid = await verifyUserPassword(credentials.email, credentials.password);
-                if (!isPasswordValid) {
-                    return null; // Senha incorreta
-                }
-
-                // 2. Se a senha for válida, buscar os dados do usuário no KV
-                const user = await validateAndGetUser(credentials.email);
-                if (!user) {
-                    return null; // Usuário não encontrado no DB do NexusFarma
-                }
-                
-                // 3. Retornar o objeto de usuário para o NextAuth
-                return user;
-
-            } catch (error) {
-                console.error("Authorization Error:", error);
-                return null;
-            }
-        },
+            // Apenas retornamos um objeto mínimo, o callback `jwt` fará o trabalho pesado.
+            return { email: credentials.email, id: credentials.email };
+        }
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
-        if (user) {
-            token.id = user.id;
-            token.name = user.name;
-            token.email = user.email;
-            token.location = (user as AppUser).location;
-            token.locationId = (user as AppUser).locationId;
-            token.accessLevel = (user as AppUser).accessLevel;
-            token.role = (user as AppUser).role;
-            token.subRole = (user as AppUser).subRole;
-            token.birthdate = (user as AppUser).birthdate;
-            token.avatarColor = (user as AppUser).avatarColor;
+    async jwt({ token, user, account, trigger, session }) {
+        // Na primeira chamada (após o signIn bem-sucedido no cliente)
+        if (account && user) {
+            const appUser = await validateAndGetUser(user.email!);
+            if (appUser) {
+                token.id = appUser.id;
+                token.name = appUser.name;
+                token.email = appUser.email;
+                token.location = appUser.location;
+                token.locationId = appUser.locationId;
+                token.accessLevel = appUser.accessLevel;
+                token.role = appUser.role;
+                token.subRole = appUser.subRole;
+                token.birthdate = appUser.birthdate;
+                token.avatarColor = appUser.avatarColor;
+            }
         }
+        
+        // Em chamadas subsequentes, o token já terá os dados
         if (trigger === "update" && session?.user) {
             token.name = session.user.name;
             token.birthdate = session.user.birthdate;
             token.avatarColor = session.user.avatarColor;
         }
+
         return token;
     },
     async session({ session, token }) {

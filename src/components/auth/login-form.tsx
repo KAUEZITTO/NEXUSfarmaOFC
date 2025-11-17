@@ -8,6 +8,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { firebaseApp } from '@/lib/firebase/client';
 
 export function LoginForm() {
   const router = useRouter();
@@ -21,13 +23,7 @@ export function LoginForm() {
   useEffect(() => {
     const authError = searchParams.get('error');
     if (authError) {
-      if (authError === 'CredentialsSignin') {
-        setError('Email ou senha inválidos. Verifique suas credenciais e tente novamente.');
-      } else if (authError === 'Configuration') {
-        setError('Ocorreu um erro de configuração no servidor. Por favor, contate o suporte.');
-      } else {
-        setError('Ocorreu um erro inesperado durante o login.');
-      }
+       setError('Ocorreu um erro inesperado durante o login. Verifique as credenciais ou contate o suporte.');
     }
   }, [searchParams]);
 
@@ -36,25 +32,41 @@ export function LoginForm() {
     setIsLoading(true);
     setError(null);
 
-    // Agora, passamos as credenciais diretamente para o NextAuth.
-    // Toda a lógica de validação acontecerá no servidor, dentro do 'authorize'.
-    const result = await signIn('credentials', {
-      redirect: false,
-      email: email,
-      password: password,
-    });
+    if (!firebaseApp) {
+      setError("O serviço de autenticação não está disponível. Contate o suporte.");
+      setIsLoading(false);
+      return;
+    }
+    const auth = getAuth(firebaseApp);
 
-    if (result?.error) {
-       if (result.error === 'CredentialsSignin') {
+    try {
+      // Passo 1: Validar as credenciais com o Firebase no cliente.
+      await signInWithEmailAndPassword(auth, email, password);
+
+      // Passo 2: Se a validação foi bem-sucedida, chamar o signIn do NextAuth.
+      // O callback 'jwt' no backend cuidará de buscar os dados do usuário.
+      const result = await signIn('credentials', {
+        redirect: false,
+        email: email,
+      });
+
+      if (result?.error) {
+        console.error("NextAuth signIn error:", result.error);
+        setError('Ocorreu um erro ao criar sua sessão. Por favor, tente novamente.');
+        setIsLoading(false);
+      } else if (result?.ok) {
+        // Sucesso! Forçar recarregamento completo para garantir que o estado da sessão seja limpo.
+        window.location.href = '/dashboard';
+      }
+
+    } catch (firebaseError: any) {
+      console.error("Firebase signIn error:", firebaseError.code);
+      if (firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
         setError('Email ou senha inválidos. Verifique suas credenciais e tente novamente.');
       } else {
-        setError('Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
+        setError('Ocorreu um erro ao tentar fazer login. Tente novamente mais tarde.');
       }
       setIsLoading(false);
-    } else if (result?.ok) {
-      // Sucesso! Forçar recarregamento completo para garantir que o estado da sessão seja limpo.
-      // O router.push() é mais suave que o window.location.href
-      router.push('/dashboard');
     }
   };
 
