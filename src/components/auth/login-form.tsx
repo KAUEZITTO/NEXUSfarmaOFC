@@ -7,11 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
-import { signIn } from 'next-auth/react';
+import { signInWithCredentials } from '@/lib/actions';
 import { useSearchParams } from 'next/navigation';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { firebaseApp } from '@/lib/firebase/client';
-import { validateAndGetUser } from '@/lib/actions';
 
 export function LoginForm() {
   const searchParams = useSearchParams();
@@ -22,22 +19,13 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    // Este useEffect agora apenas captura erros que podem vir da URL,
-    // como quando o usuário tenta acessar uma página protegida sem estar logado.
-    const authError = searchParams.get('error');
-    if (authError) {
-      // Mensagens de erro mais amigáveis
-      switch (authError) {
-        case "CredentialsSignin":
-          setError("As credenciais fornecidas são inválidas.");
-          break;
-        case "Configuration":
-           setError("Ocorreu um erro de configuração no servidor. Por favor, contate o suporte.");
-           break;
-        default:
-          setError("Ocorreu um erro durante o login. Tente novamente.");
-          break;
-      }
+    // Este efeito captura o erro da URL, mas a lógica de erro principal
+    // agora vem da resposta da Server Action.
+    const urlError = searchParams.get('error');
+    if (urlError === 'CredentialsSignin') {
+      setError("As credenciais fornecidas são inválidas.");
+    } else if (urlError) {
+      setError("Ocorreu um erro durante o login. Tente novamente.");
     }
   }, [searchParams]);
 
@@ -46,56 +34,20 @@ export function LoginForm() {
     setIsLoading(true);
     setError(null);
 
-    // Garante que o SDK do Firebase no cliente foi inicializado.
-    if (!firebaseApp) {
-      setError("O serviço de autenticação não está disponível. Contate o suporte.");
-      setIsLoading(false);
-      return;
-    }
-
-    const auth = getAuth(firebaseApp);
-
     try {
-      // Passo 1: Validar as credenciais com o Firebase diretamente no cliente.
-      await signInWithEmailAndPassword(auth, email, password);
+      const result = await signInWithCredentials({ email, password });
 
-      // Passo 2: Se a validação do Firebase foi bem-sucedida, buscar os dados
-      // do nosso banco de dados (Vercel KV) via Server Action.
-      const user = await validateAndGetUser(email);
-
-      if (!user) {
-        setError('Usuário autenticado, mas não encontrado no banco de dados do NexusFarma. Contate o suporte.');
-        setIsLoading(false);
-        return;
-      }
-
-      // Passo 3: Criar a sessão no NextAuth passando o objeto de usuário completo.
-      // A função 'authorize' no backend será passiva e apenas receberá este objeto.
-      const result = await signIn('credentials', {
-        redirect: false, // Controlamos o redirecionamento manualmente.
-        user: JSON.stringify(user), // Passa o usuário validado como uma string JSON.
-      });
-
-      if (result?.error) {
-        // Se, mesmo assim, o NextAuth retornar um erro, exibimos uma mensagem genérica.
-        console.error("NextAuth signIn error:", result.error);
-        setError('Não foi possível iniciar a sessão. Verifique suas credenciais e tente novamente.');
-        setIsLoading(false);
-      } else if (result?.ok) {
-        // Sucesso! Redirecionamento para o dashboard.
-        // O uso de `window.location.href` força um recarregamento completo da página,
-        // garantindo que o estado da sessão seja limpo e aplicado corretamente.
+      if (result.success) {
+        // Sucesso! Redirecionamento forçado para garantir que o cookie de sessão seja lido corretamente.
         window.location.href = '/dashboard';
-      }
-
-    } catch (firebaseError: any) {
-      // Captura erros específicos do Firebase Auth.
-      console.error("Firebase signIn error:", firebaseError.code);
-      if (firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
-        setError('Email ou senha inválidos. Verifique suas credenciais e tente novamente.');
       } else {
-        setError('Ocorreu um erro ao tentar fazer login. Tente novamente mais tarde.');
+        // Exibe o erro retornado pela Server Action.
+        setError(result.error || 'Ocorreu um erro desconhecido.');
+        setIsLoading(false);
       }
+    } catch (e) {
+      console.error("Submit error:", e);
+      setError('Ocorreu um erro ao tentar fazer login. Tente novamente mais tarde.');
       setIsLoading(false);
     }
   };

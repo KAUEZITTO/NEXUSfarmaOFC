@@ -2,16 +2,71 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
 import { readData, writeData, getProducts, getAllUsers, getSectorDispensations, getUnits as getUnitsFromDb, getHospitalPatients as getHospitalPatientsFromDb, getHospitalPatientDispensations as getHospitalPatientDispensationsFromDb, getUnits } from '@/lib/data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation, SectorDispensation, HospitalSector as Sector, HospitalOrderTemplateItem, HospitalPatient, HospitalPatientDispensation } from '@/lib/types';
 import { getCurrentUser } from '@/lib/session';
 import { generatePdf } from '@/lib/pdf-generator';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase/admin';
+import { getAuth as getClientAuth, signInWithEmailAndPassword } from 'firebase/auth'; // Import for client-side SDK
+import { firebaseApp } from './firebase/client';
+import { SignJWT, jwtVerify } from 'jose';
 
 // --- AUTH ACTIONS ---
 
-// Esta função é uma Server Action chamada pelo cliente para buscar os dados do usuário APÓS a validação do Firebase.
+// Esta é a nova e única Server Action para o fluxo de login
+export async function signInWithCredentials(credentials: { email: string; password?: string }): Promise<{ success: boolean; error?: string }> {
+    if (!credentials.email || !credentials.password) {
+        return { success: false, error: "Email e senha são obrigatórios." };
+    }
+
+    try {
+        // O Firebase Admin SDK não tem um método para validar senhas.
+        // A maneira segura de fazer isso no servidor é usando o SDK do cliente,
+        // pois ele foi projetado para isso.
+        const auth = getClientAuth(firebaseApp);
+        await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
+    } catch (error: any) {
+        // Se a validação da senha falhar, retorne um erro amigável.
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+            return { success: false, error: "Email ou senha inválidos." };
+        }
+        console.error("Firebase sign-in error in Server Action:", error);
+        return { success: false, error: "Ocorreu um erro no servidor de autenticação." };
+    }
+
+    // A senha está correta. Agora, buscamos o perfil do usuário no nosso DB.
+    const user = await validateAndGetUser(credentials.email);
+    if (!user) {
+        return { success: false, error: "Usuário autenticado, mas não encontrado no banco de dados do NexusFarma." };
+    }
+
+    // Crie o token JWT e defina o cookie
+    const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
+    const token = await new SignJWT(user)
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime('30d')
+        .sign(secret);
+    
+    cookies().set('session_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24 * 30, // 30 dias
+        path: '/',
+    });
+    
+    await updateUserLastSeen(user.id);
+
+    return { success: true };
+}
+
+// Ação para fazer logout
+export async function signOut() {
+  cookies().delete('session_token');
+}
+
 export async function validateAndGetUser(email: string): Promise<User | null> {
     if (!email) return null;
     try {
@@ -19,13 +74,11 @@ export async function validateAndGetUser(email: string): Promise<User | null> {
         const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
         if (!user) return null;
 
-        // Regra especial para o superadmin
         if (user.email === 'kauemoreiraofc2@gmail.com') {
             user.accessLevel = 'Admin';
             user.subRole = 'Coordenador';
         }
         
-        // Garante que o usuário do hospital tenha o ID da unidade correto
         if (user.location === 'Hospital' && !user.locationId) {
             const units = await getUnits();
             const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
@@ -34,7 +87,6 @@ export async function validateAndGetUser(email: string): Promise<User | null> {
             }
         }
 
-        // Remove a senha antes de retornar
         const { password, ...userForSession } = user;
         return userForSession as User;
 
@@ -338,7 +390,6 @@ export async function addOrder(orderData: { unitId: string; unitName?: string; o
         creatorName: session?.name || 'Usuário Desconhecido',
     };
 
-    // If order is created by CAF, deduct stock. If by Hospital, it's a request, so don't deduct.
     const isCafUser = session?.location === 'CAF' || session?.subRole === 'Coordenador';
     if (isCafUser) {
         for (const item of newOrder.items) {
@@ -616,7 +667,6 @@ export async function updateUserLastSeen(userId: string) {
         users[userIndex].lastSeen = new Date().toISOString();
         await writeData('users', users);
     }
-    // Nenhuma revalidação de caminho aqui para não interferir no fluxo de autenticação.
 }
 
 export async function updateUserAccessLevel(userId: string, accessLevel: AccessLevel) {

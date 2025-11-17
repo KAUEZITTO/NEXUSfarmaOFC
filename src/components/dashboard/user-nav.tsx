@@ -18,21 +18,32 @@ import {
 import { LogOut, HelpCircle, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
-import { useSession, signOut } from 'next-auth/react';
+import { useSession, signOut as nextAuthSignOut } from 'next-auth/react';
+import { signOut as manualSignOut } from '@/lib/actions';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '../ThemeToggle';
+import { useRouter } from 'next/navigation';
 
 export function UserNav() {
   const { toast } = useToast();
   const { data: session, status } = useSession();
+  const router = useRouter();
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: '/login' });
+    // Chama nossa Server Action para apagar o cookie
+    await manualSignOut();
+    
+    // Opcional: Se houver sessão de OAuth com NextAuth, também a limpa.
+    await nextAuthSignOut({ redirect: false });
+
     toast({
       title: "Logout realizado",
       description: "Você saiu com segurança. Até a próxima!",
     });
+
+    // Redireciona para o login
+    router.push('/login');
   };
 
   if (status === 'loading') {
@@ -40,7 +51,9 @@ export function UserNav() {
   }
 
   const user = session?.user;
-  if (!user) return null;
+  // Se não houver sessão do NextAuth (que agora é secundária), não renderiza nada.
+  // O middleware cuidará do redirecionamento se o cookie principal não existir.
+  if (!user) return null; 
 
   const fallbackInitial = user.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? '?';
 

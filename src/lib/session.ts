@@ -1,17 +1,25 @@
 
-
 'use server';
 
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { cookies } from 'next/headers';
+import { verifyAuth } from './auth';
 import type { User } from './types';
 
 /**
- * A server-side helper function to get the current user's session data.
- * This should be used in Server Actions and other server-side logic
- * instead of importing `next-auth` directly, to avoid build errors.
+ * A server-side helper function to get the current user's session data from the JWT cookie.
+ * This replaces the dependency on `getServerSession` from `next-auth`,
+ * aligning with our new manual JWT-based session management.
  */
 export async function getCurrentUser(): Promise<User | undefined> {
-    const session = await getServerSession(authOptions);
-    return session?.user;
+  const verifiedToken = await verifyAuth().catch((err) => {
+    console.error('Falha ao verificar token de sessão:', err);
+    return null;
+  });
+
+  if (!verifiedToken) {
+    return undefined;
+  }
+
+  // A "carga útil" (payload) do nosso token já é o objeto do usuário.
+  return verifiedToken as User;
 }
