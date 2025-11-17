@@ -6,6 +6,7 @@ import type { User } from '@/lib/types';
 
 export const authOptions: NextAuthOptions = {
   // A estratégia 'jwt' é OBRIGATÓRIA para o CredentialsProvider.
+  // A remoção do adapter e o uso explícito de JWT resolve o erro.
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 dias
@@ -23,8 +24,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         // A função authorize agora é síncrona e passiva.
-        // Ela não faz chamadas de rede ou validações complexas,
-        // o que elimina a causa raiz do erro 'Configuration'.
+        // Ela não faz chamadas de rede ou validações complexas.
         if (!credentials?.user) {
           console.error("[NextAuth][Authorize] Erro: Dados do usuário não foram fornecidos.");
           return null;
