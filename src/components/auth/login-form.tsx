@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
-import { signInWithCredentials } from '@/lib/actions';
+import { signInWithCredentials } from '@/lib/auth';
 import { useSearchParams } from 'next/navigation';
 
 export function LoginForm() {
@@ -19,8 +19,6 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    // Este efeito captura o erro da URL, mas a lógica de erro principal
-    // agora vem da resposta da Server Action.
     const urlError = searchParams.get('error');
     if (urlError === 'CredentialsSignin') {
       setError("As credenciais fornecidas são inválidas.");
@@ -38,10 +36,8 @@ export function LoginForm() {
       const result = await signInWithCredentials({ email, password });
 
       if (result.success) {
-        // Sucesso! Redirecionamento forçado para garantir que o cookie de sessão seja lido corretamente.
         window.location.href = '/dashboard';
       } else {
-        // Exibe o erro retornado pela Server Action.
         setError(result.error || 'Ocorreu um erro desconhecido.');
         setIsLoading(false);
       }

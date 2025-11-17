@@ -4,31 +4,50 @@ import { verifyAuth } from '@/lib/auth';
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - login (the login page)
+     * - register (the register page)
+     * - forgot-password (the forgot password page)
+     * - reset-password (the reset password page)
+     * - / (the root landing page)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico|login|register|forgot-password|reset-password|/$).*)',
   ],
 };
 
 export async function middleware(req: NextRequest) {
-  // 1. Verifica o token JWT do cookie
-  const verifiedToken = await verifyAuth(req).catch((err) => {
-    console.error('Erro na verificação do token no middleware:', err.message);
-    return null;
-  });
+  const { pathname } = req.nextUrl;
 
-  // 2. Se o token for inválido, redireciona para a página de login
+  // Paths that are public and don't require authentication
+  const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/', '/receipt', '/dispensation-receipt', '/labels', '/patient-record'];
+  if (publicPaths.some(path => pathname.startsWith(path))) {
+    return NextResponse.next();
+  }
+
+  // 1. Verifica o token JWT do cookie
+  let verifiedToken;
+  try {
+    verifiedToken = await verifyAuth(req);
+  } catch (err) {
+    // Se a verificação falhar, redireciona para o login
+    const loginUrl = new URL('/login', req.url);
+    loginUrl.searchParams.set('from', req.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Se não houver token, também redireciona
   if (!verifiedToken) {
-    // Se o usuário já está na página de login, não faz nada
-    if (req.nextUrl.pathname.startsWith('/login')) {
-      return NextResponse.next();
-    }
-    // Redireciona para o login, adicionando a URL original para redirecionamento após o sucesso
     const loginUrl = new URL('/login', req.url);
     loginUrl.searchParams.set('from', req.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   // 3. Se o token for válido, aplica as regras de acesso baseadas no perfil
-  const { pathname } = req.nextUrl;
   const isHospitalUser = verifiedToken.location === 'Hospital';
   const isCoordinator = verifiedToken.subRole === 'Coordenador';
 

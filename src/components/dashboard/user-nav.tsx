@@ -15,14 +15,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, HelpCircle, Settings } from 'lucide-react';
+import { LogOut, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
-import { useSession, signOut as nextAuthSignOut } from 'next-auth/react';
-import { signOut } from '@/lib/actions';
+import { useSession } from 'next-auth/react';
+import { signOut } from '@/lib/auth';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { ThemeToggle } from '../ThemeToggle';
 import { useRouter } from 'next/navigation';
 
 export function UserNav() {
@@ -31,7 +30,6 @@ export function UserNav() {
   const router = useRouter();
 
   const handleLogout = async () => {
-    // Chama nossa Server Action para apagar o cookie
     await signOut();
     
     toast({
@@ -39,7 +37,6 @@ export function UserNav() {
       description: "Você saiu com segurança. Até a próxima!",
     });
 
-    // Redireciona para o login
     router.push('/login');
   };
 
@@ -48,7 +45,6 @@ export function UserNav() {
   }
 
   const user = session?.user;
-  // Se não houver sessão, não renderiza nada. O middleware cuidará do redirecionamento.
   if (!user) return null; 
 
   const fallbackInitial = user.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? '?';

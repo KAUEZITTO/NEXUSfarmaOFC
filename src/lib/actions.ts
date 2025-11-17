@@ -2,100 +2,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
 import { readData, writeData, getProducts, getAllUsers, getSectorDispensations, getUnits as getUnitsFromDb, getHospitalPatients as getHospitalPatientsFromDb, getHospitalPatientDispensations as getHospitalPatientDispensationsFromDb, getUnits } from '@/lib/data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation, SectorDispensation, HospitalSector as Sector, HospitalOrderTemplateItem, HospitalPatient, HospitalPatientDispensation } from '@/lib/types';
-import { getCurrentUser } from '@/lib/session';
+import { getCurrentUser } from '@/lib/auth';
 import { generatePdf } from '@/lib/pdf-generator';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase/admin';
-import { getAuth as getClientAuth, signInWithEmailAndPassword } from 'firebase/auth'; // Import for client-side SDK
-import { firebaseApp } from './firebase/client';
-import { SignJWT, jwtVerify } from 'jose';
-
-// --- AUTH ACTIONS ---
-
-// Esta é a nova e única Server Action para o fluxo de login
-export async function signInWithCredentials(credentials: { email: string; password?: string }): Promise<{ success: boolean; error?: string }> {
-    if (!credentials.email || !credentials.password) {
-        return { success: false, error: "Email e senha são obrigatórios." };
-    }
-
-    try {
-        // O Firebase Admin SDK não tem um método para validar senhas.
-        // A maneira segura de fazer isso no servidor é usando o SDK do cliente,
-        // pois ele foi projetado para isso.
-        const auth = getClientAuth(firebaseApp);
-        await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
-    } catch (error: any) {
-        // Se a validação da senha falhar, retorne um erro amigável.
-        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-            return { success: false, error: "Email ou senha inválidos." };
-        }
-        console.error("Firebase sign-in error in Server Action:", error);
-        return { success: false, error: "Ocorreu um erro no servidor de autenticação." };
-    }
-
-    // A senha está correta. Agora, buscamos o perfil do usuário no nosso DB.
-    const user = await validateAndGetUser(credentials.email);
-    if (!user) {
-        return { success: false, error: "Usuário autenticado, mas não encontrado no banco de dados do NexusFarma." };
-    }
-
-    // Crie o token JWT e defina o cookie
-    const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
-    const token = await new SignJWT(user)
-        .setProtectedHeader({ alg: 'HS256' })
-        .setIssuedAt()
-        .setExpirationTime('30d')
-        .sign(secret);
-    
-    cookies().set('session_token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 60 * 60 * 24 * 30, // 30 dias
-        path: '/',
-    });
-    
-    await updateUserLastSeen(user.id);
-
-    return { success: true };
-}
-
-// Ação para fazer logout
-export async function signOut() {
-  cookies().delete('session_token');
-}
-
-export async function validateAndGetUser(email: string): Promise<User | null> {
-    if (!email) return null;
-    try {
-        const users = await readData<User>('users');
-        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-        if (!user) return null;
-
-        if (user.email === 'kauemoreiraofc2@gmail.com') {
-            user.accessLevel = 'Admin';
-            user.subRole = 'Coordenador';
-        }
-        
-        if (user.location === 'Hospital' && !user.locationId) {
-            const units = await getUnits();
-            const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
-            if (hospitalUnit) {
-                user.locationId = hospitalUnit.id;
-            }
-        }
-
-        const { password, ...userForSession } = user;
-        return userForSession as User;
-
-    } catch (error) {
-        console.error("CRITICAL: Failed to read user data from Vercel KV in validateAndGetUser.", error);
-        return null;
-    }
-}
-
 
 // --- UTILITIES ---
 const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -658,15 +570,6 @@ export async function updateUserProfile(userId: string, data: { name?: string; b
     revalidatePath('/dashboard', 'layout');
     
     return { success: true, user: users[userIndex] };
-}
-
-export async function updateUserLastSeen(userId: string) {
-    const users = await readData<User>('users');
-    const userIndex = users.findIndex(u => u.id === userId);
-    if (userIndex !== -1) {
-        users[userIndex].lastSeen = new Date().toISOString();
-        await writeData('users', users);
-    }
 }
 
 export async function updateUserAccessLevel(userId: string, accessLevel: AccessLevel) {
