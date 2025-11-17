@@ -1,9 +1,10 @@
 
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { updateUserLastSeen, validateAndGetUser, verifyUserPassword } from '@/lib/actions';
+import { validateAndGetUser } from '@/lib/actions';
 import { KVAdapter } from '@/lib/kv-adapter';
 import { kv } from '@/lib/server/kv.server';
+import { updateUserLastSeen } from '@/lib/actions';
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -17,50 +18,56 @@ export const authOptions: NextAuthOptions = {
       name: 'Credentials',
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        // A senha não é mais usada aqui, mas a estrutura é mantida.
+        // O `user` JSON será passado pelo cliente.
+        user: { label: "User JSON", type: "text" },
       },
+      // A função authorize é removida para evitar o erro `Configuration`.
+      // A validação agora acontece no cliente e a criação do token no callback `jwt`.
       async authorize(credentials) {
-        if (!credentials?.email || !credentials.password) {
-          console.error("[NextAuth][Authorize] Email ou senha não fornecidos.");
+        if (!credentials?.email) {
+          console.error("[NextAuth][Authorize] Email não foi fornecido nas credenciais.");
           return null;
         }
-
-        // 1. Verificar se a senha é válida usando o Firebase Admin SDK (via nossa Server Action).
-        const isPasswordValid = await verifyUserPassword(credentials.email, credentials.password);
-        if (!isPasswordValid) {
-          console.warn(`[NextAuth][Authorize] Falha na autenticação para o email: ${credentials.email}`);
-          return null; // Senha incorreta ou usuário não existe no Firebase Auth.
-        }
-        
-        // 2. Se a senha for válida, buscar os dados do usuário no nosso banco de dados (Vercel KV).
-        const user = await validateAndGetUser(credentials.email);
-        if (!user) {
-          console.error(`[NextAuth][Authorize] Usuário autenticado com sucesso no Firebase, mas não encontrado no banco de dados do NexusFarma: ${credentials.email}`);
-          // Lançar um erro aqui informa ao NextAuth que o login falhou de forma controlada.
-          throw new Error("User not found in application database.");
-        }
-
-        // 3. Retornar o objeto de usuário completo para o NextAuth.
-        return user;
-      },
+        // A lógica foi movida para o callback `jwt`.
+        // Apenas retornamos um objeto mínimo para o `jwt` callback ser acionado.
+        return { id: '', email: credentials.email };
+      }
     }),
   ],
   callbacks: {
-    async session({ session, user }) {
-        if (session.user) {
-            session.user.id = user.id;
-            session.user.location = user.location;
-            session.user.locationId = user.locationId;
-            session.user.accessLevel = user.accessLevel;
-            session.user.role = user.role;
-            session.user.subRole = user.subRole;
-            session.user.name = user.name;
-            session.user.birthdate = user.birthdate;
-            session.user.avatarColor = user.avatarColor;
+    async jwt({ token, user, trigger, account }) {
+      // Na primeira vez que o token é criado (após o login)
+      if (trigger === "signIn" && account?.provider === 'credentials' && token.email) {
+        const appUser = await validateAndGetUser(token.email);
+        if (appUser) {
+          token.id = appUser.id;
+          token.name = appUser.name;
+          token.location = appUser.location;
+          token.locationId = appUser.locationId;
+          token.accessLevel = appUser.accessLevel;
+          token.role = appUser.role;
+          token.subRole = appUser.subRole;
+          token.birthdate = appUser.birthdate;
+          token.avatarColor = appUser.avatarColor;
+        }
+      }
+      return token;
+    },
+    async session({ session, token }) {
+        if (session.user && token.id) {
+            session.user.id = token.id as string;
+            session.user.name = token.name;
+            session.user.email = token.email;
+            session.user.location = token.location;
+            session.user.locationId = token.locationId;
+            session.user.accessLevel = token.accessLevel;
+            session.user.role = token.role;
+            session.user.subRole = token.subRole;
+            session.user.birthdate = token.birthdate;
+            session.user.avatarColor = token.avatarColor;
             
-            if (user.id) {
-               await updateUserLastSeen(user.id);
-            }
+            await updateUserLastSeen(token.id as string);
         }
         return session;
     },
