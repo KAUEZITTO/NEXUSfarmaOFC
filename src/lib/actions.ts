@@ -3,7 +3,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { readData, writeData, getProducts, getAllUsers, getSectorDispensations, getUnits as getUnitsFromDb, getHospitalPatients as getHospitalPatientsFromDb, getHospitalPatientDispensations as getHospitalPatientDispensationsFromDb, getUnits } from '@/lib/data';
-import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation, SectorDispensation, HospitalSector as Sector, HospitalOrderTemplateItem, HospitalPatient, HospitalPatientDispensation } from '@/lib/types';
+import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation, SectorDispensation, HospitalSector as Sector, HospitalOrderTemplateItem, HospitalPatient, HospitalPatientDispensation } from './types';
 import { getCurrentUser } from '@/lib/auth';
 import { generatePdf } from '@/lib/pdf-generator';
 import { getAuth } from 'firebase-admin/auth';
@@ -1149,3 +1149,5 @@ export async function updateHospitalOrderTemplate(templateItems: HospitalOrderTe
     await writeData('hospitalOrderTemplate', templateItems);
     revalidatePath('/dashboard/hospital/orders/template');
 }
+
+    

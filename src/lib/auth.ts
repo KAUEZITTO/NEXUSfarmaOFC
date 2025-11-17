@@ -11,6 +11,9 @@ import { firebaseApp } from './firebase/client';
 import { readData, writeData } from './data';
 
 const secretKey = process.env.NEXTAUTH_SECRET;
+if (!secretKey) {
+  throw new Error('A variável de ambiente NEXTAUTH_SECRET não está definida.');
+}
 const key = new TextEncoder().encode(secretKey);
 
 // --- JWT and Session Management ---
@@ -50,7 +53,7 @@ export async function getCurrentUser(): Promise<User | undefined> {
     const verifiedToken = await verifyAuth();
     return verifiedToken;
   } catch (err) {
-    // It's normal for this to fail if the user is not logged in.
+    // É normal que isso falhe se o usuário não estiver logado.
     return undefined;
   }
 }
@@ -134,3 +137,5 @@ async function updateUserLastSeen(userId: string) {
         await writeData('users', users);
     }
 }
+
+    
