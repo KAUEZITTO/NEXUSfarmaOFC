@@ -2,16 +2,13 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { validateAndGetUser, verifyUserPassword } from '@/lib/actions';
-import { KVAdapter } from '@/lib/kv-adapter';
-import { kv } from '@/lib/server/kv.server';
 import { updateUserLastSeen } from '@/lib/actions';
 
 export const authOptions: NextAuthOptions = {
   session: {
-    strategy: 'database',
+    strategy: 'jwt', // CORREÇÃO: Alterado de 'database' para 'jwt' para ser compatível com CredentialsProvider
     maxAge: 30 * 24 * 60 * 60, // 30 dias
   },
-  adapter: KVAdapter(kv),
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
@@ -26,30 +23,26 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Etapa 1: Verificar a senha com segurança no backend.
         const isPasswordValid = await verifyUserPassword(credentials.email, credentials.password);
-
         if (!isPasswordValid) {
-            console.warn(`[NextAuth][Authorize] Falha na autenticação para o email: ${credentials.email}`);
-            return null;
+          console.warn(`[NextAuth][Authorize] Falha na autenticação para o email: ${credentials.email}`);
+          return null;
         }
 
-        // Etapa 2: Se a senha for válida, buscar os dados do usuário no KV.
         const user = await validateAndGetUser(credentials.email);
-        
         if (!user) {
-            console.error(`[NextAuth][Authorize] Usuário autenticado com sucesso, mas não encontrado no banco de dados: ${credentials.email}`);
-            return null;
+          console.error(`[NextAuth][Authorize] Usuário autenticado com sucesso, mas não encontrado no banco de dados: ${credentials.email}`);
+          return null;
         }
         
-        // Etapa 3: Retornar o objeto de usuário para o NextAuth criar a sessão.
         return user;
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger }) {
-      if (trigger === "signIn" && user) {
+    async jwt({ token, user }) {
+      // No login inicial (objeto `user` está presente)
+      if (user) {
         token.id = user.id;
         token.name = user.name;
         token.location = user.location;
@@ -63,6 +56,7 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
+        // A partir do token JWT, preenchemos o objeto de sessão
         if (session.user && token.id) {
             session.user.id = token.id as string;
             session.user.name = token.name;
@@ -75,7 +69,6 @@ export const authOptions: NextAuthOptions = {
             session.user.birthdate = token.birthdate;
             session.user.avatarColor = token.avatarColor;
             
-            // Atualiza o 'lastSeen' de forma assíncrona
             await updateUserLastSeen(token.id as string);
         }
         return session;
