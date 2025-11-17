@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -8,33 +9,7 @@ import { generatePdf } from '@/lib/pdf-generator';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase/admin';
 
-
 // --- AUTH ACTIONS ---
-
-export async function verifyUserPassword(email: string, password_provided: string): Promise<boolean> {
-    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-    if (!apiKey) {
-        console.error("Firebase API Key não está definida.");
-        throw new Error("Configuração do servidor incompleta.");
-    }
-    const verifyPasswordUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`;
-
-    try {
-        const response = await fetch(verifyPasswordUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: email, password: password_provided, returnSecureToken: false }),
-        });
-
-        const data = await response.json();
-        return response.ok && !!data.localId;
-        
-    } catch (error) {
-        console.error("Erro de rede ao verificar senha com Firebase:", error);
-        return false;
-    }
-}
-
 
 export async function validateAndGetUser(email: string): Promise<User | null> {
     if (!email) return null;
@@ -1216,3 +1191,5 @@ export async function updateHospitalOrderTemplate(templateItems: HospitalOrderTe
     await writeData('hospitalOrderTemplate', templateItems);
     revalidatePath('/dashboard/hospital/orders/template');
 }
+
+    

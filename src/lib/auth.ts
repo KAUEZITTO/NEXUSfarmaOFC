@@ -1,3 +1,4 @@
+
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { updateUserLastSeen } from '@/lib/actions';
@@ -66,3 +67,5 @@ export const authOptions: NextAuthOptions = {
     error: '/login', 
   },
 };
+
+    
