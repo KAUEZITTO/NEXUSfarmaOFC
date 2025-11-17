@@ -14,6 +14,7 @@ import { combinedNavItems } from '@/components/dashboard/combined-nav';
 import { getCurrentUser } from '@/lib/auth';
 import { PageLoader } from '@/components/ui/page-loader';
 import { Suspense } from 'react';
+import DashboardHeader from '@/components/dashboard/dashboard-header';
 
 // Este componente agora é um Server Component para poder buscar o usuário no servidor.
 export default async function DashboardLayout({
@@ -34,12 +35,12 @@ export default async function DashboardLayout({
 
     const renderNav = () => {
         if (isCoordinator) {
-            return <DashboardNav navItems={combinedNavItems} />;
+            return <DashboardNav navItems={combinedNavItems} userAccessLevel={user.accessLevel} />;
         }
         if (isHospitalUser) {
             return <HospitalNav />;
         }
-        return <DashboardNav />;
+        return <DashboardNav userAccessLevel={user.accessLevel} />;
     };
 
     return (
@@ -74,6 +75,8 @@ export default async function DashboardLayout({
                             <UserNav user={user} />
                         </header>
                         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-muted/40">
+                             {/* O DashboardHeader agora é um Server Component que recebe o nome do usuário */}
+                             {user && <DashboardHeader userName={user.name} />}
                             {children}
                         </main>
                     </div>

@@ -1,3 +1,4 @@
+
 import { Suspense } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Users, UserRoundCheck, Activity, AlertTriangle, BarChartHorizontal } from "lucide-react";
@@ -10,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { unstable_noStore as noStore } from "next/cache";
-import DashboardHeader from "@/components/dashboard/dashboard-header";
 import { ShoppingCart } from "lucide-react";
 
 type UpcomingReturn = {
@@ -312,18 +312,15 @@ export default async function DashboardPage() {
     ]);
 
     return (
-        <>
-            <DashboardHeader />
-            <Suspense fallback={<DashboardSkeleton />}>
-                <DashboardDataWrapper 
-                    products={products}
-                    dispensations={dispensations}
-                    users={users}
-                    activePatients={activePatients as Patient[]}
-                    orders={orders}
-                    sectorDispensations={sectorDispensations}
-                />
-            </Suspense>
-        </>
+        <Suspense fallback={<DashboardSkeleton />}>
+            <DashboardDataWrapper 
+                products={products}
+                dispensations={dispensations}
+                users={users}
+                activePatients={activePatients as Patient[]}
+                orders={orders}
+                sectorDispensations={sectorDispensations}
+            />
+        </Suspense>
     );
 }

@@ -26,8 +26,8 @@ import { useToast } from '@/hooks/use-toast';
 import { addProduct, updateProduct, uploadImage } from '@/lib/actions';
 import type { Product, ProductCategory, UserLocation } from '@/lib/types';
 import { ProductSavedDialog } from './product-saved-dialog';
-import { useSession } from 'next-auth/react';
 import { cn } from '@/lib/utils';
+import { useSearchParams } from 'next/navigation';
 
 type AddProductDialogProps = {
   trigger: React.ReactNode;
@@ -43,7 +43,7 @@ const subCategories: Exclude<Product['subCategory'], undefined>[] = ['Medicament
 const presentations: Exclude<Product['presentation'], undefined>[] = ['Comprimido', 'Unidade', 'Caixa c/ 100', 'Seringa 4g', 'Frasco 10ml', 'Caixa c/ 50', 'Caneta 3ml', 'Pacote', 'Bolsa', 'Outro'];
 
 export function AddProductDialog({ trigger, productToEdit, onProductSaved }: AddProductDialogProps) {
-  const { data: session } = useSession();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -52,7 +52,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
   const [savedProduct, setSavedProduct] = useState<Product | null>(null);
   const [showSavedDialog, setShowSavedDialog] = useState(false);
   
-  const userLocation = session?.user?.location;
+  const userLocation = searchParams.get('location') as UserLocation | null;
   const isHospital = userLocation === 'Hospital';
 
   // Form state
@@ -141,7 +141,7 @@ export function AddProductDialog({ trigger, productToEdit, onProductSaved }: Add
             expiryDate,
             supplier,
             presentation,
-            location: userLocation!,
+            location: userLocation || 'CAF', // Fallback to CAF if no location
             storageLocation,
         };
 

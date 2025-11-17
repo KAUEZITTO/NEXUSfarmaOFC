@@ -1,7 +1,6 @@
 
 'use client';
 
-import { useSession } from "next-auth/react";
 import { useEffect, useState, Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarDays, Clock } from "lucide-react";
@@ -34,8 +33,7 @@ function DateTimeDisplay() {
 }
 
 
-export default function DashboardHeader() {
-    const { data: session } = useSession();
+export default function DashboardHeader({ userName }: { userName?: string | null }) {
     const [greeting, setGreeting] = useState('');
 
     useEffect(() => {
@@ -52,7 +50,7 @@ export default function DashboardHeader() {
     return (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
-                <h1 className="text-2xl font-bold tracking-tight">{greeting}, {session?.user?.name?.split(' ')[0] || 'Usuário'}!</h1>
+                <h1 className="text-2xl font-bold tracking-tight">{greeting}, {userName?.split(' ')[0] || 'Usuário'}!</h1>
                 <p className="text-muted-foreground">Bem-vindo(a) de volta ao painel NexusFarma.</p>
             </div>
             <Suspense fallback={<Skeleton className="h-10 w-64" />}>

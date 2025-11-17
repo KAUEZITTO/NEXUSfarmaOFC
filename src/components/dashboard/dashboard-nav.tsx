@@ -16,7 +16,6 @@ import {
 } from 'lucide-react';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '../ui/sidebar';
 import { useSidebar } from '../ui/sidebar';
-import { useSession } from 'next-auth/react';
 import { Separator } from '../ui/separator';
 
 export const defaultNavItems = [
@@ -31,10 +30,9 @@ export const defaultNavItems = [
   { href: '/dashboard/about', icon: Info, label: 'Sobre' },
 ];
 
-export function DashboardNav({ isMobile = false, navItems = defaultNavItems }: { isMobile?: boolean, navItems?: any[] }) {
+export function DashboardNav({ isMobile = false, navItems = defaultNavItems, userAccessLevel }: { isMobile?: boolean; navItems?: any[]; userAccessLevel?: string }) {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
-  const { data: session } = useSession();
  
   return (
      <SidebarMenu>
@@ -48,7 +46,7 @@ export function DashboardNav({ isMobile = false, navItems = defaultNavItems }: {
                 )
             }
 
-            if (adminOnly && session?.user?.accessLevel !== 'Admin') {
+            if (adminOnly && userAccessLevel !== 'Admin') {
                 return null;
             }
 
