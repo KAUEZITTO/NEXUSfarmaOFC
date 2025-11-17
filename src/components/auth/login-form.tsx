@@ -48,16 +48,23 @@ export function LoginForm() {
       await signInWithEmailAndPassword(auth, email, password);
 
       // 2. Se a validação do Firebase for bem-sucedida, criar a sessão no NextAuth
+      // Passamos a senha aqui para alinhar com a definição de `credentials` no backend,
+      // mas a função authorize no servidor não a usará para validação.
       const result = await signIn('credentials', {
         email,
+        password, // Este campo é necessário para corresponder à definição, mas não é usado para validação no `authorize`.
         redirect: false, // Controlamos o redirecionamento manualmente.
       });
 
       if (result?.error) {
         console.error("NextAuth signIn error after Firebase success:", result.error);
-        setError('Não foi possível iniciar a sessão. Verifique se seu usuário está cadastrado no sistema NexusFarma.');
+        if (result.error === 'CredentialsSignin') {
+             setError('O usuário não foi encontrado no banco de dados do NexusFarma ou as credenciais são inválidas.');
+        } else {
+             setError('Não foi possível iniciar a sessão. Verifique se seu usuário está cadastrado no sistema NexusFarma.');
+        }
       } else if (result?.ok) {
-        // Sucesso! O NextAuth criou a sessão. Forçar recarregamento completo.
+        // Sucesso! Forçar recarregamento completo para garantir que o estado da sessão seja limpo.
         window.location.href = '/dashboard';
       }
 

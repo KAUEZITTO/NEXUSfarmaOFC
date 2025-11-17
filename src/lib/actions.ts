@@ -491,15 +491,17 @@ export async function register(data: { name: string, email: string; password: st
     const { name, email, password, birthdate, role, subRole, location } = data;
 
     try {
+        const adminAuth = getAdminApp(); // Garantir que o app admin está inicializado
+        const auth = getAuth(adminAuth);
+
         const users = await getAllUsers();
 
         if (users.some(u => u.email === email)) {
             return { success: false, message: 'Este email já está em uso.' };
         }
         
-        const adminAuth = getAuth(getAdminApp());
         try {
-            await adminAuth.getUserByEmail(email);
+            await auth.getUserByEmail(email);
             return { success: false, message: 'Este email já está registrado no sistema de autenticação.' };
         } catch (error: any) {
             if (error.code !== 'auth/user-not-found') {
@@ -507,7 +509,7 @@ export async function register(data: { name: string, email: string; password: st
             }
         }
 
-        const userRecord = await adminAuth.createUser({
+        const userRecord = await auth.createUser({
             email: email,
             password: password,
             displayName: name,
@@ -515,7 +517,6 @@ export async function register(data: { name: string, email: string; password: st
         
         const isFirstUser = users.length === 0;
 
-        // For coordinators, location is not defined from form, default to CAF as they have access to both.
         const userLocation = subRole === 'Coordenador' ? 'CAF' : location;
         if (!userLocation) {
             return { success: false, message: 'O local de trabalho é obrigatório para este cargo.' };
@@ -1162,4 +1163,3 @@ export async function updateHospitalOrderTemplate(templateItems: HospitalOrderTe
     await writeData('hospitalOrderTemplate', templateItems);
     revalidatePath('/dashboard/hospital/orders/template');
 }
-
