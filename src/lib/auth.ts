@@ -1,10 +1,9 @@
 
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { validateAndGetUser, verifyUserPassword } from '@/lib/actions';
+import { validateAndGetUser } from '@/lib/actions';
 import { updateUserLastSeen } from '@/lib/actions';
 import type { User as AppUser } from '@/lib/types';
-
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -13,60 +12,48 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
+    // O CredentialsProvider agora é usado apenas como um gatilho para o nosso fluxo customizado.
+    // A validação real da senha já aconteceu no cliente com o Firebase SDK.
     CredentialsProvider({
         name: 'Credentials',
         credentials: {
           email: { label: "Email", type: "text" },
-          password: { label: "Password", type: "password" }
         },
         async authorize(credentials) {
-            if (!credentials?.email || !credentials?.password) {
-                console.error("Authorize: Email ou senha não fornecidos.");
+            if (!credentials?.email) {
+                console.error("[NextAuth][Authorize] Email não fornecido.");
                 return null;
             }
-
-            try {
-                // Passo 1: Verificar a senha com o Firebase Admin SDK (no servidor)
-                const isPasswordValid = await verifyUserPassword(credentials.email, credentials.password);
-                
-                if (!isPasswordValid) {
-                    console.log(`Authorize: Senha inválida para o email: ${credentials.email}`);
-                    return null; // Senha incorreta
-                }
-
-                // Passo 2: Se a senha for válida, buscar os dados do usuário no nosso banco de dados
-                const user = await validateAndGetUser(credentials.email);
-
-                if (user) {
-                    return user; // Retorna o objeto de usuário para o NextAuth
-                } else {
-                    console.log(`Authorize: Usuário autenticado pelo Firebase, mas não encontrado no DB: ${credentials.email}`);
-                    return null; // Usuário não encontrado no nosso DB
-                }
-
-            } catch (error) {
-                console.error("Erro crítico na função authorize:", error);
-                return null;
-            }
+            // A senha já foi validada no cliente.
+            // Aqui, apenas retornamos um objeto mínimo para que o fluxo continue para o callback 'jwt'.
+            return { email: credentials.email, id: '' }; // O ID será preenchido no callback 'jwt'.
         },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
-        // Na primeira vez que o usuário faz login (quando `user` está presente),
-        // o objeto `user` vem da função `authorize`.
-        if (user) {
-            const appUser = user as AppUser;
-            token.id = appUser.id;
-            token.name = appUser.name;
-            token.email = appUser.email;
-            token.location = appUser.location;
-            token.locationId = appUser.locationId;
-            token.accessLevel = appUser.accessLevel;
-            token.role = appUser.role;
-            token.subRole = appUser.subRole;
-            token.birthdate = appUser.birthdate;
-            token.avatarColor = appUser.avatarColor;
+    async jwt({ token, user, trigger, session }) {
+        // 'user' está presente na primeira vez que o usuário faz login.
+        // O email vem da função 'authorize'.
+        if (user?.email) {
+            const appUser = await validateAndGetUser(user.email);
+            if (appUser) {
+                token.id = appUser.id;
+                token.name = appUser.name;
+                token.email = appUser.email;
+                token.location = appUser.location;
+                token.locationId = appUser.locationId;
+                token.accessLevel = appUser.accessLevel;
+                token.role = appUser.role;
+                token.subRole = appUser.subRole;
+                token.birthdate = appUser.birthdate;
+                token.avatarColor = appUser.avatarColor;
+            }
+        }
+        // Se a sessão for atualizada (ex: pelo update do user-nav), atualizamos o token.
+        if (trigger === "update" && session?.user) {
+            token.name = session.user.name;
+            token.birthdate = session.user.birthdate;
+            token.avatarColor = session.user.avatarColor;
         }
         return token;
     },

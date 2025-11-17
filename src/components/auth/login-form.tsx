@@ -8,10 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { signIn } from 'next-auth/react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { firebaseApp } from '@/lib/firebase/client';
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -42,23 +43,41 @@ export function LoginForm() {
     setIsLoading(true);
     setError(null);
 
-    const result = await signIn('credentials', {
-      email: email,
-      password: password,
-      redirect: false, // Não redireciona automaticamente, para podermos tratar o erro
-    });
+    if (!firebaseApp) {
+      setError("O serviço de autenticação não está disponível. Contate o suporte.");
+      setIsLoading(false);
+      return;
+    }
+    const auth = getAuth(firebaseApp);
 
-    setIsLoading(false);
+    try {
+      // Passo 1: Autenticar com o Firebase no cliente
+      await signInWithEmailAndPassword(auth, email, password);
 
-    if (result?.error) {
-       // O NextAuth já nos deu um erro, vamos usar a mensagem dele.
-       // O useEffect cuidará de exibir a mensagem correta.
-       router.push(`/login?error=${result.error}`);
-    } else if (result?.ok) {
-      // Sucesso! Forçar recarregamento completo para garantir que o estado da sessão seja limpo.
-      window.location.href = '/dashboard';
-    } else {
-       setError('Ocorreu uma falha desconhecida no login.');
+      // Passo 2: Se a autenticação do Firebase foi bem-sucedida, criar a sessão no NextAuth
+      const result = await signIn('credentials', {
+        email: email,
+        redirect: false, // Gerenciamos o redirecionamento manualmente
+      });
+
+      if (result?.error) {
+        // Se o signIn do NextAuth falhar (ex: usuário não encontrado no nosso DB pelo callback 'jwt')
+        setError(result.error === 'CredentialsSignin' ? 'Usuário não encontrado no sistema NexusFarma.' : 'Não foi possível iniciar a sessão. Verifique suas credenciais.');
+        setIsLoading(false);
+      } else if (result?.ok) {
+        // Sucesso! Forçar recarregamento completo para garantir que o estado da sessão seja limpo.
+        window.location.href = '/dashboard';
+      }
+
+    } catch (firebaseError: any) {
+      // Erro na autenticação com o Firebase
+      console.error("Firebase signIn error:", firebaseError.code);
+      if (firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
+        setError('Email ou senha inválidos. Verifique suas credenciais e tente novamente.');
+      } else {
+        setError('Ocorreu um erro ao tentar fazer login. Tente novamente mais tarde.');
+      }
+      setIsLoading(false);
     }
   };
 
