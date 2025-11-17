@@ -1,4 +1,3 @@
-
 'use server';
 
 import { cookies } from 'next/headers';
@@ -7,7 +6,7 @@ import { SignJWT, jwtVerify } from 'jose';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import type { User } from './types';
 import { firebaseApp } from './firebase/client';
-import { readData, writeData, getUnits } from './data';
+import { readData, writeData } from './data';
 
 const secretKey = process.env.NEXTAUTH_SECRET;
 if (!secretKey) {
@@ -135,5 +134,3 @@ export async function updateUserLastSeen(userId: string) {
         await writeData('users', users);
     }
 }
-
-    
