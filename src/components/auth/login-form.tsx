@@ -8,12 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { signIn } from 'next-auth/react';
-import { useSearchParams } from 'next/navigation';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { firebaseApp } from '@/lib/firebase/client';
-import { validateAndGetUser } from '@/lib/actions';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 export function LoginForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,8 +21,18 @@ export function LoginForm() {
 
   useEffect(() => {
     const authError = searchParams.get('error');
-    if (authError === 'Configuration') {
-      setError('Ocorreu um erro de configuração no servidor. Por favor, contate o suporte.');
+    if (authError) {
+        switch (authError) {
+            case 'CredentialsSignin':
+                setError('Email ou senha inválidos. Verifique suas credenciais e tente novamente.');
+                break;
+            case 'Configuration':
+                 setError('Ocorreu um erro de configuração no servidor. Por favor, contate o suporte.');
+                 break;
+            default:
+                setError('Ocorreu um erro desconhecido durante o login. Tente novamente.');
+                break;
+        }
     }
   }, [searchParams]);
 
@@ -33,50 +41,21 @@ export function LoginForm() {
     setIsLoading(true);
     setError(null);
 
-    if (!firebaseApp) {
-      setError("O serviço de autenticação não está disponível. Contate o suporte.");
-      setIsLoading(false);
-      return;
-    }
-
-    const auth = getAuth(firebaseApp);
-
-    try {
-      // Passo 1: Validar as credenciais com o Firebase no cliente.
-      await signInWithEmailAndPassword(auth, email, password);
-
-      // Passo 2: Se a validação do Firebase foi bem-sucedida, buscar os dados do usuário no nosso DB via Server Action.
-      const user = await validateAndGetUser(email);
-
-      if (!user) {
-        setError('Usuário autenticado, mas não encontrado no banco de dados do NexusFarma. Contate o suporte.');
+    const result = await signIn('credentials', {
+      redirect: false,
+      email: email,
+      password: password,
+    });
+    
+    if (result?.error) {
+        // O `useEffect` acima irá capturar o erro da URL e definir a mensagem apropriada.
+        // Apenas precisamos parar o carregamento aqui.
         setIsLoading(false);
-        return;
-      }
-
-      // Passo 3: Criar a sessão no NextAuth, passando o objeto de usuário completo, que já foi validado.
-      const result = await signIn('credentials', {
-        user: JSON.stringify(user), // Passa o objeto de usuário completo.
-        redirect: false,
-      });
-
-      if (result?.error) {
-        console.error("NextAuth signIn error:", result.error);
-        setError('Ocorreu um erro ao criar sua sessão. Por favor, tente novamente.');
-        setIsLoading(false);
-      } else if (result?.ok) {
-        // Sucesso! Forçar recarregamento completo para garantir que o estado da sessão seja limpo.
-        window.location.href = '/dashboard';
-      }
-
-    } catch (firebaseError: any) {
-      console.error("Firebase signIn error:", firebaseError.code);
-      if (firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
-        setError('Email ou senha inválidos. Verifique suas credenciais e tente novamente.');
-      } else {
-        setError('Ocorreu um erro ao tentar fazer login. Tente novamente mais tarde.');
-      }
-      setIsLoading(false);
+        // Redirecionamos para a página de login com o erro para que o useEffect possa lê-lo.
+        router.push(`/login?error=${result.error}`);
+    } else if (result?.ok) {
+        // Sucesso!
+        router.push('/dashboard');
     }
   };
 
@@ -134,7 +113,3 @@ export function LoginForm() {
     </form>
   );
 }
-
-    
-
-    

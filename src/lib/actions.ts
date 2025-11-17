@@ -11,6 +11,36 @@ import { getAdminApp } from '@/lib/firebase/admin';
 
 // --- AUTH ACTIONS ---
 
+export async function verifyUserPassword(email: string, password: string): Promise<boolean> {
+    try {
+        // Esta é uma operação não-oficial, mas funcional, para verificar a senha usando o Admin SDK
+        // fazendo uma chamada de API REST interna. Usar com cautela.
+        const FIREBASE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+        if (!FIREBASE_API_KEY) {
+            throw new Error("A chave de API do Firebase (web) não está configurada.");
+        }
+        const restApiUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_API_KEY}`;
+        
+        const response = await fetch(restApiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password,
+                returnSecureToken: false,
+            }),
+        });
+
+        return response.ok;
+
+    } catch (error) {
+        console.error("Erro ao verificar senha do usuário via API REST:", error);
+        return false;
+    }
+}
+
 export async function validateAndGetUser(email: string): Promise<User | null> {
     if (!email) return null;
     try {
@@ -1192,6 +1222,3 @@ export async function updateHospitalOrderTemplate(templateItems: HospitalOrderTe
     revalidatePath('/dashboard/hospital/orders/template');
 }
 
-    
-
-    
