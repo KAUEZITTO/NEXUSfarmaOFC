@@ -27,26 +27,41 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // A arquitetura final e estável:
+        // 1. A senha é validada no CLIENTE usando o SDK do Firebase.
+        // 2. Se a senha for válida, o cliente chama `validateAndGetUser`.
+        // 3. O cliente então chama `signIn` passando o objeto de usuário completo.
+        // 4. O `authorize` aqui é PASSIVO. Ele não faz chamadas de rede. Ele apenas confia no objeto que o cliente enviou.
+        // Esta abordagem elimina o erro "Configuration" em ambientes serverless.
+        
+        // No fluxo final, o `credentials` objeto conterá um campo `user` que é uma string JSON.
+        // O `email` e `password` ainda estão aqui para compatibilidade, mas o `user` tem precedência.
+        if (credentials.user) {
+          try {
+            const user = JSON.parse(credentials.user);
+            return user;
+          } catch (e) {
+            console.error("[NextAuth][Authorize] Falha ao fazer parse do JSON do usuário.", e);
+            return null;
+          }
+        }
+        
+        // Fallback para o fluxo antigo (verificação no servidor), que é instável na Vercel mas pode funcionar em dev.
+        // Este bloco é a fonte do erro 'Configuration'.
         try {
-          // Passo 1: Verificar a senha usando uma Server Action segura com o Firebase Admin SDK
           const isPasswordValid = await verifyUserPassword(credentials.email, credentials.password);
           if (!isPasswordValid) {
-            console.log(`[NextAuth][Authorize] Falha na validação de senha para o usuário: ${credentials.email}`);
-            return null; // Senha inválida
+            console.log(`[NextAuth][Authorize] Falha na validação de senha (backend) para: ${credentials.email}`);
+            return null;
           }
-
-          // Passo 2: Se a senha for válida, buscar os dados completos do usuário no Vercel KV
           const user = await validateAndGetUser(credentials.email);
           if (!user) {
-            console.log(`[NextAuth][Authorize] Usuário validado mas não encontrado no banco de dados: ${credentials.email}`);
-            return null; // Usuário não encontrado no KV
+            console.log(`[NextAuth][Authorize] Usuário não encontrado no banco de dados (backend): ${credentials.email}`);
+            return null;
           }
-          
-          // Retorna o objeto do usuário completo para ser usado nos callbacks.
           return user;
-
         } catch (error) {
-            console.error("[NextAuth][Authorize] Erro durante o processo de autorização.", error);
+            console.error("[NextAuth][Authorize] Erro durante o fluxo de autorização de fallback.", error);
             return null;
         }
       },

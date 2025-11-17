@@ -12,15 +12,32 @@ import { getAdminApp } from '@/lib/firebase/admin';
 // --- AUTH ACTIONS ---
 
 export async function verifyUserPassword(email: string, password: string): Promise<boolean> {
-    // This is a placeholder for a secure password check against Firebase Auth on the backend.
-    // In a real application, you'd use the Firebase Admin SDK to verify the user.
-    // For this prototype, we'll simulate a successful check if the password is not empty.
-    // IMPORTANT: This is NOT secure and is for prototyping purposes only.
-    if (password) {
+    try {
+        const adminAuth = getAdminApp();
+        const auth = getAuth(adminAuth);
+        // This is a common but indirect way to verify a password with the Admin SDK.
+        // We attempt to sign in the user on the backend. If it succeeds, the password is correct.
+        // The user's session is NOT created here; this is just for verification.
+        // A more direct method is not available in the Admin SDK for password verification.
+        // NOTE: This approach is NOT directly used in the final login flow but is kept as a secure backend verification utility.
+        
+        // A temporary client-side SDK instance on the backend is needed for signInWithEmailAndPassword
+        const { initializeApp, getApps } = await import('firebase/app');
+        const { getAuth: getClientAuth, signInWithEmailAndPassword } = await import('firebase/auth');
+
+        const clientApp = getApps().find(app => app.name === 'password-verifier') || initializeApp({
+            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+        }, 'password-verifier');
+
+        const clientAuth = getClientAuth(clientApp);
+        await signInWithEmailAndPassword(clientAuth, email, password);
         return true;
+    } catch (error) {
+        console.error(`[verifyUserPassword] Password verification failed for ${email}:`, (error as any).code);
+        return false;
     }
-    return false;
 }
+
 
 export async function validateAndGetUser(email: string): Promise<User | null> {
     if (!email) return null;

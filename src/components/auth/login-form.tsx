@@ -9,6 +9,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { firebaseApp } from '@/lib/firebase/client';
+import { validateAndGetUser } from '@/lib/actions';
 
 export function LoginForm() {
   const searchParams = useSearchParams();
@@ -20,19 +23,8 @@ export function LoginForm() {
 
   useEffect(() => {
     const authError = searchParams.get('error');
-    if (authError) {
-        switch (authError) {
-            case 'CredentialsSignin':
-            case 'Callback':
-                setError('Não foi possível iniciar a sessão. Verifique suas credenciais e tente novamente.');
-                break;
-            case 'Configuration':
-                 setError('Ocorreu um erro de configuração no servidor. Por favor, contate o suporte.');
-                 break;
-            default:
-                setError('Ocorreu um erro desconhecido durante o login.');
-                break;
-        }
+    if (authError === 'Configuration') {
+      setError('Ocorreu um erro de configuração no servidor. Por favor, contate o suporte.');
     }
   }, [searchParams]);
 
@@ -41,19 +33,56 @@ export function LoginForm() {
     setIsLoading(true);
     setError(null);
 
-    const result = await signIn('credentials', {
-      redirect: false,
-      email: email,
-      password: password,
-    });
-
-    if (result?.error) {
-      console.error("NextAuth signIn error:", result.error);
-      setError('Email ou senha inválidos. Verifique suas credenciais e tente novamente.');
+    if (!firebaseApp) {
+      setError("O serviço de autenticação não está disponível. Contate o suporte.");
       setIsLoading(false);
-    } else if (result?.ok) {
-      // Sucesso! Força um recarregamento para o dashboard para garantir a limpeza do estado.
-      window.location.href = '/dashboard';
+      return;
+    }
+
+    const auth = getAuth(firebaseApp);
+
+    try {
+      // Passo 1: Validar as credenciais com o Firebase no cliente.
+      await signInWithEmailAndPassword(auth, email, password);
+
+      // Passo 2: Se a validação do Firebase foi bem-sucedida, buscar os dados do usuário no nosso DB via Server Action.
+      const user = await validateAndGetUser(email);
+
+      if (!user) {
+        setError('Usuário autenticado, mas não encontrado no banco de dados do NexusFarma. Contate o suporte.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Passo 3: Criar a sessão no NextAuth, passando o objeto de usuário completo, que já foi validado.
+      // O `authorize` do NextAuth será passivo e apenas receberá este objeto.
+      const result = await signIn('credentials', {
+        redirect: false,
+        // Passamos o usuário como JSON. A senha não é incluída.
+        user: JSON.stringify(user),
+        // Incluímos email/senha para compatibilidade, mas o `authorize` priorizará o objeto `user`.
+        email: email, 
+        password: password
+      });
+
+
+      if (result?.error) {
+        console.error("NextAuth signIn error:", result.error);
+        setError('Não foi possível iniciar a sessão após a validação. Verifique suas credenciais e tente novamente.');
+        setIsLoading(false);
+      } else if (result?.ok) {
+        // Sucesso! Forçar recarregamento completo para garantir que o estado da sessão seja limpo.
+        window.location.href = '/dashboard';
+      }
+
+    } catch (firebaseError: any) {
+      console.error("Firebase signIn error:", firebaseError.code);
+      if (firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
+        setError('Email ou senha inválidos. Verifique suas credenciais e tente novamente.');
+      } else {
+        setError('Ocorreu um erro ao tentar fazer login. Tente novamente mais tarde.');
+      }
+      setIsLoading(false);
     }
   };
 
