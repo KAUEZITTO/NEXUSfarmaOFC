@@ -41,7 +41,6 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Etapa 1: Verificar a senha com a API REST de autenticação do Firebase.
-        // Este é o método seguro para validar uma senha no backend.
         const firebaseAuthUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`;
         
         try {
@@ -56,14 +55,12 @@ export const authOptions: NextAuthOptions = {
           });
           
           if (!response.ok) {
-            // Se a resposta não for 2xx, as credenciais são inválidas.
             console.warn(`[NextAuth][Authorize] Firebase auth failed for ${credentials.email} with status: ${response.status}`);
             return null; // Retorna null, o que resulta em um erro de 'CredentialsSignin'.
           }
         } catch (error) {
             console.error("[NextAuth][Authorize] Network error during Firebase auth check:", error);
-            // Retorna null em caso de erro de rede ou falha na chamada.
-            return null;
+            return null; // Retorna null em caso de erro de rede ou falha na chamada.
         }
 
         // Etapa 2: Se a autenticação do Firebase foi bem-sucedida, busque os dados do usuário no seu banco de dados (KV).
