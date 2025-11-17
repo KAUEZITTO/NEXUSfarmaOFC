@@ -1,3 +1,4 @@
+
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
@@ -11,8 +12,9 @@ export default withAuth(
 
     // Coordinators can access everything.
     if (isCoordinator) {
-      // The logic to redirect from /dashboard to /select-location is removed
-      // to allow access to the coordinator's main dashboard.
+      if (pathname === '/dashboard') {
+        return NextResponse.redirect(new URL('/dashboard/select-location', req.url));
+      }
       return NextResponse.next();
     }
 

@@ -66,13 +66,13 @@ export const authOptions: NextAuthOptions = {
             session.user.id = token.id as string;
             session.user.name = token.name;
             session.user.email = token.email;
-            session.user.location = token.location;
-            session.user.locationId = token.locationId;
-            session.user.accessLevel = token.accessLevel;
-            session.user.role = token.role;
-            session.user.subRole = token.subRole;
-            session.user.birthdate = token.birthdate;
-            session.user.avatarColor = token.avatarColor;
+            session.user.location = token.location as UserLocation;
+            session.user.locationId = token.locationId as string | undefined;
+            session.user.accessLevel = token.accessLevel as 'Admin' | 'User';
+            session.user.role = token.role as Role;
+            session.user.subRole = token.subRole as SubRole | undefined;
+            session.user.birthdate = token.birthdate as string | null;
+            session.user.avatarColor = token.avatarColor as string | undefined;
 
             // Atualiza o 'lastSeen' do usuário no banco de dados.
             // A chamada é "fire-and-forget" para não bloquear a resposta da sessão.
