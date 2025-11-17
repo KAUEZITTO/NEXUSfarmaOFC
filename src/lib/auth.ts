@@ -7,7 +7,7 @@ import { KVAdapter } from '@/lib/kv-adapter';
 import { kv } from '@/lib/server/kv.server';
 import { updateUserLastSeen } from '@/lib/actions';
 
-// Esta função é chamada pela Server Action no fluxo de login do cliente.
+// Esta função é uma Server Action chamada pelo cliente para buscar os dados do usuário.
 export async function validateAndGetUser(email: string): Promise<AppUser | null> {
     if (!email) return null;
     try {
@@ -15,13 +15,11 @@ export async function validateAndGetUser(email: string): Promise<AppUser | null>
         const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
         if (!user) return null;
 
-        // Regra de negócio especial para o superusuário
         if (user.email === 'kauemoreiraofc2@gmail.com') {
             user.accessLevel = 'Admin';
             user.subRole = 'Coordenador';
         }
         
-        // Garante que o usuário do hospital tenha um locationId
         if (user.location === 'Hospital' && !user.locationId) {
             const units = await getUnits();
             const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
