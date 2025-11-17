@@ -10,7 +10,6 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 dias
   },
-  // O Adapter é REMOVIDO pois é incompatível com a estratégia 'jwt'.
   
   secret: process.env.NEXTAUTH_SECRET,
 
