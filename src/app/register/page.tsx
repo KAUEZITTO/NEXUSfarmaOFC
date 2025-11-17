@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { RegisterForm } from '@/components/auth/register-form';
 import { Logo } from '@/components/logo';
-import { register } from '@/lib/auth';
+import { register } from '@/lib/actions';
 
 
 export default function RegisterPage() {
@@ -43,5 +43,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
-    

@@ -5,10 +5,7 @@ import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { SignJWT, jwtVerify } from 'jose';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { getAuth as getAdminAuth } from 'firebase-admin/auth';
-import { getAdminApp } from '@/lib/firebase/admin';
-
-import type { User, Role, SubRole, AccessLevel, UserLocation } from './types';
+import type { User } from './types';
 import { firebaseApp } from './firebase/client';
 import { readData, writeData, getUnits } from './data';
 
@@ -26,6 +23,13 @@ async function encrypt(payload: any) {
     .setIssuedAt()
     .setExpirationTime('30d')
     .sign(key);
+}
+
+async function decrypt(token: string) {
+    const { payload } = await jwtVerify(token, key, {
+        algorithms: ['HS256'],
+    });
+    return payload;
 }
 
 export async function verifyAuth(req?: NextRequest) {
@@ -131,89 +135,3 @@ export async function updateUserLastSeen(userId: string) {
         await writeData('users', users);
     }
 }
-
-
-// --- User Registration ---
-const avatarColors = [
-  'hsl(211 100% 50%)', // Blue
-  'hsl(39 100% 50%)', // Orange
-  'hsl(0 84.2% 60.2%)', // Red
-  'hsl(142.1 76.2% 36.3%)', // Green
-  'hsl(262.1 83.3% 57.8%)', // Purple
-  'hsl(314.5 72.4% 57.3%)', // Pink
-  'hsl(198.8 93.4% 42%)' // Teal
-];
-
-export async function register(data: { name: string, email: string; password: string; birthdate: string; role: Role; subRole?: SubRole; location?: UserLocation; }) {
-    const { name, email, password, birthdate, role, subRole, location } = data;
-
-    try {
-        const adminApp = getAdminApp(); 
-        const auth = getAdminAuth(adminApp);
-
-        const users = await readData<User>('users');
-
-        if (users.some(u => u.email === email)) {
-            return { success: false, message: 'Este email já está em uso.' };
-        }
-        
-        try {
-            await auth.getUserByEmail(email);
-            return { success: false, message: 'Este email já está registrado no sistema de autenticação.' };
-        } catch (error: any) {
-            if (error.code !== 'auth/user-not-found') {
-                throw error;
-            }
-        }
-
-        const userRecord = await auth.createUser({
-            email: email,
-            password: password,
-            displayName: name,
-        });
-        
-        const isFirstUser = users.length === 0;
-
-        const userLocation = subRole === 'Coordenador' ? 'CAF' : location;
-        if (!userLocation) {
-            return { success: false, message: 'O local de trabalho é obrigatório para este cargo.' };
-        }
-        
-        let locationId;
-        if (userLocation === 'Hospital') {
-            const units = await getUnits();
-            const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
-            if(hospitalUnit) locationId = hospitalUnit.id;
-        }
-
-        const newUser: User = {
-            id: userRecord.uid,
-            email,
-            name,
-            birthdate,
-            location: userLocation,
-            locationId,
-            role,
-            subRole: role === 'Farmacêutico' ? subRole : undefined,
-            accessLevel: isFirstUser ? 'Admin' : 'User',
-            avatarColor: avatarColors[Math.floor(Math.random() * avatarColors.length)],
-        };
-
-        await writeData<User>('users', [...users, newUser]);
-        revalidatePath('/dashboard/user-management');
-
-        return { success: true, message: 'Usuário registrado com sucesso.' };
-
-    } catch (error: any) {
-        console.error("Registration error:", error);
-        if (error.code === 'auth/email-already-exists') {
-            return { success: false, message: 'Este email já está em uso.' };
-        }
-        if (error.code === 'auth/weak-password') {
-            return { success: false, message: 'A senha deve ter pelo menos 6 caracteres.' };
-        }
-        return { success: false, message: `Ocorreu um erro desconhecido ao criar a conta: ${error.message}` };
-    }
-}
-
-    
