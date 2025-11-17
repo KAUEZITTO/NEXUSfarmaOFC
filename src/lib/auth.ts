@@ -1,7 +1,7 @@
 
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { validateAndGetUser } from '@/lib/actions';
+import { validateAndGetUser, verifyUserPassword } from '@/lib/actions';
 import { KVAdapter } from '@/lib/kv-adapter';
 import { kv } from '@/lib/server/kv.server';
 import { updateUserLastSeen } from '@/lib/actions';
@@ -18,39 +18,47 @@ export const authOptions: NextAuthOptions = {
       name: 'Credentials',
       credentials: {
         email: { label: "Email", type: "email" },
-        // A senha não é mais usada aqui, mas a estrutura é mantida.
-        // O `user` JSON será passado pelo cliente.
-        user: { label: "User JSON", type: "text" },
+        password: { label: "Password", type: "password" },
       },
-      // A função authorize é removida para evitar o erro `Configuration`.
-      // A validação agora acontece no cliente e a criação do token no callback `jwt`.
       async authorize(credentials) {
-        if (!credentials?.email) {
-          console.error("[NextAuth][Authorize] Email não foi fornecido nas credenciais.");
+        if (!credentials?.email || !credentials?.password) {
+          console.error("[NextAuth][Authorize] Email ou senha não fornecidos.");
           return null;
         }
-        // A lógica foi movida para o callback `jwt`.
-        // Apenas retornamos um objeto mínimo para o `jwt` callback ser acionado.
-        return { id: '', email: credentials.email };
-      }
+
+        // Etapa 1: Verificar a senha com segurança no backend.
+        const isPasswordValid = await verifyUserPassword(credentials.email, credentials.password);
+
+        if (!isPasswordValid) {
+            console.warn(`[NextAuth][Authorize] Falha na autenticação para o email: ${credentials.email}`);
+            return null;
+        }
+
+        // Etapa 2: Se a senha for válida, buscar os dados do usuário no KV.
+        const user = await validateAndGetUser(credentials.email);
+        
+        if (!user) {
+            console.error(`[NextAuth][Authorize] Usuário autenticado com sucesso, mas não encontrado no banco de dados: ${credentials.email}`);
+            return null;
+        }
+        
+        // Etapa 3: Retornar o objeto de usuário para o NextAuth criar a sessão.
+        return user;
+      },
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger, account }) {
-      // Na primeira vez que o token é criado (após o login)
-      if (trigger === "signIn" && account?.provider === 'credentials' && token.email) {
-        const appUser = await validateAndGetUser(token.email);
-        if (appUser) {
-          token.id = appUser.id;
-          token.name = appUser.name;
-          token.location = appUser.location;
-          token.locationId = appUser.locationId;
-          token.accessLevel = appUser.accessLevel;
-          token.role = appUser.role;
-          token.subRole = appUser.subRole;
-          token.birthdate = appUser.birthdate;
-          token.avatarColor = appUser.avatarColor;
-        }
+    async jwt({ token, user, trigger }) {
+      if (trigger === "signIn" && user) {
+        token.id = user.id;
+        token.name = user.name;
+        token.location = user.location;
+        token.locationId = user.locationId;
+        token.accessLevel = user.accessLevel;
+        token.role = user.role;
+        token.subRole = user.subRole;
+        token.birthdate = user.birthdate;
+        token.avatarColor = user.avatarColor;
       }
       return token;
     },
@@ -67,6 +75,7 @@ export const authOptions: NextAuthOptions = {
             session.user.birthdate = token.birthdate;
             session.user.avatarColor = token.avatarColor;
             
+            // Atualiza o 'lastSeen' de forma assíncrona
             await updateUserLastSeen(token.id as string);
         }
         return session;
@@ -77,5 +86,4 @@ export const authOptions: NextAuthOptions = {
     error: '/login', 
   },
 };
-
     

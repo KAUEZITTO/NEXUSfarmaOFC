@@ -9,8 +9,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { firebaseApp } from '@/lib/firebase/client';
 
 export function LoginForm() {
   const searchParams = useSearchParams();
@@ -26,13 +24,13 @@ export function LoginForm() {
         switch (authError) {
             case 'CredentialsSignin':
             case 'Callback':
-                setError('Email ou senha inválidos, ou erro ao buscar dados do usuário. Tente novamente.');
+                setError('Email ou senha inválidos. Verifique suas credenciais e tente novamente.');
                 break;
             case 'Configuration':
                  setError('Ocorreu um erro de configuração no servidor. Por favor, contate o suporte.');
                  break;
             default:
-                setError('Ocorreu um erro desconhecido durante o login. Tente novamente.');
+                setError('Ocorreu um erro desconhecido durante o login.');
                 break;
         }
     }
@@ -43,42 +41,26 @@ export function LoginForm() {
     setIsLoading(true);
     setError(null);
 
-    if (!firebaseApp) {
-      setError("O serviço de autenticação não está disponível. Contate o suporte.");
-      setIsLoading(false);
-      return;
-    }
+    // O formulário agora envia as credenciais diretamente para o `signIn` do NextAuth.
+    // Toda a lógica de verificação de senha e busca de usuário acontecerá no servidor.
+    const result = await signIn('credentials', {
+      email: email,
+      password: password,
+      redirect: false, // Gerenciamos o redirecionamento manualmente.
+    });
 
-    const auth = getAuth(firebaseApp);
-
-    try {
-      // Passo 1: Validar as credenciais com o Firebase no cliente.
-      await signInWithEmailAndPassword(auth, email, password);
-
-      // Passo 2: Chamar o signIn do NextAuth.js, que agora irá acionar o callback 'jwt'
-      // para buscar os dados do usuário no servidor de forma segura.
-      const result = await signIn('credentials', {
-        email: email,
-        redirect: false, // Gerenciamos o redirecionamento manualmente
-      });
-
-      if (result?.error) {
+    if (result?.error) {
+        // Se o `authorize` no servidor retornar null, o `signIn` resulta em erro.
         console.error("NextAuth signIn error:", result.error);
-        setError('Não foi possível iniciar a sessão após a autenticação. Verifique os logs do servidor.');
+        setError('Email ou senha inválidos.');
         setIsLoading(false);
-      } else if (result?.ok) {
-        // Sucesso! Forçar recarregamento completo para garantir que o estado da sessão seja limpo.
+    } else if (result?.ok) {
+        // Sucesso! Força um recarregamento para o dashboard para garantir a limpeza do estado.
         window.location.href = '/dashboard';
-      }
-
-    } catch (firebaseError: any) {
-      console.error("Firebase signIn error:", firebaseError.code);
-      if (firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
-        setError('Email ou senha inválidos. Verifique suas credenciais e tente novamente.');
-      } else {
-        setError('Ocorreu um erro ao tentar fazer login. Tente novamente mais tarde.');
-      }
-      setIsLoading(false);
+    } else {
+        // Caso genérico para outros erros inesperados.
+        setError('Ocorreu um erro inesperado durante o login.');
+        setIsLoading(false);
     }
   };
 
@@ -136,5 +118,4 @@ export function LoginForm() {
     </form>
   );
 }
-
     
