@@ -11,34 +11,7 @@ import { getAdminApp } from '@/lib/firebase/admin';
 
 // --- AUTH ACTIONS ---
 
-export async function verifyUserPassword(email: string, password: string): Promise<boolean> {
-    try {
-        const adminAuth = getAdminApp();
-        const auth = getAuth(adminAuth);
-        // This is a common but indirect way to verify a password with the Admin SDK.
-        // We attempt to sign in the user on the backend. If it succeeds, the password is correct.
-        // The user's session is NOT created here; this is just for verification.
-        // A more direct method is not available in the Admin SDK for password verification.
-        // NOTE: This approach is NOT directly used in the final login flow but is kept as a secure backend verification utility.
-        
-        // A temporary client-side SDK instance on the backend is needed for signInWithEmailAndPassword
-        const { initializeApp, getApps } = await import('firebase/app');
-        const { getAuth: getClientAuth, signInWithEmailAndPassword } = await import('firebase/auth');
-
-        const clientApp = getApps().find(app => app.name === 'password-verifier') || initializeApp({
-            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-        }, 'password-verifier');
-
-        const clientAuth = getClientAuth(clientApp);
-        await signInWithEmailAndPassword(clientAuth, email, password);
-        return true;
-    } catch (error) {
-        console.error(`[verifyUserPassword] Password verification failed for ${email}:`, (error as any).code);
-        return false;
-    }
-}
-
-
+// Esta função é uma Server Action chamada pelo cliente para buscar os dados do usuário APÓS a validação do Firebase.
 export async function validateAndGetUser(email: string): Promise<User | null> {
     if (!email) return null;
     try {
@@ -46,11 +19,13 @@ export async function validateAndGetUser(email: string): Promise<User | null> {
         const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
         if (!user) return null;
 
+        // Regra especial para o superadmin
         if (user.email === 'kauemoreiraofc2@gmail.com') {
             user.accessLevel = 'Admin';
             user.subRole = 'Coordenador';
         }
         
+        // Garante que o usuário do hospital tenha o ID da unidade correto
         if (user.location === 'Hospital' && !user.locationId) {
             const units = await getUnits();
             const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
@@ -59,6 +34,7 @@ export async function validateAndGetUser(email: string): Promise<User | null> {
             }
         }
 
+        // Remove a senha antes de retornar
         const { password, ...userForSession } = user;
         return userForSession as User;
 
@@ -1219,5 +1195,3 @@ export async function updateHospitalOrderTemplate(templateItems: HospitalOrderTe
     await writeData('hospitalOrderTemplate', templateItems);
     revalidatePath('/dashboard/hospital/orders/template');
 }
-
-    

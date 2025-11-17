@@ -55,14 +55,11 @@ export function LoginForm() {
       }
 
       // Passo 3: Criar a sessão no NextAuth, passando o objeto de usuário completo, que já foi validado.
-      // O `authorize` do NextAuth será passivo e apenas receberá este objeto.
+      // A função 'authorize' do NextAuth será passiva e apenas receberá este objeto.
       const result = await signIn('credentials', {
         redirect: false,
         // Passamos o usuário como JSON. A senha não é incluída.
         user: JSON.stringify(user),
-        // Incluímos email/senha para compatibilidade, mas o `authorize` priorizará o objeto `user`.
-        email: email, 
-        password: password
       });
 
 
@@ -140,5 +137,3 @@ export function LoginForm() {
     </form>
   );
 }
-
-    
