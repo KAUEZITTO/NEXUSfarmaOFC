@@ -46,6 +46,7 @@ export function LoginForm() {
       await signInWithEmailAndPassword(auth, email, password);
 
       // Passo 2: Se a validação do Firebase foi bem-sucedida, buscar os dados do usuário no nosso DB via Server Action.
+      // Esta etapa é crucial para garantir que o usuário existe no NexusFarma.
       const user = await validateAndGetUser(email);
 
       if (!user) {
@@ -54,9 +55,10 @@ export function LoginForm() {
         return;
       }
 
-      // Passo 3: Criar a sessão no NextAuth, passando o objeto de usuário completo, que já foi validado.
+      // Passo 3: Chamar o signIn do NextAuth, que agora usará o fluxo JWT.
+      // Passamos apenas o 'email' para o authorize, que o repassa para o callback 'jwt'.
       const result = await signIn('credentials', {
-        user: JSON.stringify(user),
+        email: email,
         redirect: false,
       });
 
