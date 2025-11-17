@@ -5,10 +5,14 @@ import { validateAndGetUser, updateUserLastSeen } from '@/lib/actions';
 import type { User } from '@/lib/types';
 
 export const authOptions: NextAuthOptions = {
+  // A estratégia de sessão DEVE ser 'jwt' para o CredentialsProvider funcionar.
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 dias
   },
+  // O Adapter é REMOVIDO pois é incompatível com a estratégia 'jwt'.
+  // adapter: KVAdapter(kv), 
+
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
@@ -37,9 +41,9 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    // O callback 'jwt' é o coração da sessão com a estratégia JWT.
     async jwt({ token, user }) {
-      // Este callback é acionado após o 'authorize'.
-      // Se o objeto 'user' (vindo do authorize) existir, é o login inicial.
+      // No login inicial (o objeto 'user' existe), populamos o token.
       if (user) {
         token.id = user.id;
         token.name = user.name;
@@ -55,7 +59,7 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-        // Preenche o objeto 'session.user' com os dados do token JWT.
+        // Preenche o objeto 'session.user' com os dados do token JWT a cada requisição.
         if (session.user && token.id) {
             session.user.id = token.id as string;
             session.user.name = token.name;
@@ -68,7 +72,8 @@ export const authOptions: NextAuthOptions = {
             session.user.birthdate = token.birthdate;
             session.user.avatarColor = token.avatarColor;
 
-            // Atualiza o lastSeen sem bloquear a resposta.
+            // Atualiza o 'lastSeen' do usuário no banco de dados.
+            // Esta chamada é "fire-and-forget" para não bloquear a resposta da sessão.
             updateUserLastSeen(token.id as string).catch(console.error);
         }
         return session;
