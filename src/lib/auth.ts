@@ -1,3 +1,4 @@
+
 'use server';
 
 import { cookies } from 'next/headers';
@@ -6,7 +7,8 @@ import { SignJWT, jwtVerify } from 'jose';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import type { User } from './types';
 import { firebaseApp } from './firebase/client';
-import { readData, writeData } from './data';
+import { readData, writeData, getUnits } from './data';
+import { getAdminApp } from './firebase/admin';
 
 const secretKey = process.env.NEXTAUTH_SECRET;
 if (!secretKey) {
@@ -47,10 +49,13 @@ export async function verifyAuth(req?: NextRequest) {
 }
 
 export async function getCurrentUser(): Promise<User | undefined> {
+  const token = cookies().get('session_token')?.value;
+  if (!token) return undefined;
   try {
-    const verifiedToken = await verifyAuth();
-    return verifiedToken;
+    const verified = await decrypt(token);
+    return verified as User;
   } catch (err) {
+    console.error("Error decrypting token in getCurrentUser", err);
     return undefined;
   }
 }
@@ -110,7 +115,7 @@ export async function validateAndGetUser(email: string): Promise<User | null> {
         }
         
         if (user.location === 'Hospital' && !user.locationId) {
-            const units = await readData<import('./types').Unit>('units');
+            const units = await getUnits();
             const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
             if (hospitalUnit) {
                 user.locationId = hospitalUnit.id;
