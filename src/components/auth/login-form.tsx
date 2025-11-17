@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,12 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { signIn } from 'next-auth/react';
-import { useSearchParams } from 'next/navigation';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { firebaseApp } from '@/lib/firebase/client';
-import { validateAndGetUser } from '@/lib/actions';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 export function LoginForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,10 +20,14 @@ export function LoginForm() {
 
   useEffect(() => {
     const authError = searchParams.get('error');
-    if (authError === 'Configuration') {
-      setError('Ocorreu um erro de configuração no servidor. Por favor, contate o suporte.');
-    } else if (authError) {
-      setError('Ocorreu um erro inesperado durante o login.');
+    if (authError) {
+      if (authError === 'CredentialsSignin') {
+        setError('Email ou senha inválidos. Verifique suas credenciais e tente novamente.');
+      } else if (authError === 'Configuration') {
+        setError('Ocorreu um erro de configuração no servidor. Por favor, contate o suporte.');
+      } else {
+        setError('Ocorreu um erro inesperado durante o login.');
+      }
     }
   }, [searchParams]);
 
@@ -35,50 +36,25 @@ export function LoginForm() {
     setIsLoading(true);
     setError(null);
 
-    if (!firebaseApp) {
-      setError("O serviço de autenticação não está disponível. Contate o suporte.");
-      setIsLoading(false);
-      return;
-    }
+    // Agora, passamos as credenciais diretamente para o NextAuth.
+    // Toda a lógica de validação acontecerá no servidor, dentro do 'authorize'.
+    const result = await signIn('credentials', {
+      redirect: false,
+      email: email,
+      password: password,
+    });
 
-    try {
-      // Passo 1: Autenticar com o Firebase no cliente
-      const auth = getAuth(firebaseApp);
-      await signInWithEmailAndPassword(auth, email, password);
-      
-      // Passo 2: Se o Firebase validou, buscar os dados do usuário no nosso DB
-      const user = await validateAndGetUser(email);
-
-      if (!user) {
-        setError('Credenciais válidas, mas o usuário não foi encontrado no sistema NexusFarma. Contate o suporte.');
-        setIsLoading(false);
-        return;
-      }
-      
-      // Passo 3: Criar a sessão no NextAuth com o usuário já validado.
-      // O 'authorize' no backend apenas passará esses dados para o callback 'jwt'.
-      const result = await signIn('credentials', {
-        user: JSON.stringify(user), // Passa o objeto de usuário completo e validado
-        redirect: false,
-      });
-
-      if (result?.error) {
-        console.error("NextAuth signIn error:", result.error);
-        setError('Não foi possível iniciar a sessão. Verifique suas credenciais e tente novamente.');
-        setIsLoading(false);
-      } else if (result?.ok) {
-        // Sucesso! Forçar recarregamento completo para garantir que o estado da sessão seja limpo.
-        window.location.href = '/dashboard';
-      }
-
-    } catch (firebaseError: any) {
-      console.error("Firebase signIn error:", firebaseError.code);
-      if (firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
+    if (result?.error) {
+       if (result.error === 'CredentialsSignin') {
         setError('Email ou senha inválidos. Verifique suas credenciais e tente novamente.');
       } else {
-        setError('Ocorreu um erro ao tentar fazer login. Tente novamente mais tarde.');
+        setError('Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
       }
       setIsLoading(false);
+    } else if (result?.ok) {
+      // Sucesso! Forçar recarregamento completo para garantir que o estado da sessão seja limpo.
+      // O router.push() é mais suave que o window.location.href
+      router.push('/dashboard');
     }
   };
 

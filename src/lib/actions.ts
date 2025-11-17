@@ -1,4 +1,3 @@
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -13,10 +12,6 @@ import { getAdminApp } from '@/lib/firebase/admin';
 // --- AUTH ACTIONS ---
 
 export async function verifyUserPassword(email: string, password_provided: string): Promise<boolean> {
-    // Esta função é chamada no backend e usa o Firebase Admin para validar a senha
-    // sem precisar de um token personalizado. É um fluxo mais direto.
-    // NOTA: Esta abordagem não é padrão no Firebase e depende de uma API REST não documentada oficialmente para este fim.
-    // Se isso falhar, a alternativa seria usar um fluxo de token personalizado.
     const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
     if (!apiKey) {
         console.error("Firebase API Key não está definida.");
@@ -27,25 +22,13 @@ export async function verifyUserPassword(email: string, password_provided: strin
     try {
         const response = await fetch(verifyPasswordUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email: email,
-                password: password_provided,
-                returnSecureToken: false
-            })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, password: password_provided, returnSecureToken: false }),
         });
 
         const data = await response.json();
-
-        if (response.ok && data.localId) {
-            return true; // Senha válida
-        } else {
-            // Log do erro para depuração no servidor, mas não expõe detalhes ao cliente
-            console.warn(`Falha na verificação de senha para ${email}:`, data.error?.message || 'Resposta inválida');
-            return false; // Senha inválida ou outro erro
-        }
+        return response.ok && !!data.localId;
+        
     } catch (error) {
         console.error("Erro de rede ao verificar senha com Firebase:", error);
         return false;

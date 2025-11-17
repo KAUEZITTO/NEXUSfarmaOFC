@@ -1,12 +1,11 @@
-
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { updateUserLastSeen } from '@/lib/actions';
+import { updateUserLastSeen, validateAndGetUser, verifyUserPassword } from '@/lib/actions';
 import type { User as AppUser } from '@/lib/types';
 
 export const authOptions: NextAuthOptions = {
   session: {
-    strategy: 'jwt', // A estratégia JWT é mais simples e robusta para este caso.
+    strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 dias
   },
   secret: process.env.NEXTAUTH_SECRET,
@@ -14,30 +13,39 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
         name: 'Credentials',
         credentials: {
-          // Apenas esperamos o objeto de usuário, que foi validado no cliente.
-          user: { label: "User JSON", type: "text" },
+          email: { label: "Email", type: "email" },
+          password: { label: "Password", type: "password" }
         },
         async authorize(credentials) {
-          // A função authorize agora é extremamente simples.
-          // Ela apenas recebe o usuário já validado do cliente e o retorna.
-          // NENHUMA chamada de rede ou DB aqui. Isso resolve o erro 'Configuration'.
-          if (!credentials?.user) {
-            return null;
-          }
-          try {
-            const user = JSON.parse(credentials.user);
-            return user; // Retorna o objeto de usuário para o callback 'jwt'
-          } catch (e) {
-            console.error("Error parsing user in authorize callback", e);
-            return null;
-          }
+            if (!credentials?.email || !credentials?.password) {
+                return null;
+            }
+
+            try {
+                // 1. Validar a senha com o Firebase Admin no backend
+                const isPasswordValid = await verifyUserPassword(credentials.email, credentials.password);
+                if (!isPasswordValid) {
+                    return null; // Senha incorreta
+                }
+
+                // 2. Se a senha for válida, buscar os dados do usuário no KV
+                const user = await validateAndGetUser(credentials.email);
+                if (!user) {
+                    return null; // Usuário não encontrado no DB do NexusFarma
+                }
+                
+                // 3. Retornar o objeto de usuário para o NextAuth
+                return user;
+
+            } catch (error) {
+                console.error("Authorization Error:", error);
+                return null;
+            }
         },
     }),
   ],
   callbacks: {
-    // O callback 'jwt' é chamado após o 'authorize'. Ele cria o token.
     async jwt({ token, user, trigger, session }) {
-        // Na primeira vez (login), 'user' vem do 'authorize'.
         if (user) {
             token.id = user.id;
             token.name = user.name;
@@ -50,7 +58,6 @@ export const authOptions: NextAuthOptions = {
             token.birthdate = (user as AppUser).birthdate;
             token.avatarColor = (user as AppUser).avatarColor;
         }
-        // Se a sessão for atualizada (ex: pelo update do user-nav), atualizamos o token.
         if (trigger === "update" && session?.user) {
             token.name = session.user.name;
             token.birthdate = session.user.birthdate;
@@ -58,7 +65,6 @@ export const authOptions: NextAuthOptions = {
         }
         return token;
     },
-    // O callback 'session' usa os dados do token para criar o objeto de sessão do cliente.
     async session({ session, token }) {
         if (session.user && token.id) {
             session.user.id = token.id as string;
