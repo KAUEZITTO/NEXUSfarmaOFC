@@ -34,30 +34,25 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
       },
       async authorize(credentials) {
-        // This function is now ONLY called after client-side Firebase validation.
-        // It receives the email and its job is to find the user in the database.
         if (!credentials?.email) {
-          console.error("[NextAuth][Authorize] Error: Email not provided after client validation.");
+          console.error("[NextAuth][Authorize] Error: Email not provided.");
           return null;
         }
 
         const userFromDb = await getUserByEmailFromDb(credentials.email);
         
         if (!userFromDb) {
-          console.error(`[NextAuth][Authorize] Error: User ${credentials.email} authenticated but not found in KV database.`);
+          console.error(`[NextAuth][Authorize] Error: User ${credentials.email} not found in KV database.`);
           return null;
         }
         
-        // Return a clean user object for the session, WITHOUT the password.
         const { password, ...userForSession } = userFromDb;
-
-        // Superuser logic
+        
         if (userForSession.email === 'kauemoreiraofc2@gmail.com') {
           userForSession.accessLevel = 'Admin';
           userForSession.subRole = 'Coordenador';
         }
         
-        // Ensure hospital user has locationId
         if (userForSession.location === 'Hospital' && !userForSession.locationId) {
             const units = await getUnits();
             const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
