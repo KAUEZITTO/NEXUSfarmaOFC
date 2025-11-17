@@ -6,7 +6,7 @@ import * as admin from 'firebase-admin';
 
 let adminApp: admin.app.App;
 
-export const initializeAdminApp = () => {
+function initializeAdminApp(): admin.app.App {
     if (admin.apps.length > 0) {
         // Se já existe uma instância, a reutilizamos.
         return admin.apps[0]!;
@@ -14,14 +14,14 @@ export const initializeAdminApp = () => {
 
     // Verifica se as variáveis de ambiente essenciais estão presentes.
     if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
-        throw new Error("As variáveis de ambiente do Firebase Admin (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY) não estão configuradas corretamente. Verifique seu arquivo .env ou as configurações da Vercel.");
+        throw new Error("As variáveis de ambiente do Firebase Admin (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY) não estão configuradas corretamente.");
     }
 
     // A chave privada das variáveis de ambiente precisa ter suas quebras de linha formatadas corretamente.
     const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
 
     try {
-        adminApp = admin.initializeApp({
+        const newAdminApp = admin.initializeApp({
             credential: admin.credential.cert({
                 projectId: process.env.FIREBASE_PROJECT_ID,
                 clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
@@ -29,20 +29,18 @@ export const initializeAdminApp = () => {
             }),
         });
         console.log("Firebase Admin SDK inicializado com sucesso.");
-        return adminApp;
+        return newAdminApp;
     } catch (error: any) {
         console.error("Falha Crítica ao Inicializar o Firebase Admin SDK:", error);
-        // Isso impedirá que a aplicação continue se o Firebase Admin não puder ser inicializado.
         throw new Error(`Não foi possível inicializar o Firebase Admin: ${error.message}`);
     }
-};
+}
 
 // Exporta uma função que sempre retorna a instância inicializada.
-export const getAdminApp = () => {
+export const getAdminApp = (): admin.app.App => {
     // Se a `adminApp` ainda não foi definida, inicializa-a.
-    // Isso é crucial para o ambiente serverless, onde o código pode ser "congelado".
     if (!adminApp) {
-        return initializeAdminApp();
+        adminApp = initializeAdminApp();
     }
     return adminApp;
 };

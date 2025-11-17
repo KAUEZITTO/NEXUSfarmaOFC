@@ -1,11 +1,12 @@
 
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { validateAndGetUser, verifyUserPassword, updateUserLastSeen } from '@/lib/actions';
+import { validateAndGetUser, updateUserLastSeen } from '@/lib/actions';
+import type { User } from '@/lib/types';
 
 export const authOptions: NextAuthOptions = {
   session: {
-    strategy: 'jwt', // CORREÇÃO FINAL: JWT é a única estratégia compatível com CredentialsProvider.
+    strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 dias
   },
   secret: process.env.NEXTAUTH_SECRET,
@@ -13,40 +14,36 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
+        // O objeto de usuário, já validado no cliente, será passado como uma string JSON.
+        user: { label: "User JSON", type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          console.error("[NextAuth][Authorize] Email ou senha não fornecidos.");
+        // Esta função agora é extremamente simples e não faz chamadas de rede.
+        // Ela apenas confia nos dados já validados que o cliente enviou.
+        if (!credentials?.user) {
+          console.error("[NextAuth][Authorize] Dados do usuário não fornecidos.");
           return null;
         }
 
-        const isPasswordValid = await verifyUserPassword(credentials.email, credentials.password);
-        
-        if (!isPasswordValid) {
-          console.warn(`[NextAuth][Authorize] Falha na autenticação para o email: ${credentials.email}`);
-          return null;
+        try {
+            const user = JSON.parse(credentials.user);
+            // Retorna o objeto do usuário para ser usado no callback jwt.
+            return user;
+        } catch (error) {
+            console.error("[NextAuth][Authorize] Erro ao parsear o JSON do usuário.", error);
+            return null;
         }
-
-        const user = await validateAndGetUser(credentials.email);
-
-        if (!user) {
-          console.error(`[NextAuth][Authorize] Usuário autenticado com sucesso, mas não encontrado no banco de dados: ${credentials.email}`);
-          return null;
-        }
-        
-        // Se a autorização for bem-sucedida, o objeto 'user' é passado para o callback 'jwt'.
-        return user;
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      // No login inicial (objeto 'user' está presente)
+      // Este callback é acionado após o 'authorize'.
+      // Se o objeto 'user' (vindo do authorize) existir, é o login inicial.
       if (user) {
         token.id = user.id;
         token.name = user.name;
+        token.email = user.email;
         token.location = user.location;
         token.locationId = user.locationId;
         token.accessLevel = user.accessLevel;
@@ -58,7 +55,7 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-        // A partir do token JWT, preenchemos o objeto de sessão
+        // Preenche o objeto 'session.user' com os dados do token JWT.
         if (session.user && token.id) {
             session.user.id = token.id as string;
             session.user.name = token.name;
@@ -70,8 +67,8 @@ export const authOptions: NextAuthOptions = {
             session.user.subRole = token.subRole;
             session.user.birthdate = token.birthdate;
             session.user.avatarColor = token.avatarColor;
-            
-            // Atualiza o lastSeen sem bloquear a resposta da sessão
+
+            // Atualiza o lastSeen sem bloquear a resposta.
             updateUserLastSeen(token.id as string).catch(console.error);
         }
         return session;
@@ -82,4 +79,3 @@ export const authOptions: NextAuthOptions = {
     error: '/login', 
   },
 };
-    

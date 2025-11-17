@@ -11,38 +11,6 @@ import { getAdminApp } from '@/lib/firebase/admin';
 
 // --- AUTH ACTIONS ---
 
-// Esta função verifica a senha de um usuário usando o SDK do cliente do Firebase,
-// mas em um ambiente de servidor. Isso é feito criando uma instância de cliente temporária.
-// É uma abordagem segura para validar credenciais no backend sem usar o Admin SDK para isso.
-export async function verifyUserPassword(email: string, password: string): Promise<boolean> {
-  const { initializeApp, getApps, deleteApp } = await import('firebase/app');
-  const { getAuth: getClientAuth, signInWithEmailAndPassword } = await import('firebase/auth');
-  
-  const tempAppName = `auth-check-${Date.now()}`;
-  
-  const firebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  };
-
-  if (!firebaseConfig.apiKey) {
-    console.error("Firebase API Key is missing for password verification.");
-    return false;
-  }
-  
-  const tempApp = initializeApp(firebaseConfig, tempAppName);
-  const tempAuth = getClientAuth(tempApp);
-
-  try {
-    await signInWithEmailAndPassword(tempAuth, email, password);
-    await deleteApp(tempApp);
-    return true;
-  } catch (error) {
-    await deleteApp(tempApp);
-    return false;
-  }
-}
-
-
 export async function validateAndGetUser(email: string): Promise<User | null> {
     if (!email) return null;
     try {
@@ -1005,7 +973,7 @@ export async function updateHospitalPatientStatus(patientId: string, status: Hos
     if (patientIndex === -1) throw new Error('Paciente não encontrado.');
     patients[patientIndex].status = status;
     await writeData('hospitalPatients', patients);
-    revalidatePath('/dashboard/hospital/patients');
+revalidatePath('/dashboard/hospital/patients');
 }
 
 
@@ -1224,4 +1192,3 @@ export async function updateHospitalOrderTemplate(templateItems: HospitalOrderTe
     revalidatePath('/dashboard/hospital/orders/template');
 }
 
-    
