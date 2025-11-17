@@ -616,6 +616,7 @@ export async function updateUserLastSeen(userId: string) {
         users[userIndex].lastSeen = new Date().toISOString();
         await writeData('users', users);
     }
+    // Nenhuma revalidação de caminho aqui para não interferir no fluxo de autenticação.
 }
 
 export async function updateUserAccessLevel(userId: string, accessLevel: AccessLevel) {
