@@ -1,9 +1,7 @@
-
 'use client';
 
 import React from 'react';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
 import { UserNav } from '@/components/dashboard/user-nav';
 import { DashboardNav } from '@/components/dashboard/dashboard-nav';
 import { Logo } from '@/components/logo';
@@ -11,35 +9,36 @@ import { Sidebar, SidebarContent, SidebarHeader, SidebarProvider, SidebarTrigger
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { HospitalNav } from '@/components/dashboard/hospital/hospital-nav';
-import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
 import { PageLoader } from '@/components/ui/page-loader';
 import { combinedNavItems } from '@/components/dashboard/combined-nav';
+import type { User } from '@/lib/types';
 
+// Este componente precisa ser um wrapper para o provedor de contexto da Sidebar,
+// mas a lógica de sessão foi movida para o layout principal do servidor.
+// Ele recebe o usuário como prop.
 export default function DashboardLayout({
   children,
+  user
 }: {
   children: React.ReactNode;
+  user: User | null; // Recebe o usuário (ou nulo) do layout do servidor
 }) {
-    const { data: session, status } = useSession();
-    const pathname = usePathname();
-    const isHospitalUser = session?.user?.location === 'Hospital';
-    const isCoordinator = session?.user?.subRole === 'Coordenador';
 
-    if (status === 'loading') {
+    if (!user) {
         return <PageLoader isLoading={true} />;
     }
 
-    // Redirect logic handled by middleware.ts now
+    const isHospitalUser = user.location === 'Hospital';
+    const isCoordinator = user.subRole === 'Coordenador';
 
     const renderNav = () => {
         if (isCoordinator) {
-            return <DashboardNav navItems={combinedNavItems} />;
+            return <DashboardNav navItems={combinedNavItems} userAccessLevel={user.accessLevel} />;
         }
         if (isHospitalUser) {
             return <HospitalNav />;
         }
-        return <DashboardNav />;
+        return <DashboardNav userAccessLevel={user.accessLevel} />;
     };
 
     return (
@@ -69,7 +68,7 @@ export default function DashboardLayout({
                   <div className="w-full flex-1">
                     {/* Can add a search bar here if needed */}
                   </div>
-                  <UserNav />
+                  <UserNav user={user} />
                 </header>
                 <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-muted/40">
                   {children}

@@ -1,11 +1,9 @@
+'use server';
 
-'use server'; // Convertido para Server Component para buscar a sessão no servidor
-
-import { generateHospitalStockReportPDF, generateHospitalEntriesAndExitsReportPDF, generateHospitalSectorDispensationReportPDF } from "@/lib/actions";
-import { getCurrentUser } from "@/lib/auth"; // Usar nossa função de auth
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HospitalReportsClientPage } from "./client-page";
+import { getCurrentUser } from "@/lib/auth";
 
 export default async function HospitalReportsPage() {
   const user = await getCurrentUser();

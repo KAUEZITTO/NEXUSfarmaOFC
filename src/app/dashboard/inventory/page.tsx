@@ -1,4 +1,3 @@
-
 'use server';
 
 import { getProducts } from '@/lib/data';
@@ -6,8 +5,7 @@ import { InventoryClientPage } from './client-page';
 import { Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
 import { unstable_noStore as noStore } from 'next/cache';
 import type { UserLocation } from '@/lib/types';
 
@@ -52,9 +50,9 @@ function InventorySkeleton() {
 // It fetches the initial data filtered by user location and passes it down to the client component.
 export default async function InventoryPageWrapper({ searchParams }: { searchParams: { location?: UserLocation | 'all' } }) {
     noStore();
-    const session = await getServerSession(authOptions);
-    const userLocation = session?.user?.location;
-    const isCoordinator = session?.user?.subRole === 'Coordenador';
+    const user = await getCurrentUser();
+    const userLocation = user?.location;
+    const isCoordinator = user?.subRole === 'Coordenador';
 
     // For coordinators, the filter can be passed via URL. If not, show all.
     // For regular users, force the filter to be their own location.

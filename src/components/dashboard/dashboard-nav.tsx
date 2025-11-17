@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -17,6 +16,7 @@ import {
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '../ui/sidebar';
 import { useSidebar } from '../ui/sidebar';
 import { Separator } from '../ui/separator';
+import type { User } from '@/lib/types';
 
 export const defaultNavItems = [
   { href: '/dashboard', icon: Home, label: 'Dashboard' },
