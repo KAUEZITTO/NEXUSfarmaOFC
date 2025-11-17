@@ -1,75 +1,61 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { updateUserLastSeen, validateAndGetUser } from '@/lib/actions';
-import type { User as AppUser } from '@/lib/types';
+import { updateUserLastSeen } from '@/lib/actions';
+import { KVAdapter } from '@/lib/kv-adapter';
+import { kv } from '@/lib/server/kv.server';
 
 export const authOptions: NextAuthOptions = {
   session: {
-    strategy: 'jwt',
+    strategy: 'database', // Usar 'database' para sessões gerenciadas pelo adapter
     maxAge: 30 * 24 * 60 * 60, // 30 dias
   },
+  adapter: KVAdapter(kv), // Usa o Vercel KV para persistir sessões e usuários
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
-        name: 'Credentials',
-        credentials: {
-          email: { label: "Email", type: "email" },
-        },
-        // A função authorize foi removida para usar o fluxo de JWT.
-        // A validação agora acontece no callback jwt.
-        async authorize(credentials) {
-           if (!credentials?.email) {
-                console.error("[NextAuth][Authorize] No email provided.");
-                return null;
-            }
-            // Apenas retornamos um objeto mínimo, o callback `jwt` fará o trabalho pesado.
-            return { email: credentials.email, id: credentials.email };
+      name: 'Credentials',
+      credentials: {
+        // Os dados do usuário agora são passados como uma string JSON, pré-validados no cliente.
+        user: { label: "User JSON", type: "text" },
+      },
+      async authorize(credentials) {
+        // A função authorize agora é extremamente simples e não faz chamadas de DB ou validação.
+        // Ela apenas recebe o objeto de usuário que já foi validado e buscado no cliente.
+        // Isso evita o erro de configuração no ambiente serverless.
+        if (!credentials?.user) {
+          console.error("[NextAuth][Authorize] Error: User data not provided in credentials.");
+          return null;
         }
+
+        try {
+            const user = JSON.parse(credentials.user);
+            // O objeto 'user' já vem limpo, sem a senha.
+            return user;
+        } catch (error) {
+            console.error("[NextAuth][Authorize] Error parsing user JSON.", error);
+            return null;
+        }
+      },
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account, trigger, session }) {
-        // Na primeira chamada (após o signIn bem-sucedido no cliente)
-        if (account && user) {
-            const appUser = await validateAndGetUser(user.email!);
-            if (appUser) {
-                token.id = appUser.id;
-                token.name = appUser.name;
-                token.email = appUser.email;
-                token.location = appUser.location;
-                token.locationId = appUser.locationId;
-                token.accessLevel = appUser.accessLevel;
-                token.role = appUser.role;
-                token.subRole = appUser.subRole;
-                token.birthdate = appUser.birthdate;
-                token.avatarColor = appUser.avatarColor;
-            }
-        }
-        
-        // Em chamadas subsequentes, o token já terá os dados
-        if (trigger === "update" && session?.user) {
-            token.name = session.user.name;
-            token.birthdate = session.user.birthdate;
-            token.avatarColor = session.user.avatarColor;
-        }
-
-        return token;
-    },
-    async session({ session, token }) {
-        if (session.user && token.id) {
-            session.user.id = token.id as string;
-            session.user.location = token.location as any;
-            session.user.locationId = token.locationId as string;
-            session.user.accessLevel = token.accessLevel as any;
-            session.user.role = token.role as any;
-            session.user.subRole = token.subRole as any;
-            session.user.name = token.name;
-            session.user.email = token.email;
-            session.user.birthdate = token.birthdate as string;
-            session.user.avatarColor = token.avatarColor as string;
-
-            if (token.id) {
-               await updateUserLastSeen(token.id as string);
+    // O callback 'jwt' não é necessário com a estratégia 'database'
+    async session({ session, user }) {
+        // A sessão é enriquecida com os dados do usuário vindos do banco de dados (via adapter)
+        if (session.user) {
+            session.user.id = user.id;
+            session.user.location = user.location;
+            session.user.locationId = user.locationId;
+            session.user.accessLevel = user.accessLevel;
+            session.user.role = user.role;
+            session.user.subRole = user.subRole;
+            session.user.name = user.name;
+            session.user.birthdate = user.birthdate;
+            session.user.avatarColor = user.avatarColor;
+            
+            // Atualiza o 'lastSeen' do usuário no banco de dados a cada sessão
+            if (user.id) {
+               await updateUserLastSeen(user.id);
             }
         }
         return session;

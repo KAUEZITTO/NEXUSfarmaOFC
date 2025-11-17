@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { signIn } from 'next-auth/react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase/client';
+import { validateAndGetUser } from '@/lib/actions';
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,8 +22,8 @@ export function LoginForm() {
 
   useEffect(() => {
     const authError = searchParams.get('error');
-    if (authError) {
-       setError('Ocorreu um erro inesperado durante o login. Verifique as credenciais ou contate o suporte.');
+    if (authError === 'Configuration') {
+      setError('Ocorreu um erro de configuração no servidor. Por favor, contate o suporte.');
     }
   }, [searchParams]);
 
@@ -37,17 +37,26 @@ export function LoginForm() {
       setIsLoading(false);
       return;
     }
+
     const auth = getAuth(firebaseApp);
 
     try {
       // Passo 1: Validar as credenciais com o Firebase no cliente.
       await signInWithEmailAndPassword(auth, email, password);
 
-      // Passo 2: Se a validação foi bem-sucedida, chamar o signIn do NextAuth.
-      // O callback 'jwt' no backend cuidará de buscar os dados do usuário.
+      // Passo 2: Se a validação do Firebase foi bem-sucedida, buscar os dados do usuário no nosso DB via Server Action.
+      const user = await validateAndGetUser(email);
+
+      if (!user) {
+        setError('Usuário autenticado, mas não encontrado no banco de dados do NexusFarma. Contate o suporte.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Passo 3: Criar a sessão no NextAuth, passando o objeto de usuário completo, que já foi validado.
       const result = await signIn('credentials', {
+        user: JSON.stringify(user), // Passa o objeto de usuário completo.
         redirect: false,
-        email: email,
       });
 
       if (result?.error) {
