@@ -8,12 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { signIn } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase/client';
+import { validateAndGetUser } from '@/lib/auth';
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,8 +25,6 @@ export function LoginForm() {
     const authError = searchParams.get('error');
     if (authError === 'Configuration') {
       setError('Ocorreu um erro de configuração no servidor. Por favor, contate o suporte.');
-    } else if (authError) {
-      setError('Ocorreu um erro inesperado durante a autenticação. Tente novamente mais tarde.');
     }
   }, [searchParams]);
 
@@ -47,22 +45,24 @@ export function LoginForm() {
       // 1. Validar credenciais com o Firebase no cliente
       await signInWithEmailAndPassword(auth, email, password);
 
-      // 2. Se a validação do Firebase for bem-sucedida, criar a sessão no NextAuth
-      // Passamos a senha aqui para alinhar com a definição de `credentials` no backend,
-      // mas a função authorize no servidor não a usará para validação.
+      // 2. Se a validação do Firebase for bem-sucedida, buscar os dados do usuário do nosso DB
+      const user = await validateAndGetUser(email);
+
+      if (!user) {
+        setError('Usuário autenticado, mas não encontrado no banco de dados do NexusFarma. Contate o suporte.');
+        setIsLoading(false);
+        return;
+      }
+
+      // 3. Criar a sessão no NextAuth, passando o objeto de usuário completo.
       const result = await signIn('credentials', {
-        email,
-        password, // Este campo é necessário para corresponder à definição, mas não é usado para validação no `authorize`.
-        redirect: false, // Controlamos o redirecionamento manualmente.
+        user: JSON.stringify(user),
+        redirect: false,
       });
 
       if (result?.error) {
-        console.error("NextAuth signIn error after Firebase success:", result.error);
-        if (result.error === 'CredentialsSignin') {
-             setError('O usuário não foi encontrado no banco de dados do NexusFarma ou as credenciais são inválidas.');
-        } else {
-             setError('Não foi possível iniciar a sessão. Verifique se seu usuário está cadastrado no sistema NexusFarma.');
-        }
+        console.error("NextAuth signIn error:", result.error);
+        setError('Não foi possível iniciar a sessão. Verifique suas credenciais e tente novamente.');
       } else if (result?.ok) {
         // Sucesso! Forçar recarregamento completo para garantir que o estado da sessão seja limpo.
         window.location.href = '/dashboard';
