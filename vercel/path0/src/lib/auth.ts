@@ -7,7 +7,6 @@ import { KVAdapter } from '@/lib/kv-adapter';
 import { kv } from '@/lib/server/kv.server';
 import { updateUserLastSeen } from '@/lib/actions';
 
-
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'database',
