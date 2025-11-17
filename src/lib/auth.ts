@@ -6,8 +6,8 @@ import { readData, getUnits } from '@/lib/data';
 import { KVAdapter } from '@/lib/kv-adapter';
 import { kv } from '@/lib/server/kv.server';
 import { updateUserLastSeen } from '@/lib/actions';
+import { getAdminApp } from '@/lib/firebase/admin';
 
-// Esta função agora é o único ponto de busca de usuário no banco de dados.
 async function getUserByEmailFromDb(email: string): Promise<AppUser | null> {
   if (!email) return null;
   try {
@@ -32,56 +32,32 @@ export const authOptions: NextAuthOptions = {
       name: 'Credentials',
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials.password) {
-          console.error("[NextAuth][Authorize] Error: Email or password not provided.");
+        // This function is now ONLY called after client-side Firebase validation.
+        // It receives the email and its job is to find the user in the database.
+        if (!credentials?.email) {
+          console.error("[NextAuth][Authorize] Error: Email not provided after client validation.");
           return null;
         }
 
-        // Etapa 1: Verificar a senha com a API REST de autenticação do Firebase.
-        const firebaseAuthUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`;
-        
-        try {
-          const response = await fetch(firebaseAuthUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: credentials.email,
-              password: credentials.password,
-              returnSecureToken: true,
-            }),
-          });
-          
-          if (!response.ok) {
-            console.warn(`[NextAuth][Authorize] Firebase auth failed for ${credentials.email} with status: ${response.status}`);
-            return null; // Retorna null, o que resulta em um erro de 'CredentialsSignin'.
-          }
-        } catch (error) {
-            console.error("[NextAuth][Authorize] Network error during Firebase auth check:", error);
-            return null; // Retorna null em caso de erro de rede ou falha na chamada.
-        }
-
-        // Etapa 2: Se a autenticação do Firebase foi bem-sucedida, busque os dados do usuário no seu banco de dados (KV).
         const userFromDb = await getUserByEmailFromDb(credentials.email);
         
         if (!userFromDb) {
-          console.error(`[NextAuth][Authorize] Error: User ${credentials.email} authenticated via Firebase but not found in KV database.`);
+          console.error(`[NextAuth][Authorize] Error: User ${credentials.email} authenticated but not found in KV database.`);
           return null;
         }
         
-        // **A CORREÇÃO CRÍTICA**: Nunca retorne o objeto completo do banco de dados se ele contiver a senha.
-        // Crie um novo objeto limpo para a sessão.
+        // Return a clean user object for the session, WITHOUT the password.
         const { password, ...userForSession } = userFromDb;
 
-        // Lógica de superusuário
+        // Superuser logic
         if (userForSession.email === 'kauemoreiraofc2@gmail.com') {
           userForSession.accessLevel = 'Admin';
           userForSession.subRole = 'Coordenador';
         }
         
-        // Garante que o usuário do hospital tenha o ID da localização.
+        // Ensure hospital user has locationId
         if (userForSession.location === 'Hospital' && !userForSession.locationId) {
             const units = await getUnits();
             const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
@@ -89,8 +65,6 @@ export const authOptions: NextAuthOptions = {
                 userForSession.locationId = hospitalUnit.id;
             }
         }
-
-        // Retorna o objeto limpo para o NextAuth criar a sessão.
         return userForSession;
       },
     }),
@@ -117,6 +91,6 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/login',
-    error: '/login', // Redireciona para /login em caso de qualquer erro, incluindo 'Configuration'
+    error: '/login',
   },
 };
