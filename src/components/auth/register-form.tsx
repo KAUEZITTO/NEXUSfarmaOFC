@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState } from 'react';
@@ -62,12 +63,6 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
         return;
     }
 
-    if (subRole !== 'Coordenador' && !location) {
-        setErrorMessage("Por favor, selecione um local (CAF ou Hospital).");
-        setIsPending(false);
-        return;
-    }
-
     if (password !== confirmPassword) {
       setErrorMessage("As senhas não coincidem.");
       setIsPending(false);
@@ -85,6 +80,22 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
         setIsPending(false);
         return;
     }
+
+    // Corrigido: A lógica original comparava tipos incompatíveis.
+    // A intenção é: se o cargo do farmacêutico NÃO é Coordenador, então a localização é obrigatória.
+    if (role === 'Farmacêutico' && subRole !== 'Coordenador' && !location) {
+        setErrorMessage("Por favor, selecione um local (CAF ou Hospital) para esta área de atuação.");
+        setIsPending(false);
+        return;
+    }
+
+    // Para outros cargos que não sejam de Farmacêutico, a localização é sempre obrigatória.
+    if (role !== 'Farmacêutico' && !location) {
+        setErrorMessage("Por favor, selecione um local (CAF ou Hospital) para este cargo.");
+        setIsPending(false);
+        return;
+    }
+
 
     try {
       const result = await registerAction({ name, email, password, birthdate, role, subRole, location });
