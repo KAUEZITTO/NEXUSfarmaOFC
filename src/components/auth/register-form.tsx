@@ -81,15 +81,13 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
         return;
     }
 
-    // Corrigido: A lógica original comparava tipos incompatíveis.
-    // A intenção é: se o cargo do farmacêutico NÃO é Coordenador, então a localização é obrigatória.
+    // Lógica de validação corrigida
     if (role === 'Farmacêutico' && subRole !== 'Coordenador' && !location) {
         setErrorMessage("Por favor, selecione um local (CAF ou Hospital) para esta área de atuação.");
         setIsPending(false);
         return;
     }
-
-    // Para outros cargos que não sejam de Farmacêutico, a localização é sempre obrigatória.
+    
     if (role !== 'Farmacêutico' && !location) {
         setErrorMessage("Por favor, selecione um local (CAF ou Hospital) para este cargo.");
         setIsPending(false);
@@ -161,10 +159,10 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
             </div>
         )}
 
-        {selectedSubRole !== 'Coordenador' && selectedRole !== '' && (
+        {selectedRole && selectedSubRole !== 'Coordenador' && (
             <div className="grid gap-2">
                 <Label htmlFor="location">Local de Trabalho</Label>
-                <Select name="location" required={selectedSubRole !== 'Coordenador'} value={selectedLocation} onValueChange={(v) => setSelectedLocation(v as UserLocation)}>
+                <Select name="location" required={selectedRole !== '' && selectedSubRole !== 'Coordenador'} value={selectedLocation} onValueChange={(v) => setSelectedLocation(v as UserLocation)}>
                     <SelectTrigger><SelectValue placeholder="Selecione o local..." /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value="CAF">CAF (Gestão Central)</SelectItem>
@@ -173,6 +171,7 @@ export function RegisterForm({ registerAction }: RegisterFormProps) {
                 </Select>
             </div>
         )}
+
 
         {availableRoles.length > 0 && selectedRole && !availableRoles.includes(selectedRole as any) && (
             <Alert variant="destructive">
