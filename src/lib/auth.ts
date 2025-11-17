@@ -25,7 +25,7 @@ async function encrypt(payload: any) {
     .sign(key);
 }
 
-async function decrypt(token: string) {
+export async function decrypt(token: string) {
     const { payload } = await jwtVerify(token, key, {
         algorithms: ['HS256'],
     });
@@ -135,3 +135,5 @@ export async function updateUserLastSeen(userId: string) {
         await writeData('users', users);
     }
 }
+
+    
