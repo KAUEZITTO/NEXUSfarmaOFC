@@ -5,7 +5,7 @@ import { updateUserLastSeen } from '@/lib/actions';
 import type { User } from '@/lib/types';
 
 export const authOptions: NextAuthOptions = {
-  // A estratégia 'jwt' é obrigatória para o CredentialsProvider.
+  // A estratégia 'jwt' é OBRIGATÓRIA para o CredentialsProvider.
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 dias
@@ -23,7 +23,8 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         // A função authorize agora é síncrona e passiva.
-        // Ela não faz chamadas de rede, o que elimina o erro 'Configuration'.
+        // Ela não faz chamadas de rede ou validações complexas,
+        // o que elimina a causa raiz do erro 'Configuration'.
         if (!credentials?.user) {
           console.error("[NextAuth][Authorize] Erro: Dados do usuário não foram fornecidos.");
           return null;
@@ -31,8 +32,8 @@ export const authOptions: NextAuthOptions = {
 
         try {
             const user = JSON.parse(credentials.user);
-            // O objeto 'user' já vem limpo, sem a senha.
-            // Retornar o objeto de usuário inicia a criação do token JWT.
+            // O objeto 'user' já vem limpo (sem senha) e validado do cliente.
+            // Retornar o objeto de usuário aqui inicia a criação do token JWT.
             return user;
         } catch (error) {
             console.error("[NextAuth][Authorize] Erro ao parsear o JSON do usuário.", error);
@@ -42,7 +43,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    // O callback 'jwt' popula o token com os dados do usuário no momento do login.
+    // O callback 'jwt' é chamado no login e popula o token com os dados do usuário.
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
@@ -58,7 +59,8 @@ export const authOptions: NextAuthOptions = {
       }
       return token;
     },
-    // O callback 'session' usa os dados do token para preencher o objeto session.user a cada requisição.
+    // O callback 'session' usa os dados do token JWT para preencher o objeto session.user
+    // que fica disponível no cliente a cada requisição.
     async session({ session, token }) {
         if (session.user && token.id) {
             session.user.id = token.id as string;
@@ -73,7 +75,7 @@ export const authOptions: NextAuthOptions = {
             session.user.avatarColor = token.avatarColor;
 
             // Atualiza o 'lastSeen' do usuário no banco de dados.
-            // Esta chamada é "fire-and-forget" para não bloquear a resposta da sessão.
+            // A chamada é "fire-and-forget" para não bloquear a resposta da sessão.
             updateUserLastSeen(token.id as string).catch(console.error);
         }
         return session;

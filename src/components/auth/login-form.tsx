@@ -22,9 +22,22 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
+    // Este useEffect agora apenas captura erros que podem vir da URL,
+    // como quando o usuário tenta acessar uma página protegida sem estar logado.
     const authError = searchParams.get('error');
-    if (authError === 'Configuration') {
-      setError('Ocorreu um erro de configuração no servidor. Por favor, contate o suporte.');
+    if (authError) {
+      // Mensagens de erro mais amigáveis
+      switch (authError) {
+        case "CredentialsSignin":
+          setError("As credenciais fornecidas são inválidas.");
+          break;
+        case "Configuration":
+           setError("Ocorreu um erro de configuração no servidor. Por favor, contate o suporte.");
+           break;
+        default:
+          setError("Ocorreu um erro durante o login. Tente novamente.");
+          break;
+      }
     }
   }, [searchParams]);
 
@@ -33,6 +46,7 @@ export function LoginForm() {
     setIsLoading(true);
     setError(null);
 
+    // Garante que o SDK do Firebase no cliente foi inicializado.
     if (!firebaseApp) {
       setError("O serviço de autenticação não está disponível. Contate o suporte.");
       setIsLoading(false);
@@ -42,10 +56,11 @@ export function LoginForm() {
     const auth = getAuth(firebaseApp);
 
     try {
-      // Passo 1: Validar as credenciais com o Firebase no cliente.
+      // Passo 1: Validar as credenciais com o Firebase diretamente no cliente.
       await signInWithEmailAndPassword(auth, email, password);
 
-      // Passo 2: Se a validação do Firebase foi bem-sucedida, buscar os dados do usuário no nosso DB via Server Action.
+      // Passo 2: Se a validação do Firebase foi bem-sucedida, buscar os dados
+      // do nosso banco de dados (Vercel KV) via Server Action.
       const user = await validateAndGetUser(email);
 
       if (!user) {
@@ -54,25 +69,27 @@ export function LoginForm() {
         return;
       }
 
-      // Passo 3: Criar a sessão no NextAuth, passando o objeto de usuário completo, que já foi validado.
-      // A função 'authorize' do NextAuth será passiva e apenas receberá este objeto.
+      // Passo 3: Criar a sessão no NextAuth passando o objeto de usuário completo.
+      // A função 'authorize' no backend será passiva e apenas receberá este objeto.
       const result = await signIn('credentials', {
-        redirect: false,
-        // Passamos o usuário como JSON. A senha não é incluída.
-        user: JSON.stringify(user),
+        redirect: false, // Controlamos o redirecionamento manualmente.
+        user: JSON.stringify(user), // Passa o usuário validado como uma string JSON.
       });
 
-
       if (result?.error) {
+        // Se, mesmo assim, o NextAuth retornar um erro, exibimos uma mensagem genérica.
         console.error("NextAuth signIn error:", result.error);
-        setError('Não foi possível iniciar a sessão após a validação. Verifique suas credenciais e tente novamente.');
+        setError('Não foi possível iniciar a sessão. Verifique suas credenciais e tente novamente.');
         setIsLoading(false);
       } else if (result?.ok) {
-        // Sucesso! Forçar recarregamento completo para garantir que o estado da sessão seja limpo.
+        // Sucesso! Redirecionamento para o dashboard.
+        // O uso de `window.location.href` força um recarregamento completo da página,
+        // garantindo que o estado da sessão seja limpo e aplicado corretamente.
         window.location.href = '/dashboard';
       }
 
     } catch (firebaseError: any) {
+      // Captura erros específicos do Firebase Auth.
       console.error("Firebase signIn error:", firebaseError.code);
       if (firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
         setError('Email ou senha inválidos. Verifique suas credenciais e tente novamente.');
