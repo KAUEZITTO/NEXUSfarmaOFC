@@ -1,12 +1,11 @@
 
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { validateAndGetUser, verifyUserPassword } from '@/lib/actions';
-import { updateUserLastSeen } from '@/lib/actions';
+import { validateAndGetUser, verifyUserPassword, updateUserLastSeen } from '@/lib/actions';
 
 export const authOptions: NextAuthOptions = {
   session: {
-    strategy: 'jwt', // CORREÇÃO: Alterado de 'database' para 'jwt' para ser compatível com CredentialsProvider
+    strategy: 'jwt', // CORREÇÃO FINAL: JWT é a única estratégia compatível com CredentialsProvider.
     maxAge: 30 * 24 * 60 * 60, // 30 dias
   },
   secret: process.env.NEXTAUTH_SECRET,
@@ -24,24 +23,27 @@ export const authOptions: NextAuthOptions = {
         }
 
         const isPasswordValid = await verifyUserPassword(credentials.email, credentials.password);
+        
         if (!isPasswordValid) {
           console.warn(`[NextAuth][Authorize] Falha na autenticação para o email: ${credentials.email}`);
           return null;
         }
 
         const user = await validateAndGetUser(credentials.email);
+
         if (!user) {
           console.error(`[NextAuth][Authorize] Usuário autenticado com sucesso, mas não encontrado no banco de dados: ${credentials.email}`);
           return null;
         }
         
+        // Se a autorização for bem-sucedida, o objeto 'user' é passado para o callback 'jwt'.
         return user;
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      // No login inicial (objeto `user` está presente)
+      // No login inicial (objeto 'user' está presente)
       if (user) {
         token.id = user.id;
         token.name = user.name;
@@ -69,7 +71,8 @@ export const authOptions: NextAuthOptions = {
             session.user.birthdate = token.birthdate;
             session.user.avatarColor = token.avatarColor;
             
-            await updateUserLastSeen(token.id as string);
+            // Atualiza o lastSeen sem bloquear a resposta da sessão
+            updateUserLastSeen(token.id as string).catch(console.error);
         }
         return session;
     },
