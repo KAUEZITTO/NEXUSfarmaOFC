@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense } from 'react';
@@ -29,7 +28,7 @@ export default function LoginPage() {
       <div className="mx-auto w-full max-w-sm rounded-lg border bg-background p-8 shadow-sm">
         <div className="grid gap-2 text-center">
           <Link href="/" className="flex justify-center">
-            <Logo />
+            <Logo className="w-56 h-20" />
           </Link>
           <h1 className="text-3xl font-bold mt-4">Login</h1>
           <p className="text-balance text-muted-foreground">
