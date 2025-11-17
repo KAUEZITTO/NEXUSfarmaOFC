@@ -4,7 +4,7 @@ import Image from 'next/image';
 
 export function Logo({ className }: { className?: string }) {
   return (
-    <div className={cn("relative w-36 h-12", className)}>
+    <div className={cn("relative w-48 h-16", className)}>
       {/* Light mode logo */}
       <Image
         src="/NEXUSnv.png"
