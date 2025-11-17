@@ -1,32 +1,24 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { updateUserProfile } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import type { User } from '@/lib/types';
 
 const avatarColors = [
-  'hsl(211 100% 50%)', // Blue
-  'hsl(39 100% 50%)', // Orange
-  'hsl(0 84.2% 60.2%)', // Red
-  'hsl(142.1 76.2% 36.3%)', // Green
-  'hsl(262.1 83.3% 57.8%)', // Purple
-  'hsl(314.5 72.4% 57.3%)', // Pink
-  'hsl(198.8 93.4% 42%)' // Teal
+  'hsl(211 100% 50%)', 'hsl(39 100% 50%)', 'hsl(0 84.2% 60.2%)', 
+  'hsl(142.1 76.2% 36.3%)', 'hsl(262.1 83.3% 57.8%)', 'hsl(314.5 72.4% 57.3%)', 'hsl(198.8 93.4% 42%)'
 ];
 
-export function AccountForm() {
-  const { data: session, update: updateSession } = useSession();
-  const user = session?.user;
+export function AccountForm({ user }: { user: User | undefined }) {
   const { toast } = useToast();
   const router = useRouter();
 
@@ -49,23 +41,14 @@ export function AccountForm() {
     if (!user) return;
     setIsSaving(true);
     try {
-      const result = await updateUserProfile(user.id, { name, birthdate, avatarColor });
+      await updateUserProfile(user.id, { name, birthdate, avatarColor });
       
-      // Manually update the session on the client-side
-      await updateSession({ 
-        ...session, 
-        user: { 
-          ...session?.user, 
-          name: result.user.name, 
-          birthdate: result.user.birthdate,
-          avatarColor: result.user.avatarColor 
-        } 
-      });
-
       toast({
         title: 'Perfil Atualizado!',
         description: 'Suas informações foram salvas com sucesso.',
       });
+      // Força o Next.js a recarregar a página e re-executar os Server Components
+      router.refresh();
       
     } catch (error) {
       toast({

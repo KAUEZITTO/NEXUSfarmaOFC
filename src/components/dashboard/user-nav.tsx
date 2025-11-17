@@ -17,16 +17,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { LogOut, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Skeleton } from '../ui/skeleton';
-import { useSession } from 'next-auth/react';
 import { signOut } from '@/lib/auth';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import type { User } from '@/lib/types';
 
-export function UserNav() {
+// O componente agora recebe o usuário como uma prop
+export function UserNav({ user }: { user: User }) {
   const { toast } = useToast();
-  const { data: session, status } = useSession();
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -40,11 +39,6 @@ export function UserNav() {
     router.push('/login');
   };
 
-  if (status === 'loading') {
-    return <Skeleton className="h-8 w-8 rounded-full" />;
-  }
-
-  const user = session?.user;
   if (!user) return null; 
 
   const fallbackInitial = user.name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? '?';
@@ -92,5 +86,3 @@ export function UserNav() {
     </div>
   );
 }
-
-    

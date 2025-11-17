@@ -5,15 +5,14 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase/client';
-import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import type { User } from '@/lib/types';
 
-export function SecurityForm() {
+export function SecurityForm({ user }: { user: User | undefined }) {
   const { toast } = useToast();
-  const { data: session } = useSession();
 
   const handleChangePassword = async () => {
-    if (!session?.user?.email) {
+    if (!user?.email) {
       toast({
         variant: 'destructive',
         title: 'Erro',
@@ -23,7 +22,7 @@ export function SecurityForm() {
     }
     const auth = getAuth(firebaseApp);
     try {
-      await sendPasswordResetEmail(auth, session.user.email);
+      await sendPasswordResetEmail(auth, user.email);
       toast({
         title: 'Email de Redefinição Enviado!',
         description: 'Verifique sua caixa de entrada para criar uma nova senha.',

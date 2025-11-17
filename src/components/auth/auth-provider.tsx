@@ -1,16 +1,16 @@
 
 'use client';
 
-import { SessionProvider } from 'next-auth/react';
 import React from 'react';
 
 type Props = {
   children?: React.ReactNode;
 };
 
-// Este componente é um "Client Component" que envolve a aplicação,
-// provendo o contexto da sessão do NextAuth.js para todos os componentes
-// que estão abaixo dele na árvore de componentes.
+// Como não estamos mais usando o SessionProvider do next-auth, 
+// este componente se torna um simples pass-through.
+// Ele é mantido por enquanto para não quebrar a estrutura do layout,
+// mas pode ser removido futuramente simplificando o RootLayout.
 export default function AuthProvider({ children }: Props) {
-  return <SessionProvider>{children}</SessionProvider>;
+  return <>{children}</>;
 }

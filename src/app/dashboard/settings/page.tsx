@@ -1,17 +1,16 @@
 
-'use client';
+'use server'; // Convertido para Server Component
 
-import { Separator } from "@/components/ui/separator"
-import { AccountForm } from "@/components/dashboard/settings/account-form"
-import { AppearanceForm } from "@/components/dashboard/settings/appearance-form"
-import { SecurityForm } from "@/components/dashboard/settings/security-form"
+import { Separator } from "@/components/ui/separator";
+import { AccountForm } from "@/components/dashboard/settings/account-form";
+import { AppearanceForm } from "@/components/dashboard/settings/appearance-form";
+import { SecurityForm } from "@/components/dashboard/settings/security-form";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { getCurrentUser } from "@/lib/auth"; // Importação direta da função de servidor
 
-export default function SettingsPage() {
-  const { data: session } = useSession();
-  const user = session?.user;
+export default async function SettingsPage() {
+  const user = await getCurrentUser();
   
   // Show alert if the user exists but doesn't have a name set yet
   const showUpdateProfileReminder = user && !user.name;
@@ -35,7 +34,8 @@ export default function SettingsPage() {
         </p>
       </div>
       <Separator />
-      <AccountForm />
+      {/* Passamos o usuário como prop para o formulário cliente */}
+      <AccountForm user={user} />
 
       <Separator />
 
@@ -46,7 +46,8 @@ export default function SettingsPage() {
         </p>
       </div>
       <Separator />
-      <SecurityForm />
+       {/* Passamos o usuário como prop para o formulário cliente */}
+      <SecurityForm user={user} />
 
       <Separator />
       

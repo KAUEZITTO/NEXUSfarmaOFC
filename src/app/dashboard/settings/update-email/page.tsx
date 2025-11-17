@@ -1,8 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,32 +13,47 @@ import { useRouter } from 'next/navigation';
 import { getAuth, EmailAuthProvider, reauthenticateWithCredential, updateEmail, sendEmailVerification } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase/client';
 import { readData, writeData } from '@/lib/data';
-import { User } from '@/lib/types';
+import type { User } from '@/lib/types';
 
 
 export default function UpdateEmailPage() {
-  const { data: session, status } = useSession();
   const router = useRouter();
   const { toast } = useToast();
 
   const [step, setStep] = useState<'confirmPassword' | 'newEmail' | 'success'>('confirmPassword');
   const [password, setPassword] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  const [currentEmail, setCurrentEmail] = useState('');
+  const [userId, setUserId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const auth = getAuth(firebaseApp);
-  const user = auth.currentUser;
+  
+  useEffect(() => {
+    // No 'use client' não podemos usar 'await getCurrentUser()'.
+    // A melhor abordagem é pegar do 'currentUser' do Firebase Auth client.
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      if (user) {
+        setCurrentEmail(user.email || '');
+        setUserId(user.uid);
+      } else {
+        router.push('/login'); // Redireciona se não estiver logado
+      }
+    });
+    return () => unsubscribe();
+  }, [auth, router]);
 
   const handlePasswordConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !session?.user?.email) return;
+    const user = auth.currentUser;
+    if (!user || !currentEmail) return;
 
     setIsLoading(true);
     setError(null);
     
-    const credential = EmailAuthProvider.credential(session.user.email, password);
+    const credential = EmailAuthProvider.credential(currentEmail, password);
     
     try {
       await reauthenticateWithCredential(user, credential);
@@ -58,7 +72,8 @@ export default function UpdateEmailPage() {
   
   const handleEmailUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !session?.user?.id) return;
+    const user = auth.currentUser;
+    if (!user || !userId) return;
     
     setIsLoading(true);
     setError(null);
@@ -66,9 +81,8 @@ export default function UpdateEmailPage() {
     try {
         await updateEmail(user, newEmail);
         
-        // Update email in Vercel KV
         const users = await readData<User>('users');
-        const userIndex = users.findIndex(u => u.id === session.user!.id);
+        const userIndex = users.findIndex(u => u.id === userId);
         if (userIndex !== -1) {
             users[userIndex].email = newEmail;
             await writeData('users', users);
