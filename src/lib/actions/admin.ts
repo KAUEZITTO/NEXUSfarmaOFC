@@ -1,14 +1,14 @@
 
 'use server';
 
-import { revalidatePath } from 'next/cache';
-import { readData, writeData, getAllUsers, getUnits as getUnitsFromDb } from '@/lib/data';
+import { writeData, getAllUsers, getUnits as getUnitsFromDb } from '@/lib/data';
 import type { User, Role, SubRole, UserLocation } from '@/lib/types';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase/admin';
+import { revalidatePath } from 'next/cache';
 
 const avatarColors = [
-  'hsl(211 100% 50%)', 'hsl(39 100% 50%)', 'hsl(0 84.2% 60.2%)', 
+  'hsl(211 100% 50%)', 'hsl(39 100% 50%)', 'hsl(0 84.2% 60.2%)',
   'hsl(142.1 76.2% 36.3%)', 'hsl(262.1 83.3% 57.8%)', 'hsl(314.5 72.4% 57.3%)', 'hsl(198.8 93.4% 42%)'
 ];
 
