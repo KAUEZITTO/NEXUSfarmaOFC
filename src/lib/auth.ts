@@ -141,5 +141,3 @@ export async function updateUserLastSeen(userId: string) {
         await writeData('users', users);
     }
 }
-
-    
