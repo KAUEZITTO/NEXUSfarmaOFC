@@ -472,7 +472,7 @@ export async function deleteDispensation(dispensationId: string): Promise<{ succ
 }
 
 
-// --- USER MANAGEMENT ACTIONS ---
+// --- USER PROFILE & MANAGEMENT ACTIONS ---
 export async function updateUserProfile(userId: string, data: { name?: string; birthdate?: string; avatarColor?: string }) {
     const users = await readData<User>('users');
     const userIndex = users.findIndex(u => u.id === userId);
@@ -499,7 +499,6 @@ export async function updateUserAccessLevel(userId: string, accessLevel: AccessL
 }
 
 export async function deleteUser(userId: string) {
-    // This function will be moved to a separate admin actions file to isolate firebase-admin
     const { getAuth } = await import('firebase-admin/auth');
     const { getAdminApp } = await import('@/lib/firebase/admin');
 

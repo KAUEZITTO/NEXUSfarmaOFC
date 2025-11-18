@@ -108,11 +108,13 @@ export async function validateAndGetUser(email: string): Promise<User | null> {
         const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
         if (!user) return null;
 
+        // Regra de negócio para o superadmin
         if (user.email === 'kauemoreiraofc2@gmail.com') {
             user.accessLevel = 'Admin';
             user.subRole = 'Coordenador';
         }
         
+        // Garante que o usuário do hospital tenha o ID da unidade correto
         if (user.location === 'Hospital' && !user.locationId) {
             const units = await getUnits();
             const hospitalUnit = units.find(u => u.name.toLowerCase().includes('hospital'));
@@ -121,6 +123,7 @@ export async function validateAndGetUser(email: string): Promise<User | null> {
             }
         }
 
+        // Remove a senha antes de retornar o objeto do usuário para a sessão
         const { password, ...userForSession } = user;
         return userForSession as User;
 
