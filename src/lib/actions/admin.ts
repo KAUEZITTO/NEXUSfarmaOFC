@@ -81,3 +81,41 @@ export async function register(data: { name: string, email: string; password: st
         return { success: false, message: `Ocorreu um erro desconhecido ao criar a conta: ${error.message}` };
     }
 }
+
+
+export async function updateUserAccessLevel(userId: string, accessLevel: AccessLevel) {
+    const users = await getAllUsers();
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex === -1) {
+        throw new Error('Usuário não encontrado.');
+    }
+    users[userIndex].accessLevel = accessLevel;
+    await writeData('users', users);
+    revalidatePath('/dashboard/user-management');
+}
+
+export async function deleteUser(userId: string) {
+    const { getAuth } = await import('firebase-admin/auth');
+    const { getAdminApp } = await import('@/lib/firebase/admin');
+
+    const adminAuth = getAuth(getAdminApp());
+    const users = await getAllUsers();
+    const userToDelete = users.find(u => u.id === userId);
+
+    if (!userToDelete) {
+        throw new Error('Usuário não encontrado para exclusão.');
+    }
+
+    try {
+        await adminAuth.deleteUser(userId);
+    } catch (error: any) {
+        if (error.code !== 'auth/user-not-found') {
+            console.error("Erro ao excluir usuário do Firebase Auth:", error);
+            throw new Error('Erro ao excluir usuário do sistema de autenticação.');
+        }
+    }
+
+    const updatedUsers = users.filter(u => u.id !== userId);
+    await writeData('users', updatedUsers);
+    revalidatePath('/dashboard/user-management');
+}

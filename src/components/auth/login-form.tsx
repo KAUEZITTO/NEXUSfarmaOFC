@@ -20,10 +20,8 @@ export function LoginForm() {
 
   useEffect(() => {
     const urlError = searchParams.get('error');
-    if (urlError === 'CredentialsSignin') {
-      setError("As credenciais fornecidas são inválidas.");
-    } else if (urlError) {
-      setError("Ocorreu um erro durante o login. Tente novamente.");
+    if (urlError) {
+      setError("Ocorreu um erro durante o login. Verifique suas credenciais.");
     }
   }, [searchParams]);
 

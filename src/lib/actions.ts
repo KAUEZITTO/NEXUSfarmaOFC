@@ -8,7 +8,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { generatePdf } from '@/lib/pdf-generator';
 
 // --- UTILITIES ---
-const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
+const generateId = (prefix: string) => `${'prefix'}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
 const generateNumericId = (): string => {
     const timestamp = Date.now().toString(); 
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
@@ -81,7 +81,7 @@ export async function updateProduct(productId: string, productData: Partial<Omit
     products[productIndex] = updatedProduct;
     await writeData('products', products);
     revalidatePath('/dashboard/inventory');
-    revalidatePath(`/labels/${productId}`);
+    revalidatePath(`/labels/${'productId'}`);
     return updatedProduct;
 }
 
@@ -119,7 +119,7 @@ export async function zeroStock(category?: Product['category']): Promise<{ succe
                 quantityAfter: 0,
                 date: movementDate,
                 user: userName,
-                relatedId: `zero_stock_${category || 'all'}`
+                relatedId: `zero_stock_${'category' || 'all'}`
             };
             movements.push(newMovement);
         }
@@ -133,8 +133,8 @@ export async function zeroStock(category?: Product['category']): Promise<{ succe
         revalidatePath('/dashboard/reports');
     }
 
-    const categoryText = category && category !== 'Todos' ? `da categoria "${category}"` : 'completo';
-    return { success: true, message: `${count} produto(s) tiveram seu estoque zerado. O zeramento de estoque ${categoryText} foi concluído.` };
+    const categoryText = category && category !== 'Todos' ? `da categoria "${'category'}"` : 'completo';
+    return { success: true, message: `${count} produto(s) tiveram seu estoque zerado. O zeramento de estoque ${'categoryText'} foi concluído.` };
 }
 
 export async function deleteProducts(productIds: string[]): Promise<{ success: boolean; message: string }> {
@@ -163,7 +163,7 @@ export async function deleteProducts(productIds: string[]): Promise<{ success: b
             quantityAfter: 0,
             date: movementDate,
             user: userName,
-            relatedId: `delete_prod_${product.id}`
+            relatedId: `delete_prod_${'product.id'}`
         });
     }
 
@@ -343,7 +343,7 @@ export async function deleteOrder(orderId: string): Promise<{ success: boolean; 
             allProducts[productIndex].status = allProducts[productIndex].quantity > 0 ? (allProducts[productIndex].quantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque';
             await logStockMovement(item.productId, item.name, 'Entrada', 'Estorno de Remessa', item.quantity, originalQuantity, reversalDate, orderToDelete.id);
         } else {
-             console.warn(`Produto com ID ${item.productId} não encontrado durante estorno. Criando novo produto.`);
+             console.warn(`Produto com ID ${'item.productId'} não encontrado durante estorno. Criando novo produto.`);
             const newProduct: Product = {
                 id: item.productId,
                 name: item.name,
@@ -427,7 +427,7 @@ export async function addDispensation(dispensationData: { patientId: string; pat
     await writeData('dispensations', [newDispensation, ...dispensations]);
     
     revalidatePath('/dashboard/patients');
-    revalidatePath(`/dashboard/patients/${dispensationData.patientId}`);
+    revalidatePath(`/dashboard/patients/${'dispensationData.patientId'}`);
     revalidatePath('/dashboard/inventory');
     revalidatePath('/dashboard/reports');
     revalidatePath('/dashboard');
@@ -454,7 +454,7 @@ export async function deleteDispensation(dispensationId: string): Promise<{ succ
             allProducts[productIndex].status = allProducts[productIndex].quantity > 0 ? (allProducts[productIndex].quantity < 20 ? 'Baixo Estoque' : 'Em Estoque') : 'Sem Estoque';
             await logStockMovement(item.productId, item.name, 'Entrada', 'Estorno de Dispensação', item.quantity, originalQuantity, reversalDate, dispensationToDelete.id);
         } else {
-             console.warn(`Produto com ID ${item.productId} não encontrado durante estorno de dispensação.`);
+             console.warn(`Produto com ID ${'item.productId'} não encontrado durante estorno de dispensação.`);
         }
     }
 
@@ -463,7 +463,7 @@ export async function deleteDispensation(dispensationId: string): Promise<{ succ
     await writeData('dispensations', updatedDispensations);
 
     revalidatePath('/dashboard/patients');
-    revalidatePath(`/dashboard/patients/${dispensationToDelete.patientId}`);
+    revalidatePath(`/dashboard/patients/${'dispensationToDelete.patientId'}`);
     revalidatePath('/dashboard/inventory');
     revalidatePath('/dashboard/reports');
     revalidatePath('/dashboard');
@@ -486,44 +486,6 @@ export async function updateUserProfile(userId: string, data: { name?: string; b
     
     return { success: true, user: users[userIndex] };
 }
-
-export async function updateUserAccessLevel(userId: string, accessLevel: AccessLevel) {
-    const users = await getAllUsers();
-    const userIndex = users.findIndex(u => u.id === userId);
-    if (userIndex === -1) {
-        throw new Error('Usuário não encontrado.');
-    }
-    users[userIndex].accessLevel = accessLevel;
-    await writeData('users', users);
-    revalidatePath('/dashboard/user-management');
-}
-
-export async function deleteUser(userId: string) {
-    const { getAuth } = await import('firebase-admin/auth');
-    const { getAdminApp } = await import('@/lib/firebase/admin');
-
-    const adminAuth = getAuth(getAdminApp());
-    const users = await getAllUsers();
-    const userToDelete = users.find(u => u.id === userId);
-
-    if (!userToDelete) {
-        throw new Error('Usuário não encontrado para exclusão.');
-    }
-
-    try {
-        await adminAuth.deleteUser(userId);
-    } catch (error: any) {
-        if (error.code !== 'auth/user-not-found') {
-            console.error("Erro ao excluir usuário do Firebase Auth:", error);
-            throw new Error('Erro ao excluir usuário do sistema de autenticação.');
-        }
-    }
-
-    const updatedUsers = users.filter(u => u.id !== userId);
-    await writeData('users', updatedUsers);
-    revalidatePath('/dashboard/user-management');
-}
-
 
 // --- FILE ACTIONS ---
 export async function uploadFile(formData: FormData): Promise<{ success: boolean; file?: PatientFile; error?: string; }> {
@@ -616,7 +578,7 @@ export async function generateCompleteReportPDF(
 };
 
 export async function generateStockReportPDF({ products, categoryFilter }: { products: Product[], categoryFilter?: string }): PdfActionResult {
-    const title = categoryFilter && categoryFilter !== 'all' ? `Relatório de Estoque - ${categoryFilter}` : 'Relatório de Estoque Geral';
+    const title = categoryFilter && categoryFilter !== 'all' ? `Relatório de Estoque - ${'categoryFilter'}` : 'Relatório de Estoque Geral';
     const productsToDisplay = categoryFilter && categoryFilter !== 'all' ? products.filter(p => p.category === categoryFilter) : products;
 
     return generatePdf(
@@ -788,7 +750,7 @@ export async function generateEntriesAndExitsReportPDF({ movements, allProducts,
 }
 
 export async function generateOrderStatusReportPDF({ units, lastOrdersMap, status }: { units: Unit[], lastOrdersMap: Map<string, Order>, status: OrderStatus }): PdfActionResult {
-    const title = `Relatório de Unidades: Status "${status}"`;
+    const title = `Relatório de Unidades: Status "${'status'}"`;
     const filteredUnits = units.filter(unit => {
         const lastOrder = lastOrdersMap.get(unit.id);
         return lastOrder?.status === status;
