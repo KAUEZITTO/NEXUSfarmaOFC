@@ -81,3 +81,5 @@ export async function register(data: { name: string, email: string; password: st
         return { success: false, message: `Ocorreu um erro desconhecido ao criar a conta: ${error.message}` };
     }
 }
+
+    

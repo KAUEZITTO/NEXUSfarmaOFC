@@ -81,3 +81,5 @@ export async function middleware(req: NextRequest) {
   // Se passou por todas as regras, permite o acesso
   return NextResponse.next();
 }
+
+    
