@@ -1,5 +1,7 @@
 
 
+'use server'; // Adicionado para garantir que o código de redirecionamento execute no servidor
+
 import { Suspense } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Users, UserRoundCheck, Activity, AlertTriangle, BarChartHorizontal } from "lucide-react";
@@ -305,14 +307,10 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
 export default async function DashboardPage() {
     noStore(); 
     
-    // --- DATA RESET LOGIC ---
-    // This will run ONCE when this page is loaded, then the change should be reverted.
-    await resetAllData();
-    // --- END OF DATA RESET ---
-    
     const user = await getCurrentUser();
     
     // If the user is a coordinator, immediately redirect to the selection page
+    // This prevents the heavy data fetching below from running unnecessarily.
     if (user?.subRole === 'Coordenador') {
         redirect('/dashboard/select-location');
     }
