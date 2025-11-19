@@ -1,4 +1,3 @@
-
 import { NextResponse, type NextRequest } from 'next/server';
 import { verifyAuth } from '@/lib/auth';
 
@@ -62,14 +61,27 @@ export async function middleware(req: NextRequest) {
 
   // Regras para usuários não-coordenadores
   if (isHospitalUser) {
-    const allowedHospitalPaths = ['/dashboard/hospital', '/dashboard/inventory', '/dashboard/settings', '/dashboard/about'];
-    const isAllowed = allowedHospitalPaths.some(p => pathname.startsWith(p));
-    if (!isAllowed) {
+    // Se um usuário do hospital tentar acessar uma rota que não seja do hospital, redirecione para o dashboard do hospital
+    if (!pathname.startsWith('/dashboard/hospital') && !pathname.startsWith('/dashboard/settings') && !pathname.startsWith('/dashboard/about') && !pathname.startsWith('/dashboard/inventory')) {
       return NextResponse.redirect(new URL('/dashboard/hospital', req.url));
     }
+     // O usuário do hospital pode ver o inventário, mas forçamos o filtro para 'Hospital'
+    if (pathname.startsWith('/dashboard/inventory') && !req.nextUrl.searchParams.has('location')) {
+      const url = req.nextUrl.clone();
+      url.searchParams.set('location', 'Hospital');
+      return NextResponse.redirect(url);
+    }
+    
   } else { // Usuário do CAF
+    // Impede que usuários do CAF acessem rotas do hospital
     if (pathname.startsWith('/dashboard/hospital')) {
       return NextResponse.redirect(new URL('/dashboard', req.url));
+    }
+     // O usuário do CAF pode ver o inventário, mas forçamos o filtro para 'CAF' se nenhum for especificado
+    if (pathname.startsWith('/dashboard/inventory') && !req.nextUrl.searchParams.has('location')) {
+      const url = req.nextUrl.clone();
+      url.searchParams.set('location', 'CAF');
+      return NextResponse.redirect(url);
     }
   }
 
@@ -81,5 +93,3 @@ export async function middleware(req: NextRequest) {
   // Se passou por todas as regras, permite o acesso
   return NextResponse.next();
 }
-
-    
