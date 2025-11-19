@@ -85,7 +85,7 @@ body {
   width: 24px;
   height: 24px;
   position: relative;
-  animation-duration: 1.5s;
+  animation-duration: 1s;
   animation-iteration-count: infinite;
   animation-timing-function: ease-in-out;
 }
