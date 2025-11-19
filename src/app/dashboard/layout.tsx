@@ -13,6 +13,8 @@ import { getCurrentUser } from '@/lib/auth';
 import { PageLoader } from '@/components/ui/page-loader';
 import { Suspense } from 'react';
 import DashboardHeader from '@/components/dashboard/dashboard-header';
+import { HospitalNav } from '@/components/dashboard/hospital/hospital-nav';
+
 
 // Este componente agora é um Server Component para poder buscar o usuário no servidor.
 export default async function DashboardLayout({
@@ -29,6 +31,18 @@ export default async function DashboardLayout({
     }
 
     const isCoordinator = user.subRole === 'Coordenador';
+    const isHospitalUser = user.location === 'Hospital';
+
+    const renderNav = () => {
+        if (isCoordinator) {
+            return <DashboardNav navItems={combinedNavItems} userAccessLevel={user.accessLevel} />;
+        }
+        if (isHospitalUser) {
+            return <HospitalNav />;
+        }
+        return <DashboardNav userAccessLevel={user.accessLevel} />;
+    };
+
 
     return (
         <Suspense fallback={<PageLoader isLoading={true} />}>
@@ -41,7 +55,7 @@ export default async function DashboardLayout({
                             </Link>
                         </SidebarHeader>
                         <SidebarContent className="p-2">
-                            <DashboardNav navItems={isCoordinator ? combinedNavItems : undefined} userAccessLevel={user.accessLevel} />
+                           {renderNav()}
                         </SidebarContent>
                         <div className="mt-auto flex flex-col items-center gap-2 border-t border-primary-foreground/20 p-4">
                             <ThemeToggle />

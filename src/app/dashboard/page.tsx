@@ -305,16 +305,12 @@ export default async function DashboardPage() {
     noStore(); 
     
     const user = await getCurrentUser();
-
-    // Se o usuário for Coordenador, redireciona IMEDIATAMENTE antes de qualquer busca de dados.
-    // Isso previne o carregamento infinito.
-    if (user?.subRole === 'Coordenador') {
-        redirect('/dashboard/select-location');
-    }
     
-    // As buscas de dados só acontecem se o usuário NÃO for um Coordenador.
+    // A lógica de redirecionamento foi movida para o middleware.
+    // Esta página agora carrega os dados para todos os usuários que chegam aqui.
+    // Para Coordenadores, isso significa todos os dados. Para outros, será filtrado pelo middleware.
     const [products, dispensations, users, activePatients, orders, sectorDispensations] = await Promise.all([
-        getProducts(),
+        getProducts('all'), // Coordenador vê tudo
         getAllDispensations(),
         getAllUsers(),
         getPatients('active'),

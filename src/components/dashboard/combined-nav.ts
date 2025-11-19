@@ -17,7 +17,6 @@ import {
 
 export const combinedNavItems = [
   { href: '/dashboard', icon: Home, label: 'Visão Geral (Coord.)' },
-  { href: '/dashboard/select-location', icon: GitCompareArrows, label: 'Trocar Ambiente' },
   { isSeparator: true, label: "CAF" },
   { href: '/dashboard/orders', icon: ShoppingCart, label: 'Pedidos (CAF)' },
   { href: '/dashboard/inventory?location=CAF', icon: Package, label: 'Inventário (CAF)' },

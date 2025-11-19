@@ -43,33 +43,31 @@ export async function middleware(req: NextRequest) {
   }
 
   const isCoordinator = verifiedToken.subRole === 'Coordenador';
-
-  // **Otimização Crítica**: Verificar e redirecionar o Coordenador ANTES de qualquer outra lógica.
-  // Isso previne o carregamento desnecessário da página /dashboard.
-  if (isCoordinator && pathname === '/dashboard') {
-    return NextResponse.redirect(new URL('/dashboard/select-location', req.url));
-  }
-
   const isHospitalUser = verifiedToken.location === 'Hospital';
 
   if (isCoordinator) {
+    // Coordenador tem acesso a tudo. Nenhuma restrição de rota necessária.
     return NextResponse.next();
   }
 
+  // Lógica para usuários não-coordenadores
   if (isHospitalUser) {
+    // Se for usuário do hospital, restrinja o acesso apenas às rotas do hospital.
     if (!pathname.startsWith('/dashboard/hospital') && !pathname.startsWith('/dashboard/settings') && !pathname.startsWith('/dashboard/about') && !pathname.startsWith('/dashboard/inventory')) {
       return NextResponse.redirect(new URL('/dashboard/hospital', req.url));
     }
+    // Garante que o inventário do hospital aponte para a localização correta.
     if (pathname.startsWith('/dashboard/inventory') && !req.nextUrl.searchParams.has('location')) {
       const url = req.nextUrl.clone();
       url.searchParams.set('location', 'Hospital');
       return NextResponse.redirect(url);
     }
-    
   } else { // Usuário do CAF
+    // Impede o acesso do usuário do CAF às rotas do hospital.
     if (pathname.startsWith('/dashboard/hospital')) {
       return NextResponse.redirect(new URL('/dashboard', req.url));
     }
+     // Garante que o inventário do CAF aponte para a localização correta.
     if (pathname.startsWith('/dashboard/inventory') && !req.nextUrl.searchParams.has('location')) {
       const url = req.nextUrl.clone();
       url.searchParams.set('location', 'CAF');
@@ -77,8 +75,9 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  if (!isCoordinator && pathname === '/dashboard/select-location') {
-    return NextResponse.redirect(new URL('/dashboard', req.url));
+  // Impede que usuários não-coordenadores acessem a página de seleção.
+  if (pathname === '/dashboard/select-location') {
+      return NextResponse.redirect(new URL('/dashboard', req.url));
   }
 
   return NextResponse.next();
