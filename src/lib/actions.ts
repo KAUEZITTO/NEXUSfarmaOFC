@@ -2,7 +2,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { readData, writeData, getProducts, getAllUsers, getSectorDispensations, getUnits as getUnitsFromDb, getHospitalPatients as getHospitalPatientsFromDb, getHospitalPatientDispensations as getHospitalPatientDispensationsFromDb, resetAllData as resetDataFromDb } from '@/lib/data';
+import { readData, writeData, getProducts, getAllUsers, getSectorDispensations, getUnits as getUnitsFromDb, getHospitalPatients as getHospitalPatientsFromDb, getHospitalPatientDispensations as getHospitalPatientDispensationsFromDb } from '@/lib/data';
 import type { User, Product, Unit, Patient, Order, OrderItem, Dispensation, DispensationItem, StockMovement, PatientStatus, Role, SubRole, AccessLevel, OrderType, PatientFile, OrderStatus, UserLocation, SectorDispensation, HospitalSector as Sector, HospitalOrderTemplateItem, HospitalPatient, HospitalPatientDispensation } from './types';
 import { getCurrentUser } from '@/lib/auth';
 import { generatePdf } from '@/lib/pdf-generator';
@@ -45,15 +45,6 @@ const logStockMovement = async (
   };
   await writeData('stockMovements', [newMovement, ...movements]);
 };
-
-export async function resetAllData() {
-    await resetDataFromDb();
-    revalidatePath('/dashboard');
-    revalidatePath('/dashboard/inventory');
-    revalidatePath('/dashboard/patients');
-    revalidatePath('/dashboard/orders');
-    revalidatePath('/dashboard/hospital');
-}
 
 
 // --- PRODUCT ACTIONS ---

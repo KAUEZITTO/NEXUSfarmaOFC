@@ -107,8 +107,8 @@ export async function generatePdf(
     try {
         const doc = new jsPDF({ orientation: isLandscape ? 'landscape' : 'portrait' }) as jsPDFWithAutoTable;
         const startY = 85;
-        const totalPages = (doc.internal as any).getNumberOfPages();
-
+        
+        // Render the body first to know the total number of pages
         if (typeof bodyOrTableOptions === 'function') {
              const bodyFn = bodyOrTableOptions;
              bodyFn(doc);
