@@ -2,7 +2,7 @@
 'use server';
 
 import { writeData, getAllUsers, getUnits as getUnitsFromDb } from '@/lib/data';
-import type { User, Role, SubRole, UserLocation } from '@/lib/types';
+import type { User, Role, SubRole, UserLocation, AccessLevel } from '@/lib/types';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase/admin';
 import { revalidatePath } from 'next/cache';
