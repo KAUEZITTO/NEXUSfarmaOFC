@@ -15,6 +15,7 @@ import { unstable_noStore as noStore } from "next/cache";
 import { ShoppingCart } from "lucide-react";
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
+import { resetAllData } from "@/lib/seed";
 
 type UpcomingReturn = {
     patientId: string;
@@ -304,13 +305,20 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
 export default async function DashboardPage() {
     noStore(); 
     
+    // --- DATA RESET LOGIC ---
+    // This will run ONCE when this page is loaded, then the change should be reverted.
+    await resetAllData();
+    // --- END OF DATA RESET ---
+    
     const user = await getCurrentUser();
     
-    // A lógica de redirecionamento foi movida para o middleware.
-    // Esta página agora carrega os dados para todos os usuários que chegam aqui.
-    // Para Coordenadores, isso significa todos os dados. Para outros, será filtrado pelo middleware.
+    // If the user is a coordinator, immediately redirect to the selection page
+    if (user?.subRole === 'Coordenador') {
+        redirect('/dashboard/select-location');
+    }
+    
     const [products, dispensations, users, activePatients, orders, sectorDispensations] = await Promise.all([
-        getProducts('all'), // Coordenador vê tudo
+        getProducts('all'),
         getAllDispensations(),
         getAllUsers(),
         getPatients('active'),
