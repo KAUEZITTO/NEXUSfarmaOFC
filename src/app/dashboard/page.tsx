@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { Suspense } from "react";
@@ -17,7 +16,6 @@ import { unstable_noStore as noStore } from "next/cache";
 import { ShoppingCart } from "lucide-react";
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
-import { resetAllData } from "@/lib/seed";
 
 type UpcomingReturn = {
     patientId: string;
@@ -307,6 +305,11 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
 export default async function DashboardPage() {
     noStore(); 
     const user = await getCurrentUser();
+
+    // If the user is a hospital user, redirect them to the hospital-specific dashboard.
+    if (user?.location === 'Hospital' && user?.subRole !== 'Coordenador') {
+        redirect('/dashboard/hospital');
+    }
     
     // Non-coordinators will see the consolidated dashboard.
     // This allows CAF and Hospital users to have a relevant landing page.

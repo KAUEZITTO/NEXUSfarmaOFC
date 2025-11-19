@@ -1,3 +1,4 @@
+
 'use server';
 
 import React from 'react';
@@ -31,7 +32,7 @@ export default async function DashboardLayout({
     }
 
     const isCoordinator = user.subRole === 'Coordenador';
-    const isHospitalUser = user.location === 'Hospital';
+    const isHospitalUser = user.location === 'Hospital' && !isCoordinator;
 
     const renderNav = () => {
         if (isCoordinator) {
@@ -40,6 +41,7 @@ export default async function DashboardLayout({
         if (isHospitalUser) {
             return <HospitalNav />;
         }
+        // Default to CAF Nav
         return <DashboardNav userAccessLevel={user.accessLevel} />;
     };
 
