@@ -19,19 +19,25 @@ export async function register(data: { name: string, email: string; password: st
         const adminAuth = getAuth(getAdminApp());
         const users = await getAllUsers();
 
+        // 1. Verifica se o email já está em uso no nosso banco de dados
         if (users.some(u => u.email === email)) {
-            return { success: false, message: 'Este email já está em uso.' };
+            return { success: false, message: 'Este email já está em uso no banco de dados do NexusFarma.' };
         }
         
+        // 2. Verifica se o email já existe no Firebase Auth (proteção extra)
         try {
             await adminAuth.getUserByEmail(email);
-            return { success: false, message: 'Este email já está registrado no sistema de autenticação.' };
+            // Se não deu erro, o usuário já existe no Firebase Auth, mas não no nosso BD.
+            return { success: false, message: 'Este email já está registrado no sistema de autenticação, mas não no NexusFarma. Contate o suporte.' };
         } catch (error: any) {
+            // Se o erro for "user-not-found", ótimo, podemos continuar.
             if (error.code !== 'auth/user-not-found') {
+                // Outro erro inesperado do Firebase
                 throw error;
             }
         }
 
+        // 3. Cria o usuário no Firebase Auth
         const userRecord = await adminAuth.createUser({
             email: email,
             password: password,
@@ -42,6 +48,7 @@ export async function register(data: { name: string, email: string; password: st
 
         const userLocation = subRole === 'Coordenador' ? 'CAF' : location;
         if (!userLocation) {
+            // Esta validação deve ser feita no lado do cliente, mas como segurança.
             return { success: false, message: 'O local de trabalho é obrigatório para este cargo.' };
         }
         
@@ -52,6 +59,7 @@ export async function register(data: { name: string, email: string; password: st
             if(hospitalUnit) locationId = hospitalUnit.id;
         }
 
+        // 4. Cria o usuário no nosso banco de dados Vercel KV
         const newUser: User = {
             id: userRecord.uid,
             email,
@@ -95,27 +103,33 @@ export async function updateUserAccessLevel(userId: string, accessLevel: AccessL
 }
 
 export async function deleteUser(userId: string) {
-    const { getAuth } = await import('firebase-admin/auth');
-    const { getAdminApp } = await import('@/lib/firebase/admin');
-
     const adminAuth = getAuth(getAdminApp());
     const users = await getAllUsers();
-    const userToDelete = users.find(u => u.id === userId);
-
-    if (!userToDelete) {
-        throw new Error('Usuário não encontrado para exclusão.');
+    
+    // 1. Encontra o usuário no nosso banco de dados para garantir que ele existe
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex === -1) {
+        // Se o usuário não existe no nosso BD, tentamos remover do Auth por segurança, mas retornamos erro.
+        try { await adminAuth.deleteUser(userId); } catch (e) {}
+        throw new Error('Usuário não encontrado no banco de dados do NexusFarma.');
     }
 
+    // 2. Tenta excluir o usuário do Firebase Authentication primeiro.
     try {
         await adminAuth.deleteUser(userId);
     } catch (error: any) {
+        // Se o usuário já não existe no Firebase Auth, podemos ignorar o erro e continuar.
         if (error.code !== 'auth/user-not-found') {
             console.error("Erro ao excluir usuário do Firebase Auth:", error);
-            throw new Error('Erro ao excluir usuário do sistema de autenticação.');
+            // Se a exclusão no Firebase Auth falhar por outro motivo, não continuamos.
+            throw new Error('Erro ao excluir usuário do sistema de autenticação. A operação foi abortada.');
         }
     }
 
+    // 3. Se a exclusão no Firebase Auth foi bem-sucedida (ou o usuário já não estava lá), remove do nosso banco.
     const updatedUsers = users.filter(u => u.id !== userId);
     await writeData('users', updatedUsers);
+    
+    // 4. Revalida o cache da página de gerenciamento de usuários.
     revalidatePath('/dashboard/user-management');
 }
