@@ -306,13 +306,13 @@ export default async function DashboardPage() {
     
     const user = await getCurrentUser();
 
-    // Se o usuário for Coordenador, ele já foi redirecionado pelo middleware.
-    // Esta verificação adicional previne a execução desnecessária do fetch de dados.
+    // Se o usuário for Coordenador, redireciona IMEDIATAMENTE antes de qualquer busca de dados.
+    // Isso previne o carregamento infinito.
     if (user?.subRole === 'Coordenador') {
-        // O redirect do server-side component garante que nada mais será renderizado.
         redirect('/dashboard/select-location');
     }
     
+    // As buscas de dados só acontecem se o usuário NÃO for um Coordenador.
     const [products, dispensations, users, activePatients, orders, sectorDispensations] = await Promise.all([
         getProducts(),
         getAllDispensations(),
