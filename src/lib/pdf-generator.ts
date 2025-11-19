@@ -14,14 +14,15 @@ interface jsPDFWithAutoTable extends jsPDF {
 // Helper function to get image as base64
 const getImageAsBase64 = async (imagePath: string): Promise<string | null> => {
     try {
-        const fullPath = path.resolve(process.cwd(), 'public', imagePath.startsWith('/') ? imagePath.substring(1) : imagePath);
-        const file = await fs.readFile(fullPath);
-        return `data:image/png;base64,${file.toString('base64')}`;
+        const fullPath = path.join(process.cwd(), 'public', imagePath.startsWith('/') ? imagePath.substring(1) : imagePath);
+        const fileBuffer = await fs.readFile(fullPath);
+        return `data:image/png;base64,${fileBuffer.toString('base64')}`;
     } catch (error) {
         console.error(`Failed to read image at ${imagePath}:`, error);
         return null;
     }
 };
+
 
 const drawHeaderAndFooter = async (doc: jsPDFWithAutoTable, pageNumber: number, totalPages: number, title: string, subtitle: string | undefined, isHospitalReport: boolean) => {
     const [prefLogo, nexusLogo, cafLogo] = await Promise.all([
