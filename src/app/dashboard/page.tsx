@@ -1,6 +1,6 @@
 
 
-'use server'; // Adicionado para garantir que o código de redirecionamento execute no servidor
+'use server';
 
 import { Suspense } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -306,14 +306,10 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
 
 export default async function DashboardPage() {
     noStore(); 
-    
     const user = await getCurrentUser();
     
-    // If the user is a coordinator, immediately redirect to the selection page
-    // This prevents the heavy data fetching below from running unnecessarily.
-    if (user?.subRole === 'Coordenador') {
-        redirect('/dashboard/select-location');
-    }
+    // Non-coordinators will see the consolidated dashboard.
+    // This allows CAF and Hospital users to have a relevant landing page.
     
     const [products, dispensations, users, activePatients, orders, sectorDispensations] = await Promise.all([
         getProducts('all'),
