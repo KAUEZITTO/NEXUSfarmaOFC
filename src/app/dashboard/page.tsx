@@ -1,4 +1,5 @@
 
+
 import { Suspense } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Users, UserRoundCheck, Activity, AlertTriangle, BarChartHorizontal } from "lucide-react";
@@ -12,6 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { unstable_noStore as noStore } from "next/cache";
 import { ShoppingCart } from "lucide-react";
+import { redirect } from 'next/navigation';
+import { getCurrentUser } from '@/lib/auth';
 
 type UpcomingReturn = {
     patientId: string;
@@ -298,9 +301,17 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
     );
 }
 
-// This is now a fully dynamic component
 export default async function DashboardPage() {
     noStore(); 
+    
+    const user = await getCurrentUser();
+
+    // Se o usuário for Coordenador, ele já foi redirecionado pelo middleware.
+    // Esta verificação adicional previne a execução desnecessária do fetch de dados.
+    if (user?.subRole === 'Coordenador') {
+        // O redirect do server-side component garante que nada mais será renderizado.
+        redirect('/dashboard/select-location');
+    }
     
     const [products, dispensations, users, activePatients, orders, sectorDispensations] = await Promise.all([
         getProducts(),
