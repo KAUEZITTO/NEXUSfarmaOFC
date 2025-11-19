@@ -8,7 +8,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { generatePdf } from '@/lib/pdf-generator';
 
 // --- UTILITIES ---
-const generateId = (prefix: string) => `${'prefix'}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
+const generateId = (prefix: string) => `${prefix}_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
 const generateNumericId = (): string => {
     const timestamp = Date.now().toString(); 
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
@@ -81,7 +81,7 @@ export async function updateProduct(productId: string, productData: Partial<Omit
     products[productIndex] = updatedProduct;
     await writeData('products', products);
     revalidatePath('/dashboard/inventory');
-    revalidatePath(`/labels/${'productId'}`);
+    revalidatePath(`/labels/${productId}`);
     return updatedProduct;
 }
 
@@ -1029,3 +1029,5 @@ export async function updateHospitalOrderTemplate(templateItems: HospitalOrderTe
     await writeData('hospitalOrderTemplate', templateItems);
     revalidatePath('/dashboard/hospital/orders/template');
 }
+
+    
