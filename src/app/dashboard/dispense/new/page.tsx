@@ -2,27 +2,20 @@
 
 import React from 'react';
 import { Suspense } from 'react';
-import { getProducts, getAllDispensations } from '@/lib/data';
-import { NewDispensationClientPage } from './client-page';
-import LoadingNewDispensationPage from './loading';
-import type { Dispensation } from '@/lib/types';
-import { unstable_noStore as noStore } from 'next/cache';
+import { getUnits, getProducts } from '@/lib/data';
+import { NewOrderClientPage } from './client-page';
+import LoadingNewOrderPage from './loading';
 
-export const dynamic = 'force-dynamic';
+export default async function NewOrderPageWrapper() {
+    // Fetch data on the server
+    const unitsData = await getUnits();
+    const productsData = await getProducts('CAF');
 
-export default async function NewDispensationPageWrapper() {
-    noStore();
-    const [productsData, dispensationsData] = await Promise.all([
-        getProducts('CAF'),
-        getAllDispensations()
-    ]);
-
+    // The Suspense boundary here handles the loading state while data is being fetched.
+    // The fallback points directly to our skeleton component.
     return (
-        <Suspense fallback={<LoadingNewDispensationPage />}>
-            <NewDispensationClientPage 
-                initialProducts={productsData} 
-                initialDispensations={dispensationsData as Dispensation[]}
-            />
+        <Suspense fallback={<LoadingNewOrderPage />}>
+            <NewOrderClientPage initialUnits={unitsData} initialProducts={productsData} />
         </Suspense>
     );
 }

@@ -1,4 +1,5 @@
 
+
 import { Suspense } from 'react';
 import { getUnits } from '@/lib/data';
 import { UnitsClientPage } from './client-page';
