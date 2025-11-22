@@ -1,3 +1,4 @@
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { verifyAuth } from '@/lib/auth';
 
@@ -45,8 +46,8 @@ export async function middleware(req: NextRequest) {
   const isCoordinator = verifiedToken.subRole === 'Coordenador';
   const isHospitalUser = verifiedToken.location === 'Hospital';
 
+  // O Coordenador nunca deve ser redirecionado automaticamente. Ele tem acesso ao dashboard consolidado.
   if (isCoordinator) {
-    // Coordenador tem acesso a tudo. Nenhuma restrição de rota necessária.
     return NextResponse.next();
   }
 
@@ -73,11 +74,6 @@ export async function middleware(req: NextRequest) {
       url.searchParams.set('location', 'CAF');
       return NextResponse.redirect(url);
     }
-  }
-
-  // Impede que usuários não-coordenadores acessem a página de seleção.
-  if (pathname === '/dashboard/select-location') {
-      return NextResponse.redirect(new URL('/dashboard', req.url));
   }
 
   return NextResponse.next();
