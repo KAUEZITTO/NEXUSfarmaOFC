@@ -25,7 +25,7 @@ function LoginFormSkeleton() {
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-      <div className="mx-auto w-full max-w-sm rounded-lg border bg-background p-8 shadow-sm">
+      <div className="mx-auto w-full max-w-sm rounded-lg border bg-card p-8 shadow-sm">
         <div className="grid gap-2 text-center">
           <Link href="/" className="flex justify-center">
             <Logo className="w-56 h-20" />

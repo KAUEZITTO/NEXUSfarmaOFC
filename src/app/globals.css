@@ -15,50 +15,50 @@ body {
     --card-foreground: 224 71.4% 4.1%;
     --popover: 0 0% 100%;
     --popover-foreground: 224 71.4% 4.1%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 173 96% 31%;
-    --secondary-foreground: 0 0% 100%;
+    --primary: 142.1 76.2% 36.3%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 220 13% 23%;
+    --secondary-foreground: 0 0% 98%;
     --muted: 220 14.3% 95.9%;
     --muted-foreground: 220 8.9% 46.1%;
-    --accent: 45 93% 47%;
+    --accent: 38 92% 50%;
     --accent-foreground: 48 95.5% 12.5%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 217 91% 60%;
+    --ring: 142.1 76.2% 36.3%;
     --radius: 0.5rem;
-    --chart-1: 217 91% 60%;
-    --chart-2: 173 96% 31%;
-    --chart-3: 160 60% 45%;
+    --chart-1: 142.1 76.2% 36.3%;
+    --chart-2: 220 13% 23%;
+    --chart-3: 38 92% 50%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
 
   .dark {
-    --background: 224 71.4% 4.1%;
+    --background: 220 13% 18%;
     --foreground: 210 20% 98%;
-    --card: 224 71.4% 4.1%;
+    --card: 220 14% 15%;
     --card-foreground: 210 20% 98%;
     --popover: 224 71.4% 4.1%;
     --popover-foreground: 210 20% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 173 96% 31%;
-    --secondary-foreground: 0 0% 100%;
+    --primary: 142.1 70.6% 45.3%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 215 27.9% 26.9%;
+    --secondary-foreground: 0 0% 98%;
     --muted: 215 27.9% 16.9%;
     --muted-foreground: 217.9 10.6% 64.9%;
-    --accent: 45 93% 47%;
+    --accent: 38 92% 50%;
     --accent-foreground: 48 95.5% 12.5%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 85.7% 97.3%;
     --border: 215 27.9% 16.9%;
     --input: 215 27.9% 16.9%;
-    --ring: 217 91% 60%;
-    --chart-1: 217 91% 60%;
-    --chart-2: 173 96% 31%;
-    --chart-3: 160 60% 45%;
+    --ring: 142.1 70.6% 45.3%;
+    --chart-1: 142.1 70.6% 45.3%;
+    --chart-2: 215 27.9% 26.9%;
+    --chart-3: 38 92% 50%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
@@ -85,7 +85,7 @@ body {
   width: 24px;
   height: 24px;
   position: relative;
-  animation-duration: 1s;
+  animation-duration: 1.5s;
   animation-iteration-count: infinite;
   animation-timing-function: ease-in-out;
 }
@@ -118,4 +118,73 @@ body {
   50% {
     transform: translateX(8px);
   }
+}
+
+/* Custom styles for Intro.js */
+.custom-tooltip-class {
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--card-foreground));
+    border-radius: var(--radius);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    max-width: 350px !important;
+}
+
+.introjs-button {
+    background-color: hsl(var(--primary)) !important;
+    color: hsl(var(--primary-foreground)) !important;
+    text-shadow: none !important;
+    border-radius: var(--radius) !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    transition: background-color 0.2s;
+}
+
+.introjs-button:hover {
+    background-color: hsl(var(--primary) / 0.9) !important;
+}
+
+.introjs-prevbutton {
+    background-color: hsl(var(--muted)) !important;
+    color: hsl(var(--muted-foreground)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+}
+.introjs-prevbutton:hover {
+    background-color: hsl(var(--muted) / 0.9) !important;
+}
+
+.introjs-skipbutton {
+    color: hsl(var(--muted-foreground)) !important;
+}
+.introjs-skipbutton:hover {
+    color: hsl(var(--foreground)) !important;
+}
+
+.introjs-tooltiptext {
+    line-height: 1.7;
+    padding: 0.5rem;
+}
+
+.introjs-arrow.top {
+    border-bottom-color: hsl(var(--card)) !important;
+}
+.introjs-arrow.bottom {
+    border-top-color: hsl(var(--card)) !important;
+}
+.introjs-arrow.left {
+    border-right-color: hsl(var(--card)) !important;
+}
+.introjs-arrow.right {
+    border-left-color: hsl(var(--card)) !important;
+}
+
+.introjs-overlay {
+    position: fixed;
+    box-sizing: border-box;
+    z-index: 999999;
+    background-color: #000;
+    opacity: 0;
+    background: hsla(0,0%,0%,.3);
+    transition: all .3s ease-out;
 }

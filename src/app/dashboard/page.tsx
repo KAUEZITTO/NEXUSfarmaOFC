@@ -153,7 +153,7 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
     return (
          <div className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="hover:shadow-lg transition-shadow duration-300">
+                <Card className="hover:shadow-lg transition-shadow duration-300 border-l-4 border-primary">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Baixo Estoque (Global)</CardTitle>
                         <Package className="h-5 w-5 text-primary" />
@@ -163,7 +163,7 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
                         <p className="text-xs text-muted-foreground">Grupos de itens que precisam de reposição.</p>
                     </CardContent>
                 </Card>
-                <Card className="hover:shadow-lg transition-shadow duration-300">
+                <Card className="hover:shadow-lg transition-shadow duration-300 border-l-4 border-destructive">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Próximos do Vencimento (Global)</CardTitle>
                         <AlertTriangle className="h-5 w-5 text-destructive" />
@@ -173,20 +173,20 @@ function DashboardDataWrapper({ products, dispensations, users, activePatients, 
                         <p className="text-xs text-muted-foreground">Lotes vencendo nos próximos 120 dias.</p>
                     </CardContent>
                 </Card>
-                 <Card className="hover:shadow-lg transition-shadow duration-300">
+                 <Card className="hover:shadow-lg transition-shadow duration-300 border-l-4 border-secondary">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Pacientes Ativos (CAF)</CardTitle>
-                        <Users className="h-5 w-5 text-primary" />
+                        <Users className="h-5 w-5 text-secondary" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold text-foreground">{activePatients.length}</div>
                         <p className="text-xs text-muted-foreground">Total de pacientes com status ativo.</p>
                     </CardContent>
                 </Card>
-                <Card className="hover:shadow-lg transition-shadow duration-300">
+                <Card className="hover:shadow-lg transition-shadow duration-300 border-l-4 border-accent">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Usuários Online</CardTitle>
-                        <UserRoundCheck className="h-5 w-5 text-primary" />
+                        <UserRoundCheck className="h-5 w-5 text-accent" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold text-foreground">{onlineUsersCount}</div>
@@ -311,8 +311,7 @@ export default async function DashboardPage() {
         redirect('/dashboard/hospital');
     }
     
-    // Non-coordinators will see the consolidated dashboard.
-    // This allows CAF and Hospital users to have a relevant landing page.
+    // Coordinators and CAF users will see the consolidated dashboard.
     
     const [products, dispensations, users, activePatients, orders, sectorDispensations] = await Promise.all([
         getProducts('all'),
